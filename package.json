@@ -5,6 +5,7 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "build:dev": "ng build --configuration dev",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "serve:ssr:front-synapta": "node dist/front-synapta/server/server.mjs"

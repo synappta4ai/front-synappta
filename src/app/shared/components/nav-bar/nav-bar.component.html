@@ -1,0 +1,82 @@
+<header class="sticky top-0 z-20 border-b border-zinc-200 bg-zinc-50/80 backdrop-blur">
+  <nav
+    class="mx-auto flex h-16 max-w-6xl items-center justify-between gap-6 px-4 sm:px-6"
+    aria-label="Principal"
+  >
+    <a routerLink="/" class="flex items-center gap-2.5">
+      <span class="grid h-8 w-8 grid-cols-2 gap-1 rounded-lg bg-zinc-900 p-1.5" aria-hidden="true">
+        <span class="rounded-[2px] bg-zinc-300"></span>
+        <span class="rounded-[2px] bg-zinc-300"></span>
+        <span class="rounded-[2px] bg-zinc-300"></span>
+        <span class="rounded-[2px] bg-indigo-400"></span>
+      </span>
+      <span class="text-lg font-semibold tracking-tight text-zinc-900">Synapta</span>
+    </a>
+
+    <div class="hidden items-center gap-1 md:flex">
+      @for (link of links; track link.href) {
+        <a
+          [routerLink]="link.href"
+          routerLinkActive="font-semibold text-indigo-600"
+          [routerLinkActiveOptions]="{ exact: link.exact }"
+          class="rounded-md px-3 py-2 text-sm font-medium text-zinc-600 transition-colors motion-reduce:transition-none hover:text-zinc-900"
+          >{{ link.label }}</a
+        >
+      }
+    </div>
+
+    <button
+      type="button"
+      class="inline-flex h-10 w-10 items-center justify-center rounded-md text-zinc-600 hover:bg-zinc-100 md:hidden"
+      [attr.aria-expanded]="menuOpen()"
+      aria-controls="mobile-menu"
+      aria-label="Abrir menú"
+      (click)="toggleMenu()"
+    >
+      @if (menuOpen()) {
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+          class="h-5 w-5"
+          aria-hidden="true"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+        </svg>
+      } @else {
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+          class="h-5 w-5"
+          aria-hidden="true"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
+          />
+        </svg>
+      }
+    </button>
+  </nav>
+
+  @if (menuOpen()) {
+    <div id="mobile-menu" class="border-t border-zinc-200 bg-zinc-50 px-4 py-3 md:hidden">
+      @for (link of links; track link.href) {
+        <a
+          [routerLink]="link.href"
+          routerLinkActive="text-indigo-600"
+          [routerLinkActiveOptions]="{ exact: link.exact }"
+          class="block rounded-md px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100"
+          (click)="closeMenu()"
+          >{{ link.label }}</a
+        >
+      }
+    </div>
+  }
+</header>
