@@ -1,7 +1,7 @@
-import { computed, inject, Injectable, signal } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 
-import { TokenStorageService } from '@services/token-storage.service';
+import { UserSessionStore } from '@core/store/user.session';
 
 import { LoginRequest, RegisterRequest, TokenResponse, User } from '../interfaces';
 import { AuthApiRepository } from '../repositories';
@@ -9,19 +9,11 @@ import { AuthApiRepository } from '../repositories';
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly authApiRepository = inject(AuthApiRepository);
-  private readonly tokenStorage = inject(TokenStorageService);
-
-  private readonly tokenSignal = signal<string | null>(this.tokenStorage.getToken());
-  private readonly userSignal = signal<User | null>(this.tokenStorage.getUser<User>());
-
-  readonly token = this.tokenSignal.asReadonly();
-  readonly user = this.userSignal.asReadonly();
-  readonly isAuthenticated = computed(() => this.tokenSignal() !== null);
-  readonly roleLevel = computed(() => this.userSignal()?.role_level ?? null);
+  private readonly sessionStore = inject(UserSessionStore);
 
   login(payload: LoginRequest): Observable<TokenResponse> {
     return unwrap(this.authApiRepository.login(payload)).pipe(
-      tap((data) => this.persistSession(data.token, data.user)),
+      tap((data) => this.sessionStore.login(data.user, data.token, data.tenant_id)),
     );
   }
 
@@ -34,15 +26,7 @@ export class AuthService {
   }
 
   logout(): void {
-    this.tokenStorage.clear();
-    this.tokenSignal.set(null);
-    this.userSignal.set(null);
-  }
-
-  private persistSession(token: string, user: User): void {
-    this.tokenStorage.saveSession(token, user);
-    this.tokenSignal.set(token);
-    this.userSignal.set(user);
+    this.sessionStore.logout();
   }
 }
 

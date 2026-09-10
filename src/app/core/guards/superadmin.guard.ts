@@ -1,15 +1,15 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 
-import { AuthService } from '@modules/auth/services/auth.service';
+import { UserSessionStore } from '../store';
 
 export const superadminGuard: CanActivateFn = () => {
-  const authService = inject(AuthService);
+  const sessionStore = inject(UserSessionStore);
   const router = inject(Router);
 
-  const roleLevel = authService.roleLevel();
+  const user = sessionStore.currentUser();
 
-  if (roleLevel === null || roleLevel !== 0) {
+  if (!user || user.role_level !== 0) {
     return router.createUrlTree(['/agency']);
   }
 

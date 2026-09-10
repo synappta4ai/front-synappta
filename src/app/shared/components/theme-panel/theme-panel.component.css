@@ -17,7 +17,7 @@
   align-items: center;
   gap: 0.75rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--surface-200);
 }
 
 .user-avatar {
@@ -26,6 +26,7 @@
   border-radius: 50%;
   overflow: hidden;
   border: 2px solid var(--primary-500);
+  flex-shrink: 0;
 }
 
 .user-avatar img {
@@ -37,13 +38,17 @@
 .user-info {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .user-name {
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--surface-900);
   font-size: 0.875rem;
   margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .user-role {
@@ -69,7 +74,7 @@
   border-radius: 0.5rem;
   background: transparent;
   border: none;
-  color: var(--text-secondary);
+  color: var(--surface-500);
   font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -79,11 +84,11 @@
 
 .menu-item:hover {
   background-color: var(--surface-100);
-  color: var(--text-primary);
+  color: var(--surface-900);
 }
 
 .menu-item.logout:hover {
-  color: var(--red-500);
+  color: #ef4444;
 }
 
 .menu-icon {
@@ -94,8 +99,8 @@
 /* Divider */
 .divider {
   height: 1px;
-  background-color: var(--border-color);
-  margin: 0.5rem 0;
+  background-color: var(--surface-200);
+  margin: 0.25rem 0;
 }
 
 /* Sections */
@@ -108,7 +113,7 @@
 .section-title {
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--surface-900);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin: 0;
@@ -128,8 +133,8 @@
   padding: 0.5rem 0.75rem;
   border-radius: 0.5rem;
   background-color: var(--surface-50);
-  border: 1px solid var(--border-color);
-  color: var(--text-secondary);
+  border: 1px solid var(--surface-200);
+  color: var(--surface-600);
   font-size: 0.75rem;
   font-weight: 500;
   cursor: pointer;
@@ -144,7 +149,7 @@
 .color-btn.active {
   background-color: var(--surface-100);
   border-color: var(--color);
-  color: var(--text-primary);
+  color: var(--surface-900);
   box-shadow: 0 0 0 2px var(--color);
 }
 
@@ -174,8 +179,8 @@
   padding: 0.625rem 1rem;
   border-radius: 0.5rem;
   background-color: var(--surface-50);
-  border: 1px solid var(--border-color);
-  color: var(--text-secondary);
+  border: 1px solid var(--surface-200);
+  color: var(--surface-600);
   font-size: 0.75rem;
   font-weight: 500;
   cursor: pointer;
@@ -184,7 +189,7 @@
 
 .mode-btn:hover {
   background-color: var(--surface-100);
-  color: var(--text-primary);
+  color: var(--surface-900);
 }
 
 .mode-btn.active {

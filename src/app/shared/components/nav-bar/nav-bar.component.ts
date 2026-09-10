@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 
-import { AuthService } from '@modules/auth/services/auth.service';
+import { UserSessionStore } from '@core/store/user.session';
 import { ThemePanelComponent } from '../theme-panel/theme-panel.component';
 
 interface NavLink {
@@ -18,7 +18,7 @@ interface NavLink {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NavBarComponent {
-  private readonly authService = inject(AuthService);
+  private readonly sessionStore = inject(UserSessionStore);
 
   protected readonly allLinks: readonly NavLink[] = [
     { label: 'Inicio', href: '/', exact: true },
@@ -31,7 +31,7 @@ export class NavBarComponent {
   protected readonly menuOpen = signal(false);
 
   protected get links(): readonly NavLink[] {
-    const isSuperadmin = this.authService.roleLevel() === 0;
+    const isSuperadmin = this.sessionStore.currentUser()?.role_level === 0;
     return this.allLinks.filter((link) => !link.adminOnly || isSuperadmin);
   }
 

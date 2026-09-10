@@ -1,6 +1,341 @@
-/* You can add global styles to this file, and also import other style files */
-
 @import 'tailwindcss';
+
+/* Class-based dark mode for Tailwind v4 */
+@custom-variant dark (&:where(.dark, .dark *));
 
 /* PrimeNG icons */
 @import 'primeicons/primeicons.css';
+
+/* ============================================
+   SISTEMA DE TEMAS DINAMICOS
+   ============================================ */
+
+/* Definición de las 7 paletas de colores */
+:root {
+  /* Paleta Base (Rojo) */
+  --base-50: #fef2f2;
+  --base-100: #fee2e2;
+  --base-200: #fecaca;
+  --base-300: #fca5a5;
+  --base-400: #f87171;
+  --base-500: #ef4444;
+  --base-600: #dc2626;
+  --base-700: #b91c1c;
+  --base-800: #991b1b;
+  --base-900: #7f1d1d;
+  --base-950: #450a0a;
+
+  /* Paleta Yellow */
+  --yellow-50: #fefce8;
+  --yellow-100: #fef9c3;
+  --yellow-200: #fef08a;
+  --yellow-300: #fde047;
+  --yellow-400: #facc15;
+  --yellow-500: #eab308;
+  --yellow-600: #ca8a04;
+  --yellow-700: #a16207;
+  --yellow-800: #854d0e;
+  --yellow-900: #713f12;
+  --yellow-950: #422006;
+
+  /* Paleta Green */
+  --green-50: #f0fdf4;
+  --green-100: #dcfce7;
+  --green-200: #bbf7d0;
+  --green-300: #86efac;
+  --green-400: #4ade80;
+  --green-500: #22c55e;
+  --green-600: #16a34a;
+  --green-700: #15803d;
+  --green-800: #166534;
+  --green-900: #14532d;
+  --green-950: #052e16;
+
+  /* Paleta Blue */
+  --blue-50: #eff6ff;
+  --blue-100: #dbeafe;
+  --blue-200: #bfdbfe;
+  --blue-300: #93c5fd;
+  --blue-400: #60a5fa;
+  --blue-500: #3b82f6;
+  --blue-600: #2563eb;
+  --blue-700: #1d4ed8;
+  --blue-800: #1e40af;
+  --blue-900: #1e3a8a;
+  --blue-950: #172554;
+
+  /* Paleta Orange */
+  --orange-50: #fff7ed;
+  --orange-100: #ffedd5;
+  --orange-200: #fed7aa;
+  --orange-300: #fdba74;
+  --orange-400: #fb923c;
+  --orange-500: #f97316;
+  --orange-600: #ea580c;
+  --orange-700: #c2410c;
+  --orange-800: #9a3412;
+  --orange-900: #7c2d12;
+  --orange-950: #431407;
+
+  /* Paleta Red */
+  --red-50: #fef2f2;
+  --red-100: #fee2e2;
+  --red-200: #fecaca;
+  --red-300: #fca5a5;
+  --red-400: #f87171;
+  --red-500: #ef4444;
+  --red-600: #dc2626;
+  --red-700: #b91c1c;
+  --red-800: #991b1b;
+  --red-900: #7f1d1d;
+  --red-950: #450a0a;
+
+  /* Paleta Violet */
+  --violet-50: #f5f3ff;
+  --violet-100: #ede9fe;
+  --violet-200: #ddd6fe;
+  --violet-300: #c4b5fd;
+  --violet-400: #a78bfa;
+  --violet-500: #8b5cf6;
+  --violet-600: #7c3aed;
+  --violet-700: #6d28d9;
+  --violet-800: #5b21b6;
+  --violet-900: #4c1d95;
+  --violet-950: #2e1065;
+
+  /* Color primario por defecto (Violet) */
+  --primary-50: var(--violet-50);
+  --primary-100: var(--violet-100);
+  --primary-200: var(--violet-200);
+  --primary-300: var(--violet-300);
+  --primary-400: var(--violet-400);
+  --primary-500: var(--violet-500);
+  --primary-600: var(--violet-600);
+  --primary-700: var(--violet-700);
+  --primary-800: var(--violet-800);
+  --primary-900: var(--violet-900);
+  --primary-950: var(--violet-950);
+}
+
+/* ============================================
+   Tema Claro
+   ============================================ */
+:root {
+  /* Superficies */
+  --surface-0: #ffffff;
+  --surface-50: #fafafa;
+  --surface-100: #f4f4f5;
+  --surface-200: #e4e4e7;
+  --surface-300: #d4d4d8;
+  --surface-400: #a1a1aa;
+  --surface-500: #71717a;
+  --surface-600: #52525b;
+  --surface-700: #3f3f46;
+  --surface-800: #27272a;
+  --surface-900: #18181b;
+  --surface-950: #09090b;
+
+  /* Layout */
+  --sidebar-bg: #f8fafc;
+  --sidebar-text: #1e293b;
+  --sidebar-text-muted: #64748b;
+  --sidebar-border: #e2e8f0;
+  --sidebar-hover: #f1f5f9;
+  --sidebar-active: var(--primary-50);
+
+  --header-bg: #ffffff;
+  --header-text: #1e293b;
+  --header-border: #e2e8f0;
+
+  --content-bg: #f8fafc;
+  --content-text: #1e293b;
+
+  --border-color: #e2e8f0;
+
+  /* Texto */
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --text-muted: #94a3b8;
+}
+
+/* ============================================
+   Tema Oscuro
+   ============================================ */
+.dark {
+  /* Superficies */
+  --surface-0: #09090b;
+  --surface-50: #18181b;
+  --surface-100: #27272a;
+  --surface-200: #3f3f46;
+  --surface-300: #52525b;
+  --surface-400: #71717a;
+  --surface-500: #a1a1aa;
+  --surface-600: #d4d4d8;
+  --surface-700: #e4e4e7;
+  --surface-800: #f4f4f5;
+  --surface-900: #fafafa;
+  --surface-950: #ffffff;
+
+  /* Layout */
+  --sidebar-bg: #0f172a;
+  --sidebar-text: #e2e8f0;
+  --sidebar-text-muted: #64748b;
+  --sidebar-border: #1e293b;
+  --sidebar-hover: #1e293b;
+  --sidebar-active: rgba(139, 92, 246, 0.15);
+
+  --header-bg: #0f172a;
+  --header-text: #e2e8f0;
+  --header-border: #1e293b;
+
+  --content-bg: #0b1120;
+  --content-text: #e2e8f0;
+
+  --border-color: #1e293b;
+
+  /* Texto */
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+}
+
+/* ============================================
+   PrimeNG Component Overrides
+   ============================================ */
+@layer base {
+  :root body {
+    --p-datatable-header-cell-background: var(--primary-500);
+    --p-datatable-header-cell-color: white;
+    --p-checkbox-checked-border-color: var(--primary-600);
+    --p-checkbox-checked-color: var(--primary-600);
+    --p-checkbox-checked-icon-color: var(--primary-600);
+    --p-checkbox-checked-background: var(--primary-600);
+    --p-select-focus-border-color: var(--primary-600);
+    --p-select-focus-ring-color: var(--primary-600);
+    --p-checkbox-checked-hover-background: var(--primary-300);
+    --p-checkbox-checked-hover-border-color: var(--primary-300);
+    --p-radiobutton-checked-border-color: var(--primary-600);
+    --p-radiobutton-checked-background: var(--primary-600);
+    --p-radiobutton-checked-icon-color: var(--primary-600);
+    --p-radiobutton-checked-hover-border-color: var(--primary-600);
+    --p-radiobutton-checked-hover-background: var(--primary-600);
+    --p-radiobutton-checked-hover-icon-color: var(--primary-600);
+    --p-button-primary-background: var(--primary-500);
+    --p-button-primary-border-color: var(--primary-500);
+    --p-button-primary-hover-background: var(--primary-600);
+    --p-button-primary-hover-border-color: var(--primary-600);
+    --p-button-primary-active-background: var(--primary-700);
+    --p-button-primary-active-border-color: var(--primary-700);
+    --p-button-text-primary-color: var(--primary-500);
+    --p-button-text-primary-hover-color: var(--primary-600);
+    --p-button-text-primary-active-color: var(--primary-700);
+    --p-button-text-primary-active-background: var(--primary-100);
+    --p-button-text-primary-hover-background: var(--primary-50);
+    --p-button-outlined-primary-border-color: var(--primary-100);
+    --p-button-outlined-primary-color: var(--primary-500);
+    --p-button-outlined-primary-active-background: var(--primary-100);
+    --p-button-outlined-primary-hover-background: var(--primary-50);
+    --p-inputtext-focus-border-color: var(--primary-500);
+    --p-datepicker-date-selected-background: var(--primary-600);
+    --p-breadcrumb-item-icon-color: var(--primary-500) !important;
+    --p-chip-background: var(--primary-500) !important;
+    --p-chip-color: #ffffff !important;
+    --p-chip-remove-icon-color: inherit !important;
+    --p-popover-background: #f1f5f9 !important;
+    --p-datepicker-dropdown-background: var(--primary-500) !important;
+    --p-datepicker-dropdown-color: #ffffff !important;
+    --p-toggleswitch-checked-background: var(--primary-500);
+    --p-toggleswitch-checked-hover-background: var(--primary-600);
+    --p-progressbar-value-background: var(--primary-500);
+    --p-progressbar-label-color: #ffffff;
+    --fc-button-bg-color: var(--primary-500);
+    --fc-button-border-color: var(--primary-500);
+    --fc-button-active-bg-color: var(--primary-600);
+    --fc-button-active-border-color: var(--primary-600);
+    --p-breadcrumb-item-color: var(--primary-500);
+    --p-text-hover-color: var(--primary-500);
+  }
+
+  .dark table tbody tr:hover {
+    background-color: var(--primary-300) !important;
+    color: black !important;
+  }
+}
+
+/* ============================================
+   Estilos Base
+   ============================================ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================
+   Utilidades
+   ============================================ */
+
+/* Scrollbar personalizada */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--surface-100);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--surface-400);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--surface-500);
+}
+
+/* Focus visible */
+*:focus-visible {
+  outline: 2px solid var(--primary-500);
+  outline-offset: 2px;
+}
+
+/* ============================================
+   PrimeNG Custom Styles
+   ============================================ */
+
+/* Ajustes para PrimeNG en tema oscuro */
+.dark .p-component {
+  color: var(--text-primary);
+}
+
+/* PrimeNG Popover theme-panel override */
+.theme-popover.p-popover {
+  padding: 0;
+  border-radius: 0.75rem;
+  border: 1px solid var(--surface-200);
+  box-shadow:
+    0 10px 25px -5px rgb(0 0 0 / 0.1),
+    0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+
+.theme-popover.p-popover .p-popover-content {
+  padding: 0;
+  margin: 0;
+  border: none;
+}

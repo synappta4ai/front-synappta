@@ -5,10 +5,12 @@ import { provideRouter } from '@angular/router';
 
 import { AuthService } from './auth.service';
 import { AuthApiRepository } from '../repositories';
+import { UserSessionStore } from '../../../core/store/user.session';
 
 describe('AuthService', () => {
   let service: AuthService;
   let httpMock: HttpTestingController;
+  let sessionStore: typeof UserSessionStore.prototype;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -20,6 +22,7 @@ describe('AuthService', () => {
     service = TestBed.inject(AuthService);
     httpMock = TestBed.inject(HttpTestingController);
     TestBed.inject(AuthApiRepository);
+    sessionStore = TestBed.inject(UserSessionStore);
   });
 
   afterEach(() => {
@@ -40,8 +43,8 @@ describe('AuthService', () => {
 
     service.login({ username: 'drako', password: 'secret' }).subscribe((session) => {
       expect(session.token).toBe('jwt-123');
-      expect(service.isAuthenticated()).toBe(true);
-      expect(service.user()?.username).toBe('drako');
+      expect(sessionStore.isLoggedIn()).toBe(true);
+      expect(sessionStore.currentUser()?.username).toBe('drako');
     });
 
     httpMock.expectOne('http://localhost:9099/api/v1/auth/login').flush(response);
@@ -66,6 +69,6 @@ describe('AuthService', () => {
       );
 
     expect(errored).toBe(true);
-    expect(service.isAuthenticated()).toBe(false);
+    expect(sessionStore.isLoggedIn()).toBe(false);
   });
 });
