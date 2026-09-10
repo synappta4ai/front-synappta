@@ -1,19 +1,24 @@
-<section class="mx-auto w-full max-w-3xl p-6">
+<app-page-container title="Eventos">
   <header class="mb-6 flex items-center justify-between">
-    <h1 class="text-2xl font-semibold text-neutral-900">Eventos</h1>
-    <label class="flex items-center gap-2 text-sm text-neutral-600">
+    <div></div>
+    <label class="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
       <input
         type="checkbox"
         [checked]="showInactive()"
         (change)="toggleShowInactive()"
-        class="h-4 w-4 rounded border-neutral-300"
+        class="h-4 w-4 rounded border-[var(--surface-300)]"
       />
       Mostrar inactivos
     </label>
   </header>
 
   @if (error(); as message) {
-    <div role="alert" class="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-700">{{ message }}</div>
+    <div
+      role="alert"
+      class="mb-4 rounded-lg bg-[var(--red-50)] p-3 text-sm text-[var(--red-700)] dark:bg-[var(--red-950)] dark:text-[var(--red-300)]"
+    >
+      {{ message }}
+    </div>
   }
 
   <form class="mb-6 flex gap-2" (ngSubmit)="createEvent()">
@@ -24,44 +29,46 @@
       [(ngModel)]="newName"
       name="newEvent"
       placeholder="Nombre del evento"
-      class="flex-1 rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none"
+      class="flex-1 rounded-lg border border-[var(--surface-300)] bg-[var(--surface-0)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--primary-500)] focus:outline-none dark:border-[var(--surface-600)]"
     />
     <button
       type="submit"
       [disabled]="loading() || !newName().trim()"
-      class="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700 disabled:opacity-50"
+      class="rounded-lg bg-[var(--primary-500)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--primary-600)] active:bg-[var(--primary-700)] disabled:opacity-50"
     >
       Crear
     </button>
   </form>
 
   @if (loading()) {
-    <p class="text-sm text-neutral-500">Cargando…</p>
+    <p class="text-sm text-[var(--text-secondary)]">Cargando…</p>
   } @else {
     <ul class="flex flex-col gap-3">
       @for (event of events(); track event.id) {
-        <li class="rounded-lg border border-neutral-200 p-4">
-          <h2 class="font-medium text-neutral-900">{{ event.name }}</h2>
+        <li
+          class="rounded-lg border border-[var(--border-color)] bg-[var(--surface-50)] p-4 transition-colors hover:bg-[var(--surface-100)]"
+        >
+          <h2 class="font-medium text-[var(--text-primary)]">{{ event.name }}</h2>
           @if (event.description) {
-            <p class="mt-1 text-sm text-neutral-600">{{ event.description }}</p>
+            <p class="mt-1 text-sm text-[var(--text-secondary)]">{{ event.description }}</p>
           }
-          <p class="mt-2 text-xs text-neutral-500">
+          <p class="mt-2 text-xs text-[var(--text-muted)]">
             {{ event.program_count ?? 0 }} programas
             @if (event.starts_at) {
               · {{ event.starts_at | date: 'medium' }}
             }
             @if (!event.active) {
-              · inactivo
+              · <span class="text-[var(--red-600)] dark:text-[var(--red-400)]">inactivo</span>
             }
           </p>
         </li>
       } @empty {
         <li
-          class="rounded-lg border border-dashed border-neutral-300 p-6 text-center text-sm text-neutral-500"
+          class="rounded-lg border border-dashed border-[var(--surface-300)] p-6 text-center text-sm text-[var(--text-muted)]"
         >
           No hay eventos todavía.
         </li>
       }
     </ul>
   }
-</section>
+</app-page-container>

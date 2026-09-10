@@ -1,0 +1,12 @@
+<div
+  class="mx-auto w-full max-w-4xl rounded-2xl border border-[var(--border-color)] bg-[var(--surface-0)] p-6 shadow-sm sm:p-8"
+>
+  @if (title()) {
+    <h1
+      class="mb-6 text-2xl font-semibold text-[var(--primary-600)] dark:text-[var(--primary-400)]"
+    >
+      {{ title() }}
+    </h1>
+  }
+  <ng-content />
+</div>

@@ -3,10 +3,11 @@ import { catchError, EMPTY, finalize } from 'rxjs';
 
 import { AgencyService } from '../../services/agency.service';
 import { AiModel, Modality } from '../../interfaces';
+import { PageContainerComponent } from '@shared/components/index';
 
 @Component({
   selector: 'app-agency',
-  imports: [],
+  imports: [PageContainerComponent],
   templateUrl: './agency.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

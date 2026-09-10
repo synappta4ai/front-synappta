@@ -9,10 +9,11 @@ import { catchError, EMPTY, finalize } from 'rxjs';
 
 import { VideoService } from '../../services/video.service';
 import { StatusResponse } from '@modules/agency/interfaces';
+import { PageContainerComponent } from '@shared/components/index';
 
 @Component({
   selector: 'app-video',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, PageContainerComponent],
   templateUrl: './video.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

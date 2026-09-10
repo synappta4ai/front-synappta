@@ -5,10 +5,11 @@ import { catchError, EMPTY, finalize } from 'rxjs';
 
 import { AdminService } from '../../services/admin.service';
 import { Tenant } from '../../interfaces';
+import { PageContainerComponent } from '@shared/components/index';
 
 @Component({
   selector: 'app-admin-tenants',
-  imports: [ReactiveFormsModule, DatePipe],
+  imports: [ReactiveFormsModule, DatePipe, PageContainerComponent],
   templateUrl: './tenants.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

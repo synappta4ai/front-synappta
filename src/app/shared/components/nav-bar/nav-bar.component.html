@@ -1,5 +1,5 @@
 <header
-  class="sticky top-0 z-20 border-b border-zinc-200 bg-zinc-50/80 backdrop-blur dark:border-zinc-700 dark:bg-zinc-900/80"
+  class="sticky top-0 z-20 border-b border-[var(--header-border)] bg-[var(--header-bg)]/80 backdrop-blur"
 >
   <nav
     class="mx-auto flex h-16 max-w-6xl items-center justify-between gap-6 px-4 sm:px-6"
@@ -7,27 +7,25 @@
   >
     <a routerLink="/" class="flex items-center gap-2.5">
       <span
-        class="grid h-8 w-8 grid-cols-2 gap-1 rounded-lg bg-zinc-900 p-1.5 dark:bg-zinc-100"
+        class="grid h-8 w-8 grid-cols-2 gap-1 rounded-lg bg-[var(--primary-500)] p-1.5"
         aria-hidden="true"
       >
-        <span class="rounded-[2px] bg-zinc-300 dark:bg-zinc-600"></span>
-        <span class="rounded-[2px] bg-zinc-300 dark:bg-zinc-600"></span>
-        <span class="rounded-[2px] bg-zinc-300 dark:bg-zinc-600"></span>
-        <span class="rounded-[2px] bg-indigo-400"></span>
+        <span class="rounded-[2px] bg-white/30"></span>
+        <span class="rounded-[2px] bg-white/30"></span>
+        <span class="rounded-[2px] bg-white/30"></span>
+        <span class="rounded-[2px] bg-white"></span>
       </span>
-      <span class="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100"
-        >Synapta</span
-      >
+      <span class="text-lg font-semibold tracking-tight text-[var(--header-text)]">Synapta</span>
     </a>
 
-    <div class="flex justify-end w-full gap-4">
+    <div class="flex w-full justify-end gap-4">
       <div class="hidden items-center gap-4 md:flex">
         @for (link of links; track link.href) {
           <a
             [routerLink]="link.href"
-            routerLinkActive="font-semibold text-indigo-600"
+            routerLinkActive="font-semibold text-[var(--primary-500)]"
             [routerLinkActiveOptions]="{ exact: link.exact }"
-            class="rounded-md px-3 py-2 text-sm font-medium text-zinc-600 transition-colors motion-reduce:transition-none hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+            class="rounded-md px-3 py-2 text-sm font-medium text-[var(--text-secondary)] transition-colors motion-reduce:transition-none hover:text-[var(--text-primary)]"
             >{{ link.label }}</a
           >
         }
@@ -39,7 +37,7 @@
         <!-- Mobile menu button -->
         <button
           type="button"
-          class="inline-flex h-9 w-9 items-center justify-center rounded-md text-zinc-600 hover:bg-zinc-100 md:hidden dark:text-zinc-400 dark:hover:bg-zinc-800"
+          class="inline-flex h-9 w-9 items-center justify-center rounded-md text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-100)] hover:text-[var(--text-primary)] md:hidden"
           [attr.aria-expanded]="menuOpen()"
           aria-controls="mobile-menu"
           aria-label="Abrir men\u00fa"
@@ -82,14 +80,14 @@
   @if (menuOpen()) {
     <div
       id="mobile-menu"
-      class="border-t border-zinc-200 bg-zinc-50 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-900 md:hidden"
+      class="border-t border-[var(--header-border)] bg-[var(--header-bg)] px-4 py-3 md:hidden"
     >
       @for (link of links; track link.href) {
         <a
           [routerLink]="link.href"
-          routerLinkActive="text-indigo-600"
+          routerLinkActive="text-[var(--primary-500)]"
           [routerLinkActiveOptions]="{ exact: link.exact }"
-          class="block rounded-md px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          class="block rounded-md px-3 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-100)] hover:text-[var(--text-primary)]"
           (click)="closeMenu()"
           >{{ link.label }}</a
         >

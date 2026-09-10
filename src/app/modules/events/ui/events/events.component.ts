@@ -5,10 +5,11 @@ import { catchError, EMPTY, finalize } from 'rxjs';
 
 import { EventsService } from '../../services/events.service';
 import { Event } from '../../interfaces';
+import { PageContainerComponent } from '@shared/components/index';
 
 @Component({
   selector: 'app-events',
-  imports: [DatePipe, FormsModule],
+  imports: [DatePipe, FormsModule, PageContainerComponent],
   templateUrl: './events.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -1,13 +1,20 @@
-<section class="mx-auto w-full max-w-xl p-6">
-  <h1 class="mb-6 text-2xl font-semibold text-neutral-900">Generación de video</h1>
-
+<app-page-container title="Generación de video">
   @if (error(); as message) {
-    <div role="alert" class="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-700">{{ message }}</div>
+    <div
+      role="alert"
+      class="mb-4 rounded-lg bg-[var(--red-50)] p-3 text-sm text-[var(--red-700)] dark:bg-[var(--red-950)] dark:text-[var(--red-300)]"
+    >
+      {{ message }}
+    </div>
   }
 
   @if (resultUrl(); as url) {
-    <div class="mb-6 rounded-lg border border-green-200 bg-green-50 p-4">
-      <p class="mb-2 text-sm font-medium text-green-800">¡Video generado!</p>
+    <div
+      class="mb-6 rounded-lg border border-[var(--green-200)] bg-[var(--green-50)] p-4 dark:border-[var(--green-800)] dark:bg-[var(--green-950)]"
+    >
+      <p class="mb-2 text-sm font-medium text-[var(--green-700)] dark:text-[var(--green-300)]">
+        ¡Video generado!
+      </p>
       <video controls class="w-full rounded-md">
         <source [src]="url" type="video/mp4" />
         Tu navegador no soporta video HTML5.
@@ -17,72 +24,80 @@
 
   <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-4" novalidate>
     <div class="flex flex-col gap-1">
-      <label for="model" class="text-sm font-medium text-neutral-800">Modelo</label>
+      <label for="model" class="text-sm font-medium text-[var(--text-secondary)]">Modelo</label>
       <input
         id="model"
         type="text"
         formControlName="model"
         placeholder="dreamina-seedance-2-0-260128"
-        class="rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none"
+        class="rounded-lg border border-[var(--surface-300)] bg-[var(--surface-0)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--primary-500)] focus:outline-none dark:border-[var(--surface-600)]"
       />
     </div>
 
     <div class="flex flex-col gap-1">
-      <label for="prompt" class="text-sm font-medium text-neutral-800">Prompt</label>
+      <label for="prompt" class="text-sm font-medium text-[var(--text-secondary)]">Prompt</label>
       <textarea
         id="prompt"
         formControlName="prompt"
         rows="3"
-        class="rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none"
+        class="rounded-lg border border-[var(--surface-300)] bg-[var(--surface-0)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--primary-500)] focus:outline-none dark:border-[var(--surface-600)]"
       ></textarea>
     </div>
 
     <div class="grid grid-cols-2 gap-4">
       <div class="flex flex-col gap-1">
-        <label for="eventId" class="text-sm font-medium text-neutral-800">Event ID</label>
+        <label for="eventId" class="text-sm font-medium text-[var(--text-secondary)]"
+          >Event ID</label
+        >
         <input
           id="eventId"
           type="text"
           formControlName="eventId"
-          class="rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none"
+          class="rounded-lg border border-[var(--surface-300)] bg-[var(--surface-0)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--primary-500)] focus:outline-none dark:border-[var(--surface-600)]"
         />
       </div>
       <div class="flex flex-col gap-1">
-        <label for="pieceId" class="text-sm font-medium text-neutral-800">Piece ID</label>
+        <label for="pieceId" class="text-sm font-medium text-[var(--text-secondary)]"
+          >Piece ID</label
+        >
         <input
           id="pieceId"
           type="text"
           formControlName="pieceId"
-          class="rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none"
+          class="rounded-lg border border-[var(--surface-300)] bg-[var(--surface-0)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--primary-500)] focus:outline-none dark:border-[var(--surface-600)]"
         />
       </div>
       <div class="flex flex-col gap-1">
-        <label for="pieceCode" class="text-sm font-medium text-neutral-800">Piece Code</label>
+        <label for="pieceCode" class="text-sm font-medium text-[var(--text-secondary)]"
+          >Piece Code</label
+        >
         <input
           id="pieceCode"
           type="text"
           formControlName="pieceCode"
-          class="rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none"
+          class="rounded-lg border border-[var(--surface-300)] bg-[var(--surface-0)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--primary-500)] focus:outline-none dark:border-[var(--surface-600)]"
         />
       </div>
       <div class="flex flex-col gap-1">
-        <label for="generationNumber" class="text-sm font-medium text-neutral-800"
+        <label for="generationNumber" class="text-sm font-medium text-[var(--text-secondary)]"
           >Generation #</label
         >
         <input
           id="generationNumber"
           type="number"
           formControlName="generationNumber"
-          class="rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none"
+          class="rounded-lg border border-[var(--surface-300)] bg-[var(--surface-0)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--primary-500)] focus:outline-none dark:border-[var(--surface-600)]"
         />
       </div>
       <div class="flex flex-col gap-1">
-        <label for="duration" class="text-sm font-medium text-neutral-800">Duración (s)</label>
+        <label for="duration" class="text-sm font-medium text-[var(--text-secondary)]"
+          >Duración (s)</label
+        >
         <input
           id="duration"
           type="number"
           formControlName="duration"
-          class="rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none"
+          class="rounded-lg border border-[var(--surface-300)] bg-[var(--surface-0)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--primary-500)] focus:outline-none dark:border-[var(--surface-600)]"
         />
       </div>
     </div>
@@ -90,7 +105,7 @@
     <button
       type="submit"
       [disabled]="submitting() || polling()"
-      class="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700 disabled:opacity-50"
+      class="rounded-lg bg-[var(--primary-500)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--primary-600)] active:bg-[var(--primary-700)] disabled:opacity-50"
     >
       @if (submitting()) {
         Enviando…
@@ -101,4 +116,4 @@
       }
     </button>
   </form>
-</section>
+</app-page-container>

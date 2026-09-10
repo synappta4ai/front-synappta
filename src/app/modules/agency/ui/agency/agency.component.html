@@ -1,27 +1,36 @@
-<section class="mx-auto w-full max-w-3xl p-6">
-  <h1 class="mb-6 text-2xl font-semibold text-neutral-900">Agencia · Modelos</h1>
-
+<app-page-container title="Agencia · Modelos">
   @if (error(); as message) {
-    <div role="alert" class="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-700">{{ message }}</div>
+    <div
+      role="alert"
+      class="mb-4 rounded-lg bg-[var(--red-50)] p-3 text-sm text-[var(--red-700)] dark:bg-[var(--red-950)] dark:text-[var(--red-300)]"
+    >
+      {{ message }}
+    </div>
   }
 
   @if (loading()) {
-    <p class="text-sm text-neutral-500">Cargando…</p>
+    <p class="text-sm text-[var(--text-secondary)]">Cargando…</p>
   } @else {
     @for (modality of modalities; track modality) {
-      <h2 class="mb-2 mt-6 text-sm font-semibold tracking-wide text-neutral-500 uppercase">
+      <h2
+        class="mb-2 mt-6 text-sm font-semibold uppercase tracking-wide text-[var(--primary-600)] dark:text-[var(--primary-400)]"
+      >
         {{ modality }}
       </h2>
       <ul class="flex flex-col gap-2">
         @for (model of models(); track model.name) {
           @if (model.content_type === modality) {
-            <li class="rounded-lg border border-neutral-200 p-3">
-              <p class="font-medium text-neutral-900">{{ model.display_name ?? model.name }}</p>
-              <p class="text-xs text-neutral-500">{{ model.name }}</p>
+            <li
+              class="rounded-lg border border-[var(--border-color)] bg-[var(--surface-50)] p-3 transition-colors hover:bg-[var(--surface-100)]"
+            >
+              <p class="font-medium text-[var(--text-primary)]">
+                {{ model.display_name ?? model.name }}
+              </p>
+              <p class="text-xs text-[var(--text-secondary)]">{{ model.name }}</p>
             </li>
           }
         }
       </ul>
     }
   }
-</section>
+</app-page-container>

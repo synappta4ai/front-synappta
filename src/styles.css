@@ -115,6 +115,19 @@
   --primary-800: var(--violet-800);
   --primary-900: var(--violet-900);
   --primary-950: var(--violet-950);
+
+  /* Color secundario por defecto (Zinc) */
+  --secondary-50: #fafafa;
+  --secondary-100: #f4f4f5;
+  --secondary-200: #e4e4e7;
+  --secondary-300: #d4d4d8;
+  --secondary-400: #a1a1aa;
+  --secondary-500: #71717a;
+  --secondary-600: #52525b;
+  --secondary-700: #3f3f46;
+  --secondary-800: #27272a;
+  --secondary-900: #18181b;
+  --secondary-950: #09090b;
 }
 
 /* ============================================
@@ -235,13 +248,24 @@
     --p-button-outlined-primary-color: var(--primary-500);
     --p-button-outlined-primary-active-background: var(--primary-100);
     --p-button-outlined-primary-hover-background: var(--primary-50);
+    --p-button-secondary-background: var(--secondary-500);
+    --p-button-secondary-border-color: var(--secondary-500);
+    --p-button-secondary-hover-background: var(--secondary-600);
+    --p-button-secondary-hover-border-color: var(--secondary-600);
+    --p-button-secondary-active-background: var(--secondary-700);
+    --p-button-secondary-active-border-color: var(--secondary-700);
+    --p-button-text-secondary-color: var(--secondary-500);
+    --p-button-text-secondary-hover-color: var(--secondary-600);
+    --p-button-text-secondary-active-color: var(--secondary-700);
+    --p-button-outlined-secondary-border-color: var(--secondary-300);
+    --p-button-outlined-secondary-color: var(--secondary-600);
     --p-inputtext-focus-border-color: var(--primary-500);
     --p-datepicker-date-selected-background: var(--primary-600);
     --p-breadcrumb-item-icon-color: var(--primary-500) !important;
     --p-chip-background: var(--primary-500) !important;
     --p-chip-color: #ffffff !important;
     --p-chip-remove-icon-color: inherit !important;
-    --p-popover-background: #f1f5f9 !important;
+    --p-popover-background: var(--surface-0) !important;
     --p-datepicker-dropdown-background: var(--primary-500) !important;
     --p-datepicker-dropdown-color: #ffffff !important;
     --p-toggleswitch-checked-background: var(--primary-500);
@@ -284,6 +308,11 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: var(--content-bg);
+  color: var(--content-text);
 }
 
 /* ============================================

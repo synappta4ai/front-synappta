@@ -1,51 +1,58 @@
-<section class="mx-auto w-full max-w-3xl p-6">
-  <h1 class="mb-6 text-2xl font-semibold text-neutral-900">Gestión de Tenants</h1>
-
+<app-page-container title="Gestión de Tenants">
   @if (error(); as message) {
-    <div role="alert" class="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-700">{{ message }}</div>
+    <div
+      role="alert"
+      class="mb-4 rounded-lg bg-[var(--red-50)] p-3 text-sm text-[var(--red-700)] dark:bg-[var(--red-950)] dark:text-[var(--red-300)]"
+    >
+      {{ message }}
+    </div>
   }
 
   <form [formGroup]="form" (ngSubmit)="createTenant()" class="mb-6 flex gap-4" novalidate>
     <div class="flex flex-1 flex-col gap-1">
-      <label for="tenant-name" class="text-sm font-medium text-neutral-800">Nombre</label>
+      <label for="tenant-name" class="text-sm font-medium text-[var(--text-secondary)]"
+        >Nombre</label
+      >
       <input
         id="tenant-name"
         type="text"
         formControlName="name"
-        class="rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none"
+        class="rounded-lg border border-[var(--surface-300)] bg-[var(--surface-0)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--primary-500)] focus:outline-none dark:border-[var(--surface-600)]"
       />
     </div>
     <div class="flex flex-1 flex-col gap-1">
-      <label for="tenant-slug" class="text-sm font-medium text-neutral-800">Slug</label>
+      <label for="tenant-slug" class="text-sm font-medium text-[var(--text-secondary)]">Slug</label>
       <input
         id="tenant-slug"
         type="text"
         formControlName="slug"
-        class="rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none"
+        class="rounded-lg border border-[var(--surface-300)] bg-[var(--surface-0)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--primary-500)] focus:outline-none dark:border-[var(--surface-600)]"
       />
     </div>
     <button
       type="submit"
       [disabled]="creating()"
-      class="self-end rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700 disabled:opacity-50"
+      class="self-end rounded-lg bg-[var(--primary-500)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--primary-600)] active:bg-[var(--primary-700)] disabled:opacity-50"
     >
       {{ creating() ? 'Creando…' : 'Crear Tenant' }}
     </button>
   </form>
 
   @if (loading()) {
-    <p class="text-sm text-neutral-500">Cargando…</p>
+    <p class="text-sm text-[var(--text-secondary)]">Cargando…</p>
   } @else {
     <ul class="flex flex-col gap-3">
       @for (tenant of tenants(); track tenant.id) {
-        <li class="flex items-center justify-between rounded-lg border border-neutral-200 p-4">
+        <li
+          class="flex items-center justify-between rounded-lg border border-[var(--border-color)] bg-[var(--surface-50)] p-4 transition-colors hover:bg-[var(--surface-100)]"
+        >
           <div>
-            <h2 class="font-medium text-neutral-900">{{ tenant.name }}</h2>
-            <p class="text-sm text-neutral-500">Slug: {{ tenant.slug }}</p>
-            <p class="text-xs text-neutral-400">
+            <h2 class="font-medium text-[var(--text-primary)]">{{ tenant.name }}</h2>
+            <p class="text-sm text-[var(--text-secondary)]">Slug: {{ tenant.slug }}</p>
+            <p class="text-xs text-[var(--text-muted)]">
               Creado: {{ tenant.created_at | date: 'medium' }}
               @if (!tenant.active) {
-                · <span class="text-red-600">Inactivo</span>
+                · <span class="text-[var(--red-600)] dark:text-[var(--red-400)]">Inactivo</span>
               }
             </p>
           </div>
@@ -53,7 +60,7 @@
             <button
               type="button"
               (click)="deactivateTenant(tenant.id)"
-              class="rounded-md border border-red-300 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50"
+              class="rounded-lg border border-[var(--red-300)] px-3 py-1.5 text-sm font-medium text-[var(--red-700)] hover:bg-[var(--red-50)] dark:border-[var(--red-700)] dark:text-[var(--red-400)] dark:hover:bg-[var(--red-950)]"
             >
               Desactivar
             </button>
@@ -61,11 +68,11 @@
         </li>
       } @empty {
         <li
-          class="rounded-lg border border-dashed border-neutral-300 p-6 text-center text-sm text-neutral-500"
+          class="rounded-lg border border-dashed border-[var(--surface-300)] p-6 text-center text-sm text-[var(--text-muted)]"
         >
           No hay tenants configurados.
         </li>
       }
     </ul>
   }
-</section>
+</app-page-container>
