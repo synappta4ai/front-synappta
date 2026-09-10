@@ -1,0 +1,71 @@
+<section class="mx-auto w-full max-w-3xl p-6">
+  <h1 class="mb-6 text-2xl font-semibold text-neutral-900">Gestión de Tenants</h1>
+
+  @if (error(); as message) {
+    <div role="alert" class="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-700">{{ message }}</div>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="createTenant()" class="mb-6 flex gap-4" novalidate>
+    <div class="flex flex-1 flex-col gap-1">
+      <label for="tenant-name" class="text-sm font-medium text-neutral-800">Nombre</label>
+      <input
+        id="tenant-name"
+        type="text"
+        formControlName="name"
+        class="rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none"
+      />
+    </div>
+    <div class="flex flex-1 flex-col gap-1">
+      <label for="tenant-slug" class="text-sm font-medium text-neutral-800">Slug</label>
+      <input
+        id="tenant-slug"
+        type="text"
+        formControlName="slug"
+        class="rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none"
+      />
+    </div>
+    <button
+      type="submit"
+      [disabled]="creating()"
+      class="self-end rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700 disabled:opacity-50"
+    >
+      {{ creating() ? 'Creando…' : 'Crear Tenant' }}
+    </button>
+  </form>
+
+  @if (loading()) {
+    <p class="text-sm text-neutral-500">Cargando…</p>
+  } @else {
+    <ul class="flex flex-col gap-3">
+      @for (tenant of tenants(); track tenant.id) {
+        <li class="flex items-center justify-between rounded-lg border border-neutral-200 p-4">
+          <div>
+            <h2 class="font-medium text-neutral-900">{{ tenant.name }}</h2>
+            <p class="text-sm text-neutral-500">Slug: {{ tenant.slug }}</p>
+            <p class="text-xs text-neutral-400">
+              Creado: {{ tenant.created_at | date: 'medium' }}
+              @if (!tenant.active) {
+                · <span class="text-red-600">Inactivo</span>
+              }
+            </p>
+          </div>
+          @if (tenant.active) {
+            <button
+              type="button"
+              (click)="deactivateTenant(tenant.id)"
+              class="rounded-md border border-red-300 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50"
+            >
+              Desactivar
+            </button>
+          }
+        </li>
+      } @empty {
+        <li
+          class="rounded-lg border border-dashed border-neutral-300 p-6 text-center text-sm text-neutral-500"
+        >
+          No hay tenants configurados.
+        </li>
+      }
+    </ul>
+  }
+</section>

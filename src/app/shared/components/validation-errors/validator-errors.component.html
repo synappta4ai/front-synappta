@@ -1,0 +1,102 @@
+@if (errorsDefault.includes(errorKey ?? '')) {
+  @switch (errorKey) {
+    @case ('required') {
+      @if (!omitErrors().includes(errorKey)) {
+        <span class="text-red-500 text-sm mt-1 block">
+          {{
+            required()
+              ? (required() | translate: errorParams)
+              : ('ALERTS.REQUIRED' | translate: errorParams)
+          }}
+        </span>
+      }
+    }
+    @case ('maxlength') {
+      @if (!omitErrors().includes(errorKey)) {
+        <span class="text-red-500 text-sm mt-1 block">
+          {{
+            maxlength()
+              ? (maxlength() | translate: errorParams)
+              : ('ALERTS.MAJOR' | translate: errorParams)
+          }}
+        </span>
+      }
+    }
+    @case ('minlength') {
+      @if (!omitErrors().includes(errorKey)) {
+        <span class="text-red-500 text-sm mt-1 block">
+          {{
+            minlength()
+              ? (minlength() | translate: errorParams)
+              : ('ALERTS.MINOR' | translate: errorParams)
+          }}
+        </span>
+      }
+    }
+    @case ('pattern') {
+      @if (!omitErrors().includes(errorKey)) {
+        <span class="text-red-500 text-sm mt-1 block">
+          {{
+            pattern()
+              ? (pattern() | translate: errorParams)
+              : ('ALERTS.PATTERN' | translate: errorParams)
+          }}
+        </span>
+      }
+    }
+    @case ('email') {
+      @if (!omitErrors().includes(errorKey)) {
+        <span class="text-red-500 text-sm mt-1 block">
+          {{
+            email()
+              ? (email() | translate: errorParams)
+              : ('ALERTS.INVALID_EMAIL' | translate: errorParams)
+          }}
+        </span>
+      }
+    }
+    @case ('min') {
+      @if (!omitErrors().includes(errorKey)) {
+        <span class="text-red-500 text-sm mt-1 block">
+          {{
+            min() ? (min() | translate: errorParams) : ('ALERTS.MIN_VALUE' | translate: errorParams)
+          }}
+        </span>
+      }
+    }
+    @case ('max') {
+      @if (!omitErrors().includes(errorKey)) {
+        <span class="text-red-500 text-sm mt-1 block">
+          {{
+            max() ? (max() | translate: errorParams) : ('ALERTS.MAX_VALUE' | translate: errorParams)
+          }}
+        </span>
+      }
+    }
+    @case ('unique') {
+      @if (!omitErrors().includes(errorKey)) {
+        <span class="text-red-500 text-sm mt-1 block">
+          {{
+            unique()
+              ? (unique() | translate: errorParams)
+              : ('ALERTS.UNIQUE' | translate: errorParams)
+          }}
+        </span>
+      }
+    }
+  }
+} @else {
+  @if (errorKey === customErrorType() && !omitErrors().includes(errorKey)) {
+    <span class="text-red-500 text-sm mt-1 block">
+      {{ customErrorMessage() | translate: errorParams }}
+    </span>
+  }
+
+  @for (error of customErrors(); track error.type) {
+    @if (errorKey === error.type) {
+      <span class="text-red-500 text-sm mt-1 block">
+        {{ error.message | translate: errorParams }}
+      </span>
+    }
+  }
+}

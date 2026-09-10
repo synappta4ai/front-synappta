@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://api.synapta.com/api',
+  apiUrl: 'https://api.synapta.com/api/v1',
 };

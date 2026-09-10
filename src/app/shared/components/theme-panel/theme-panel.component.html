@@ -1,0 +1,83 @@
+<div class="theme-panel">
+  <!-- User Profile Section -->
+  <div class="user-section">
+    <div class="user-avatar">
+      <img
+        src="https://ui-avatars.com/api/?name=Test+User&background=random&color=fff"
+        alt="User"
+      />
+    </div>
+    <div class="user-info">
+      <h4 class="user-name">Test User</h4>
+      <span class="user-role">SUPER_ADMIN</span>
+    </div>
+  </div>
+
+  <!-- Menu Items -->
+  <div class="menu-section">
+    <button class="menu-item">
+      <i class="pi pi-user menu-icon"></i>
+      <span>Your Profile</span>
+    </button>
+
+    <button class="menu-item">
+      <i class="pi pi-cog menu-icon"></i>
+      <span>Settings</span>
+    </button>
+
+    <button class="menu-item logout" (click)="onLogout()">
+      <i class="pi pi-sign-out menu-icon"></i>
+      <span>Log out</span>
+    </button>
+
+    <button class="menu-item" (click)="onDownloadOffline()">
+      <i class="pi pi-cloud-download menu-icon"></i>
+      <span>Download Offline</span>
+    </button>
+  </div>
+
+  <!-- Divider -->
+  <div class="divider"></div>
+
+  <!-- Color Section -->
+  <div class="section">
+    <h5 class="section-title">Color</h5>
+    <div class="color-grid">
+      @for (palette of palettes; track palette.id) {
+        <button
+          class="color-btn"
+          [class.active]="currentPalette() === palette.id"
+          [style.--color]="palette.color"
+          (click)="onPaletteChange(palette.id)"
+        >
+          <span class="color-dot" [style.background-color]="palette.color"></span>
+          <span class="color-name">{{ palette.name }}</span>
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Mode Section -->
+  <div class="section">
+    <h5 class="section-title">Mode</h5>
+    <div class="mode-toggle">
+      <button
+        class="mode-btn"
+        [class.active]="currentMode() === 'light'"
+        (click)="onModeChange('light')"
+      >
+        <i class="pi pi-sun mode-icon"></i>
+        <span>Light</span>
+      </button>
+
+      <button
+        class="mode-btn"
+        [class.active]="currentMode() === 'dark'"
+        (click)="onModeChange('dark')"
+      >
+        <i class="pi pi-moon mode-icon"></i>
+        <span>Dark</span>
+      </button>
+    </div>
+  </div>
+</div>

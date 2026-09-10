@@ -1,3 +1,51 @@
-<section class="flex flex-1 flex-col items-center justify-center px-4 py-16">
-  <h1 class="text-4xl font-semibold tracking-tight">Login</h1>
+<section class="mx-auto w-full max-w-sm p-6">
+  <h1 class="mb-6 text-2xl font-semibold text-neutral-900">Iniciar sesión</h1>
+
+  @if (error(); as message) {
+    <div role="alert" class="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-700">
+      {{ message }}
+    </div>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-4" novalidate>
+    <div class="flex flex-col gap-1">
+      <label for="username" class="text-sm font-medium text-neutral-800">Usuario</label>
+      <input
+        id="username"
+        type="text"
+        formControlName="username"
+        autocomplete="username"
+        [attr.aria-invalid]="form.controls.username.invalid && form.controls.username.touched"
+        aria-describedby="username-error"
+        class="rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none"
+      />
+      @if (form.controls.username.invalid && form.controls.username.touched) {
+        <p id="username-error" class="text-xs text-red-600">El usuario es obligatorio.</p>
+      }
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label for="password" class="text-sm font-medium text-neutral-800">Contraseña</label>
+      <input
+        id="password"
+        type="password"
+        formControlName="password"
+        autocomplete="current-password"
+        [attr.aria-invalid]="form.controls.password.invalid && form.controls.password.touched"
+        aria-describedby="password-error"
+        class="rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none"
+      />
+      @if (form.controls.password.invalid && form.controls.password.touched) {
+        <p id="password-error" class="text-xs text-red-600">La contraseña es obligatoria.</p>
+      }
+    </div>
+
+    <button
+      type="submit"
+      [disabled]="submitting()"
+      class="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700 disabled:opacity-50"
+    >
+      {{ submitting() ? 'Entrando…' : 'Entrar' }}
+    </button>
+  </form>
 </section>

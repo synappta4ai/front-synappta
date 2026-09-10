@@ -1,0 +1,67 @@
+<section class="mx-auto w-full max-w-3xl p-6">
+  <header class="mb-6 flex items-center justify-between">
+    <h1 class="text-2xl font-semibold text-neutral-900">Eventos</h1>
+    <label class="flex items-center gap-2 text-sm text-neutral-600">
+      <input
+        type="checkbox"
+        [checked]="showInactive()"
+        (change)="toggleShowInactive()"
+        class="h-4 w-4 rounded border-neutral-300"
+      />
+      Mostrar inactivos
+    </label>
+  </header>
+
+  @if (error(); as message) {
+    <div role="alert" class="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-700">{{ message }}</div>
+  }
+
+  <form class="mb-6 flex gap-2" (ngSubmit)="createEvent()">
+    <label for="new-event" class="sr-only">Nombre del evento</label>
+    <input
+      id="new-event"
+      type="text"
+      [(ngModel)]="newName"
+      name="newEvent"
+      placeholder="Nombre del evento"
+      class="flex-1 rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none"
+    />
+    <button
+      type="submit"
+      [disabled]="loading() || !newName().trim()"
+      class="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700 disabled:opacity-50"
+    >
+      Crear
+    </button>
+  </form>
+
+  @if (loading()) {
+    <p class="text-sm text-neutral-500">Cargando…</p>
+  } @else {
+    <ul class="flex flex-col gap-3">
+      @for (event of events(); track event.id) {
+        <li class="rounded-lg border border-neutral-200 p-4">
+          <h2 class="font-medium text-neutral-900">{{ event.name }}</h2>
+          @if (event.description) {
+            <p class="mt-1 text-sm text-neutral-600">{{ event.description }}</p>
+          }
+          <p class="mt-2 text-xs text-neutral-500">
+            {{ event.program_count ?? 0 }} programas
+            @if (event.starts_at) {
+              · {{ event.starts_at | date: 'medium' }}
+            }
+            @if (!event.active) {
+              · inactivo
+            }
+          </p>
+        </li>
+      } @empty {
+        <li
+          class="rounded-lg border border-dashed border-neutral-300 p-6 text-center text-sm text-neutral-500"
+        >
+          No hay eventos todavía.
+        </li>
+      }
+    </ul>
+  }
+</section>

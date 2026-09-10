@@ -1,3 +1,104 @@
-<section class="mx-auto flex min-h-[50vh] max-w-6xl flex-col items-center justify-center px-4">
-  <h1 class="text-4xl font-semibold tracking-tight">Video</h1>
+<section class="mx-auto w-full max-w-xl p-6">
+  <h1 class="mb-6 text-2xl font-semibold text-neutral-900">Generación de video</h1>
+
+  @if (error(); as message) {
+    <div role="alert" class="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-700">{{ message }}</div>
+  }
+
+  @if (resultUrl(); as url) {
+    <div class="mb-6 rounded-lg border border-green-200 bg-green-50 p-4">
+      <p class="mb-2 text-sm font-medium text-green-800">¡Video generado!</p>
+      <video controls class="w-full rounded-md">
+        <source [src]="url" type="video/mp4" />
+        Tu navegador no soporta video HTML5.
+      </video>
+    </div>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-4" novalidate>
+    <div class="flex flex-col gap-1">
+      <label for="model" class="text-sm font-medium text-neutral-800">Modelo</label>
+      <input
+        id="model"
+        type="text"
+        formControlName="model"
+        placeholder="dreamina-seedance-2-0-260128"
+        class="rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none"
+      />
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label for="prompt" class="text-sm font-medium text-neutral-800">Prompt</label>
+      <textarea
+        id="prompt"
+        formControlName="prompt"
+        rows="3"
+        class="rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none"
+      ></textarea>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+      <div class="flex flex-col gap-1">
+        <label for="eventId" class="text-sm font-medium text-neutral-800">Event ID</label>
+        <input
+          id="eventId"
+          type="text"
+          formControlName="eventId"
+          class="rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none"
+        />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label for="pieceId" class="text-sm font-medium text-neutral-800">Piece ID</label>
+        <input
+          id="pieceId"
+          type="text"
+          formControlName="pieceId"
+          class="rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none"
+        />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label for="pieceCode" class="text-sm font-medium text-neutral-800">Piece Code</label>
+        <input
+          id="pieceCode"
+          type="text"
+          formControlName="pieceCode"
+          class="rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none"
+        />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label for="generationNumber" class="text-sm font-medium text-neutral-800"
+          >Generation #</label
+        >
+        <input
+          id="generationNumber"
+          type="number"
+          formControlName="generationNumber"
+          class="rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none"
+        />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label for="duration" class="text-sm font-medium text-neutral-800">Duración (s)</label>
+        <input
+          id="duration"
+          type="number"
+          formControlName="duration"
+          class="rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none"
+        />
+      </div>
+    </div>
+
+    <button
+      type="submit"
+      [disabled]="submitting() || polling()"
+      class="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700 disabled:opacity-50"
+    >
+      @if (submitting()) {
+        Enviando…
+      } @else if (polling()) {
+        Generando… (esto puede tardar varios minutos)
+      } @else {
+        Generar video
+      }
+    </button>
+  </form>
 </section>

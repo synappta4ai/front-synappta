@@ -1,16 +1,19 @@
-import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
-import { environment } from '@env/environment';
-import { Video } from '../interfaces';
+import { AgencyApiRepository } from '@modules/agency/repositories';
+import { ApiResponse } from '@interfaces/api.interface';
+import { GenerateRequest, GenerateResponse, StatusResponse } from '@modules/agency/interfaces';
 
 @Injectable({ providedIn: 'root' })
 export class VideoApiRepository {
-  private readonly http = inject(HttpClient);
-  private readonly apiUrl = environment.apiUrl;
+  private readonly agencyApiRepository = inject(AgencyApiRepository);
 
-  listVideos(): Observable<Video[]> {
-    return this.http.get<Video[]>(`${this.apiUrl}/videos`);
+  generateVideo(payload: GenerateRequest): Observable<ApiResponse<GenerateResponse>> {
+    return this.agencyApiRepository.generate('video', payload);
+  }
+
+  getVideoStatus(taskId: string): Observable<ApiResponse<StatusResponse>> {
+    return this.agencyApiRepository.getStatus('video', taskId);
   }
 }
