@@ -1,36 +1,371 @@
-<app-page-container title="Agencia · Modelos">
+<app-page-container title="Agencia · Flujo de Producción">
   @if (error(); as message) {
     <div
       role="alert"
-      class="mb-4 rounded-lg bg-[var(--red-50)] p-3 text-sm text-[var(--red-700)] dark:bg-[var(--red-950)] dark:text-[var(--red-300)]"
+      class="mb-6 rounded-lg bg-[var(--red-50)] p-3 text-sm text-[var(--red-700)] dark:bg-[var(--red-950)] dark:text-[var(--red-300)]"
     >
       {{ message }}
     </div>
   }
 
-  @if (loading()) {
-    <p class="text-sm text-[var(--text-secondary)]">Cargando…</p>
-  } @else {
-    @for (modality of modalities; track modality) {
-      <h2
-        class="mb-2 mt-6 text-sm font-semibold uppercase tracking-wide text-[var(--primary-600)] dark:text-[var(--primary-400)]"
+  <!-- Phase Indicator -->
+  <nav class="mb-8 flex items-center gap-2 text-sm" aria-label="Fases del flujo">
+    @for (phase of phases; track phase.name; let i = $index) {
+      <button
+        type="button"
+        (click)="goToPhase(phase.key)"
+        class="flex items-center gap-2 rounded-lg px-3 py-1.5 transition-colors"
+        [class]="
+          currentPhase() === phase.key
+            ? 'bg-[var(--primary-500)] text-white font-medium'
+            : 'bg-[var(--surface-100)] text-[var(--text-secondary)] hover:bg-[var(--surface-200)]'
+        "
       >
-        {{ modality }}
-      </h2>
-      <ul class="flex flex-col gap-2">
-        @for (model of models(); track model.name) {
-          @if (model.content_type === modality) {
-            <li
-              class="rounded-lg border border-[var(--border-color)] bg-[var(--surface-50)] p-3 transition-colors hover:bg-[var(--surface-100)]"
-            >
-              <p class="font-medium text-[var(--text-primary)]">
-                {{ model.display_name ?? model.name }}
-              </p>
-              <p class="text-xs text-[var(--text-secondary)]">{{ model.name }}</p>
-            </li>
-          }
-        }
-      </ul>
+        <span
+          class="flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold"
+          [class]="
+            currentPhase() === phase.key
+              ? 'bg-white text-[var(--primary-600)]'
+              : i < phaseIndex()
+                ? 'bg-[var(--primary-500)] text-white'
+                : 'bg-[var(--surface-300)] text-[var(--text-muted)]'
+          "
+        >
+          {{ i + 1 }}
+        </span>
+        {{ phase.name }}
+      </button>
+      @if (i < 3) {
+        <div class="h-px flex-1 bg-[var(--surface-300)]"></div>
+      }
     }
+  </nav>
+
+  <!-- Phase 1: Input / Documentation -->
+  @if (currentPhase() === 'input') {
+    <div class="space-y-6">
+      <div class="rounded-xl border border-[var(--border-color)] bg-[var(--surface-50)] p-6">
+        <h2
+          class="mb-4 text-lg font-semibold text-[var(--primary-600)] dark:text-[var(--primary-400)]"
+        >
+          Información del Proyecto
+        </h2>
+        <p class="mb-4 text-sm text-[var(--text-secondary)]">
+          Ingresa la documentación necesaria para que el cerebro IA analice el proyecto
+          inmobiliario.
+        </p>
+
+        <form [formGroup]="form" class="space-y-4" novalidate>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div class="flex flex-col gap-1">
+              <label for="propertyName" class="text-sm font-medium text-[var(--text-secondary)]">
+                Nombre del Proyecto
+              </label>
+              <input
+                id="propertyName"
+                type="text"
+                formControlName="propertyName"
+                placeholder="Ej: Residencias El Parque"
+                class="rounded-lg border border-[var(--surface-300)] bg-[var(--surface-0)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--primary-500)] focus:outline-none dark:border-[var(--surface-600)]"
+              />
+            </div>
+            <div class="flex flex-col gap-1">
+              <label for="location" class="text-sm font-medium text-[var(--text-secondary)]">
+                Ubicación
+              </label>
+              <input
+                id="location"
+                type="text"
+                formControlName="location"
+                placeholder="Ej: CDMX, Polanco"
+                class="rounded-lg border border-[var(--surface-300)] bg-[var(--surface-0)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--primary-500)] focus:outline-none dark:border-[var(--surface-600)]"
+              />
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-1">
+            <label for="description" class="text-sm font-medium text-[var(--text-secondary)]">
+              Descripción del Proyecto
+            </label>
+            <textarea
+              id="description"
+              formControlName="description"
+              rows="4"
+              placeholder="Describe las características principales del proyecto inmobiliario, target de clientes, precio promedio, amenidades..."
+              class="rounded-lg border border-[var(--surface-300)] bg-[var(--surface-0)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--primary-500)] focus:outline-none dark:border-[var(--surface-600)]"
+            ></textarea>
+          </div>
+        </form>
+      </div>
+
+      <div class="flex justify-end">
+        <button
+          type="button"
+          [disabled]="!canProceedToAngles"
+          (click)="generateAngles()"
+          class="rounded-lg bg-[var(--primary-500)] px-6 py-2.5 text-sm font-medium text-white hover:bg-[var(--primary-600)] active:bg-[var(--primary-700)] disabled:opacity-50"
+        >
+          @if (loading()) {
+            Analizando…
+          } @else {
+            Analizar y generar ángulos
+          }
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- Phase 2: Angles -->
+  @if (currentPhase() === 'angles') {
+    <div class="space-y-6">
+      <div class="rounded-xl border border-[var(--border-color)] bg-[var(--surface-50)] p-6">
+        <h2
+          class="mb-2 text-lg font-semibold text-[var(--primary-600)] dark:text-[var(--primary-400)]"
+        >
+          Ángulos de Venta
+        </h2>
+        <p class="mb-4 text-sm text-[var(--text-secondary)]">
+          El cerebro IA analizó tu proyecto y propuso los siguientes ángulos de venta. Selecciona
+          uno o más para continuar.
+        </p>
+
+        <div class="space-y-3">
+          @for (angle of angles(); track angle.id) {
+            <button
+              type="button"
+              (click)="toggleAngle(angle.id)"
+              class="w-full rounded-lg border-2 p-4 text-left transition-all"
+              [class]="
+                angle.selected
+                  ? 'border-[var(--primary-500)] bg-[var(--primary-50)] dark:bg-[var(--primary-950)]'
+                  : 'border-[var(--surface-300)] bg-[var(--surface-0)] hover:border-[var(--primary-300)]'
+              "
+            >
+              <div class="flex items-start gap-3">
+                <div
+                  class="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded border-2"
+                  [class]="
+                    angle.selected
+                      ? 'border-[var(--primary-500)] bg-[var(--primary-500)]'
+                      : 'border-[var(--surface-400)]'
+                  "
+                >
+                  @if (angle.selected) {
+                    <svg
+                      class="h-3 w-3 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      stroke-width="3"
+                    >
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  }
+                </div>
+                <div>
+                  <p class="font-medium text-[var(--text-primary)]">{{ angle.title }}</p>
+                  <p class="mt-1 text-sm text-[var(--text-secondary)]">{{ angle.description }}</p>
+                </div>
+              </div>
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="flex justify-between">
+        <button
+          type="button"
+          (click)="prevPhase()"
+          class="rounded-lg border border-[var(--surface-300)] px-4 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-100)]"
+        >
+          ← Volver
+        </button>
+        <button
+          type="button"
+          [disabled]="!canProceedToStoryboard"
+          (click)="generateStoryboard()"
+          class="rounded-lg bg-[var(--primary-500)] px-6 py-2.5 text-sm font-medium text-white hover:bg-[var(--primary-600)] active:bg-[var(--primary-700)] disabled:opacity-50"
+        >
+          Generar Storyboard ({{ selectedAnglesCount }} ángulos)
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- Phase 3: Storyboard -->
+  @if (currentPhase() === 'storyboard') {
+    <div class="space-y-6">
+      <div class="rounded-xl border border-[var(--border-color)] bg-[var(--surface-50)] p-6">
+        <h2
+          class="mb-2 text-lg font-semibold text-[var(--primary-600)] dark:text-[var(--primary-400)]"
+        >
+          Storyboard
+        </h2>
+        <p class="mb-4 text-sm text-[var(--text-secondary)]">
+          Basado en los ángulos seleccionados, se generó el siguiente storyboard. Revisa las escenas
+          y genera las imágenes.
+        </p>
+
+        <div class="space-y-6">
+          @for (scene of storyboard(); track scene.id; let i = $index) {
+            <div class="rounded-lg border border-[var(--border-color)] bg-[var(--surface-0)] p-4">
+              <div class="mb-3 flex items-start justify-between">
+                <div>
+                  <h3 class="font-medium text-[var(--primary-600)] dark:text-[var(--primary-400)]">
+                    {{ scene.title }}
+                  </h3>
+                  <p class="mt-1 text-sm text-[var(--text-secondary)]">
+                    {{ scene.description }}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  (click)="generateScene(scene.id)"
+                  [disabled]="scene.shots.some((s) => s.generating)"
+                  class="rounded-lg bg-[var(--primary-500)] px-4 py-1.5 text-xs font-medium text-white hover:bg-[var(--primary-600)] disabled:opacity-50"
+                >
+                  @if (scene.shots.some((s) => s.generating)) {
+                    Generando…
+                  } @else {
+                    Generar imágenes
+                  }
+                </button>
+              </div>
+
+              <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                @for (shot of scene.shots; track shot.id) {
+                  <div
+                    class="overflow-hidden rounded-lg border border-[var(--surface-200)] bg-[var(--surface-50)]"
+                  >
+                    @if (shot.imageUrl) {
+                      <img
+                        [src]="shot.imageUrl"
+                        [alt]="shot.description"
+                        class="aspect-video w-full object-cover"
+                      />
+                    } @else if (shot.generating) {
+                      <div
+                        class="flex aspect-video items-center justify-center bg-[var(--surface-100)]"
+                      >
+                        <div class="text-center">
+                          <div
+                            class="mx-auto mb-2 h-8 w-8 animate-spin rounded-full border-2 border-[var(--primary-500)] border-t-transparent"
+                          ></div>
+                          <p class="text-xs text-[var(--text-muted)]">Generando imagen…</p>
+                        </div>
+                      </div>
+                    } @else {
+                      <div
+                        class="flex aspect-video items-center justify-center bg-[var(--surface-100)]"
+                      >
+                        <p class="text-xs text-[var(--text-muted)]">Sin imagen</p>
+                      </div>
+                    }
+                    <div class="p-2">
+                      <p class="text-xs text-[var(--text-secondary)]">{{ shot.description }}</p>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="flex justify-between">
+        <button
+          type="button"
+          (click)="prevPhase()"
+          class="rounded-lg border border-[var(--surface-300)] px-4 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-100)]"
+        >
+          ← Volver
+        </button>
+        <button
+          type="button"
+          (click)="nextPhase()"
+          class="rounded-lg bg-[var(--primary-500)] px-6 py-2.5 text-sm font-medium text-white hover:bg-[var(--primary-600)] active:bg-[var(--primary-700)]"
+        >
+          Continuar a Escenas →
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- Phase 4: Scenes / Final -->
+  @if (currentPhase() === 'scenes') {
+    <div class="space-y-6">
+      <div class="rounded-xl border border-[var(--border-color)] bg-[var(--surface-50)] p-6">
+        <h2
+          class="mb-2 text-lg font-semibold text-[var(--primary-600)] dark:text-[var(--primary-400)]"
+        >
+          Escenas y Shots Finales
+        </h2>
+        <p class="mb-4 text-sm text-[var(--text-secondary)]">
+          Revisa las escenas generadas con sus respectivos shots. Cada shot es un plano listo para
+          producción de video.
+        </p>
+
+        <div class="space-y-6">
+          @for (scene of storyboard(); track scene.id) {
+            <div class="rounded-lg border border-[var(--border-color)] bg-[var(--surface-0)] p-4">
+              <h3 class="mb-3 font-medium text-[var(--primary-600)] dark:text-[var(--primary-400)]">
+                {{ scene.title }}
+              </h3>
+
+              <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                @for (shot of scene.shots; track shot.id; let j = $index) {
+                  <div
+                    class="overflow-hidden rounded-lg border border-[var(--surface-200)] bg-[var(--surface-50)]"
+                  >
+                    @if (shot.imageUrl) {
+                      <img
+                        [src]="shot.imageUrl"
+                        [alt]="shot.description"
+                        class="aspect-video w-full object-cover"
+                      />
+                    } @else {
+                      <div
+                        class="flex aspect-video items-center justify-center bg-[var(--surface-100)]"
+                      >
+                        <p class="text-xs text-[var(--text-muted)]">Pendiente de generación</p>
+                      </div>
+                    }
+                    <div class="p-2">
+                      <p class="text-xs font-medium text-[var(--text-primary)]">Shot {{ j + 1 }}</p>
+                      <p class="text-xs text-[var(--text-secondary)]">{{ shot.description }}</p>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        @if (storyboard().length === 0) {
+          <div class="rounded-lg border border-dashed border-[var(--surface-300)] p-8 text-center">
+            <p class="text-sm text-[var(--text-muted)]">
+              No hay escenas generadas. Vuelve al storyboard para generar imágenes.
+            </p>
+          </div>
+        }
+      </div>
+
+      <div class="flex justify-between">
+        <button
+          type="button"
+          (click)="prevPhase()"
+          class="rounded-lg border border-[var(--surface-300)] px-4 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-100)]"
+        >
+          ← Volver al Storyboard
+        </button>
+        <button
+          type="button"
+          (click)="resetWorkflow()"
+          class="rounded-lg bg-[var(--primary-500)] px-6 py-2.5 text-sm font-medium text-white hover:bg-[var(--primary-600)] active:bg-[var(--primary-700)]"
+        >
+          Nuevo Proyecto
+        </button>
+      </div>
+    </div>
   }
 </app-page-container>
