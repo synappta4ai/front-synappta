@@ -1,78 +1,223 @@
 <app-page-container title="Gestión de Tenants">
   @if (error(); as message) {
-    <div
-      role="alert"
-      class="mb-4 rounded-lg bg-[var(--red-50)] p-3 text-sm text-[var(--red-700)] dark:bg-[var(--red-950)] dark:text-[var(--red-300)]"
-    >
-      {{ message }}
+    <div class="mb-6">
+      <p-message severity="error" [text]="message" [escape]="false" styleClass="w-full" />
     </div>
   }
 
-  <form [formGroup]="form" (ngSubmit)="createTenant()" class="mb-6 flex gap-4" novalidate>
-    <div class="flex flex-1 flex-col gap-1">
-      <label for="tenant-name" class="text-sm font-medium text-[var(--text-secondary)]"
-        >Nombre</label
-      >
-      <input
-        id="tenant-name"
-        type="text"
-        formControlName="name"
-        class="rounded-lg border border-[var(--surface-300)] bg-[var(--surface-0)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--primary-500)] focus:outline-none dark:border-[var(--surface-600)]"
-      />
-    </div>
-    <div class="flex flex-1 flex-col gap-1">
-      <label for="tenant-slug" class="text-sm font-medium text-[var(--text-secondary)]">Slug</label>
-      <input
-        id="tenant-slug"
-        type="text"
-        formControlName="slug"
-        class="rounded-lg border border-[var(--surface-300)] bg-[var(--surface-0)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--primary-500)] focus:outline-none dark:border-[var(--surface-600)]"
-      />
-    </div>
-    <button
-      type="submit"
-      [disabled]="creating()"
-      class="self-end rounded-lg bg-[var(--primary-500)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--primary-600)] active:bg-[var(--primary-700)] disabled:opacity-50"
-    >
-      {{ creating() ? 'Creando…' : 'Crear Tenant' }}
-    </button>
-  </form>
+  <p-confirmDialog styleClass="custom-confirm-dialog" />
 
+  <!-- Stats Row -->
+  <div class="mb-6 grid gap-4 sm:grid-cols-3">
+    <div
+      class="flex items-center gap-4 rounded-xl border border-[var(--surface-200)] bg-[var(--surface-0)] p-5"
+    >
+      <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--primary-100)]">
+        <i class="pi pi-building text-xl text-[var(--primary-600)]"></i>
+      </div>
+      <div>
+        <p class="text-2xl font-bold text-[var(--text-primary)]">{{ tenants().length }}</p>
+        <p class="text-sm text-[var(--text-secondary)]">Total Tenants</p>
+      </div>
+    </div>
+    <div
+      class="flex items-center gap-4 rounded-xl border border-[var(--surface-200)] bg-[var(--surface-0)] p-5"
+    >
+      <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-green-100">
+        <i class="pi pi-check-circle text-xl text-green-600"></i>
+      </div>
+      <div>
+        <p class="text-2xl font-bold text-[var(--text-primary)]">
+          {{ tenants().filter((t) => t.active).length }}
+        </p>
+        <p class="text-sm text-[var(--text-secondary)]">Activos</p>
+      </div>
+    </div>
+    <div
+      class="flex items-center gap-4 rounded-xl border border-[var(--surface-200)] bg-[var(--surface-0)] p-5"
+    >
+      <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-red-100">
+        <i class="pi pi-times-circle text-xl text-red-600"></i>
+      </div>
+      <div>
+        <p class="text-2xl font-bold text-[var(--text-primary)]">
+          {{ tenants().filter((t) => !t.active).length }}
+        </p>
+        <p class="text-sm text-[var(--text-secondary)]">Inactivos</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Tenant Form -->
+  <p-card styleClass="mb-6">
+    <ng-template #header>
+      <div class="flex items-center gap-3 border-b border-[var(--surface-200)] px-6 py-4">
+        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--primary-100)]">
+          <i class="pi pi-plus-circle text-lg text-[var(--primary-600)]"></i>
+        </div>
+        <h2 class="text-lg font-semibold text-[var(--text-primary)]">Crear Nuevo Tenant</h2>
+      </div>
+    </ng-template>
+
+    <form
+      [formGroup]="form"
+      (ngSubmit)="createTenant()"
+      class="flex flex-col gap-4 sm:flex-row sm:items-end"
+      novalidate
+    >
+      <div class="flex flex-1 flex-col gap-2">
+        <label for="tenant-name" class="text-sm font-medium text-[var(--text-primary)]">
+          Nombre <span class="text-red-500">*</span>
+        </label>
+        <input
+          pInputText
+          id="tenant-name"
+          type="text"
+          formControlName="name"
+          placeholder="Ej: Empresa XYZ"
+          class="w-full"
+        />
+        <small class="text-[var(--text-muted)]">Nombre descriptivo del tenant</small>
+      </div>
+      <div class="flex flex-1 flex-col gap-2">
+        <label for="tenant-slug" class="text-sm font-medium text-[var(--text-primary)]">
+          Slug <span class="text-red-500">*</span>
+        </label>
+        <input
+          pInputText
+          id="tenant-slug"
+          type="text"
+          formControlName="slug"
+          placeholder="Ej: empresa-xyz"
+          class="w-full"
+        />
+        <small class="text-[var(--text-muted)]">Identificador URL (minúsculas, sin espacios)</small>
+      </div>
+      <p-button
+        type="submit"
+        label="Crear Tenant"
+        icon="pi pi-plus"
+        [loading]="creating()"
+        [disabled]="creating()"
+        styleClass="px-6"
+      />
+    </form>
+  </p-card>
+
+  <!-- Tenants Table -->
   @if (loading()) {
-    <p class="text-sm text-[var(--text-secondary)]">Cargando…</p>
+    <div
+      class="flex flex-col items-center gap-4 rounded-xl border border-[var(--surface-200)] bg-[var(--surface-0)] py-16"
+    >
+      <p-progressSpinner styleClass="w-12 h-12" strokeWidth="3" />
+      <p class="text-sm text-[var(--text-secondary)]">Cargando tenants...</p>
+    </div>
   } @else {
-    <ul class="flex flex-col gap-3">
-      @for (tenant of tenants(); track tenant.id) {
-        <li
-          class="flex items-center justify-between rounded-lg border border-[var(--border-color)] bg-[var(--surface-50)] p-4 transition-colors hover:bg-[var(--surface-100)]"
+    <p-card>
+      <ng-template #header>
+        <div
+          class="flex items-center justify-between border-b border-[var(--surface-200)] px-6 py-4"
         >
-          <div>
-            <h2 class="font-medium text-[var(--text-primary)]">{{ tenant.name }}</h2>
-            <p class="text-sm text-[var(--text-secondary)]">Slug: {{ tenant.slug }}</p>
-            <p class="text-xs text-[var(--text-muted)]">
-              Creado: {{ tenant.created_at | date: 'medium' }}
-              @if (!tenant.active) {
-                · <span class="text-[var(--red-600)] dark:text-[var(--red-400)]">Inactivo</span>
-              }
-            </p>
-          </div>
-          @if (tenant.active) {
-            <button
-              type="button"
-              (click)="deactivateTenant(tenant.id)"
-              class="rounded-lg border border-[var(--red-300)] px-3 py-1.5 text-sm font-medium text-[var(--red-700)] hover:bg-[var(--red-50)] dark:border-[var(--red-700)] dark:text-[var(--red-400)] dark:hover:bg-[var(--red-950)]"
+          <div class="flex items-center gap-3">
+            <div
+              class="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--primary-100)]"
             >
-              Desactivar
-            </button>
-          }
-        </li>
-      } @empty {
-        <li
-          class="rounded-lg border border-dashed border-[var(--surface-300)] p-6 text-center text-sm text-[var(--text-muted)]"
-        >
-          No hay tenants configurados.
-        </li>
-      }
-    </ul>
+              <i class="pi pi-list text-lg text-[var(--primary-600)]"></i>
+            </div>
+            <div>
+              <h2 class="text-lg font-semibold text-[var(--text-primary)]">Lista de Tenants</h2>
+              <p class="text-sm text-[var(--text-secondary)]">
+                {{ tenants().length }} tenants configurados
+              </p>
+            </div>
+          </div>
+        </div>
+      </ng-template>
+
+      <p-table
+        [value]="$any(tenants())"
+        [tableStyle]="{ 'min-width': '40rem' }"
+        [rowHover]="true"
+        styleClass="p-datatable-striped"
+      >
+        <ng-template #header>
+          <tr>
+            <th style="width: 25%">Nombre</th>
+            <th style="width: 15%">Slug</th>
+            <th style="width: 20%">Creado</th>
+            <th style="width: 10%" class="text-center">Estado</th>
+            <th style="width: 15%" class="text-center">Acciones</th>
+          </tr>
+        </ng-template>
+        <ng-template #body let-tenant>
+          <tr>
+            <td>
+              <div class="flex items-center gap-3">
+                <div
+                  class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--primary-500)] to-[var(--primary-700)] text-white"
+                >
+                  <i class="pi pi-building text-sm"></i>
+                </div>
+                <div>
+                  <p class="font-semibold text-[var(--text-primary)]">{{ tenant.name }}</p>
+                  <p class="text-xs text-[var(--text-muted)]">ID: {{ tenant.id }}</p>
+                </div>
+              </div>
+            </td>
+            <td>
+              <code
+                class="rounded-lg bg-[var(--surface-100)] px-3 py-1.5 text-sm font-medium text-[var(--primary-600)]"
+                >{{ tenant.slug }}</code
+              >
+            </td>
+            <td>
+              <span class="text-sm text-[var(--text-secondary)]">
+                {{ tenant.created_at | date: 'medium' }}
+              </span>
+            </td>
+            <td class="text-center">
+              @if (tenant.active) {
+                <p-tag value="Activo" severity="success" />
+              } @else {
+                <p-tag value="Inactivo" severity="danger" />
+              }
+            </td>
+            <td class="text-center">
+              @if (tenant.active) {
+                <p-button
+                  label="Desactivar"
+                  icon="pi pi-ban"
+                  severity="danger"
+                  size="small"
+                  text
+                  (onClick)="confirmDeactivate(tenant)"
+                />
+              } @else {
+                <span class="text-sm text-[var(--text-muted)]">—</span>
+              }
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template #emptymessage>
+          <tr>
+            <td colspan="5">
+              <div class="flex flex-col items-center gap-4 py-16">
+                <div
+                  class="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--surface-100)]"
+                >
+                  <i class="pi pi-building text-3xl text-[var(--surface-400)]"></i>
+                </div>
+                <div class="text-center">
+                  <p class="font-medium text-[var(--text-primary)]">No hay tenants configurados</p>
+                  <p class="mt-1 text-sm text-[var(--text-secondary)]">
+                    Crea tu primer tenant para comenzar
+                  </p>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </p-card>
   }
 </app-page-container>

@@ -176,125 +176,85 @@
    ============================================ */
 .dark {
   /* Superficies */
-  --surface-0: #09090b;
-  --surface-50: #18181b;
-  --surface-100: #27272a;
-  --surface-200: #3f3f46;
-  --surface-300: #52525b;
-  --surface-400: #71717a;
-  --surface-500: #a1a1aa;
-  --surface-600: #d4d4d8;
-  --surface-700: #e4e4e7;
-  --surface-800: #f4f4f5;
-  --surface-900: #fafafa;
+  --surface-0: #1a1d2e;
+  --surface-50: #1e2132;
+  --surface-100: #252838;
+  --surface-200: #303348;
+  --surface-300: #404460;
+  --surface-400: #6b7094;
+  --surface-500: #9098b8;
+  --surface-600: #b4b9d0;
+  --surface-700: #d0d4e4;
+  --surface-800: #e8eaf2;
+  --surface-900: #f4f5f9;
   --surface-950: #ffffff;
 
   /* Layout */
-  --sidebar-bg: #0f172a;
+  --sidebar-bg: #12152a;
   --sidebar-text: #e2e8f0;
   --sidebar-text-muted: #64748b;
-  --sidebar-border: #1e293b;
-  --sidebar-hover: #1e293b;
+  --sidebar-border: #2a2e45;
+  --sidebar-hover: #252840;
   --sidebar-active: rgba(139, 92, 246, 0.15);
 
-  --header-bg: #0f172a;
+  --header-bg: #12152a;
   --header-text: #e2e8f0;
-  --header-border: #1e293b;
+  --header-border: #2a2e45;
 
-  --content-bg: #0b1120;
+  --content-bg: #0e1125;
   --content-text: #e2e8f0;
 
-  --border-color: #1e293b;
+  --border-color: #2a2e45;
 
   /* Texto */
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
+  --text-primary: #f1f3f9;
+  --text-secondary: #9ba3c0;
+  --text-muted: #6b7094;
 }
 
 /* ============================================
    PrimeNG Component Overrides
    ============================================ */
-@layer base {
-  :root body {
-    --p-datatable-header-cell-background: var(--primary-500);
-    --p-datatable-header-cell-color: white;
-    --p-checkbox-checked-border-color: var(--primary-600);
-    --p-checkbox-checked-color: var(--primary-600);
-    --p-checkbox-checked-icon-color: var(--primary-600);
-    --p-checkbox-checked-background: var(--primary-600);
-    --p-select-focus-border-color: var(--primary-600);
-    --p-select-focus-ring-color: var(--primary-600);
-    --p-checkbox-checked-hover-background: var(--primary-300);
-    --p-checkbox-checked-hover-border-color: var(--primary-300);
-    --p-radiobutton-checked-border-color: var(--primary-600);
-    --p-radiobutton-checked-background: var(--primary-600);
-    --p-radiobutton-checked-icon-color: var(--primary-600);
-    --p-radiobutton-checked-hover-border-color: var(--primary-600);
-    --p-radiobutton-checked-hover-background: var(--primary-600);
-    --p-radiobutton-checked-hover-icon-color: var(--primary-600);
-    --p-button-primary-background: var(--primary-500);
-    --p-button-primary-border-color: var(--primary-500);
-    --p-button-primary-hover-background: var(--primary-600);
-    --p-button-primary-hover-border-color: var(--primary-600);
-    --p-button-primary-active-background: var(--primary-700);
-    --p-button-primary-active-border-color: var(--primary-700);
-    --p-button-text-primary-color: var(--primary-500);
-    --p-button-text-primary-hover-color: var(--primary-600);
-    --p-button-text-primary-active-color: var(--primary-700);
-    --p-button-text-primary-active-background: var(--primary-100);
-    --p-button-text-primary-hover-background: var(--primary-50);
-    --p-button-outlined-primary-border-color: var(--primary-100);
-    --p-button-outlined-primary-color: var(--primary-500);
-    --p-button-outlined-primary-active-background: var(--primary-100);
-    --p-button-outlined-primary-hover-background: var(--primary-50);
-    --p-button-secondary-background: var(--secondary-500);
-    --p-button-secondary-border-color: var(--secondary-500);
-    --p-button-secondary-hover-background: var(--secondary-600);
-    --p-button-secondary-hover-border-color: var(--secondary-600);
-    --p-button-secondary-active-background: var(--secondary-700);
-    --p-button-secondary-active-border-color: var(--secondary-700);
-    --p-button-text-secondary-color: var(--secondary-500);
-    --p-button-text-secondary-hover-color: var(--secondary-600);
-    --p-button-text-secondary-active-color: var(--secondary-700);
-    --p-button-outlined-secondary-border-color: var(--secondary-300);
-    --p-button-outlined-secondary-color: var(--secondary-600);
-    --p-inputtext-focus-border-color: var(--primary-500);
-    --p-datepicker-date-selected-background: var(--primary-600);
-    --p-breadcrumb-item-icon-color: var(--primary-500) !important;
-    --p-chip-background: var(--primary-500) !important;
-    --p-chip-color: #ffffff !important;
-    --p-chip-remove-icon-color: inherit !important;
-    --p-popover-background: var(--surface-0) !important;
-    --p-datepicker-dropdown-background: var(--primary-500) !important;
-    --p-datepicker-dropdown-color: #ffffff !important;
-    --p-toggleswitch-checked-background: var(--primary-500);
-    --p-toggleswitch-checked-hover-background: var(--primary-600);
-    --p-progressbar-value-background: var(--primary-500);
-    --p-progressbar-label-color: #ffffff;
-    --fc-button-bg-color: var(--primary-500);
-    --fc-button-border-color: var(--primary-500);
-    --fc-button-active-bg-color: var(--primary-600);
-    --fc-button-active-border-color: var(--primary-600);
-    --p-breadcrumb-item-color: var(--primary-500);
-    --p-text-hover-color: var(--primary-500);
-  }
 
-  .dark table tbody tr:hover {
-    background-color: var(--primary-300) !important;
-    color: black !important;
-  }
+/* PrimeNG theme token overrides */
+:root {
+  --p-primary-50: var(--primary-50);
+  --p-primary-100: var(--primary-100);
+  --p-primary-200: var(--primary-200);
+  --p-primary-300: var(--primary-300);
+  --p-primary-400: var(--primary-400);
+  --p-primary-500: var(--primary-500);
+  --p-primary-600: var(--primary-600);
+  --p-primary-700: var(--primary-700);
+  --p-primary-800: var(--primary-800);
+  --p-primary-900: var(--primary-900);
+  --p-primary-950: var(--primary-950);
+
+  --p-surface-0: var(--surface-0);
+  --p-surface-50: var(--surface-50);
+  --p-surface-100: var(--surface-100);
+  --p-surface-200: var(--surface-200);
+  --p-surface-300: var(--surface-300);
+  --p-surface-400: var(--surface-400);
+  --p-surface-500: var(--surface-500);
+  --p-surface-600: var(--surface-600);
+  --p-surface-700: var(--surface-700);
+  --p-surface-800: var(--surface-800);
+  --p-surface-900: var(--surface-900);
+  --p-surface-950: var(--surface-950);
+
+  --p-card-background: var(--surface-0);
+  --p-card-color: var(--text-primary);
+  --p-inputtext-background: var(--surface-0);
+  --p-inputtext-color: var(--text-primary);
+  --p-inputtext-border-color: var(--surface-300);
+  --p-inputtext-hover-border-color: var(--surface-400);
+  --p-inputtext-focus-border-color: var(--primary-500);
 }
 
 /* ============================================
    Estilos Base
    ============================================ */
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
 
 html,
 body {
@@ -348,12 +308,177 @@ body {
    PrimeNG Custom Styles
    ============================================ */
 
-/* Ajustes para PrimeNG en tema oscuro */
-.dark .p-component {
+/* Cards */
+.p-card {
+  border-radius: 1rem;
+  box-shadow:
+    0 1px 3px 0 rgb(0 0 0 / 0.15),
+    0 4px 12px -2px rgb(0 0 0 / 0.1);
+  border: 1px solid var(--border-color);
+  background: var(--surface-0);
+  overflow: hidden;
+}
+
+.p-card-body {
+  padding: 1.5rem;
+}
+
+.dark .p-card {
+  border-color: var(--surface-200);
+  box-shadow:
+    0 2px 8px 0 rgb(0 0 0 / 0.3),
+    0 8px 24px -4px rgb(0 0 0 / 0.2);
+}
+
+/* Inputs */
+.p-inputtext,
+.p-textarea {
+  border-radius: 0.5rem;
+  border: 1px solid var(--surface-300);
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+  background: var(--surface-0);
   color: var(--text-primary);
 }
 
-/* PrimeNG Popover theme-panel override */
+.dark .p-inputtext,
+.dark .p-textarea {
+  background: var(--surface-50);
+  border-color: var(--surface-200);
+}
+
+.p-inputtext:focus,
+.p-textarea:focus {
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+}
+
+/* Buttons */
+.p-button {
+  border-radius: 0.5rem;
+  font-weight: 500;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+
+/* Table */
+.p-datatable {
+  border-radius: 0.75rem;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+.p-datatable .p-datatable-thead > tr > th {
+  background: var(--primary-500);
+  color: white;
+  font-weight: 600;
+  padding: 1rem;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+}
+
+.p-datatable .p-datatable-tbody > tr {
+  transition: background-color 0.2s;
+}
+
+.p-datatable .p-datatable-tbody > tr:hover {
+  background-color: var(--primary-50);
+}
+
+.p-datatable .p-datatable-tbody > tr > td {
+  padding: 1rem;
+  border-color: var(--border-color);
+}
+
+/* Tags */
+.p-tag {
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.25rem 0.625rem;
+}
+
+/* Steps */
+.p-steps {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.p-steps .p-steps-list {
+  width: 100%;
+  max-width: 800px;
+}
+
+.p-steps .p-steps-item .p-steps-number {
+  background: var(--surface-200);
+  color: var(--surface-600);
+  width: 2.5rem;
+  height: 2.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.p-steps .p-steps-item.p-highlight .p-steps-number {
+  background: var(--primary-500);
+  color: white;
+}
+
+.p-steps .p-steps-item .p-steps-title {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.p-steps .p-steps-item.p-highlight .p-steps-title {
+  color: var(--primary-600);
+  font-weight: 600;
+}
+
+/* Checkbox */
+.p-checkbox .p-checkbox-box {
+  border: 2px solid var(--surface-300);
+  border-radius: 0.375rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  transition: all 0.2s;
+}
+
+.p-checkbox .p-checkbox-box.p-highlight {
+  background: var(--primary-500);
+  border-color: var(--primary-500);
+}
+
+/* ProgressSpinner */
+.p-progressspinner-circle {
+  stroke: var(--primary-500);
+}
+
+/* Menubar */
+.p-menubar {
+  background: var(--surface-0);
+  border: none;
+  border-bottom: 1px solid var(--border-color);
+  padding: 0.5rem 1rem;
+  border-radius: 0;
+  width: 100%;
+  max-width: 100%;
+}
+
+.p-menubar .p-menubar-root-list {
+  margin-left: auto;
+}
+
+/* Message */
+.p-message {
+  border-radius: 0.5rem;
+  border: none;
+  padding: 0.875rem 1rem;
+}
+
+/* Popover */
 .theme-popover.p-popover {
   padding: 0;
   border-radius: 0.75rem;
@@ -367,4 +492,82 @@ body {
   padding: 0;
   margin: 0;
   border: none;
+}
+
+/* Dark mode adjustments */
+.dark .p-component {
+  color: var(--text-primary);
+}
+
+.dark table tbody tr:hover {
+  background-color: rgba(139, 92, 246, 0.1) !important;
+}
+
+.dark .p-datatable .p-datatable-thead > tr > th {
+  background: var(--surface-100);
+  border-color: var(--surface-200);
+}
+
+.dark .p-datatable .p-datatable-tbody > tr > td {
+  border-color: var(--surface-200);
+}
+
+.dark .p-datatable {
+  border-color: var(--surface-200);
+}
+
+.dark .p-tag {
+  opacity: 0.9;
+}
+
+.dark .p-steps .p-steps-item .p-steps-number {
+  background: var(--surface-200);
+  color: var(--surface-600);
+}
+
+.dark .p-steps .p-steps-item .p-steps-line {
+  background: var(--surface-200);
+}
+
+.p-menubar-item-label {
+  color: var(--text-secondary);
+}
+
+/* Ensure all text is visible */
+.dark label,
+.dark p,
+.dark h1,
+.dark h2,
+.dark h3 {
+  color: var(--text-primary);
+}
+
+.dark small {
+  color: var(--text-muted);
+}
+
+/* Card header in dark mode */
+.dark .p-card-header {
+  background: var(--surface-50);
+}
+
+/* Angle selection cards in dark mode */
+.dark .border-\[var\(--surface-200\)\].bg-\[var\(--surface-0\)\] {
+  background: var(--surface-50) !important;
+  border-color: var(--surface-200) !important;
+}
+
+/* Message component */
+.dark .p-message-error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.dark .p-message-error .p-message-text {
+  color: #fca5a5;
+}
+
+.dark .p-message-info {
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.3);
 }

@@ -7,13 +7,31 @@ import {
 } from '@angular/forms';
 import { catchError, EMPTY, finalize } from 'rxjs';
 
+import { Button } from 'primeng/button';
+import { Card } from 'primeng/card';
+import { InputText } from 'primeng/inputtext';
+import { Textarea } from 'primeng/textarea';
+import { InputNumber } from 'primeng/inputnumber';
+import { Message } from 'primeng/message';
+import { ProgressSpinner } from 'primeng/progressspinner';
+
 import { VideoService } from '../../services/video.service';
 import { StatusResponse } from '@modules/agency/interfaces';
 import { PageContainerComponent } from '@shared/components/index';
 
 @Component({
   selector: 'app-video',
-  imports: [ReactiveFormsModule, PageContainerComponent],
+  imports: [
+    ReactiveFormsModule,
+    PageContainerComponent,
+    Button,
+    Card,
+    InputText,
+    Textarea,
+    InputNumber,
+    Message,
+    ProgressSpinner,
+  ],
   templateUrl: './video.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

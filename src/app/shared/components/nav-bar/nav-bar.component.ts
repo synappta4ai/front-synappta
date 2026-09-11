@@ -1,45 +1,37 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
+import { MenuItem } from 'primeng/api';
+import { Menubar } from 'primeng/menubar';
 
 import { UserSessionStore } from '@core/store/user.session';
 import { ThemePanelComponent } from '../theme-panel/theme-panel.component';
 
-interface NavLink {
-  label: string;
-  href: string;
-  exact: boolean;
-  adminOnly?: boolean;
-}
-
 @Component({
   selector: 'app-nav-bar',
-  imports: [RouterLink, RouterLinkActive, ThemePanelComponent],
+  imports: [RouterLink, ThemePanelComponent, Menubar],
   templateUrl: './nav-bar.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NavBarComponent {
   private readonly sessionStore = inject(UserSessionStore);
+  private readonly router = inject(Router);
 
-  protected readonly allLinks: readonly NavLink[] = [
-    { label: 'Inicio', href: '/', exact: true },
-    { label: 'Agencia', href: '/agency', exact: false },
-    { label: 'Eventos', href: '/events', exact: false },
-    { label: 'Video', href: '/video', exact: false },
-    { label: 'Admin', href: '/admin/tenants', exact: false, adminOnly: true },
-  ];
-
-  protected readonly menuOpen = signal(false);
-
-  protected get links(): readonly NavLink[] {
+  protected readonly menuItems = computed<MenuItem[]>(() => {
     const isSuperadmin = this.sessionStore.currentUser()?.role_level === 0;
-    return this.allLinks.filter((link) => !link.adminOnly || isSuperadmin);
-  }
-
-  protected toggleMenu(): void {
-    this.menuOpen.update((open) => !open);
-  }
-
-  protected closeMenu(): void {
-    this.menuOpen.set(false);
-  }
+    const items: MenuItem[] = [
+      {
+        label: 'Inicio',
+        icon: 'pi pi-home',
+        routerLink: '/',
+        routerLinkActiveOptions: { exact: true },
+      },
+      { label: 'Agencia', icon: 'pi pi-briefcase', routerLink: '/agency' },
+      { label: 'Eventos', icon: 'pi pi-calendar', routerLink: '/events' },
+      { label: 'Video', icon: 'pi pi-video', routerLink: '/video' },
+    ];
+    if (isSuperadmin) {
+      items.push({ label: 'Admin', icon: 'pi pi-cog', routerLink: '/admin/tenants' });
+    }
+    return items;
+  });
 }

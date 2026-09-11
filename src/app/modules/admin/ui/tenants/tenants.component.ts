@@ -3,19 +3,43 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { catchError, EMPTY, finalize } from 'rxjs';
 
+import { Button } from 'primeng/button';
+import { Card } from 'primeng/card';
+import { InputText } from 'primeng/inputtext';
+import { TableModule } from 'primeng/table';
+import { Tag } from 'primeng/tag';
+import { Message } from 'primeng/message';
+import { ConfirmDialog } from 'primeng/confirmdialog';
+import { ConfirmationService } from 'primeng/api';
+import { ProgressSpinner } from 'primeng/progressspinner';
+
 import { AdminService } from '../../services/admin.service';
 import { Tenant } from '../../interfaces';
 import { PageContainerComponent } from '@shared/components/index';
 
 @Component({
   selector: 'app-admin-tenants',
-  imports: [ReactiveFormsModule, DatePipe, PageContainerComponent],
+  imports: [
+    ReactiveFormsModule,
+    DatePipe,
+    PageContainerComponent,
+    Button,
+    Card,
+    InputText,
+    TableModule,
+    Tag,
+    Message,
+    ConfirmDialog,
+    ProgressSpinner,
+  ],
+  providers: [ConfirmationService],
   templateUrl: './tenants.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TenantsComponent {
   private readonly adminService = inject(AdminService);
   private readonly formBuilder = inject(NonNullableFormBuilder);
+  private readonly confirmationService = inject(ConfirmationService);
 
   protected readonly tenants = signal<readonly Tenant[]>([]);
   protected readonly loading = signal(false);
@@ -71,15 +95,25 @@ export class TenantsComponent {
       });
   }
 
-  protected deactivateTenant(id: number): void {
-    this.adminService
-      .deactivateTenant(id)
-      .pipe(
-        catchError(() => {
-          this.error.set('No se pudo desactivar el tenant.');
-          return EMPTY;
-        }),
-      )
-      .subscribe(() => this.loadTenants());
+  protected confirmDeactivate(tenant: Tenant): void {
+    this.confirmationService.confirm({
+      message: `¿Estás seguro de que quieres desactivar el tenant "${tenant.name}"?`,
+      header: 'Confirmar desactivación',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Desactivar',
+      rejectLabel: 'Cancelar',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => {
+        this.adminService
+          .deactivateTenant(tenant.id)
+          .pipe(
+            catchError(() => {
+              this.error.set('No se pudo desactivar el tenant.');
+              return EMPTY;
+            }),
+          )
+          .subscribe(() => this.loadTenants());
+      },
+    });
   }
 }

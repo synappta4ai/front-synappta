@@ -1,6 +1,22 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  FormsModule,
+  NonNullableFormBuilder,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { catchError, EMPTY, finalize } from 'rxjs';
+
+import { Button } from 'primeng/button';
+import { Card } from 'primeng/card';
+import { InputText } from 'primeng/inputtext';
+import { Textarea } from 'primeng/textarea';
+import { Steps } from 'primeng/steps';
+import { Checkbox } from 'primeng/checkbox';
+import { Tag } from 'primeng/tag';
+import { Message } from 'primeng/message';
+import { ProgressSpinner } from 'primeng/progressspinner';
+import { MenuItem } from 'primeng/api';
 
 import { AgencyService } from '../../services/agency.service';
 import { AiModel, Modality, GeneratedAsset, StatusResponse } from '../../interfaces';
@@ -31,7 +47,20 @@ interface StoryboardShot {
 
 @Component({
   selector: 'app-agency',
-  imports: [ReactiveFormsModule, PageContainerComponent],
+  imports: [
+    FormsModule,
+    ReactiveFormsModule,
+    PageContainerComponent,
+    Button,
+    Card,
+    InputText,
+    Textarea,
+    Steps,
+    Checkbox,
+    Tag,
+    Message,
+    ProgressSpinner,
+  ],
   templateUrl: './agency.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -52,6 +81,13 @@ export class AgencyComponent {
 
   protected readonly phaseIndex = computed(() =>
     this.phases.findIndex((p) => p.key === this.currentPhase()),
+  );
+
+  protected readonly stepItems = computed<MenuItem[]>(() =>
+    this.phases.map((phase, i) => ({
+      label: phase.name,
+      command: () => this.goToPhase(phase.key),
+    })),
   );
 
   protected readonly models = signal<readonly AiModel[]>([]);

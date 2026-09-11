@@ -1,74 +1,166 @@
 <app-page-container title="Eventos">
-  <header class="mb-6 flex items-center justify-between">
-    <div></div>
-    <label class="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-      <input
-        type="checkbox"
-        [checked]="showInactive()"
-        (change)="toggleShowInactive()"
-        class="h-4 w-4 rounded border-[var(--surface-300)]"
-      />
-      Mostrar inactivos
-    </label>
-  </header>
-
   @if (error(); as message) {
-    <div
-      role="alert"
-      class="mb-4 rounded-lg bg-[var(--red-50)] p-3 text-sm text-[var(--red-700)] dark:bg-[var(--red-950)] dark:text-[var(--red-300)]"
-    >
-      {{ message }}
+    <div class="mb-6">
+      <p-message severity="error" [text]="message" [escape]="false" styleClass="w-full" />
     </div>
   }
 
-  <form class="mb-6 flex gap-2" (ngSubmit)="createEvent()">
-    <label for="new-event" class="sr-only">Nombre del evento</label>
-    <input
-      id="new-event"
-      type="text"
-      [(ngModel)]="newName"
-      name="newEvent"
-      placeholder="Nombre del evento"
-      class="flex-1 rounded-lg border border-[var(--surface-300)] bg-[var(--surface-0)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--primary-500)] focus:outline-none dark:border-[var(--surface-600)]"
-    />
-    <button
-      type="submit"
-      [disabled]="loading() || !newName().trim()"
-      class="rounded-lg bg-[var(--primary-500)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--primary-600)] active:bg-[var(--primary-700)] disabled:opacity-50"
-    >
-      Crear
-    </button>
-  </form>
+  <!-- Create Event Form -->
+  <p-card styleClass="mb-6">
+    <ng-template #header>
+      <div class="flex items-center gap-3 border-b border-[var(--surface-200)] px-6 py-4">
+        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--primary-100)]">
+          <i class="pi pi-plus-circle text-lg text-[var(--primary-600)]"></i>
+        </div>
+        <h2 class="text-lg font-semibold text-[var(--text-primary)]">Crear Nuevo Evento</h2>
+      </div>
+    </ng-template>
 
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-end">
+      <div class="flex flex-1 flex-col gap-2">
+        <label for="new-event" class="text-sm font-medium text-[var(--text-primary)]">
+          Nombre del Evento <span class="text-red-500">*</span>
+        </label>
+        <p-iconfield iconPosition="left">
+          <p-inputicon styleClass="pi pi-calendar-plus" />
+          <input
+            pInputText
+            id="new-event"
+            type="text"
+            [(ngModel)]="newName"
+            placeholder="Ej: Lanzamiento Residencias El Parque"
+            class="w-full"
+          />
+        </p-iconfield>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2">
+          <p-checkbox
+            [binary]="true"
+            [ngModel]="showInactive()"
+            (ngModelChange)="toggleShowInactive()"
+          />
+          <label class="text-sm text-[var(--text-secondary)]">Mostrar inactivos</label>
+        </div>
+        <p-button
+          label="Crear Evento"
+          icon="pi pi-plus"
+          [loading]="loading()"
+          [disabled]="loading() || !newName().trim()"
+          (onClick)="createEvent()"
+        />
+      </div>
+    </div>
+  </p-card>
+
+  <!-- Events Table -->
   @if (loading()) {
-    <p class="text-sm text-[var(--text-secondary)]">Cargando…</p>
+    <div
+      class="flex flex-col items-center gap-4 rounded-xl border border-[var(--surface-200)] bg-[var(--surface-0)] py-16"
+    >
+      <p-progressSpinner styleClass="w-12 h-12" strokeWidth="3" />
+      <p class="text-sm text-[var(--text-secondary)]">Cargando eventos...</p>
+    </div>
   } @else {
-    <ul class="flex flex-col gap-3">
-      @for (event of events(); track event.id) {
-        <li
-          class="rounded-lg border border-[var(--border-color)] bg-[var(--surface-50)] p-4 transition-colors hover:bg-[var(--surface-100)]"
+    <p-card>
+      <ng-template #header>
+        <div
+          class="flex items-center justify-between border-b border-[var(--surface-200)] px-6 py-4"
         >
-          <h2 class="font-medium text-[var(--text-primary)]">{{ event.name }}</h2>
-          @if (event.description) {
-            <p class="mt-1 text-sm text-[var(--text-secondary)]">{{ event.description }}</p>
-          }
-          <p class="mt-2 text-xs text-[var(--text-muted)]">
-            {{ event.program_count ?? 0 }} programas
-            @if (event.starts_at) {
-              · {{ event.starts_at | date: 'medium' }}
-            }
-            @if (!event.active) {
-              · <span class="text-[var(--red-600)] dark:text-[var(--red-400)]">inactivo</span>
-            }
-          </p>
-        </li>
-      } @empty {
-        <li
-          class="rounded-lg border border-dashed border-[var(--surface-300)] p-6 text-center text-sm text-[var(--text-muted)]"
-        >
-          No hay eventos todavía.
-        </li>
-      }
-    </ul>
+          <div class="flex items-center gap-3">
+            <div
+              class="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--primary-100)]"
+            >
+              <i class="pi pi-list text-lg text-[var(--primary-600)]"></i>
+            </div>
+            <div>
+              <h2 class="text-lg font-semibold text-[var(--text-primary)]">Lista de Eventos</h2>
+              <p class="text-sm text-[var(--text-secondary)]">
+                {{ events().length }} eventos registrados
+              </p>
+            </div>
+          </div>
+        </div>
+      </ng-template>
+
+      <p-table
+        [value]="$any(events())"
+        [tableStyle]="{ 'min-width': '40rem' }"
+        [rowHover]="true"
+        styleClass="p-datatable-striped"
+      >
+        <ng-template #header>
+          <tr>
+            <th style="width: 30%">Nombre</th>
+            <th style="width: 25%">Descripción</th>
+            <th style="width: 10%" class="text-center">Programas</th>
+            <th style="width: 20%">Fecha</th>
+            <th style="width: 10%" class="text-center">Estado</th>
+            <th style="width: 5%"></th>
+          </tr>
+        </ng-template>
+        <ng-template #body let-event>
+          <tr>
+            <td>
+              <div class="flex items-center gap-3">
+                <div
+                  class="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--primary-100)]"
+                >
+                  <i class="pi pi-calendar text-sm text-[var(--primary-600)]"></i>
+                </div>
+                <span class="font-medium text-[var(--text-primary)]">{{ event.name }}</span>
+              </div>
+            </td>
+            <td>
+              <span class="text-sm text-[var(--text-secondary)]">
+                {{ event.description || '—' }}
+              </span>
+            </td>
+            <td class="text-center">
+              <p-tag [value]="(event.program_count ?? 0).toString()" severity="info" />
+            </td>
+            <td>
+              <span class="text-sm text-[var(--text-secondary)]">
+                @if (event.starts_at) {
+                  {{ event.starts_at | date: 'medium' }}
+                } @else {
+                  <span class="text-[var(--text-muted)]">—</span>
+                }
+              </span>
+            </td>
+            <td class="text-center">
+              @if (event.active) {
+                <p-tag value="Activo" severity="success" />
+              } @else {
+                <p-tag value="Inactivo" severity="danger" />
+              }
+            </td>
+            <td>
+              <p-button icon="pi pi-chevron-right" severity="secondary" text rounded size="small" />
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template #emptymessage>
+          <tr>
+            <td colspan="6">
+              <div class="flex flex-col items-center gap-4 py-16">
+                <div
+                  class="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--surface-100)]"
+                >
+                  <i class="pi pi-calendar text-3xl text-[var(--surface-400)]"></i>
+                </div>
+                <div class="text-center">
+                  <p class="font-medium text-[var(--text-primary)]">No hay eventos todavía</p>
+                  <p class="mt-1 text-sm text-[var(--text-secondary)]">
+                    Crea tu primer evento para comenzar
+                  </p>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </p-card>
   }
 </app-page-container>

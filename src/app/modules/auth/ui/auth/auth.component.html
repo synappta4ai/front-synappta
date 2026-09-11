@@ -1,70 +1,75 @@
-<section class="flex min-h-screen items-center justify-center bg-[var(--content-bg)]">
-  <div
-    class="w-full max-w-md rounded-2xl border border-[var(--border-color)] bg-[var(--surface-0)] p-8 shadow-sm"
-  >
-    <h1
-      class="mb-6 text-center text-2xl font-semibold text-[var(--primary-600)] dark:text-[var(--primary-400)]"
-    >
-      Iniciar sesi&oacute;n
-    </h1>
+<section class="flex min-h-screen items-center justify-center bg-[var(--surface-ground)]">
+  <p-card styleClass="w-full max-w-md shadow-3">
+    <ng-template #header>
+      <div class="flex flex-col items-center gap-3 pt-8 pb-4">
+        <span
+          class="grid h-12 w-12 grid-cols-2 gap-1 rounded-xl bg-[var(--primary-500)] p-2"
+          aria-hidden="true"
+        >
+          <span class="rounded-[3px] bg-white/30"></span>
+          <span class="rounded-[3px] bg-white/30"></span>
+          <span class="rounded-[3px] bg-white/30"></span>
+          <span class="rounded-[3px] bg-white"></span>
+        </span>
+        <h1 class="text-2xl font-semibold text-[var(--primary-600)]">Iniciar sesión</h1>
+      </div>
+    </ng-template>
 
     @if (error(); as message) {
-      <div
-        role="alert"
-        class="mb-4 rounded-lg bg-[var(--red-50)] p-3 text-sm text-[var(--red-700)] dark:bg-[var(--red-950)] dark:text-[var(--red-300)]"
-      >
-        {{ message }}
-      </div>
+      <p-message severity="error" [text]="message" styleClass="mb-4 w-full" />
     }
 
-    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-4" novalidate>
-      <div class="flex flex-col gap-1">
-        <label for="username" class="text-sm font-medium text-[var(--text-secondary)]"
-          >Usuario</label
-        >
-        <input
-          id="username"
-          type="text"
-          formControlName="username"
-          autocomplete="username"
-          [attr.aria-invalid]="form.controls.username.invalid && form.controls.username.touched"
-          aria-describedby="username-error"
-          class="rounded-lg border border-[var(--surface-300)] bg-[var(--surface-0)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--primary-500)] focus:outline-none dark:border-[var(--surface-600)]"
-        />
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-5" novalidate>
+      <div class="flex flex-col gap-2">
+        <label for="username" class="font-medium text-[var(--text-color)]">Usuario</label>
+        <p-iconfield iconPosition="left">
+          <p-inputicon styleClass="pi pi-user" />
+          <input
+            pInputText
+            id="username"
+            type="text"
+            formControlName="username"
+            autocomplete="username"
+            placeholder="Tu usuario"
+            [attr.aria-invalid]="form.controls.username.invalid && form.controls.username.touched"
+            aria-describedby="username-error"
+            class="w-full"
+          />
+        </p-iconfield>
         @if (form.controls.username.invalid && form.controls.username.touched) {
-          <p id="username-error" class="text-xs text-[var(--red-600)] dark:text-[var(--red-400)]">
-            El usuario es obligatorio.
-          </p>
+          <small id="username-error" class="text-red-500">El usuario es obligatorio.</small>
         }
       </div>
 
-      <div class="flex flex-col gap-1">
-        <label for="password" class="text-sm font-medium text-[var(--text-secondary)]"
-          >Contrase&ntilde;a</label
-        >
-        <input
-          id="password"
-          type="password"
-          formControlName="password"
-          autocomplete="current-password"
-          [attr.aria-invalid]="form.controls.password.invalid && form.controls.password.touched"
-          aria-describedby="password-error"
-          class="rounded-lg border border-[var(--surface-300)] bg-[var(--surface-0)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--primary-500)] focus:outline-none dark:border-[var(--surface-600)]"
-        />
+      <div class="flex flex-col gap-2">
+        <label for="password" class="font-medium text-[var(--text-color)]">Contraseña</label>
+        <p-iconfield iconPosition="left">
+          <p-inputicon styleClass="pi pi-lock" />
+          <input
+            pInputText
+            id="password"
+            type="password"
+            formControlName="password"
+            autocomplete="current-password"
+            placeholder="Tu contraseña"
+            [attr.aria-invalid]="form.controls.password.invalid && form.controls.password.touched"
+            aria-describedby="password-error"
+            class="w-full"
+          />
+        </p-iconfield>
         @if (form.controls.password.invalid && form.controls.password.touched) {
-          <p id="password-error" class="text-xs text-[var(--red-600)] dark:text-[var(--red-400)]">
-            La contrase&ntilde;a es obligatoria.
-          </p>
+          <small id="password-error" class="text-red-500">La contraseña es obligatoria.</small>
         }
       </div>
 
-      <button
+      <p-button
         type="submit"
+        label="Entrar"
+        [loading]="submitting()"
         [disabled]="submitting()"
-        class="rounded-lg bg-[var(--primary-500)] px-4 py-2.5 text-sm font-medium text-white hover:bg-[var(--primary-600)] active:bg-[var(--primary-700)] disabled:opacity-50"
-      >
-        {{ submitting() ? 'Entrando\u2026' : 'Entrar' }}
-      </button>
+        styleClass="w-full"
+        icon="pi pi-sign-in"
+      />
     </form>
-  </div>
+  </p-card>
 </section>

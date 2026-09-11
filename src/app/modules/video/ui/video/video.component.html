@@ -1,119 +1,205 @@
-<app-page-container title="Generación de video">
+<app-page-container title="Generación de Video">
   @if (error(); as message) {
-    <div
-      role="alert"
-      class="mb-4 rounded-lg bg-[var(--red-50)] p-3 text-sm text-[var(--red-700)] dark:bg-[var(--red-950)] dark:text-[var(--red-300)]"
-    >
-      {{ message }}
+    <div class="mb-6">
+      <p-message severity="error" [text]="message" [escape]="false" styleClass="w-full" />
     </div>
   }
 
+  <!-- Result Video -->
   @if (resultUrl(); as url) {
-    <div
-      class="mb-6 rounded-lg border border-[var(--green-200)] bg-[var(--green-50)] p-4 dark:border-[var(--green-800)] dark:bg-[var(--green-950)]"
-    >
-      <p class="mb-2 text-sm font-medium text-[var(--green-700)] dark:text-[var(--green-300)]">
-        ¡Video generado!
-      </p>
-      <video controls class="w-full rounded-md">
-        <source [src]="url" type="video/mp4" />
-        Tu navegador no soporta video HTML5.
-      </video>
-    </div>
+    <p-card styleClass="mb-6">
+      <ng-template #header>
+        <div class="flex items-center gap-3 border-b border-green-200 bg-green-50 px-6 py-4">
+          <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100">
+            <i class="pi pi-check-circle text-lg text-green-600"></i>
+          </div>
+          <div>
+            <h2 class="text-lg font-semibold text-green-800">¡Video generado exitosamente!</h2>
+            <p class="text-sm text-green-600">Tu video está listo para descargar</p>
+          </div>
+        </div>
+      </ng-template>
+
+      <div class="flex flex-col gap-4">
+        <video controls class="w-full rounded-lg shadow-lg">
+          <source [src]="url" type="video/mp4" />
+          Tu navegador no soporta video HTML5.
+        </video>
+
+        <div class="flex items-center justify-between rounded-lg bg-[var(--surface-50)] p-4">
+          <div class="flex items-center gap-3">
+            <i class="pi pi-file-video text-xl text-[var(--primary-500)]"></i>
+            <div>
+              <p class="font-medium text-[var(--text-primary)]">Video generado</p>
+              <p class="text-sm text-[var(--text-secondary)]">Haz clic derecho para descargar</p>
+            </div>
+          </div>
+          <a
+            [href]="url"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center gap-2 rounded-lg bg-[var(--primary-500)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--primary-600)]"
+          >
+            <i class="pi pi-external-link"></i>
+            Abrir en nueva pestaña
+          </a>
+        </div>
+      </div>
+    </p-card>
   }
 
-  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-4" novalidate>
-    <div class="flex flex-col gap-1">
-      <label for="model" class="text-sm font-medium text-[var(--text-secondary)]">Modelo</label>
-      <input
-        id="model"
-        type="text"
-        formControlName="model"
-        placeholder="dreamina-seedance-2-0-260128"
-        class="rounded-lg border border-[var(--surface-300)] bg-[var(--surface-0)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--primary-500)] focus:outline-none dark:border-[var(--surface-600)]"
-      />
-    </div>
+  <!-- Generation Form -->
+  <p-card>
+    <ng-template #header>
+      <div class="flex items-center gap-3 border-b border-[var(--surface-200)] px-6 py-4">
+        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--primary-100)]">
+          <i class="pi pi-video text-lg text-[var(--primary-600)]"></i>
+        </div>
+        <div>
+          <h2 class="text-lg font-semibold text-[var(--text-primary)]">Configurar Generación</h2>
+          <p class="text-sm text-[var(--text-secondary)]">Define los parámetros para tu video</p>
+        </div>
+      </div>
+    </ng-template>
 
-    <div class="flex flex-col gap-1">
-      <label for="prompt" class="text-sm font-medium text-[var(--text-secondary)]">Prompt</label>
-      <textarea
-        id="prompt"
-        formControlName="prompt"
-        rows="3"
-        class="rounded-lg border border-[var(--surface-300)] bg-[var(--surface-0)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--primary-500)] focus:outline-none dark:border-[var(--surface-600)]"
-      ></textarea>
-    </div>
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-6" novalidate>
+      <!-- Model -->
+      <div class="flex flex-col gap-2">
+        <label for="model" class="text-sm font-medium text-[var(--text-primary)]">
+          Modelo <span class="text-red-500">*</span>
+        </label>
+        <input
+          pInputText
+          id="model"
+          type="text"
+          formControlName="model"
+          placeholder="dreamina-seedance-2-0-260128"
+          class="w-full"
+        />
+        <small class="text-[var(--text-muted)]">Modelo de IA a utilizar para la generación</small>
+      </div>
 
-    <div class="grid grid-cols-2 gap-4">
-      <div class="flex flex-col gap-1">
-        <label for="eventId" class="text-sm font-medium text-[var(--text-secondary)]"
-          >Event ID</label
+      <!-- Prompt -->
+      <div class="flex flex-col gap-2">
+        <label for="prompt" class="text-sm font-medium text-[var(--text-primary)]">
+          Prompt <span class="text-red-500">*</span>
+        </label>
+        <textarea
+          pTextarea
+          id="prompt"
+          formControlName="prompt"
+          rows="4"
+          placeholder="Describe la escena que quieres generar con detalle..."
+          class="w-full"
+        ></textarea>
+        <small class="text-[var(--text-muted)]"
+          >Sé específico para obtener mejores resultados</small
         >
-        <input
-          id="eventId"
-          type="text"
-          formControlName="eventId"
-          class="rounded-lg border border-[var(--surface-300)] bg-[var(--surface-0)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--primary-500)] focus:outline-none dark:border-[var(--surface-600)]"
-        />
       </div>
-      <div class="flex flex-col gap-1">
-        <label for="pieceId" class="text-sm font-medium text-[var(--text-secondary)]"
-          >Piece ID</label
-        >
-        <input
-          id="pieceId"
-          type="text"
-          formControlName="pieceId"
-          class="rounded-lg border border-[var(--surface-300)] bg-[var(--surface-0)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--primary-500)] focus:outline-none dark:border-[var(--surface-600)]"
-        />
-      </div>
-      <div class="flex flex-col gap-1">
-        <label for="pieceCode" class="text-sm font-medium text-[var(--text-secondary)]"
-          >Piece Code</label
-        >
-        <input
-          id="pieceCode"
-          type="text"
-          formControlName="pieceCode"
-          class="rounded-lg border border-[var(--surface-300)] bg-[var(--surface-0)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--primary-500)] focus:outline-none dark:border-[var(--surface-600)]"
-        />
-      </div>
-      <div class="flex flex-col gap-1">
-        <label for="generationNumber" class="text-sm font-medium text-[var(--text-secondary)]"
-          >Generation #</label
-        >
-        <input
-          id="generationNumber"
-          type="number"
-          formControlName="generationNumber"
-          class="rounded-lg border border-[var(--surface-300)] bg-[var(--surface-0)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--primary-500)] focus:outline-none dark:border-[var(--surface-600)]"
-        />
-      </div>
-      <div class="flex flex-col gap-1">
-        <label for="duration" class="text-sm font-medium text-[var(--text-secondary)]"
-          >Duración (s)</label
-        >
-        <input
-          id="duration"
-          type="number"
-          formControlName="duration"
-          class="rounded-lg border border-[var(--surface-300)] bg-[var(--surface-0)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--primary-500)] focus:outline-none dark:border-[var(--surface-600)]"
-        />
-      </div>
-    </div>
 
-    <button
-      type="submit"
-      [disabled]="submitting() || polling()"
-      class="rounded-lg bg-[var(--primary-500)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--primary-600)] active:bg-[var(--primary-700)] disabled:opacity-50"
+      <!-- IDs Grid -->
+      <div class="rounded-xl border border-[var(--surface-200)] bg-[var(--surface-50)] p-5">
+        <h3 class="mb-4 flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
+          <i class="pi pi-link text-[var(--primary-500)]"></i>
+          Identificadores del Proyecto
+        </h3>
+        <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div class="flex flex-col gap-2">
+            <label for="eventId" class="text-sm font-medium text-[var(--text-primary)]"
+              >Event ID</label
+            >
+            <input pInputText id="eventId" type="text" formControlName="eventId" class="w-full" />
+          </div>
+          <div class="flex flex-col gap-2">
+            <label for="pieceId" class="text-sm font-medium text-[var(--text-primary)]"
+              >Piece ID</label
+            >
+            <input pInputText id="pieceId" type="text" formControlName="pieceId" class="w-full" />
+          </div>
+          <div class="flex flex-col gap-2">
+            <label for="pieceCode" class="text-sm font-medium text-[var(--text-primary)]"
+              >Piece Code</label
+            >
+            <input
+              pInputText
+              id="pieceCode"
+              type="text"
+              formControlName="pieceCode"
+              class="w-full"
+            />
+          </div>
+          <div class="flex flex-col gap-2">
+            <label for="generationNumber" class="text-sm font-medium text-[var(--text-primary)]"
+              >Generation #</label
+            >
+            <p-inputNumber
+              id="generationNumber"
+              formControlName="generationNumber"
+              [min]="1"
+              [showButtons]="true"
+              styleClass="w-full"
+            />
+          </div>
+          <div class="flex flex-col gap-2">
+            <label for="duration" class="text-sm font-medium text-[var(--text-primary)]"
+              >Duración (seg)</label
+            >
+            <p-inputNumber
+              id="duration"
+              formControlName="duration"
+              [min]="4"
+              [max]="15"
+              [showButtons]="true"
+              styleClass="w-full"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between border-t border-[var(--surface-200)] pt-4">
+        <p class="text-sm text-[var(--text-muted)]">
+          <i class="pi pi-info-circle mr-1"></i>
+          La generación puede tomar varios minutos
+        </p>
+        <p-button
+          type="submit"
+          label="Generar video"
+          icon="pi pi-play"
+          [loading]="submitting() || polling()"
+          [disabled]="submitting() || polling()"
+          styleClass="px-6"
+        >
+          @if (polling()) {
+            <span>Generando…</span>
+          }
+        </p-button>
+      </div>
+    </form>
+  </p-card>
+
+  <!-- Polling Status -->
+  @if (polling()) {
+    <div
+      class="mt-6 rounded-xl border border-[var(--primary-200)] bg-gradient-to-r from-[var(--primary-50)] to-[var(--surface-50)] p-8"
     >
-      @if (submitting()) {
-        Enviando…
-      } @else if (polling()) {
-        Generando… (esto puede tardar varios minutos)
-      } @else {
-        Generar video
-      }
-    </button>
-  </form>
+      <div class="flex flex-col items-center gap-4 text-center">
+        <div class="relative">
+          <p-progressSpinner styleClass="w-16 h-16" strokeWidth="2" />
+          <div class="absolute inset-0 flex items-center justify-center">
+            <i class="pi pi-video text-xl text-[var(--primary-500)]"></i>
+          </div>
+        </div>
+        <div>
+          <p class="text-lg font-semibold text-[var(--text-primary)]">Generando video…</p>
+          <p class="mt-1 text-sm text-[var(--text-secondary)]">
+            Esto puede tomar varios minutos. No cierres esta página.
+          </p>
+        </div>
+        <div class="flex items-center gap-2 text-sm text-[var(--primary-600)]">
+          <i class="pi pi-spin pi-spinner"></i>
+          <span>Procesando con IA</span>
+        </div>
+      </div>
+    </div>
+  }
 </app-page-container>

@@ -1,5 +1,10 @@
 <div class="flex min-h-dvh flex-col bg-[var(--content-bg)] text-[var(--content-text)]">
-  <app-nav-bar />
+  <!-- Full-width nav bar -->
+  <div class="w-full">
+    <app-nav-bar />
+  </div>
+
+  <!-- Centered content area -->
   <main class="flex-1">
     <router-outlet />
   </main>
