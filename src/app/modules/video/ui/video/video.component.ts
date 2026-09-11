@@ -12,16 +12,19 @@ import { Card } from 'primeng/card';
 import { InputText } from 'primeng/inputtext';
 import { Textarea } from 'primeng/textarea';
 import { InputNumber } from 'primeng/inputnumber';
+import { Select } from 'primeng/select';
 import { Message } from 'primeng/message';
 import { ProgressSpinner } from 'primeng/progressspinner';
+import { Tag } from 'primeng/tag';
 
 import { VideoService } from '../../services/video.service';
-import { StatusResponse } from '@modules/agency/interfaces';
+import { AiModel, StatusResponse } from '@modules/agency/interfaces';
 import { PageContainerComponent } from '@shared/components/index';
 
 @Component({
   selector: 'app-video',
   imports: [
+    FormsModule,
     ReactiveFormsModule,
     PageContainerComponent,
     Button,
@@ -29,8 +32,10 @@ import { PageContainerComponent } from '@shared/components/index';
     InputText,
     Textarea,
     InputNumber,
+    Select,
     Message,
     ProgressSpinner,
+    Tag,
   ],
   templateUrl: './video.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -43,6 +48,12 @@ export class VideoComponent {
   protected readonly polling = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly resultUrl = signal<string | null>(null);
+  protected readonly loadingModels = signal(false);
+
+  protected readonly models = signal<AiModel[]>([]);
+  protected readonly selectedModel = signal<AiModel | null>(null);
+
+  protected readonly durationOptions = signal<number[]>([5, 10]);
 
   protected readonly form = this.formBuilder.group({
     eventId: ['', Validators.required],
@@ -53,6 +64,38 @@ export class VideoComponent {
     prompt: ['', Validators.required],
     duration: [5, [Validators.required, Validators.min(4), Validators.max(15)]],
   });
+
+  constructor() {
+    this.loadModels();
+  }
+
+  protected loadModels(): void {
+    this.loadingModels.set(true);
+    this.videoService
+      .listVideoModels()
+      .pipe(
+        catchError(() => {
+          this.error.set('No se pudieron cargar los modelos de video.');
+          return EMPTY;
+        }),
+        finalize(() => this.loadingModels.set(false)),
+      )
+      .subscribe((models) => this.models.set(models));
+  }
+
+  protected onModelChange(model: AiModel | null): void {
+    this.selectedModel.set(model);
+    if (model) {
+      this.form.patchValue({ model: model.name });
+      if (model.defaults.durations?.length) {
+        this.durationOptions.set(model.defaults.durations);
+        const minDuration = model.defaults.durations[0];
+        if (this.form.controls.duration.value < minDuration) {
+          this.form.patchValue({ duration: minDuration });
+        }
+      }
+    }
+  }
 
   protected onSubmit(): void {
     if (this.form.invalid || this.submitting()) {

@@ -63,20 +63,116 @@
     </ng-template>
 
     <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-6" novalidate>
-      <!-- Model -->
+      <!-- Model Selection -->
       <div class="flex flex-col gap-2">
         <label for="model" class="text-sm font-medium text-[var(--text-primary)]">
-          Modelo <span class="text-red-500">*</span>
+          Modelo de Video <span class="text-red-500">*</span>
         </label>
-        <input
-          pInputText
-          id="model"
-          type="text"
-          formControlName="model"
-          placeholder="dreamina-seedance-2-0-260128"
-          class="w-full"
-        />
-        <small class="text-[var(--text-muted)]">Modelo de IA a utilizar para la generación</small>
+
+        @if (loadingModels()) {
+          <div
+            class="flex items-center gap-2 rounded-lg border border-[var(--surface-200)] bg-[var(--surface-50)] p-3"
+          >
+            <i class="pi pi-spin pi-spinner text-[var(--primary-500)]"></i>
+            <span class="text-sm text-[var(--text-secondary)]">Cargando modelos...</span>
+          </div>
+        } @else {
+          <p-select
+            id="model"
+            formControlName="model"
+            class="w-full"
+            appendTo="body"
+            [options]="models()"
+            optionLabel="display_name"
+            optionValue="name"
+            placeholder="Selecciona un modelo de video"
+            [filter]="true"
+            filterBy="generator,name"
+            [showClear]="true"
+          >
+            <ng-template #selectedItem let-model>
+              @if (model) {
+                <div class="flex items-center gap-2">
+                  <i class="pi pi-video text-(--primary-500)"></i>
+                  <span>{{ model.display_name }}</span>
+                  <p-tag [value]="model.modality" severity="info" styleClass="text-xs" />
+                </div>
+              }
+            </ng-template>
+            <ng-template #item let-model>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div
+                    class="flex h-8 w-8 items-center justify-center rounded-lg bg-(--primary-100)"
+                  >
+                    <i class="pi pi-video text-sm text-(--primary-600)"></i>
+                  </div>
+                  <div>
+                    <p class="font-medium text-(--text-primary)">{{ model.display_name }}</p>
+                    <p class="text-xs text-(--text-muted)">{{ model.name }}</p>
+                  </div>
+                </div>
+                <p-tag
+                  [value]="model.credential_provider"
+                  severity="secondary"
+                  styleClass="text-xs"
+                />
+              </div>
+            </ng-template>
+          </p-select>
+        }
+
+        <!-- Model Info Card -->
+        @if (selectedModel(); as model) {
+          <div
+            class="mt-2 rounded-lg border border-[var(--primary-200)] bg-[var(--primary-50)] p-4"
+          >
+            <div class="mb-3 flex items-center gap-2">
+              <i class="pi pi-info-circle text-[var(--primary-600)]"></i>
+              <span class="text-sm font-semibold text-[var(--primary-700)]"
+                >Información del Modelo</span
+              >
+            </div>
+            <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div>
+                <p class="text-xs font-medium text-[var(--text-muted)]">Proveedor</p>
+                <p class="text-sm font-medium text-[var(--text-primary)]">
+                  {{ model.credential_provider }}
+                </p>
+              </div>
+              <div>
+                <p class="text-xs font-medium text-[var(--text-muted)]">Generador</p>
+                <p class="text-sm font-medium text-[var(--text-primary)]">{{ model.generator }}</p>
+              </div>
+              @if (model.defaults.ratios?.length) {
+                <div>
+                  <p class="text-xs font-medium text-[var(--text-muted)]">Ratios</p>
+                  <div class="mt-1 flex flex-wrap gap-1">
+                    @for (ratio of model.defaults.ratios; track ratio) {
+                      <span
+                        class="rounded bg-[var(--surface-100)] px-1.5 py-0.5 text-xs text-[var(--text-secondary)]"
+                        >{{ ratio }}</span
+                      >
+                    }
+                  </div>
+                </div>
+              }
+              @if (model.defaults.resolutions?.length) {
+                <div>
+                  <p class="text-xs font-medium text-[var(--text-muted)]">Resoluciones</p>
+                  <div class="mt-1 flex flex-wrap gap-1">
+                    @for (res of model.defaults.resolutions; track res) {
+                      <span
+                        class="rounded bg-[var(--surface-100)] px-1.5 py-0.5 text-xs text-[var(--text-secondary)]"
+                        >{{ res }}</span
+                      >
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
       </div>
 
       <!-- Prompt -->
@@ -144,12 +240,11 @@
             <label for="duration" class="text-sm font-medium text-[var(--text-primary)]"
               >Duración (seg)</label
             >
-            <p-inputNumber
+            <p-select
               id="duration"
+              [options]="$any(durationOptions())"
               formControlName="duration"
-              [min]="4"
-              [max]="15"
-              [showButtons]="true"
+              placeholder="Selecciona duración"
               styleClass="w-full"
             />
           </div>
@@ -166,7 +261,7 @@
           label="Generar video"
           icon="pi pi-play"
           [loading]="submitting() || polling()"
-          [disabled]="submitting() || polling()"
+          [disabled]="submitting() || polling() || !form.controls.model.value"
           styleClass="px-6"
         >
           @if (polling()) {

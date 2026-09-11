@@ -6,11 +6,17 @@ export type TaskStatus =
 export interface AiModel {
   name: string;
   display_name: string | null;
-  content_type: Modality | null;
-  credential_provider: CredentialProvider | null;
-  base_url: string | null;
-  endpoint: string | null;
-  [key: string]: unknown;
+  modality: Modality;
+  generator: string;
+  credential_provider: CredentialProvider;
+  base_url: string;
+  endpoint: string;
+  gallery_sync: boolean;
+  defaults: {
+    ratios?: string[];
+    resolutions?: string[];
+    durations?: number[];
+  };
 }
 
 export interface Credential {

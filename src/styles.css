@@ -1,5 +1,10 @@
 @import 'tailwindcss';
 
+/* Layer order: Tailwind preflight (base) BEFORE PrimeNG, utilities win over both.
+   Without this, Tailwind's `button { background: transparent }` preflight
+   overrides every PrimeNG component style. */
+@layer theme, base, primeng, components, utilities;
+
 /* Class-based dark mode for Tailwind v4 */
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -165,6 +170,29 @@
 
   --border-color: #e2e8f0;
 
+  /* Border radius */
+  --radius-none: 0;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-full: 9999px;
+
+  /* Padding */
+  --space-0: 0;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+
   /* Texto */
   --text-primary: #1e293b;
   --text-secondary: #64748b;
@@ -250,6 +278,76 @@
   --p-inputtext-border-color: var(--surface-300);
   --p-inputtext-hover-border-color: var(--surface-400);
   --p-inputtext-focus-border-color: var(--primary-500);
+
+  --p-select-background: var(--surface-0);
+  --p-select-color: var(--text-primary);
+  --p-select-border-color: var(--surface-300);
+  --p-select-hover-border-color: var(--surface-400);
+  --p-select-focus-border-color: var(--primary-500);
+  --p-select-focus-ring-color: rgba(139, 92, 246, 0.15);
+  --p-select-dropdown-color: var(--text-secondary);
+
+  --p-select-option-background: var(--surface-0);
+  --p-select-option-color: var(--text-primary);
+  --p-select-option-hover-background: var(--primary-50);
+  --p-select-option-hover-color: var(--primary-700);
+  --p-select-option-selected-background: var(--primary-100);
+  --p-select-option-selected-color: var(--primary-700);
+
+  --p-select-overlay-background: var(--surface-0);
+  --p-select-overlay-border-color: var(--surface-200);
+  --p-select-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+  --p-datatable-header-cell-background: var(--primary-500);
+  --p-datatable-header-cell-color: white;
+  --p-checkbox-checked-border-color: var(--primary-600);
+  --p-checkbox-checked-color: var(--primary-600);
+  --p-checkbox-checked-icon-color: var(--primary-600);
+  --p-checkbox-checked-background: var(--primary-600);
+  --p-select-focus-border-color: var(--primary-600);
+  --p-select-focus-ring-color: var(--primary-600);
+  --p-checkbox-checked-hover-background: var(--primary-300);
+  --p-checkbox-checked-hover-border-color: var(--primary-300);
+  --p-radiobutton-checked-border-color: var(--primary-600);
+  --p-radiobutton-checked-background: var(--primary-600);
+  --p-radiobutton-checked-icon-color: var(--primary-600);
+  --p-radiobutton-checked-hover-border-color: var(--primary-600);
+  --p-radiobutton-checked-hover-background: var(--primary-600);
+  --p-radiobutton-checked-hover-icon-color: var(--primary-600);
+  --p-button-primary-background: var(--primary-500);
+  --p-button-primary-border-color: var(--primary-500);
+  --p-button-primary-hover-background: var(--primary-600);
+  --p-button-primary-hover-border-color: var(--primary-600);
+  --p-button-primary-active-background: var(--primary-700);
+  --p-button-primary-active-border-color: var(--primary-700);
+  --p-button-text-primary-color: var(--primary-500);
+  --p-button-text-primary-hover-color: var(--primary-600);
+  --p-button-text-primary-active-color: var(--primary-700);
+  --p-button-text-primary-active-background: var(--primary-100);
+  --p-button-text-primary-hover-background: var(--primary-50);
+  --p-button-outlined-primary-border-color: var(--primary-100);
+  --p-button-outlined-primary-color: var(--primary-500);
+  --p-button-outlined-primary-active-background: var(--primary-100);
+  --p-button-outlined-primary-hover-background: var(--primary-50);
+  --p-inputtext-focus-border-color: var(--primary-500);
+  --p-datepicker-date-selected-background: var(--primary-600);
+  --p-breadcrumb-item-icon-color: var(--primary-500) !important;
+  --p-chip-background: var(--primary-500) !important;
+  --p-chip-color: #ffffff !important;
+  --p-chip-remove-icon-color: inherit !important;
+  --p-popover-background: #f1f5f9 !important;
+  --p-datepicker-dropdown-background: var(--primary-500) !important;
+  --p-datepicker-dropdown-color: #ffffff !important;
+  --p-toggleswitch-checked-background: var(--primary-500);
+  --p-toggleswitch-checked-hover-background: var(--primary-600);
+  --p-progressbar-value-background: var(--primary-500);
+  --p-progressbar-label-color: #ffffff;
+  --fc-button-bg-color: var(--primary-500);
+  --fc-button-border-color: var(--primary-500);
+  --fc-button-active-bg-color: var(--primary-600);
+  --fc-button-active-border-color: var(--primary-600);
+  --p-breadcrumb-item-color: var(--primary-500);
+  --p-text-hover-color: var(--primary-500);
 }
 
 /* ============================================
@@ -291,7 +389,7 @@ body {
 
 ::-webkit-scrollbar-thumb {
   background: var(--surface-400);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -308,9 +406,103 @@ body {
    PrimeNG Custom Styles
    ============================================ */
 
+/* Buttons — explicit unlayered rules so they always beat Tailwind preflight
+   and reflect the active theme palette via --primary-* variables. */
+p-button .p-button,
+.p-button {
+  background: var(--p-button-primary-background, var(--primary-500));
+  border: 1px solid var(--p-button-primary-border-color, var(--primary-500));
+  color: #ffffff;
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+}
+
+p-button .p-button:hover:not(:disabled),
+.p-button:hover:not(:disabled) {
+  background: var(--p-button-primary-hover-background, var(--primary-600));
+  border-color: var(--p-button-primary-hover-border-color, var(--primary-600));
+}
+
+p-button .p-button:active:not(:disabled),
+.p-button:active:not(:disabled) {
+  background: var(--p-button-primary-active-background, var(--primary-700));
+  border-color: var(--p-button-primary-active-border-color, var(--primary-700));
+}
+
+/* Severity variants */
+.p-button-secondary,
+p-button .p-button-secondary {
+  background: var(--p-button-secondary-background, var(--secondary-500)) !important;
+  border-color: var(--p-button-secondary-border-color, var(--secondary-500)) !important;
+}
+
+.p-button-secondary:hover:not(:disabled),
+p-button .p-button-secondary:hover:not(:disabled) {
+  background: var(--p-button-secondary-hover-background, var(--secondary-600)) !important;
+  border-color: var(--p-button-secondary-hover-border-color, var(--secondary-600)) !important;
+}
+
+.p-button-danger,
+p-button .p-button-danger {
+  background: var(--p-danger-color, #ef4444) !important;
+  border-color: var(--p-danger-color, #ef4444) !important;
+}
+
+.p-button-danger:hover:not(:disabled),
+p-button .p-button-danger:hover:not(:disabled) {
+  background: #dc2626 !important;
+  border-color: #dc2626 !important;
+}
+
+.p-button-success,
+p-button .p-button-success {
+  background: var(--p-success-color, #22c55e) !important;
+  border-color: var(--p-success-color, #22c55e) !important;
+}
+
+.p-button-success:hover:not(:disabled),
+p-button .p-button-success:hover:not(:disabled) {
+  background: #16a34a !important;
+  border-color: #16a34a !important;
+}
+
+/* Text variant keeps transparent background */
+.p-button-text,
+p-button .p-button-text {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: var(--p-button-text-primary-color, var(--primary-500)) !important;
+}
+
+.p-button-text:hover:not(:disabled),
+p-button .p-button-text:hover:not(:disabled) {
+  background: var(--p-button-text-primary-hover-background, var(--primary-50)) !important;
+  color: var(--p-button-text-primary-hover-color, var(--primary-600)) !important;
+}
+
+/* Outlined variant */
+.p-button-outlined,
+p-button .p-button-outlined {
+  background: transparent !important;
+  border: 1px solid var(--p-button-outlined-primary-border-color, var(--primary-300)) !important;
+  color: var(--p-button-outlined-primary-color, var(--primary-500)) !important;
+}
+
+.p-button-outlined:hover:not(:disabled),
+p-button .p-button-outlined:hover:not(:disabled) {
+  background: var(--p-button-outlined-primary-hover-background, var(--primary-50)) !important;
+}
+
+/* Disabled state */
+.p-button:disabled,
+p-button .p-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* Cards */
 .p-card {
-  border-radius: 1rem;
+  border-radius: var(--radius-xl);
   box-shadow:
     0 1px 3px 0 rgb(0 0 0 / 0.15),
     0 4px 12px -2px rgb(0 0 0 / 0.1);
@@ -320,7 +512,7 @@ body {
 }
 
 .p-card-body {
-  padding: 1.5rem;
+  padding: var(--space-6);
 }
 
 .dark .p-card {
@@ -333,9 +525,9 @@ body {
 /* Inputs */
 .p-inputtext,
 .p-textarea {
-  border-radius: 0.5rem;
+  border-radius: var(--radius-md);
   border: 1px solid var(--surface-300);
-  padding: 0.75rem 1rem;
+  padding: var(--space-3) var(--space-4);
   font-size: 0.875rem;
   transition: all 0.2s;
   background: var(--surface-0);
@@ -354,18 +546,9 @@ body {
   box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
 }
 
-/* Buttons */
-.p-button {
-  border-radius: 0.5rem;
-  font-weight: 500;
-  padding: 0.625rem 1.25rem;
-  font-size: 0.875rem;
-  transition: all 0.2s;
-}
-
 /* Table */
 .p-datatable {
-  border-radius: 0.75rem;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   border: 1px solid var(--border-color);
 }
@@ -374,7 +557,7 @@ body {
   background: var(--primary-500);
   color: white;
   font-weight: 600;
-  padding: 1rem;
+  padding: var(--space-4);
   text-transform: uppercase;
   font-size: 0.75rem;
   letter-spacing: 0.05em;
@@ -389,16 +572,16 @@ body {
 }
 
 .p-datatable .p-datatable-tbody > tr > td {
-  padding: 1rem;
+  padding: var(--space-4);
   border-color: var(--border-color);
 }
 
 /* Tags */
 .p-tag {
-  border-radius: 0.375rem;
+  border-radius: var(--radius-sm);
   font-size: 0.75rem;
   font-weight: 500;
-  padding: 0.25rem 0.625rem;
+  padding: var(--space-1) var(--space-2);
 }
 
 /* Steps */
@@ -418,6 +601,7 @@ body {
   color: var(--surface-600);
   width: 2.5rem;
   height: 2.5rem;
+  border-radius: var(--radius-full);
   font-size: 0.875rem;
   font-weight: 600;
 }
@@ -440,7 +624,7 @@ body {
 /* Checkbox */
 .p-checkbox .p-checkbox-box {
   border: 2px solid var(--surface-300);
-  border-radius: 0.375rem;
+  border-radius: var(--radius-sm);
   width: 1.25rem;
   height: 1.25rem;
   transition: all 0.2s;
@@ -461,7 +645,7 @@ body {
   background: var(--surface-0);
   border: none;
   border-bottom: 1px solid var(--border-color);
-  padding: 0.5rem 1rem;
+  padding: var(--space-2) var(--space-4);
   border-radius: 0;
   width: 100%;
   max-width: 100%;
@@ -471,17 +655,66 @@ body {
   margin-left: auto;
 }
 
+/* Select */
+.p-select {
+  border-radius: var(--radius-md);
+  min-height: 2.75rem;
+  border: 1px solid var(--p-select-border-color) !important;
+}
+
+/* Keep border visible when filled (value selected) or focused */
+.p-select.p-inputwrapper-filled,
+.p-select.ng-dirty,
+.p-select.ng-touched {
+  border: 1px solid var(--p-select-border-color) !important;
+}
+
+.p-select.p-focus,
+.p-select.p-inputwrapper-focus {
+  border: 1px solid var(--p-select-focus-border-color) !important;
+}
+
+.p-select .p-select-label {
+  padding: var(--space-2) var(--space-4);
+}
+
+.p-select-panel {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--surface-200);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.p-select-option {
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-sm);
+  margin: var(--space-1) var(--space-2);
+  transition: all 0.15s;
+}
+
+.p-select-option.p-highlight {
+  background: var(--primary-100);
+  color: var(--primary-700);
+}
+
+.p-select-filter {
+  margin: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--surface-200);
+  width: calc(100% - var(--space-4));
+}
+
 /* Message */
 .p-message {
-  border-radius: 0.5rem;
+  border-radius: var(--radius-md);
   border: none;
-  padding: 0.875rem 1rem;
+  padding: var(--space-3) var(--space-4);
 }
 
 /* Popover */
 .theme-popover.p-popover {
   padding: 0;
-  border-radius: 0.75rem;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--surface-200);
   box-shadow:
     0 10px 25px -5px rgb(0 0 0 / 0.1),
@@ -570,4 +803,7 @@ body {
 .dark .p-message-info {
   background: rgba(139, 92, 246, 0.1);
   border: 1px solid rgba(139, 92, 246, 0.3);
+}
+.p-menubar-item-label {
+  line-height: 2;
 }

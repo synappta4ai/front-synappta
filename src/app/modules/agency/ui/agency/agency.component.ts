@@ -245,7 +245,7 @@ export class AgencyComponent {
       ),
     );
 
-    const imageModels = this.models().filter((m) => m.content_type === 'image');
+    const imageModels = this.models().filter((m) => m.modality === 'image');
     const model = imageModels[0];
     if (!model) {
       this.error.set('No hay modelos de imagen disponibles.');

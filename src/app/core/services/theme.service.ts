@@ -5,9 +5,9 @@ import {
   ColorPalette,
   ThemeMode,
   ThemeConfig,
-  UserThemePreference,
   COLOR_PALETTES,
 } from '../interfaces/theme.interface';
+import { ApiResponse } from '../interfaces/api.interface';
 import { environment } from '@env/environment';
 import { Observable, of, tap, catchError, map } from 'rxjs';
 
@@ -48,12 +48,14 @@ export class ThemeService {
 
     // Intentar cargar desde el backend primero
     this.http
-      .get<UserThemePreference>(this.API_URL)
+      .get<ApiResponse<ThemeConfig>>(this.API_URL)
       .pipe(
-        tap((preference) => {
-          this.currentPalette.set(preference.theme.palette);
-          this.currentMode.set(preference.theme.mode);
-          this.saveToLocalStorage(preference.theme);
+        tap((response) => {
+          if (response.data) {
+            this.currentPalette.set(response.data.palette);
+            this.currentMode.set(response.data.mode);
+            this.saveToLocalStorage(response.data);
+          }
         }),
         catchError((error) => {
           // Si falla el backend, intentar cargar desde localStorage
@@ -148,7 +150,7 @@ export class ThemeService {
 
     // Intentar guardar en backend
     this.http
-      .post<UserThemePreference>(this.API_URL, { theme })
+      .post<ApiResponse<ThemeConfig>>(this.API_URL, { theme })
       .pipe(
         catchError((error) => {
           console.warn('No se pudo guardar el tema en el backend:', error);
@@ -163,7 +165,7 @@ export class ThemeService {
    */
   private saveToLocalStorage(theme: ThemeConfig): void {
     if (!isPlatformBrowser(this.platformId)) return;
-    localStorage.setItem('aura-pos-theme', JSON.stringify(theme));
+    localStorage.setItem('app-theme', JSON.stringify(theme));
   }
 
   /**
@@ -172,7 +174,7 @@ export class ThemeService {
   private loadFromLocalStorage(): ThemeConfig | null {
     if (!isPlatformBrowser(this.platformId)) return null;
 
-    const saved = localStorage.getItem('aura-pos-theme');
+    const saved = localStorage.getItem('app-theme');
     if (saved) {
       try {
         return JSON.parse(saved);
@@ -194,13 +196,15 @@ export class ThemeService {
    * Sincroniza el tema con el backend (útil al iniciar sesión)
    */
   syncThemeWithBackend(): Observable<ThemeConfig | null> {
-    return this.http.get<UserThemePreference>(this.API_URL).pipe(
-      tap((preference) => {
-        this.currentPalette.set(preference.theme.palette);
-        this.currentMode.set(preference.theme.mode);
-        this.saveToLocalStorage(preference.theme);
+    return this.http.get<ApiResponse<ThemeConfig>>(this.API_URL).pipe(
+      tap((response) => {
+        if (response.data) {
+          this.currentPalette.set(response.data.palette);
+          this.currentMode.set(response.data.mode);
+          this.saveToLocalStorage(response.data);
+        }
       }),
-      map((preference) => preference?.theme || null),
+      map((response) => response.data || null),
       catchError((error) => {
         console.warn('No se pudo sincronizar el tema:', error);
         return of(null);
