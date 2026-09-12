@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
-import { TranslatePipe } from '@ngx-translate/core';
+import { provideTranslateService } from '@ngx-translate/core';
 import { ValidatorErrors } from './validator-errors.component';
 
 describe('ValidatorErrors', () => {
@@ -9,21 +9,13 @@ describe('ValidatorErrors', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ValidatorErrors, ReactiveFormsModule, TranslatePipe],
+      imports: [ValidatorErrors, ReactiveFormsModule],
+      providers: [provideTranslateService()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(ValidatorErrors);
     component = fixture.componentInstance;
   });
-
-  function createControlWithErrors(errors: Record<string, unknown>): FormControl {
-    const control = new FormControl('test value', { validators: Validators.required });
-    Object.keys(errors).forEach((key) => {
-      control.setErrors({ ...control.errors, [key]: errors[key] });
-    });
-    control.markAsTouched();
-    return control;
-  }
 
   function setInput(name: string, value: unknown): void {
     fixture.componentRef.setInput(name, value);
@@ -39,20 +31,20 @@ describe('ValidatorErrors', () => {
   describe('errorKey', () => {
     it('should return null when control is null', () => {
       setInput('control', null);
-      expect(component.errorKey).toBeNull();
+      expect(component.errorKey()).toBeNull();
     });
 
     it('should return null when control has no errors', () => {
       const control = new FormControl('test');
       control.markAsTouched();
       setInput('control', control);
-      expect(component.errorKey).toBeNull();
+      expect(component.errorKey()).toBeNull();
     });
 
     it('should return null when control is untouched', () => {
       const control = new FormControl('', { validators: Validators.required });
       setInput('control', control);
-      expect(component.errorKey).toBeNull();
+      expect(component.errorKey()).toBeNull();
     });
 
     it('should return first error key when control has errors and is touched', () => {
@@ -60,7 +52,7 @@ describe('ValidatorErrors', () => {
       control.setErrors({ required: true });
       control.markAsTouched();
       setInput('control', control);
-      expect(component.errorKey).toBe('required');
+      expect(component.errorKey()).toBe('required');
     });
 
     it('should return first error when multiple errors exist', () => {
@@ -68,7 +60,17 @@ describe('ValidatorErrors', () => {
       control.setErrors({ required: true, minlength: { requiredLength: 3 } });
       control.markAsTouched();
       setInput('control', control);
-      expect(component.errorKey).toBe('required');
+      expect(component.errorKey()).toBe('required');
+    });
+
+    it('should return error after markAsTouched is called', () => {
+      const control = new FormControl('', { validators: Validators.required });
+      setInput('control', control);
+      expect(component.errorKey()).toBeNull();
+
+      control.markAsTouched();
+      fixture.detectChanges();
+      expect(component.errorKey()).toBe('required');
     });
   });
 
@@ -79,7 +81,7 @@ describe('ValidatorErrors', () => {
       control.setErrors({ required: true });
       control.markAsTouched();
       setInput('control', control);
-      expect(component.errorParams).toEqual({ control: 'Email' });
+      expect(component.errorParams()).toEqual({ control: 'Email' });
     });
 
     it('should include min value for min error', () => {
@@ -88,7 +90,7 @@ describe('ValidatorErrors', () => {
       control.setErrors({ min: { min: 18 } });
       control.markAsTouched();
       setInput('control', control);
-      expect(component.errorParams).toEqual({ control: 'Age', value: 18 });
+      expect(component.errorParams()).toEqual({ control: 'Age', value: 18 });
     });
 
     it('should include max value for max error', () => {
@@ -97,7 +99,7 @@ describe('ValidatorErrors', () => {
       control.setErrors({ max: { max: 100 } });
       control.markAsTouched();
       setInput('control', control);
-      expect(component.errorParams).toEqual({ control: 'Age', value: 100 });
+      expect(component.errorParams()).toEqual({ control: 'Age', value: 100 });
     });
 
     it('should include requiredLength for maxlength error', () => {
@@ -106,7 +108,7 @@ describe('ValidatorErrors', () => {
       control.setErrors({ maxlength: { requiredLength: 50 } });
       control.markAsTouched();
       setInput('control', control);
-      expect(component.errorParams).toEqual({ control: 'Username', value: 50 });
+      expect(component.errorParams()).toEqual({ control: 'Username', value: 50 });
     });
 
     it('should include requiredLength for minlength error', () => {
@@ -115,13 +117,13 @@ describe('ValidatorErrors', () => {
       control.setErrors({ minlength: { requiredLength: 3 } });
       control.markAsTouched();
       setInput('control', control);
-      expect(component.errorParams).toEqual({ control: 'Username', value: 3 });
+      expect(component.errorParams()).toEqual({ control: 'Username', value: 3 });
     });
 
     it('should return empty control when control is null', () => {
       setInput('control', null);
       setInput('label', 'Test');
-      expect(component.errorParams).toEqual({ control: 'Test' });
+      expect(component.errorParams()).toEqual({ control: 'Test' });
     });
   });
 

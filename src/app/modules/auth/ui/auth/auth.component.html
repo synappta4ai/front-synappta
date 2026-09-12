@@ -1,9 +1,9 @@
-<section class="flex min-h-screen items-center justify-center bg-[var(--surface-ground)]">
+<section class="flex min-h-screen items-center justify-center bg-(--surface-ground)">
   <p-card styleClass="w-full max-w-md shadow-3">
     <ng-template #header>
       <div class="flex flex-col items-center gap-3 pt-8 pb-4">
         <span
-          class="grid h-12 w-12 grid-cols-2 gap-1 rounded-xl bg-[var(--primary-500)] p-2"
+          class="grid h-12 w-12 grid-cols-2 gap-1 rounded-xl bg-(--primary-500) p-2"
           aria-hidden="true"
         >
           <span class="rounded-[3px] bg-white/30"></span>
@@ -11,7 +11,9 @@
           <span class="rounded-[3px] bg-white/30"></span>
           <span class="rounded-[3px] bg-white"></span>
         </span>
-        <h1 class="text-2xl font-semibold text-[var(--primary-600)]">Iniciar sesión</h1>
+        <h1 class="text-2xl font-semibold text-(--primary-600)">
+          {{ 'AUTH.LOGIN_TITLE' | translate }}
+        </h1>
       </div>
     </ng-template>
 
@@ -21,50 +23,51 @@
 
     <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-5" novalidate>
       <div class="flex flex-col gap-2">
-        <label for="username" class="font-medium text-[var(--text-color)]">Usuario</label>
-        <p-iconfield iconPosition="left">
-          <p-inputicon styleClass="pi pi-user" />
+        <label for="username" class="font-medium text-(--text-color)">{{
+          'AUTH.USERNAME_LABEL' | translate
+        }}</label>
+        <p-iconfield>
           <input
             pInputText
             id="username"
             type="text"
             formControlName="username"
-            autocomplete="username"
-            placeholder="Tu usuario"
-            [attr.aria-invalid]="form.controls.username.invalid && form.controls.username.touched"
-            aria-describedby="username-error"
+            [placeholder]="'AUTH.USERNAME_PLACEHOLDER' | translate"
+            [invalid]="form.get('username') | formControlErrorClass"
             class="w-full"
           />
+          <p-inputicon class="pi pi-user" />
         </p-iconfield>
-        @if (form.controls.username.invalid && form.controls.username.touched) {
-          <small id="username-error" class="text-red-500">El usuario es obligatorio.</small>
-        }
+        <validator-errors
+          [control]="form.get('username')"
+          [label]="'AUTH.USERNAME_LABEL' | translate"
+          [submitTick]="submitted()"
+        />
       </div>
 
       <div class="flex flex-col gap-2">
-        <label for="password" class="font-medium text-[var(--text-color)]">Contraseña</label>
-        <p-iconfield iconPosition="left">
-          <p-inputicon styleClass="pi pi-lock" />
-          <input
-            pInputText
-            id="password"
-            type="password"
-            formControlName="password"
-            autocomplete="current-password"
-            placeholder="Tu contraseña"
-            [attr.aria-invalid]="form.controls.password.invalid && form.controls.password.touched"
-            aria-describedby="password-error"
-            class="w-full"
-          />
-        </p-iconfield>
-        @if (form.controls.password.invalid && form.controls.password.touched) {
-          <small id="password-error" class="text-red-500">La contraseña es obligatoria.</small>
-        }
+        <label for="password" class="font-medium text-(--text-color)">{{
+          'AUTH.PASSWORD_LABEL' | translate
+        }}</label>
+        <p-password
+          inputId="password"
+          formControlName="password"
+          [toggleMask]="true"
+          autocomplete="off"
+          [feedback]="false"
+          [invalid]="form.get('password') | formControlErrorClass"
+          class="w-full"
+        />
+        <validator-errors
+          [control]="form.get('password')"
+          [label]="'AUTH.PASSWORD_LABEL' | translate"
+          [submitTick]="submitted()"
+        />
       </div>
 
       <p-button
         type="submit"
-        label="Entrar"
+        [label]="'AUTH.SUBMIT_BUTTON' | translate"
         severity="primary"
         [loading]="submitting()"
         [disabled]="submitting()"
