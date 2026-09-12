@@ -16,8 +16,8 @@
         <i class="pi pi-building text-xl text-[var(--primary-600)]"></i>
       </div>
       <div>
-        <p class="text-2xl font-bold text-[var(--text-primary)]">{{ tenants().length }}</p>
-        <p class="text-sm text-[var(--text-secondary)]">Total Tenants</p>
+        <p class="text-2xl font-bold text-(--text-primary)">{{ tenants().length }}</p>
+        <p class="text-sm text-(--text-secondary)">Total Tenants</p>
       </div>
     </div>
     <div
@@ -27,10 +27,10 @@
         <i class="pi pi-check-circle text-xl text-green-600"></i>
       </div>
       <div>
-        <p class="text-2xl font-bold text-[var(--text-primary)]">
+        <p class="text-2xl font-bold text-(--text-primary)">
           {{ tenants().filter((t) => t.active).length }}
         </p>
-        <p class="text-sm text-[var(--text-secondary)]">Activos</p>
+        <p class="text-sm text-(--text-secondary)">Activos</p>
       </div>
     </div>
     <div
@@ -40,10 +40,10 @@
         <i class="pi pi-times-circle text-xl text-red-600"></i>
       </div>
       <div>
-        <p class="text-2xl font-bold text-[var(--text-primary)]">
+        <p class="text-2xl font-bold text-(--text-primary)">
           {{ tenants().filter((t) => !t.active).length }}
         </p>
-        <p class="text-sm text-[var(--text-secondary)]">Inactivos</p>
+        <p class="text-sm text-(--text-secondary)">Inactivos</p>
       </div>
     </div>
   </div>
@@ -55,7 +55,7 @@
         <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--primary-100)]">
           <i class="pi pi-plus-circle text-lg text-[var(--primary-600)]"></i>
         </div>
-        <h2 class="text-lg font-semibold text-[var(--text-primary)]">Crear Nuevo Tenant</h2>
+        <h2 class="text-lg font-semibold text-(--text-primary)">Crear Nuevo Tenant</h2>
       </div>
     </ng-template>
 
@@ -66,7 +66,7 @@
       novalidate
     >
       <div class="flex flex-1 flex-col gap-2">
-        <label for="tenant-name" class="text-sm font-medium text-[var(--text-primary)]">
+        <label for="tenant-name" class="text-sm font-medium text-(--text-primary)">
           Nombre <span class="text-red-500">*</span>
         </label>
         <input
@@ -80,7 +80,7 @@
         <small class="text-[var(--text-muted)]">Nombre descriptivo del tenant</small>
       </div>
       <div class="flex flex-1 flex-col gap-2">
-        <label for="tenant-slug" class="text-sm font-medium text-[var(--text-primary)]">
+        <label for="tenant-slug" class="text-sm font-medium text-(--text-primary)">
           Slug <span class="text-red-500">*</span>
         </label>
         <input
@@ -110,7 +110,7 @@
       class="flex flex-col items-center gap-4 rounded-xl border border-[var(--surface-200)] bg-[var(--surface-0)] py-16"
     >
       <p-progressSpinner styleClass="w-12 h-12" strokeWidth="3" />
-      <p class="text-sm text-[var(--text-secondary)]">Cargando tenants...</p>
+      <p class="text-sm text-(--text-secondary)">Cargando tenants...</p>
     </div>
   } @else {
     <p-card>
@@ -125,8 +125,8 @@
               <i class="pi pi-list text-lg text-[var(--primary-600)]"></i>
             </div>
             <div>
-              <h2 class="text-lg font-semibold text-[var(--text-primary)]">Lista de Tenants</h2>
-              <p class="text-sm text-[var(--text-secondary)]">
+              <h2 class="text-lg font-semibold text-(--text-primary)">Lista de Tenants</h2>
+              <p class="text-sm text-(--text-secondary)">
                 {{ tenants().length }} tenants configurados
               </p>
             </div>
@@ -159,7 +159,7 @@
                   <i class="pi pi-building text-sm"></i>
                 </div>
                 <div>
-                  <p class="font-semibold text-[var(--text-primary)]">{{ tenant.name }}</p>
+                  <p class="font-semibold text-(--text-primary)">{{ tenant.name }}</p>
                   <p class="text-xs text-[var(--text-muted)]">ID: {{ tenant.id }}</p>
                 </div>
               </div>
@@ -171,7 +171,7 @@
               >
             </td>
             <td>
-              <span class="text-sm text-[var(--text-secondary)]">
+              <span class="text-sm text-(--text-secondary)">
                 {{ tenant.created_at | date: 'medium' }}
               </span>
             </td>
@@ -208,8 +208,8 @@
                   <i class="pi pi-building text-3xl text-[var(--surface-400)]"></i>
                 </div>
                 <div class="text-center">
-                  <p class="font-medium text-[var(--text-primary)]">No hay tenants configurados</p>
-                  <p class="mt-1 text-sm text-[var(--text-secondary)]">
+                  <p class="font-medium text-(--text-primary)">No hay tenants configurados</p>
+                  <p class="mt-1 text-sm text-(--text-secondary)">
                     Crea tu primer tenant para comenzar
                   </p>
                 </div>

@@ -21,10 +21,8 @@
             <i class="pi pi-file-edit text-lg text-[var(--primary-600)]"></i>
           </div>
           <div>
-            <h2 class="text-lg font-semibold text-[var(--text-primary)]">
-              Información del Proyecto
-            </h2>
-            <p class="text-sm text-[var(--text-secondary)]">Documentación para análisis IA</p>
+            <h2 class="text-lg font-semibold text-(--text-primary)">Información del Proyecto</h2>
+            <p class="text-sm text-(--text-secondary)">Documentación para análisis IA</p>
           </div>
         </div>
       </ng-template>
@@ -32,7 +30,7 @@
       <form [formGroup]="form" class="flex flex-col gap-6" novalidate>
         <div class="grid gap-6 sm:grid-cols-2">
           <div class="flex flex-col gap-2">
-            <label for="propertyName" class="text-sm font-medium text-[var(--text-primary)]">
+            <label for="propertyName" class="text-sm font-medium text-(--text-primary)">
               Nombre del Proyecto <span class="text-red-500">*</span>
             </label>
             <input
@@ -45,7 +43,7 @@
             />
           </div>
           <div class="flex flex-col gap-2">
-            <label for="location" class="text-sm font-medium text-[var(--text-primary)]">
+            <label for="location" class="text-sm font-medium text-(--text-primary)">
               Ubicación <span class="text-red-500">*</span>
             </label>
             <input
@@ -60,7 +58,7 @@
         </div>
 
         <div class="flex flex-col gap-2">
-          <label for="description" class="text-sm font-medium text-[var(--text-primary)]">
+          <label for="description" class="text-sm font-medium text-(--text-primary)">
             Descripción del Proyecto
           </label>
           <textarea
@@ -106,8 +104,8 @@
             <i class="pi pi-compass text-lg text-[var(--primary-600)]"></i>
           </div>
           <div>
-            <h2 class="text-lg font-semibold text-[var(--text-primary)]">Ángulos de Venta</h2>
-            <p class="text-sm text-[var(--text-secondary)]">Selecciona uno o más para continuar</p>
+            <h2 class="text-lg font-semibold text-(--text-primary)">Ángulos de Venta</h2>
+            <p class="text-sm text-(--text-secondary)">Selecciona uno o más para continuar</p>
           </div>
         </div>
       </ng-template>
@@ -143,9 +141,9 @@
               <div class="flex-1">
                 <div class="flex items-center gap-2">
                   <i class="pi pi-bullseye text-[var(--primary-500)]"></i>
-                  <p class="font-semibold text-[var(--text-primary)]">{{ angle.title }}</p>
+                  <p class="font-semibold text-(--text-primary)">{{ angle.title }}</p>
                 </div>
-                <p class="mt-2 text-sm leading-relaxed text-[var(--text-secondary)]">
+                <p class="mt-2 text-sm leading-relaxed text-(--text-secondary)">
                   {{ angle.description }}
                 </p>
               </div>
@@ -189,8 +187,8 @@
             <i class="pi pi-images text-lg text-[var(--primary-600)]"></i>
           </div>
           <div class="flex-1">
-            <h2 class="text-lg font-semibold text-[var(--text-primary)]">Storyboard</h2>
-            <p class="text-sm text-[var(--text-secondary)]">Genera imágenes para cada escena</p>
+            <h2 class="text-lg font-semibold text-(--text-primary)">Storyboard</h2>
+            <p class="text-sm text-(--text-secondary)">Genera imágenes para cada escena</p>
           </div>
           <p-tag [value]="storyboard().length + ' escenas'" severity="info" />
         </div>
@@ -207,8 +205,8 @@
                   {{ i + 1 }}
                 </div>
                 <div>
-                  <h3 class="font-semibold text-[var(--text-primary)]">{{ scene.title }}</h3>
-                  <p class="text-sm text-[var(--text-secondary)]">{{ scene.description }}</p>
+                  <h3 class="font-semibold text-(--text-primary)">{{ scene.title }}</h3>
+                  <p class="text-sm text-(--text-secondary)">{{ scene.description }}</p>
                 </div>
               </div>
               <p-button
@@ -254,7 +252,7 @@
                     </div>
                   }
                   <div class="p-3">
-                    <p class="text-xs leading-relaxed text-[var(--text-secondary)]">
+                    <p class="text-xs leading-relaxed text-(--text-secondary)">
                       {{ shot.description }}
                     </p>
                   </div>
@@ -289,10 +287,8 @@
             <i class="pi pi-clapperboard text-lg text-[var(--primary-600)]"></i>
           </div>
           <div>
-            <h2 class="text-lg font-semibold text-[var(--text-primary)]">
-              Escenas y Shots Finales
-            </h2>
-            <p class="text-sm text-[var(--text-secondary)]">Planos listos para producción</p>
+            <h2 class="text-lg font-semibold text-(--text-primary)">Escenas y Shots Finales</h2>
+            <p class="text-sm text-(--text-secondary)">Planos listos para producción</p>
           </div>
         </div>
       </ng-template>
@@ -331,11 +327,11 @@
                         >
                           {{ j + 1 }}
                         </span>
-                        <span class="text-xs font-medium text-[var(--text-primary)]"
+                        <span class="text-xs font-medium text-(--text-primary)"
                           >Shot {{ j + 1 }}</span
                         >
                       </div>
-                      <p class="text-xs leading-relaxed text-[var(--text-secondary)]">
+                      <p class="text-xs leading-relaxed text-(--text-secondary)">
                         {{ shot.description }}
                       </p>
                     </div>
@@ -355,8 +351,8 @@
             <i class="pi pi-inbox text-3xl text-[var(--surface-400)]"></i>
           </div>
           <div>
-            <p class="font-medium text-[var(--text-primary)]">No hay escenas generadas</p>
-            <p class="mt-1 text-sm text-[var(--text-secondary)]">
+            <p class="font-medium text-(--text-primary)">No hay escenas generadas</p>
+            <p class="mt-1 text-sm text-(--text-secondary)">
               Vuelve al storyboard para generar imágenes
             </p>
           </div>

@@ -373,6 +373,18 @@ body {
   color: var(--content-text);
 }
 
+input {
+  width: 100%;
+}
+
+.pi {
+  line-height: 0;
+}
+
+.p-password-toggle-mask-icon {
+  margin-top: calc(-1 * var(--space-2)) !important;
+}
+
 /* ============================================
    Utilidades
    ============================================ */
@@ -804,6 +816,14 @@ p-button .p-button:disabled {
   background: rgba(139, 92, 246, 0.1);
   border: 1px solid rgba(139, 92, 246, 0.3);
 }
+.p-menubar-root-list > .p-menubar-item > .p-menubar-item-content {
+  padding: 0px 14px !important;
+}
+
+.p-menubar-root-list {
+  gap: 0 !important;
+}
+
 .p-menubar-item-label {
-  line-height: 2;
+  line-height: 1.5;
 }

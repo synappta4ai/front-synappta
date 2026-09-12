@@ -12,13 +12,13 @@
         <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--primary-100)]">
           <i class="pi pi-plus-circle text-lg text-[var(--primary-600)]"></i>
         </div>
-        <h2 class="text-lg font-semibold text-[var(--text-primary)]">Crear Nuevo Evento</h2>
+        <h2 class="text-lg font-semibold text-(--text-primary)">Crear Nuevo Evento</h2>
       </div>
     </ng-template>
 
     <div class="flex flex-col gap-4 sm:flex-row sm:items-end">
       <div class="flex flex-1 flex-col gap-2">
-        <label for="new-event" class="text-sm font-medium text-[var(--text-primary)]">
+        <label for="new-event" class="text-sm font-medium text-(--text-primary)">
           Nombre del Evento <span class="text-red-500">*</span>
         </label>
         <p-iconfield iconPosition="left">
@@ -41,7 +41,7 @@
             [ngModel]="showInactive()"
             (ngModelChange)="toggleShowInactive()"
           />
-          <label class="text-sm text-[var(--text-secondary)]">Mostrar inactivos</label>
+          <label class="text-sm text-(--text-secondary)">Mostrar inactivos</label>
         </div>
         <p-button
           label="Crear Evento"
@@ -60,7 +60,7 @@
       class="flex flex-col items-center gap-4 rounded-xl border border-[var(--surface-200)] bg-[var(--surface-0)] py-16"
     >
       <p-progressSpinner styleClass="w-12 h-12" strokeWidth="3" />
-      <p class="text-sm text-[var(--text-secondary)]">Cargando eventos...</p>
+      <p class="text-sm text-(--text-secondary)">Cargando eventos...</p>
     </div>
   } @else {
     <p-card>
@@ -75,8 +75,8 @@
               <i class="pi pi-list text-lg text-[var(--primary-600)]"></i>
             </div>
             <div>
-              <h2 class="text-lg font-semibold text-[var(--text-primary)]">Lista de Eventos</h2>
-              <p class="text-sm text-[var(--text-secondary)]">
+              <h2 class="text-lg font-semibold text-(--text-primary)">Lista de Eventos</h2>
+              <p class="text-sm text-(--text-secondary)">
                 {{ events().length }} eventos registrados
               </p>
             </div>
@@ -109,11 +109,11 @@
                 >
                   <i class="pi pi-calendar text-sm text-[var(--primary-600)]"></i>
                 </div>
-                <span class="font-medium text-[var(--text-primary)]">{{ event.name }}</span>
+                <span class="font-medium text-(--text-primary)">{{ event.name }}</span>
               </div>
             </td>
             <td>
-              <span class="text-sm text-[var(--text-secondary)]">
+              <span class="text-sm text-(--text-secondary)">
                 {{ event.description || '—' }}
               </span>
             </td>
@@ -121,7 +121,7 @@
               <p-tag [value]="(event.program_count ?? 0).toString()" severity="info" />
             </td>
             <td>
-              <span class="text-sm text-[var(--text-secondary)]">
+              <span class="text-sm text-(--text-secondary)">
                 @if (event.starts_at) {
                   {{ event.starts_at | date: 'medium' }}
                 } @else {
@@ -151,8 +151,8 @@
                   <i class="pi pi-calendar text-3xl text-[var(--surface-400)]"></i>
                 </div>
                 <div class="text-center">
-                  <p class="font-medium text-[var(--text-primary)]">No hay eventos todavía</p>
-                  <p class="mt-1 text-sm text-[var(--text-secondary)]">
+                  <p class="font-medium text-(--text-primary)">No hay eventos todavía</p>
+                  <p class="mt-1 text-sm text-(--text-secondary)">
                     Crea tu primer evento para comenzar
                   </p>
                 </div>

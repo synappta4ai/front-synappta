@@ -42,18 +42,18 @@
   <p class="mb-3 text-sm font-semibold uppercase tracking-widest text-[var(--primary-600)]">
     Servicios
   </p>
-  <h2 class="max-w-xl text-3xl font-semibold tracking-tight text-[var(--text-primary)] sm:text-4xl">
+  <h2 class="max-w-xl text-3xl font-semibold tracking-tight text-(--text-primary) sm:text-4xl">
     Qué hacemos
   </h2>
   <div class="mt-12 grid gap-6 md:grid-cols-3">
     @for (service of services; track service.title) {
       <article
-        class="rounded-2xl border border-[var(--border-color)] bg-[var(--surface-0)] p-6 transition-shadow hover:shadow-md"
+        class="rounded-2xl border border-(--border-color) bg-[var(--surface-0)] p-6 transition-shadow hover:shadow-md"
       >
         <h3 class="text-lg font-semibold text-[var(--primary-600)] dark:text-[var(--primary-400)]">
           {{ service.title }}
         </h3>
-        <p class="mt-2 text-sm leading-relaxed text-[var(--text-secondary)]">
+        <p class="mt-2 text-sm leading-relaxed text-(--text-secondary)">
           {{ service.description }}
         </p>
       </article>

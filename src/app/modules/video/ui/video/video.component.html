@@ -30,8 +30,8 @@
           <div class="flex items-center gap-3">
             <i class="pi pi-file-video text-xl text-[var(--primary-500)]"></i>
             <div>
-              <p class="font-medium text-[var(--text-primary)]">Video generado</p>
-              <p class="text-sm text-[var(--text-secondary)]">Haz clic derecho para descargar</p>
+              <p class="font-medium text-(--text-primary)">Video generado</p>
+              <p class="text-sm text-(--text-secondary)">Haz clic derecho para descargar</p>
             </div>
           </div>
           <a
@@ -56,8 +56,8 @@
           <i class="pi pi-video text-lg text-[var(--primary-600)]"></i>
         </div>
         <div>
-          <h2 class="text-lg font-semibold text-[var(--text-primary)]">Configurar Generación</h2>
-          <p class="text-sm text-[var(--text-secondary)]">Define los parámetros para tu video</p>
+          <h2 class="text-lg font-semibold text-(--text-primary)">Configurar Generación</h2>
+          <p class="text-sm text-(--text-secondary)">Define los parámetros para tu video</p>
         </div>
       </div>
     </ng-template>
@@ -65,7 +65,7 @@
     <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-6" novalidate>
       <!-- Model Selection -->
       <div class="flex flex-col gap-2">
-        <label for="model" class="text-sm font-medium text-[var(--text-primary)]">
+        <label for="model" class="text-sm font-medium text-(--text-primary)">
           Modelo de Video <span class="text-red-500">*</span>
         </label>
 
@@ -74,7 +74,7 @@
             class="flex items-center gap-2 rounded-lg border border-[var(--surface-200)] bg-[var(--surface-50)] p-3"
           >
             <i class="pi pi-spin pi-spinner text-[var(--primary-500)]"></i>
-            <span class="text-sm text-[var(--text-secondary)]">Cargando modelos...</span>
+            <span class="text-sm text-(--text-secondary)">Cargando modelos...</span>
           </div>
         } @else {
           <p-select
@@ -136,13 +136,13 @@
             <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <div>
                 <p class="text-xs font-medium text-[var(--text-muted)]">Proveedor</p>
-                <p class="text-sm font-medium text-[var(--text-primary)]">
+                <p class="text-sm font-medium text-(--text-primary)">
                   {{ model.credential_provider }}
                 </p>
               </div>
               <div>
                 <p class="text-xs font-medium text-[var(--text-muted)]">Generador</p>
-                <p class="text-sm font-medium text-[var(--text-primary)]">{{ model.generator }}</p>
+                <p class="text-sm font-medium text-(--text-primary)">{{ model.generator }}</p>
               </div>
               @if (model.defaults.ratios?.length) {
                 <div>
@@ -150,7 +150,7 @@
                   <div class="mt-1 flex flex-wrap gap-1">
                     @for (ratio of model.defaults.ratios; track ratio) {
                       <span
-                        class="rounded bg-[var(--surface-100)] px-1.5 py-0.5 text-xs text-[var(--text-secondary)]"
+                        class="rounded bg-[var(--surface-100)] px-1.5 py-0.5 text-xs text-(--text-secondary)"
                         >{{ ratio }}</span
                       >
                     }
@@ -163,7 +163,7 @@
                   <div class="mt-1 flex flex-wrap gap-1">
                     @for (res of model.defaults.resolutions; track res) {
                       <span
-                        class="rounded bg-[var(--surface-100)] px-1.5 py-0.5 text-xs text-[var(--text-secondary)]"
+                        class="rounded bg-[var(--surface-100)] px-1.5 py-0.5 text-xs text-(--text-secondary)"
                         >{{ res }}</span
                       >
                     }
@@ -177,7 +177,7 @@
 
       <!-- Prompt -->
       <div class="flex flex-col gap-2">
-        <label for="prompt" class="text-sm font-medium text-[var(--text-primary)]">
+        <label for="prompt" class="text-sm font-medium text-(--text-primary)">
           Prompt <span class="text-red-500">*</span>
         </label>
         <textarea
@@ -195,25 +195,21 @@
 
       <!-- IDs Grid -->
       <div class="rounded-xl border border-[var(--surface-200)] bg-[var(--surface-50)] p-5">
-        <h3 class="mb-4 flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
+        <h3 class="mb-4 flex items-center gap-2 text-sm font-semibold text-(--text-primary)">
           <i class="pi pi-link text-[var(--primary-500)]"></i>
           Identificadores del Proyecto
         </h3>
         <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           <div class="flex flex-col gap-2">
-            <label for="eventId" class="text-sm font-medium text-[var(--text-primary)]"
-              >Event ID</label
-            >
+            <label for="eventId" class="text-sm font-medium text-(--text-primary)">Event ID</label>
             <input pInputText id="eventId" type="text" formControlName="eventId" class="w-full" />
           </div>
           <div class="flex flex-col gap-2">
-            <label for="pieceId" class="text-sm font-medium text-[var(--text-primary)]"
-              >Piece ID</label
-            >
+            <label for="pieceId" class="text-sm font-medium text-(--text-primary)">Piece ID</label>
             <input pInputText id="pieceId" type="text" formControlName="pieceId" class="w-full" />
           </div>
           <div class="flex flex-col gap-2">
-            <label for="pieceCode" class="text-sm font-medium text-[var(--text-primary)]"
+            <label for="pieceCode" class="text-sm font-medium text-(--text-primary)"
               >Piece Code</label
             >
             <input
@@ -225,7 +221,7 @@
             />
           </div>
           <div class="flex flex-col gap-2">
-            <label for="generationNumber" class="text-sm font-medium text-[var(--text-primary)]"
+            <label for="generationNumber" class="text-sm font-medium text-(--text-primary)"
               >Generation #</label
             >
             <p-inputNumber
@@ -237,7 +233,7 @@
             />
           </div>
           <div class="flex flex-col gap-2">
-            <label for="duration" class="text-sm font-medium text-[var(--text-primary)]"
+            <label for="duration" class="text-sm font-medium text-(--text-primary)"
               >Duración (seg)</label
             >
             <p-select
@@ -285,8 +281,8 @@
           </div>
         </div>
         <div>
-          <p class="text-lg font-semibold text-[var(--text-primary)]">Generando video…</p>
-          <p class="mt-1 text-sm text-[var(--text-secondary)]">
+          <p class="text-lg font-semibold text-(--text-primary)">Generando video…</p>
+          <p class="mt-1 text-sm text-(--text-secondary)">
             Esto puede tomar varios minutos. No cierres esta página.
           </p>
         </div>

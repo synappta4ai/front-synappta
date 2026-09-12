@@ -1,11 +1,11 @@
-<div class="flex min-h-dvh flex-col bg-[var(--content-bg)] text-[var(--content-text)]">
+<div class="flex min-h-dvh flex-col bg-(--content-bg) text-(--content-text)">
   <main class="flex flex-1 flex-col">
     <router-outlet />
   </main>
-  <footer class="border-t border-[var(--border-color)] py-6">
+  <footer class="border-t border-(--border-color) py-6">
     <div class="mx-auto flex max-w-6xl items-center justify-between px-4 sm:px-6">
-      <p class="text-sm font-medium text-[var(--text-primary)]">Synapta</p>
-      <p class="text-sm text-[var(--text-secondary)]">&copy; 2026 Synapta</p>
+      <p class="text-sm font-medium text-(--text-primary)">Synapta</p>
+      <p class="text-sm text-(--text-secondary)">&copy; {{ currentYear() }} Synapta</p>
     </div>
   </footer>
 </div>
