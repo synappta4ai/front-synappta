@@ -8,6 +8,9 @@
     "build:dev": "ng build --configuration dev",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:report": "playwright show-report",
     "serve:ssr:front-synapta": "node dist/front-synapta/server/server.mjs"
   },
   "private": true,
@@ -39,6 +42,7 @@
     "@angular/cli": "^22.1.7",
     "@angular/compiler-cli": "^22.1.6",
     "@netlify/angular-runtime": "^4.0.0",
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4.1.12",
     "@types/express": "^5.0.1",
     "@types/node": "^20.17.19",
