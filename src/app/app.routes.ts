@@ -25,10 +25,12 @@ export const routes: Routes = [
     children: [
       {
         path: 'agency',
+        canActivate: [authGuard],
         loadChildren: () => import('@modules/agency/agency.routes').then((m) => m.agencyRoutes),
       },
       {
         path: 'video',
+        canActivate: [authGuard],
         loadChildren: () => import('@modules/video/video.routes').then((m) => m.videoRoutes),
       },
       {
