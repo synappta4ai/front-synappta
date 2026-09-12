@@ -1,0 +1,20 @@
+{
+  "ALERTS": {
+    "REQUIRED": "El campo {{control}} es requerido",
+    "MAJOR": "El campo {{control}} no puede exceder {{value}} caracteres",
+    "MINOR": "El campo {{control}} debe tener al menos {{value}} caracteres",
+    "PATTERN": "El campo {{control}} tiene un formato inválido",
+    "INVALID_EMAIL": "El campo {{control}} debe ser un correo electrónico válido",
+    "MIN_VALUE": "El campo {{control}} debe ser mayor o igual a {{value}}",
+    "MAX_VALUE": "El campo {{control}} debe ser menor o igual a {{value}}",
+    "UNIQUE": "El valor del campo {{control}} ya existe"
+  },
+  "AUTH": {
+    "LOGIN_TITLE": "Iniciar sesión",
+    "USERNAME_LABEL": "Usuario",
+    "USERNAME_PLACEHOLDER": "Tu usuario",
+    "PASSWORD_LABEL": "Contraseña",
+    "SUBMIT_BUTTON": "Entrar",
+    "LOGIN_ERROR": "No se pudo iniciar sesión. Inténtalo de nuevo."
+  }
+}

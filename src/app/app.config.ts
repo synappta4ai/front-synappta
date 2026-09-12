@@ -17,6 +17,9 @@ import Aura from '@primeuix/themes/aura';
 import { providePrimeNG } from 'primeng/config';
 import { AppStore, UserSessionStore } from './core/store';
 
+import { provideTranslateService } from '@ngx-translate/core';
+import { provideTranslateHttpLoader } from '@ngx-translate/http-loader';
+
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
@@ -35,6 +38,14 @@ export const appConfig: ApplicationConfig = {
           },
         },
       },
+    }),
+    provideTranslateService({
+      lang: 'es',
+      fallbackLang: 'es',
+    }),
+    provideTranslateHttpLoader({
+      prefix: './assets/i18n/',
+      suffix: '.json',
     }),
     provideAppInitializer(async () => {
       const sessionStore = inject(UserSessionStore);

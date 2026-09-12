@@ -24,6 +24,7 @@
     "@angular/ssr": "^22.1.7",
     "@ngrx/signals": "^22.0.0",
     "@ngx-translate/core": "^18.0.0",
+    "@ngx-translate/http-loader": "^18.0.0",
     "@primeuix/styled": "^0.7.4",
     "@primeuix/themes": "^2.0.3",
     "@primeuix/utils": "^0.7.2",
