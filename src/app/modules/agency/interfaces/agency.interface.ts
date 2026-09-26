@@ -87,6 +87,8 @@ export interface StatusResponse {
   outputs?: StatusOutput[];
   error?: string;
   progress?: unknown;
+  /** Estimated progress percent (0-100) computed by the server; 100 on success. */
+  progress_percent?: number;
 }
 
 export interface PreviewPayloadResponse {
@@ -124,6 +126,14 @@ export interface GenerationLog {
   resource_type: string | null;
   estimated_cost: number | null;
   cost_source: string | null;
+  usage_tokens: number;
+  usage_completion_tokens: number;
+  video_duration: number;
+  video_resolution: string;
+  video_ratio: string;
+  video_seed: number;
+  video_fps: number;
+  progress: number;
   created_at: string;
 }
 

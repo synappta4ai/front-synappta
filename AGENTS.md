@@ -53,6 +53,56 @@ Instrucciones para agentes de IA que trabajan en este repositorio. Léelas antes
 - Señales para estado local de componente; `computed()` para estado derivado; transformaciones puras y predecibles.
 - Para mutar señales usar `set()`/`update()`. **Prohibido** `.mutate()`.
 
+## ValidatorErrors
+
+Componente en `src/app/shared/components/validation-errors/` para mostrar errores de validación de formularios reactivos. Se usa con `<validator-errors [control]="...">` junto al input del campo.
+
+### Uso básico
+
+```html
+<label for="username">Usuario</label>
+<input pInputText id="username" formControlName="username"
+       [invalid]="form.get('username') | formControlErrorClass" />
+<validator-errors
+  [control]="form.get('username')"
+  [label]="'AUTH.USERNAME_LABEL' | translate"
+  [submitTick]="submitted()"
+/>
+```
+
+### Reglas obligatorias
+
+- El padre debe exponer una señal numérica de submit y actualizarla en `onSubmit()` **después** de `markAllAsTouched()`:
+  ```typescript
+  protected readonly submitted = signal(0);
+
+  protected onSubmit(): void {
+    this.form.markAllAsTouched();
+    this.submitted.update((v) => v + 1);
+    ...
+  }
+  ```
+  Sin `[submitTick]`, en modo zoneless la plantilla no se re-evalúa al hacer submit y los errores no aparecen.
+- Pasar siempre `[label]` con la etiqueta del campo **traducida** (usa `| translate`).
+- El template así declarado **no re-evalúa los errores** si el componente usa getters que leen propiedades no-señal de `AbstractControl`. Si se modifica `ValidatorErrors`, mantener el patrón de `computed()` + `effect` sobre `control.events`; ver `validator-errors.component.ts`.
+- Opcionalmente acompañar el input con `[invalid]="form.get('campo') | formControlErrorClass"` para marcarlo como inválido (pipe `formControlErrorClass` en `@core/pipes`).
+
+### Inputs disponibles
+
+| Input                 | Tipo     | Descripción                                              |
+| --------------------- | -------- | -------------------------------------------------------- |
+| `control`             | `AbstractControl \| null` | Control a validar (`form.get('campo')`)        |
+| `label`               | `string` | Etiqueta del campo traducida (se inyecta en el mensaje)   |
+| `submitTick`          | `number` | Señal de submit del padre (ver reglas arriba)             |
+| `required`/`minlength`/`maxlength`/`pattern`/`email`/`min`/`max`/`unique` | `string` | Key i18n o texto custom para sobrescribir el mensaje por validación |
+| `omitErrors`          | `string[]` | Errores que no se renderizan (`[omitErrors]="['required']"`) |
+| `customErrors`        | `{ type, message }[]` | Errores custom por tipo                            |
+| `customErrorType`/`customErrorMessage` | `string` | Key y mensaje de un error custom único    |
+
+### Errores por defecto (i18n)
+
+Sin inputs de personalización usa las claves `ALERTS.*` de `src/assets/i18n/{es,en}.json` (`REQUIRED`, `MAJOR`, `MINOR`, `PATTERN`, `INVALID_EMAIL`, `MIN_VALUE`, `MAX_VALUE`, `UNIQUE`).
+
 ## Servicios
 
 - Una sola responsabilidad por servicio, `providedIn: 'root'`.

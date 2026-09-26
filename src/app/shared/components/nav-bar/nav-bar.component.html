@@ -2,20 +2,13 @@
   <p-menubar [model]="menuItems()" styleClass="custom-menubar">
     <ng-template #start>
       <a routerLink="/" class="mr-6 flex items-center gap-3">
-        <span
-          class="grid h-9 w-9 grid-cols-2 gap-0.5 rounded-xl bg-linear-to-br from-(--primary-500) to-(--primary-700) p-1.5 shadow-lg"
-          aria-hidden="true"
-        >
-          <span class="rounded-xs bg-white/30"></span>
-          <span class="rounded-xs bg-white/30"></span>
-          <span class="rounded-xs bg-white/30"></span>
-          <span class="rounded-xs bg-white"></span>
-        </span>
-        <span class="text-xl font-bold tracking-tight text-(--text-primary)">Synapta</span>
+        <img src="assets/img/sinappta-logo-sqared.png" alt="Logo Synapta" class="h-9 w-9" />
+        <img src="assets/img/sinappta-title.png" alt="Synapta" class="navbar-title h-9 w-auto" />
       </a>
     </ng-template>
     <ng-template #end>
       <div class="flex items-center gap-3">
+        <app-generation-bell />
         <app-theme-panel />
       </div>
     </ng-template>

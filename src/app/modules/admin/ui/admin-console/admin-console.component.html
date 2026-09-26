@@ -1,0 +1,21 @@
+<app-page-container title="Consola de Administración">
+  <p-tabs [value]="$any(activeValue)" [scrollable]="true" styleClass="admin-console-tabs">
+    <p-tablist>
+      @for (item of tabItems(); track item.value) {
+        <p-tab [value]="item.value">
+          <a
+            [routerLink]="item.routerLink"
+            class="flex items-center gap-2 no-underline outline-none"
+          >
+            <i class="{{ item.icon }}"></i>
+            <span>{{ item.label }}</span>
+          </a>
+        </p-tab>
+      }
+    </p-tablist>
+  </p-tabs>
+
+  <div class="mt-6">
+    <router-outlet />
+  </div>
+</app-page-container>

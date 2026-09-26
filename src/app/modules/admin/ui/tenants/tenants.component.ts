@@ -46,6 +46,7 @@ export class TenantsComponent {
   protected readonly error = signal<string | null>(null);
   protected readonly creating = signal(false);
 
+  /** Formulario de creación de tenants. */
   protected readonly form = this.formBuilder.group({
     name: ['', Validators.required],
     slug: ['', Validators.required],
@@ -97,7 +98,7 @@ export class TenantsComponent {
 
   protected confirmDeactivate(tenant: Tenant): void {
     this.confirmationService.confirm({
-      message: `¿Estás seguro de que quieres desactivar el tenant "${tenant.name}"?`,
+      message: `¿Estás seguro de que quieres desactivar el tenant "${tenant.name}"? Sus usuarios perderán acceso inmediatamente.`,
       header: 'Confirmar desactivación',
       icon: 'pi pi-exclamation-triangle',
       acceptLabel: 'Desactivar',

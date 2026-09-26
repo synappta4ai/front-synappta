@@ -10,12 +10,14 @@ import {
 import { ApiResponse } from '../interfaces/api.interface';
 import { environment } from '@env/environment';
 import { Observable, of, tap, catchError, map } from 'rxjs';
+import { UserSessionStore } from '@core/store';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ThemeService {
   private http = inject(HttpClient);
+  private sessionStore = inject(UserSessionStore);
   private platformId = inject(PLATFORM_ID);
 
   // Signals para el estado del tema
@@ -43,6 +45,7 @@ export class ThemeService {
    */
   private loadTheme(): void {
     if (!isPlatformBrowser(this.platformId)) return;
+    if (!this.sessionStore.isLoggedIn()) return;
 
     this.isLoading.set(true);
 

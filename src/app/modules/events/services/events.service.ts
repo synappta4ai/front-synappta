@@ -66,8 +66,8 @@ export class EventsService {
     return unwrap(this.eventsApiRepository.getPiece(id));
   }
 
-  createPiece(payload: CreatePieceRequest): Observable<Piece> {
-    return unwrap(this.eventsApiRepository.createPiece(payload));
+  createPiece(eventId: string, payload: CreatePieceRequest): Observable<Piece> {
+    return unwrap(this.eventsApiRepository.createPiece(eventId, payload));
   }
 
   updatePiece(id: string, payload: UpdatePieceRequest): Observable<Piece> {

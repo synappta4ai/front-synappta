@@ -29,14 +29,40 @@ export const routes: Routes = [
         loadChildren: () => import('@modules/agency/agency.routes').then((m) => m.agencyRoutes),
       },
       {
+        path: 'studio',
+        canActivate: [authGuard],
+        loadChildren: () => import('@modules/studio/studio.routes').then((m) => m.studioRoutes),
+      },
+      {
         path: 'video',
         canActivate: [authGuard],
         loadChildren: () => import('@modules/video/video.routes').then((m) => m.videoRoutes),
       },
       {
+        // /events muestra los eventos de generación; el CRUD de eventos
+        // (proyectos de agencia) vive en /events/manage.
         path: 'events',
         canActivate: [authGuard],
-        loadChildren: () => import('@modules/events/events.routes').then((m) => m.eventsRoutes),
+        children: [
+          {
+            path: '',
+            title: 'Eventos de generación',
+            loadComponent: () =>
+              import('@modules/studio/ui/generation-events/generation-events.component').then(
+                (m) => m.GenerationEventsComponent,
+              ),
+          },
+          {
+            path: 'manage',
+            title: 'Eventos',
+            loadChildren: () => import('@modules/events/events.routes').then((m) => m.eventsRoutes),
+          },
+        ],
+      },
+      {
+        path: 'projects',
+        canActivate: [authGuard],
+        loadChildren: () => import('@modules/projects/projects.routes').then((m) => m.projectsRoutes),
       },
       {
         path: 'admin',

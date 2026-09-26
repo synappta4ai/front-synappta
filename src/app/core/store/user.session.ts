@@ -26,10 +26,12 @@ async function loadFromStorage(storageService: StorageService): Promise<AuthStat
       ...initialAuthState,
       ...saved,
       isAuthenticated: !!saved.token && !!saved.user,
+      isHydrated: true,
+      isHydrating: false,
     };
   }
 
-  return initialAuthState;
+  return { ...initialAuthState, isHydrated: true, isHydrating: false };
 }
 
 async function saveToStorage(state: AuthState, storageService: StorageService): Promise<void> {
@@ -49,14 +51,35 @@ export const UserSessionStore = signalStore(
     getToken: computed(() => store.token()),
     getRoles: computed(() => (store.user()?.role_name ? [store.user()!.role_name] : [])),
     getTenantId: computed(() => store.tenantId()),
+    isHydrated: computed(() => store.isHydrated()),
+    isHydrating: computed(() => store.isHydrating()),
   })),
   withMethods((store) => {
     const storageService = inject(StorageService);
 
+    /** Promesa de la hidratación en curso (o completada). Evita lecturas duplicadas de IndexedDB. */
+    let hydrationPromise: Promise<void> | null = null;
+
+    function hydrate(): Promise<void> {
+      if (!hydrationPromise) {
+        hydrationPromise = (async () => {
+          patchState(store, { isHydrating: true });
+          const loadedState = await loadFromStorage(storageService);
+          patchState(store, loadedState);
+        })();
+      }
+      return hydrationPromise;
+    }
+
     return {
+      /** Restaura la sesión desde almacenamiento. Idempotente: solo lee una vez. */
       async init(): Promise<void> {
-        const loadedState = await loadFromStorage(storageService);
-        patchState(store, loadedState);
+        await hydrate();
+      },
+
+      /** Resuelve cuando el store ya restauró la sesión (inmediato si ya terminó). */
+      async waitUntilHydrated(): Promise<void> {
+        await hydrate();
       },
 
       async login(user: User, token: string, tenantId: number): Promise<void> {
@@ -66,13 +89,15 @@ export const UserSessionStore = signalStore(
           tenantId,
           isAuthenticated: true,
           isLoading: false,
+          isHydrated: true,
+          isHydrating: false,
         };
         patchState(store, newState);
         await saveToStorage(newState, storageService);
       },
 
       async logout(): Promise<void> {
-        patchState(store, { ...initialAuthState });
+        patchState(store, { ...initialAuthState, isHydrated: true, isHydrating: false });
         await removeFromStorage(storageService);
       },
 
@@ -87,6 +112,8 @@ export const UserSessionStore = signalStore(
           tenantId: store.tenantId(),
           isAuthenticated: !!token && !!store.user(),
           isLoading: store.isLoading(),
+          isHydrated: true,
+          isHydrating: false,
         };
         patchState(store, newState);
         await saveToStorage(newState, storageService);
@@ -104,6 +131,8 @@ export const UserSessionStore = signalStore(
               tenantId: store.tenantId(),
               isAuthenticated: store.isAuthenticated(),
               isLoading: store.isLoading(),
+              isHydrated: true,
+              isHydrating: false,
             },
             storageService,
           );
@@ -113,6 +142,7 @@ export const UserSessionStore = signalStore(
       async syncState(): Promise<void> {
         const loadedState = await loadFromStorage(storageService);
         patchState(store, loadedState);
+        hydrationPromise = Promise.resolve();
       },
     };
   }),

@@ -1,0 +1,401 @@
+<div class="studio-shell h-full">
+  <!-- ══════════ Left rail: prompt + params ══════════ -->
+  <aside class="studio-left">
+    <div class="studio-mode">
+      <button
+        type="button"
+        class="mode-btn"
+        [class.active]="mode() === 'video'"
+        (click)="setMode('video')"
+      >
+        <i class="pi pi-video"></i> Video
+      </button>
+      <button
+        type="button"
+        class="mode-btn"
+        [class.active]="mode() === 'image'"
+        (click)="setMode('image')"
+      >
+        <i class="pi pi-image"></i> Imagen
+      </button>
+    </div>
+
+    <!-- References (collapsible, typed slots) -->
+    <div class="panel refs-panel">
+      <button
+        type="button"
+        class="panel-head as-btn"
+        (click)="showAssetGallery.set(!showAssetGallery())"
+      >
+        <span><i class="pi pi-images"></i> Referencias</span>
+        <i
+          class="pi"
+          [class.pi-chevron-down]="showAssetGallery()"
+          [class.pi-chevron-right]="!showAssetGallery()"
+        ></i>
+      </button>
+      @if (showAssetGallery()) {
+        <div class="slot-grid">
+          @for (slot of refSlotDefs; track slot.key) {
+            <label
+              class="slot"
+              [class.filled]="!!refSlots()[slot.key]"
+              (click)="$event.preventDefault()"
+            >
+              @if (refSlots()[slot.key]; as assetId) {
+                <img class="slot-img" [src]="assetThumbUrl(assetId)" [alt]="slot.label" />
+                <span class="slot-replace"><i class="pi pi-refresh"></i></span>
+              } @else {
+                <i class="pi pi-plus slot-plus mb-3"></i>
+                <span class="slot-label">{{ slot.label }}</span>
+                <span class="slot-hint">{{ slot.hint }}</span>
+              }
+              <input
+                type="file"
+                accept="image/png,image/jpeg"
+                hidden
+                (change)="onSlotPicked($event, slot.key)"
+              />
+            </label>
+          }
+        </div>
+        <div class="refs-meta muted small">
+          <span>{{ selectedAssetIds().size }}/12 seleccionadas</span>
+        </div>
+        @if (refError(); as err) {
+          <p class="ref-error small" role="alert">
+            <i class="pi pi-exclamation-circle"></i> {{ err }}
+          </p>
+        }
+        @if (assets().length > 0) {
+          <div class="asset-grid">
+            @for (asset of assets().slice(0, 8); track asset.id) {
+              <button
+                type="button"
+                class="asset-thumb"
+                [class.selected]="selectedAssetIds().has(asset.id)"
+                (click)="toggleAsset(asset.id)"
+                [title]="asset.filename"
+              >
+                <img [src]="asset.url | serverUrl" [alt]="asset.filename" />
+              </button>
+            }
+          </div>
+        }
+      }
+    </div>
+
+    <!-- Prompt: big, with inline controls in the footer -->
+    <div class="panel prompt-panel">
+      <textarea
+        pTextarea
+        [ngModel]="prompt()"
+        (ngModelChange)="prompt.set($event)"
+        rows="7"
+        placeholder="AGREGÁ TU PROMPT"
+        class="prompt-input big"
+      ></textarea>
+      <input
+        type="text"
+        class="negative-input"
+        placeholder="Negative prompt (opcional)"
+        [ngModel]="negativePrompt()"
+        (ngModelChange)="negativePrompt.set($event)"
+      />
+      <div class="prompt-foot">
+        <span
+          class="foot-chip static"
+          [title]="selectedAssetIds().size + ' referencias seleccionadas'"
+        >
+          <i class="pi pi-paperclip"></i> {{ selectedAssetIds().size }}
+        </span>
+        <p-select
+          [ngModel]="resolution()"
+          (ngModelChange)="resolution.set($event)"
+          [options]="resolutionOptions"
+          inputId="studio-resolution"
+          class="foot-select"
+          appendTo="body"
+          [showClear]="false"
+        >
+          <ng-template pTemplate="selectedItem" let-opt>
+            <span class="ratio-inline"><i class="pi pi-desktop foot-icon"></i> {{ opt }}</span>
+          </ng-template>
+          <ng-template #item let-opt>
+            <span class="ratio-inline"><i class="pi pi-desktop foot-icon"></i> {{ opt }}</span>
+          </ng-template>
+        </p-select>
+        <p-select
+          [ngModel]="ratio()"
+          (ngModelChange)="ratio.set($event)"
+          [options]="ratioOptions"
+          optionLabel="label"
+          optionValue="value"
+          inputId="studio-ratio"
+          class="foot-select"
+          appendTo="body"
+          [showClear]="false"
+        >
+          <ng-template pTemplate="selectedItem" let-opt>
+            <span class="ratio-inline">
+              <span class="ratio-screen" [style.aspect-ratio]="opt.w + '/' + opt.h"></span>
+              {{ opt.label }}
+            </span>
+          </ng-template>
+          <ng-template #item let-opt>
+            <span class="ratio-inline">
+              <span class="ratio-screen" [style.aspect-ratio]="opt.w + '/' + opt.h"></span>
+              {{ opt.label }}
+            </span>
+          </ng-template>
+        </p-select>
+        @if (mode() === 'video') {
+          <button
+            type="button"
+            class="foot-chip duration-trigger"
+            (click)="toggleDurationPopover($event)"
+            [title]="'Duración: ' + durationHint()"
+          >
+            <i class="pi pi-clock"></i> {{ duration() }}s
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Duration popover: range slider bounded by the selected model -->
+    <p-popover #durationPopover styleClass="duration-popover" [style]="{ width: '240px' }">
+      <div class="duration-pop-body">
+        <div class="duration-pop-head">
+          <span>Duration</span>
+          <span class="duration-value">{{ duration() }}s</span>
+        </div>
+        <input
+          type="range"
+          class="duration-range"
+          [min]="durationRange().min"
+          [max]="durationRange().max"
+          [step]="durationRange().step"
+          [value]="duration()"
+          (input)="duration.set(+$any($event.target).value)"
+        />
+        <div class="duration-pop-hint muted small">Model span · up to {{ durationHint() }}</div>
+      </div>
+    </p-popover>
+    <div class="panel">
+      <div class="panel-head">
+        <span><i class="pi pi-sparkles"></i> Modelo</span>
+      </div>
+      @if (loadingModels()) {
+        <p class="muted small">Cargando catálogo…</p>
+      } @else {
+        <p-select
+          [ngModel]="selectedModel()?.name ?? null"
+          (ngModelChange)="onModelChange($event)"
+          [options]="modeModels()"
+          optionLabel="displayName"
+          optionValue="name"
+          placeholder="Elegí el modelo de generación"
+          [filter]="true"
+          [showClear]="false"
+          class="w-full"
+          appendTo="body"
+        >
+          <ng-template #item let-m>
+            <div class="flex items-center justify-between gap-2 w-full">
+              <div class="min-w-0">
+                <p class="font-medium truncate">{{ m.displayName }}</p>
+                <p class="text-xs opacity-60 truncate">{{ m.name }}</p>
+              </div>
+              <div class="flex items-center gap-1 shrink-0">
+                @if (m.type === 'downloaded') {
+                  <p-tag value="worker" severity="success" styleClass="text-[10px]" />
+                  @if (m.vramGb) {
+                    <p-tag
+                      [value]="m.vramGb + ' GB'"
+                      severity="secondary"
+                      styleClass="text-[10px]"
+                    />
+                  }
+                } @else {
+                  <p-tag [value]="m.badge" severity="info" styleClass="text-[10px]" />
+                }
+                @if (!m.available) {
+                  <p-tag value="no disp." severity="danger" styleClass="text-[10px]" />
+                }
+              </div>
+            </div>
+          </ng-template>
+        </p-select>
+      }
+    </div>
+
+    <!-- Seed -->
+    <div class="panel">
+      <div class="panel-head">
+        <span><i class="pi pi-database"></i> Seed</span>
+      </div>
+      <input
+        type="text"
+        class="seed-input"
+        placeholder="aleatoria"
+        [ngModel]="seed()"
+        (ngModelChange)="seed.set($event)"
+      />
+    </div>
+
+    <button type="button" class="generate-btn" [disabled]="!canGenerate()" (click)="generate()">
+      <i class="pi" [class.pi-spin.pi-spinner]="submitting()" [class.pi-bolt]="!submitting()"></i>
+      {{ submitting() ? 'Enviando…' : 'Generar ' + (mode() === 'video' ? 'Video' : 'Imagen') }}
+    </button>
+  </aside>
+
+  <!-- ══════════ Center: viewer ══════════ -->
+  <section class="studio-center">
+    @if (error(); as message) {
+      <p-message severity="error" [text]="message" [escape]="false" />
+    }
+    @if (selectedTake(); as take) {
+      <div class="viewer">
+        @switch (take.status) {
+          @case ('succeeded') {
+            @if (mode() === 'video') {
+              <video controls autoplay loop class="viewer-media">
+                <source [src]="take.videoUrl | serverUrl" type="video/mp4" />
+              </video>
+            } @else {
+              <img [src]="take.videoUrl | serverUrl" [alt]="take.prompt" class="viewer-media" />
+            }
+          }
+          @case ('failed') {
+            <div class="viewer-placeholder error">
+              <i class="pi pi-times-circle text-3xl"></i>
+              <p>La generación falló</p>
+              @if (take.error) {
+                <p class="small muted">{{ take.error }}</p>
+              }
+            </div>
+          }
+          @case ('cancelled') {
+            <div class="viewer-placeholder">
+              <i class="pi pi-ban text-3xl"></i>
+              <p>Generación cancelada</p>
+            </div>
+          }
+          @default {
+            <div class="viewer-placeholder">
+              <i class="pi pi-spin pi-spinner text-3xl"></i>
+              <p>{{ take.status === 'queued' ? 'En cola…' : 'Generando…' }}</p>
+              <div class="progress-track">
+                <div class="progress-fill" [style.width.%]="take.progress"></div>
+              </div>
+              <p class="muted small">{{ take.progress }}%</p>
+            </div>
+          }
+        }
+      </div>
+      <div class="viewer-meta">
+        <span class="meta-model">{{ take.modelDisplayName }}</span>
+        <span class="muted">·</span>
+        <span>{{ take.ratio }}</span>
+        @if (take.duration) {
+          <span class="muted">·</span>
+          <span>{{ take.duration }}s</span>
+        }
+        <span class="muted">·</span>
+        <span class="prompt-ellipsis" [title]="take.prompt">{{ take.prompt }}</span>
+      </div>
+    } @else {
+      <div class="viewer">
+        <div class="viewer-placeholder">
+          <i class="pi pi-video text-4xl"></i>
+          <p>Tus tomas aparecen acá</p>
+          <p class="muted small">Escribí un prompt y generá tu primer take</p>
+        </div>
+      </div>
+      <div class="viewer-meta muted">Sin take seleccionado</div>
+    }
+  </section>
+
+  <!-- ══════════ Right: take reel + queue ══════════ -->
+  <aside class="studio-right">
+    <div class="reel-head">
+      <span><i class="pi pi-film"></i> Take Reel</span>
+      <p-tag [value]="takes().length.toString()" severity="secondary" />
+    </div>
+    @if (takes().length === 0) {
+      <p class="muted small pad">Todavía no hay tomas en esta sesión.</p>
+    }
+    <div class="reel-list">
+      @for (take of takes(); track take.id) {
+        <button
+          type="button"
+          class="take-card"
+          [class.selected]="take.id === selectedTakeId()"
+          (click)="selectTake(take)"
+        >
+          @if (take.status === 'succeeded' && take.videoUrl) {
+            <video
+              class="take-thumb"
+              [src]="take.videoUrl | serverUrl"
+              preload="metadata"
+              muted
+            ></video>
+          } @else {
+            <div class="take-thumb placeholder">
+              <i class="pi" [class.pi-spin.pi-spinner]="take.status === 'running'"></i>
+            </div>
+          }
+          <div class="take-info">
+            <p class="take-title truncate">{{ take.modelDisplayName }}</p>
+            <p class="take-sub muted small truncate">{{ take.prompt }}</p>
+            <div class="take-foot">
+              <p-tag
+                [value]="takeStatusLabel(take.status)"
+                [severity]="takeStatusSeverity(take.status)"
+                styleClass="text-[10px]"
+              />
+              @if (take.status === 'running' || take.status === 'queued') {
+                <span class="small muted">{{ take.progress }}%</span>
+                <p-button
+                  icon="pi pi-times"
+                  [rounded]="true"
+                  [text]="true"
+                  severity="secondary"
+                  styleClass="w-6 h-6"
+                  (onClick)="cancelTake(take)"
+                  pTooltip="Cancelar"
+                />
+              }
+              <span class="small muted time">{{ formatTime(take.createdAt) }}</span>
+            </div>
+          </div>
+        </button>
+      }
+    </div>
+
+    <div class="queue-head">
+      <span><i class="pi pi-list"></i> Cola de generación</span>
+      <p-tag
+        [value]="activeTakes().length.toString()"
+        [severity]="activeTakes().length ? 'info' : 'secondary'"
+      />
+    </div>
+    @if (activeTakes().length === 0) {
+      <p class="muted small pad">Sin trabajos en curso.</p>
+    }
+    <div class="queue-list">
+      @for (take of activeTakes(); track take.id) {
+        <div class="queue-item">
+          <i class="pi pi-spin pi-spinner"></i>
+          <div class="queue-info">
+            <p class="truncate">{{ take.modelDisplayName }}</p>
+            <div class="progress-track slim">
+              <div class="progress-fill" [style.width.%]="take.progress"></div>
+            </div>
+          </div>
+          <span class="small muted">{{ take.progress }}%</span>
+        </div>
+      }
+    </div>
+  </aside>
+</div>

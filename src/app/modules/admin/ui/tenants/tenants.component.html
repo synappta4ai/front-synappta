@@ -127,7 +127,8 @@
             <div>
               <h2 class="text-lg font-semibold text-(--text-primary)">Lista de Tenants</h2>
               <p class="text-sm text-(--text-secondary)">
-                {{ tenants().length }} tenants configurados
+                {{ tenants().length }} tenants configurados · sus modelos y API keys se gestionan
+                en la pestaña "Modelos"
               </p>
             </div>
           </div>
@@ -142,11 +143,11 @@
       >
         <ng-template #header>
           <tr>
-            <th style="width: 25%">Nombre</th>
-            <th style="width: 15%">Slug</th>
-            <th style="width: 20%">Creado</th>
-            <th style="width: 10%" class="text-center">Estado</th>
-            <th style="width: 15%" class="text-center">Acciones</th>
+            <th style="width: 30%">Nombre</th>
+            <th style="width: 18%">Slug</th>
+            <th style="width: 22%">Creado</th>
+            <th style="width: 12%" class="text-center">Estado</th>
+            <th style="width: 18%" class="text-center">Acciones</th>
           </tr>
         </ng-template>
         <ng-template #body let-tenant>

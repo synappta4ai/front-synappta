@@ -1,34 +1,57 @@
 import { CanActivateFn, Router } from '@angular/router';
-import { inject } from '@angular/core';
+import { PLATFORM_ID, inject } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+
 import { UserSessionStore } from '../store';
 import { APP_ROUTES, AUTH } from '@constants/routes';
 
 /**
- * Permite el acceso a usuarios autenticados
- * @returns
+ * SSR: en el servidor no hay IndexedDB/localStorage, la sesión nunca podrá
+ * restaurarse ahí. Se devuelve `true` para que el SSR renderice el shell y
+ * sea el guard en el navegador (con la sesión ya hidratada) quien decida.
  */
-export const authGuard: CanActivateFn = () => {
+function isServer(): boolean {
+  return !isPlatformBrowser(inject(PLATFORM_ID));
+}
+
+/**
+ * Permite el acceso a usuarios autenticados.
+ * Espera la hidratación de la sesión (IndexedDB) antes de decidir,
+ * para que recargar la página no redirija al login.
+ */
+export const authGuard: CanActivateFn = async () => {
+  if (isServer()) {
+    return true;
+  }
+
   const sessionStore = inject(UserSessionStore);
   const router = inject(Router);
+
+  await sessionStore.waitUntilHydrated();
 
   if (sessionStore.isLoggedIn()) {
     return true;
   }
 
-  return router.navigate([AUTH.ROOT, AUTH.LOGIN]);
+  // UrlTree en vez de router.navigate(): seguro en SSR y sin efectos de lado.
+  return router.createUrlTree([AUTH.ROOT, AUTH.LOGIN]);
 };
 
 /**
  * No permite el acceso a usuarios autenticados a la pantalla de login
- * @returns boolean
  */
-export const loginGuestGuard: CanActivateFn = () => {
+export const loginGuestGuard: CanActivateFn = async () => {
+  if (isServer()) {
+    return true;
+  }
+
   const sessionStore = inject(UserSessionStore);
   const router = inject(Router);
 
-  console.log('isLoggedIn', sessionStore.isLoggedIn());
+  await sessionStore.waitUntilHydrated();
+
   if (sessionStore.isLoggedIn()) {
-    return router.navigate([APP_ROUTES.ROOT]);
+    return router.createUrlTree([APP_ROUTES.ROOT]);
   }
 
   return true;

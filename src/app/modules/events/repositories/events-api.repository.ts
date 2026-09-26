@@ -83,8 +83,11 @@ export class EventsApiRepository {
     return this.http.get<ApiResponse<Piece>>(`${this.apiUrl}/pieces/${id}`);
   }
 
-  createPiece(payload: CreatePieceRequest): Observable<ApiResponse<Piece>> {
-    return this.http.post<ApiResponse<Piece>>(`${this.apiUrl}/pieces`, payload);
+  createPiece(eventId: string, payload: CreatePieceRequest): Observable<ApiResponse<Piece>> {
+    return this.http.post<ApiResponse<Piece>>(
+      `${this.apiUrl}/events/${eventId}/pieces`,
+      payload,
+    );
   }
 
   updatePiece(id: string, payload: UpdatePieceRequest): Observable<ApiResponse<Piece>> {

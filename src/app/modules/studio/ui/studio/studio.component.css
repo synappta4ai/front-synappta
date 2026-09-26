@@ -1,0 +1,740 @@
+/* Lienzo del Studio: sigue el tema global (claro/oscuro) y la paleta
+   dinámica del usuario vía las variables --surface/--text/--primary. */
+:host {
+  display: block;
+  background:
+    radial-gradient(1100px 460px at 85% -8%, color-mix(in srgb, var(--primary-500) 10%, transparent), transparent 60%),
+    radial-gradient(900px 420px at -10% 30%, color-mix(in srgb, var(--primary-400) 5%, transparent), transparent 55%),
+    var(--content-bg);
+  min-height: calc(100vh - 64px);
+  padding: 18px 20px;
+}
+
+/* Studio workspace: 3 columnas (params | viewer | takes).
+   Las variables --st-* se mapean al tema global (claro/oscuro + paleta dinámica). */
+.studio-shell {
+  --st-bg: var(--surface-100);
+  --st-panel: var(--surface-0);
+  --st-panel-2: var(--surface-100);
+  --st-line: var(--border-color);
+  --st-text: var(--text-primary);
+  --st-text-2: var(--text-secondary);
+  --st-muted: var(--text-muted);
+  --st-accent: var(--primary-500);
+  --st-accent-2: var(--primary-400);
+  --st-ok: #34d399;
+  --st-err: var(--red-400);
+  --st-warn: var(--yellow-400);
+
+  display: grid;
+  grid-template-columns: 340px minmax(0, 1fr) 320px;
+  gap: 16px;
+  min-height: 640px;
+  color: var(--st-text);
+}
+
+.studio-left,
+.studio-right {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-right: 4px;
+}
+
+.studio-center {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  color: var(--st-text);
+}
+
+/* ── Panels ─────────────────────────────────────────────────── */
+.panel {
+  background: var(--st-panel);
+  border: 1px solid var(--st-line);
+  border-radius: 14px;
+  padding: 12px;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  color: var(--st-text-2);
+}
+
+.panel-head i {
+  color: var(--st-accent);
+  margin-right: 6px;
+}
+
+/* ── Mode switch ────────────────────────────────────────────── */
+.studio-mode {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.mode-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 0;
+  border-radius: 10px;
+  border: 1px solid var(--st-line);
+  background: var(--st-panel);
+  color: var(--st-text-2);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.mode-btn:hover {
+  border-color: var(--st-accent);
+  color: var(--st-text);
+}
+
+.mode-btn.active {
+  background: linear-gradient(135deg, var(--st-accent), var(--primary-700));
+  border-color: var(--st-accent);
+  color: #ffffff;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--primary-500) 35%, transparent);
+}
+
+/* ── Prompt ─────────────────────────────────────────────────── */
+.prompt-panel {
+  padding: 8px;
+}
+
+.prompt-input,
+.negative-input,
+.seed-input {
+  width: 100%;
+  background: var(--st-bg);
+  border: 1px solid var(--st-line);
+  border-radius: 10px;
+  color: var(--st-text);
+  padding: 10px;
+  font-size: 13px;
+  resize: vertical;
+}
+
+.prompt-input:focus,
+.negative-input:focus,
+.seed-input:focus {
+  outline: none;
+  border-color: var(--st-accent);
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.25);
+}
+
+.prompt-input {
+  min-height: 120px;
+  border: none;
+  outline: none;
+  resize: none;
+}
+
+.prompt-input::placeholder,
+.negative-input::placeholder,
+.seed-input::placeholder {
+  color: var(--st-muted);
+  letter-spacing: 0.08em;
+}
+
+.negative-input {
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.negative-input:focus,
+.seed-input:focus {
+  outline: 1px solid var(--st-accent);
+}
+
+/* ── Assets ─────────────────────────────────────────────────── */
+.upload-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  border: 1px dashed var(--st-line);
+  cursor: pointer;
+  color: var(--st-text-2);
+  background: transparent;
+}
+
+.upload-btn:hover {
+  color: var(--st-accent);
+  border-color: var(--st-accent);
+}
+
+.asset-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.asset-thumb {
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid var(--st-line);
+  padding: 0;
+  cursor: pointer;
+  background: var(--st-bg);
+}
+
+.asset-thumb:hover {
+  border-color: var(--st-text-2);
+}
+
+.asset-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.asset-thumb.selected {
+  border-color: var(--st-accent-2);
+  box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.3);
+}
+
+/* ── References: collapsible head + typed slots ─────────────── */
+.panel-head.as-btn {
+  width: 100%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--st-text-2);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 0;
+  padding: 0;
+}
+
+.panel-head.as-btn:hover {
+  color: var(--st-text);
+}
+
+.refs-panel {
+  padding: 12px 12px 10px;
+}
+
+.refs-panel .panel-head.as-btn {
+  margin-bottom: 10px;
+}
+
+.slot-grid {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 8px;
+  justify-content: center;
+}
+
+/* Columnas más anchas cuando el panel izquierdo se apila en pantallas angostas */
+@media (max-width: 1100px) {
+  .slot-grid {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 8px;
+  }
+}
+
+@media (max-width: 640px) {
+  .slot {
+    min-height: 92px;
+  }
+
+  .asset-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+
+  .prompt-foot {
+    flex-wrap: wrap;
+  }
+
+  .foot-select.p-select,
+  .foot-select .p-select {
+    height: 36px;
+  }
+}
+
+/* Iconos compactos del footer del prompt */
+.foot-icon {
+  font-size: 11px;
+  color: var(--st-accent);
+  flex-shrink: 0;
+}
+
+.slot {
+  position: relative;
+  aspect-ratio: 0.9;
+  min-height: 104px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  border: 1px solid var(--st-line);
+  border-radius: 10px;
+  background: var(--st-bg);
+  cursor: pointer;
+  overflow: hidden;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.slot-plus {
+  font-size: 14px;
+  color: var(--st-text);
+}
+
+.slot-label {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--st-text);
+  text-align: center;
+  line-height: 1.15;
+  padding: 0 3px;
+}
+
+.slot-hint {
+  display: none;
+}
+
+.slot:hover {
+  border-color: var(--st-accent);
+  box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.35);
+}
+
+.slot.filled {
+  border-style: solid;
+}
+
+.slot:hover {
+  border-color: var(--st-accent);
+  box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.35);
+}
+
+.slot-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.slot-replace {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--surface-950) 55%, transparent);
+  color: var(--surface-50);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.slot:hover .slot-replace {
+  opacity: 1;
+}
+
+.refs-meta {
+  margin: 2px 0 8px;
+}
+
+.ref-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  background: rgba(248, 113, 113, 0.1);
+  color: var(--st-err);
+}
+
+/* ── Prompt footer: attach count + compact selects ──────────── */
+.prompt-foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.foot-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 10px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--st-line);
+  background: var(--st-bg);
+  color: var(--st-text-2);
+  font-size: 12px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.foot-chip i {
+  font-size: 11px;
+  color: var(--st-accent);
+}
+
+.foot-select {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+/* Ratio: icono de pantalla proporcional junto al label.
+   Los nodos del template (label del select y opciones del overlay)
+   carry el atributo de encapsulación → CSS del componente alcanza. */
+.ratio-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.ratio-screen {
+  display: inline-block;
+  width: 15px;
+  max-height: 13px;
+  border: 1.5px solid currentColor;
+  border-radius: 2.5px;
+  opacity: 0.85;
+  flex-shrink: 0;
+}
+
+.foot-select.p-select,
+.foot-select .p-select {
+  width: auto;
+  height: 32px;
+  font-size: 12px;
+  border-radius: 8px;
+  background: var(--st-bg) !important;
+  border: 1px solid var(--st-line) !important;
+}
+
+.foot-select .p-select-label,
+.foot-select.p-select .p-select-label {
+  color: var(--st-text) !important;
+  padding: 0 8px !important;
+  font-size: 12px !important;
+}
+
+.foot-select .p-select-dropdown,
+.foot-select.p-select .p-select-dropdown {
+  color: var(--st-muted) !important;
+  width: 1.7rem !important;
+}
+
+/* ── Generate button ────────────────────────────────────────── */
+.generate-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, var(--st-accent), var(--primary-700) 60%, var(--primary-900));
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--primary-500) 40%, transparent);
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    opacity 0.15s ease;
+}
+
+.generate-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 26px color-mix(in srgb, var(--primary-500) 55%, transparent);
+}
+
+.generate-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ── Viewer ─────────────────────────────────────────────────── */
+.viewer {
+  flex: 1;
+  min-height: 320px;
+  border-radius: 16px;
+  border: 1px solid var(--st-line);
+  background: var(--st-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.viewer-media {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.viewer-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: var(--st-muted);
+  padding: 24px;
+  text-align: center;
+}
+
+.viewer-placeholder.error {
+  color: var(--st-err);
+}
+
+.viewer-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--st-text-2);
+  padding: 0 4px;
+}
+
+.meta-model {
+  font-weight: 600;
+  color: var(--st-text);
+}
+
+.prompt-ellipsis {
+  max-width: 40ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Progress ───────────────────────────────────────────────── */
+.progress-track {
+  width: 260px;
+  max-width: 80%;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--st-line);
+  overflow: hidden;
+}
+
+.progress-track.slim {
+  width: 100%;
+  height: 4px;
+  margin-top: 4px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--st-accent), var(--st-accent-2));
+  transition: width 0.4s ease;
+}
+
+/* ── Take reel ──────────────────────────────────────────────── */
+.reel-head,
+.queue-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--st-text-2);
+  padding: 2px 4px;
+}
+
+.reel-head i,
+.queue-head i {
+  color: var(--st-accent);
+  margin-right: 6px;
+}
+
+.reel-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.take-card {
+  display: flex;
+  gap: 10px;
+  padding: 8px;
+  border-radius: 12px;
+  border: 1px solid var(--st-line);
+  background: var(--st-panel);
+  cursor: pointer;
+  text-align: left;
+  color: var(--st-text);
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.take-card:hover {
+  border-color: var(--st-text-2);
+}
+
+.take-card.selected {
+  border-color: var(--st-accent);
+  background: var(--st-panel-2);
+  box-shadow: 0 0 0 1px var(--st-accent);
+}
+
+.take-thumb {
+  width: 96px;
+  height: 54px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: var(--st-bg);
+  flex-shrink: 0;
+}
+
+.take-thumb.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--st-muted);
+}
+
+.take-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.take-title {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.take-sub {
+  font-size: 11px;
+  margin: 2px 0 4px;
+}
+
+.take-foot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.take-foot .time {
+  margin-left: auto;
+}
+
+/* ── Queue ──────────────────────────────────────────────────── */
+.queue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.queue-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--st-line);
+  background: var(--st-panel);
+  font-size: 12px;
+  color: var(--st-text);
+}
+
+.queue-item i {
+  color: var(--st-accent-2);
+}
+
+.queue-info {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── Utils ──────────────────────────────────────────────────── */
+.muted {
+  color: var(--st-muted);
+}
+
+.small {
+  font-size: 11px;
+}
+
+.pad {
+  padding: 0 4px;
+}
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Responsive: apilar en pantallas angostas */
+@media (max-width: 1100px) {
+  .studio-shell {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .viewer {
+    min-height: 300px;
+  }
+}
+
+/* ── PrimeNG select dentro del Studio: contraste propio ─────── */
+.studio-shell .p-select {
+  background: var(--st-bg);
+  border: 1px solid var(--st-line);
+  border-radius: 10px;
+}
+
+.studio-shell .p-select:not(.p-disabled):hover {
+  border-color: var(--st-text-2);
+}
+
+.studio-shell .p-select.p-focus {
+  border-color: var(--st-accent);
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.25);
+}
+
+.studio-shell .p-select-label {
+  color: var(--st-text);
+}
+
+.studio-shell .p-select-placeholder {
+  color: var(--st-text-2);
+}
+
+.studio-shell .p-select-dropdown {
+  color: var(--st-text-2);
+}
+
+/* Mensaje de error con contraste */
+.studio-shell .p-message {
+  margin-bottom: 8px;
+}
