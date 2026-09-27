@@ -188,6 +188,37 @@
                   inputStyleClass="w-full"
                 />
               </div>
+            } @else if (credForm.controls.provider.value === 'higgsfield') {
+              <div class="flex flex-col gap-2">
+                <label for="cred-hf-keyid" class="text-sm font-medium text-(--text-primary)">
+                  Key ID <span class="text-red-500">*</span>
+                </label>
+                <input
+                  pInputText
+                  id="cred-hf-keyid"
+                  formControlName="access_key_id"
+                  placeholder="Higgsfield API Key ID"
+                  class="w-full"
+                />
+              </div>
+              <div class="flex flex-col gap-2">
+                <label for="cred-hf-secret" class="text-sm font-medium text-(--text-primary)">
+                  Key Secret <span class="text-red-500">*</span>
+                </label>
+                <p-password
+                  inputId="cred-hf-secret"
+                  formControlName="secret_access_key"
+                  [feedback]="false"
+                  [toggleMask]="true"
+                  placeholder="Higgsfield API Key Secret"
+                  styleClass="w-full"
+                  inputStyleClass="w-full"
+                />
+                <small class="text-[var(--text-muted)]">
+                  Consigue ambos en Higgsfield Console (open.higgsfield.ai) → API Keys. Se envían
+                  como "Authorization: Key &lt;id&gt;:&lt;secret&gt;".
+                </small>
+              </div>
             } @else {
               <div class="flex flex-col gap-2">
                 <label for="cred-apikey" class="text-sm font-medium text-(--text-primary)">

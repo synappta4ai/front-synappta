@@ -7,6 +7,7 @@ import { environment } from '@env/environment';
 
 import {
   CreateTenantRequest,
+  GeneratedImagesPage,
   GeneratedVideosPage,
   ServerCommsPage,
   Tenant,
@@ -95,9 +96,20 @@ export class AdminApiRepository {
   }
 
   /** Videos generados completados, con contexto de proyecto/pieza/usuario. */
-  listGeneratedVideos(page = 1, limit = 20): Observable<ApiResponse<GeneratedVideosPage>> {
-    return this.http.get<ApiResponse<GeneratedVideosPage>>(`${this.apiUrl}/agency/videos`, {
-      params: { page, limit },
-    });
+  listGeneratedVideos(page = 1, limit = 20, eventId?: string): Observable<ApiResponse<GeneratedVideosPage>> {
+    const params: Record<string, number | string> = { page, limit };
+    if (eventId) {
+      params['event_id'] = eventId;
+    }
+    return this.http.get<ApiResponse<GeneratedVideosPage>>(`${this.apiUrl}/agency/videos`, { params });
+  }
+
+  /** Imágenes generadas completadas (misma forma que videos). */
+  listGeneratedImages(page = 1, limit = 20, eventId?: string): Observable<ApiResponse<GeneratedImagesPage>> {
+    const params: Record<string, number | string> = { page, limit };
+    if (eventId) {
+      params['event_id'] = eventId;
+    }
+    return this.http.get<ApiResponse<GeneratedImagesPage>>(`${this.apiUrl}/agency/images`, { params });
   }
 }

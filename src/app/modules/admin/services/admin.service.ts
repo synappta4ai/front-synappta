@@ -2,8 +2,11 @@ import { inject, Injectable } from '@angular/core';
 import { HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
+import { ApiResponse } from '@interfaces/api.interface';
+
 import {
   CreateTenantRequest,
+  GeneratedImagesPage,
   GeneratedVideosPage,
   ServerCommsPage,
   Tenant,
@@ -69,17 +72,28 @@ export class AdminService {
     return unwrap(this.adminApiRepository.listServerComms(page, limit, taskId));
   }
 
-  listGeneratedVideos(page = 1, limit = 20): Observable<GeneratedVideosPage> {
-    return unwrap(this.adminApiRepository.listGeneratedVideos(page, limit));
+  listGeneratedVideos(page = 1, limit = 20, eventId?: string): Observable<GeneratedVideosPage> {
+    return unwrap(this.adminApiRepository.listGeneratedVideos(page, limit, eventId));
+  }
+
+  listGeneratedImages(page = 1, limit = 20, eventId?: string): Observable<GeneratedImagesPage> {
+    return unwrap(this.adminApiRepository.listGeneratedImages(page, limit, eventId));
   }
 }
 
-function unwrap<T>(source: Observable<{ data: T | null; message: string }>): Observable<T> {
+function unwrap<T>(source: Observable<ApiResponse<T>>): Observable<T> {
   return new Observable<T>((subscriber) => {
     const subscription = source.subscribe({
       next: (response) => {
+        // success:false es error real; success:true con data:null es una
+        // respuesta de solo-mensaje (p.ej. "file added to ingredient").
+        if (response.success === false) {
+          subscriber.error(new Error(response.message || 'Request failed'));
+          return;
+        }
         if (response.data === null) {
-          subscriber.error(new Error(response.message || 'Unexpected empty response'));
+          subscriber.next(null as T);
+          subscriber.complete();
           return;
         }
         subscriber.next(response.data);

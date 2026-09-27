@@ -1,5 +1,5 @@
 <app-page-container title="Consola de Administración">
-  <p-tabs [value]="$any(activeValue)" [scrollable]="true" styleClass="admin-console-tabs">
+  <p-tabs [value]="activeValue()" [scrollable]="true" styleClass="admin-console-tabs">
     <p-tablist>
       @for (item of tabItems(); track item.value) {
         <p-tab [value]="item.value">

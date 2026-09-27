@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { Router, RouterLink, RouterOutlet } from '@angular/router';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Tabs, Tab, TabList } from 'primeng/tabs';
 
 import { UserSessionStore } from '@core/store/user.session';
@@ -24,6 +25,7 @@ export class AdminConsoleComponent {
     const items = [
       { value: 'models', label: 'Modelos', icon: 'pi pi-microchip', routerLink: '/admin/models' },
       { value: 'videos', label: 'Videos', icon: 'pi pi-video', routerLink: '/admin/videos' },
+      { value: 'imagens', label: 'Imágenes', icon: 'pi pi-image', routerLink: '/admin/imagens' },
       { value: 'logs', label: 'Logs', icon: 'pi pi-list', routerLink: '/admin/logs' },
     ];
     if (this.isSuperadmin()) {
@@ -37,10 +39,22 @@ export class AdminConsoleComponent {
     return items;
   });
 
-  protected get activeValue(): string {
+  /** Tab activo reactivo: el getter anterior quedaba stale con OnPush. */
+  protected readonly activeValue = signal(this.computeActiveValue());
+
+  constructor() {
+    this.router.events.pipe(takeUntilDestroyed()).subscribe((e) => {
+      if (e instanceof NavigationEnd) {
+        this.activeValue.set(this.computeActiveValue());
+      }
+    });
+  }
+
+  private computeActiveValue(): string {
     const url = this.router.url;
     if (url.includes('/admin/tenants')) return 'tenants';
     if (url.includes('/admin/videos')) return 'videos';
+    if (url.includes('/admin/imagens')) return 'imagens';
     if (url.includes('/admin/logs')) return 'logs';
     return 'models';
   }

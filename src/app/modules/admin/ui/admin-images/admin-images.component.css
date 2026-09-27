@@ -1,0 +1,388 @@
+/* ─── Toolbar principal ───────────────────────────────────── */
+.images-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--surface-200);
+  background: var(--surface-50);
+}
+
+.images-toolbar__group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Búsqueda con icono dentro (p-iconfield) */
+.images-search {
+  width: 230px;
+}
+
+.images-search input {
+  width: 100%;
+  font-size: 13.5px;
+  padding-left: 2.4rem;
+}
+
+.images-search .p-inputicon {
+  color: var(--surface-400);
+}
+
+/* Select de proyectos en la toolbar */
+.toolbar-select {
+  width: 190px;
+  height: 40px;
+  font-size: 13.5px;
+}
+
+.toolbar-select .p-select-label {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.toolbar-select .p-select-label.p-placeholder {
+  color: var(--text-secondary);
+}
+
+.toolbar-select .p-select-dropdown {
+  color: var(--text-secondary);
+}
+
+/* ─── Botones de subida por tipo ─────────────────────────── */
+.upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.upload-btn.solid {
+  background: var(--primary-500);
+  color: #fff;
+}
+
+.upload-btn.solid:hover {
+  background: var(--primary-600);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--primary-500) 45%, transparent);
+}
+
+.upload-btn.tinted {
+  background: color-mix(in srgb, var(--primary-500) 16%, transparent);
+  border-color: color-mix(in srgb, var(--primary-500) 35%, transparent);
+  color: var(--primary-300);
+}
+
+.upload-btn.tinted:hover {
+  background: color-mix(in srgb, var(--primary-500) 28%, transparent);
+  color: var(--primary-200);
+}
+
+.upload-btn:active {
+  transform: translateY(1px);
+}
+
+/* ─── Tabs por tipo ─────────────────────────────────────────── */
+.type-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  border-bottom: 1px solid var(--surface-300);
+}
+
+.type-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 14px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  color: var(--text-secondary);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  border-radius: 8px 8px 0 0;
+}
+
+.type-tab:hover:not(.active) {
+  background: color-mix(in srgb, var(--primary-500) 6%, transparent);
+}
+
+.type-tab:hover {
+  color: var(--text-primary);
+}
+
+.type-tab.active {
+  color: var(--primary-300);
+  border-bottom-color: var(--primary-400);
+}
+
+.type-tab .pi {
+  font-size: 13px;
+}
+
+.type-tab .count {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: var(--surface-200);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
+.type-tab .count.badge {
+  background: var(--primary-500);
+  color: #fff;
+}
+
+/* ─── Cards de recursos ─────────────────────────────────────── */
+.resource-card {
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--surface-200);
+  background: var(--surface-0);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.resource-card:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--primary-500) 45%, var(--surface-200));
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+}
+
+/* Badges sobre la miniatura */
+.resource-card .overlay-badge {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.62);
+  backdrop-filter: blur(4px);
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.resource-card .select-chip {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.resource-card .select-chip:hover {
+  background: rgba(0, 0, 0, 0.75);
+}
+
+.resource-card .select-chip.checked {
+  background: var(--primary-500);
+  border-color: var(--primary-400);
+}
+
+/* Cuerpo de la card */
+.resource-card .card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 10px 12px 12px;
+}
+
+.resource-card .filename {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.resource-card .ing-chip {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: color-mix(in srgb, var(--primary-500) 20%, transparent);
+  color: var(--primary-200);
+}
+
+.resource-card .meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.64rem;
+  color: var(--text-muted);
+}
+
+/* ─── Chip de tenant (superadmin) ───────────────────────────── */
+.tenant-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: var(--surface-100);
+  border: 1px solid var(--surface-300);
+  color: var(--text-primary);
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tenant-chip .pi {
+  color: var(--primary-400);
+}
+
+/* ─── Contador de total ─────────────────────────────────────── */
+.total-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary-500) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary-500) 40%, transparent);
+  color: var(--primary-300);
+  font-size: 12.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.total-chip strong {
+  font-size: 14px;
+}
+
+.total-chip small {
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+/* ─── Error banner ──────────────────────────────────────────── */
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--red-500) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--red-500) 40%, transparent);
+  color: var(--red-300);
+  font-size: 13.5px;
+  font-weight: 500;
+}
+
+.error-banner .pi {
+  flex-shrink: 0;
+}
+
+.error-banner button {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* ─── Viewer: ingredientes editables ────────────────────────── */
+.ing-editor {
+  border: 1px solid var(--surface-200);
+  border-radius: 12px;
+  padding: 14px;
+  background: var(--surface-0);
+}
+
+.ing-editor .editor-title {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+/* ─── Paginación ─────────────────────────────────────────── */
+.pagination-bar {
+  border: 1px solid var(--surface-200);
+  border-radius: 14px;
+  background: var(--surface-50);
+}
+
+/* ─── Empty state ───────────────────────────────────────────── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 56px 24px;
+  border-radius: 16px;
+  border: 1px dashed var(--surface-300);
+  background:
+    radial-gradient(
+      480px 200px at 50% 0%,
+      color-mix(in srgb, var(--primary-500) 7%, transparent),
+      transparent
+    ),
+    var(--surface-50);
+  text-align: center;
+}
+
+.empty-state .empty-icon {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary-500) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary-500) 30%, transparent);
+  color: var(--primary-300);
+  font-size: 26px;
+}
+
+.empty-state h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.empty-state p {
+  margin: 0;
+  max-width: 420px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}

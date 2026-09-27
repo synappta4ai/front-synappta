@@ -319,6 +319,69 @@
             }
           </div>
         </div>
+        <!-- Imágenes de referencia del proyecto (centralización de recursos) -->
+        <div class="mt-5">
+          <div class="flex h-9 items-center justify-between">
+            <label class="text-sm font-medium text-(--text-primary)">
+              <i class="pi pi-images mr-1 text-[var(--primary-500)]"></i>
+              Imágenes de referencia del proyecto
+            </label>
+            @if (selectedProject()) {
+              <div class="flex items-center gap-1">
+                <p-button
+                  label="Biblioteca"
+                  icon="pi pi-folder-open"
+                  size="small"
+                  [text]="true"
+                  (onClick)="libraryPickerVisible.set(true)"
+                />
+                <label class="p-button p-button-text p-button-sm" [class.p-disabled]="uploadingRef()">
+                  <i class="pi" [class.pi-spin.pi-spinner]="uploadingRef()" [class.pi-upload]="!uploadingRef()"></i>
+                  <span class="ml-1">Subir</span>
+                  <input type="file" accept="image/png,image/jpeg" class="hidden" (change)="onRefPicked($event)" [disabled]="uploadingRef()" />
+                </label>
+              </div>
+            }
+          </div>
+          @if (!selectedProject()) {
+            <div class="rounded-lg border border-dashed border-[var(--surface-200)] bg-[var(--surface-0)] p-3 text-center text-sm text-(--text-muted)">
+              Selecciona un proyecto para ver y subir sus imágenes de referencia
+            </div>
+          } @else if (loadingRefs()) {
+            <div class="flex items-center gap-2 rounded-lg border border-[var(--surface-200)] bg-[var(--surface-0)] p-3">
+              <i class="pi pi-spin pi-spinner text-[var(--primary-500)]"></i>
+              <span class="text-sm text-(--text-secondary)">Cargando referencias...</span>
+            </div>
+          } @else if (refImages().length === 0) {
+            <div class="rounded-lg border border-dashed border-[var(--surface-200)] bg-[var(--surface-0)] p-3 text-center text-sm text-(--text-muted)">
+              Este proyecto todavía no tiene imágenes asignadas. Sube una o asígnalas desde Admin → Imágenes.
+            </div>
+          } @else {
+            <div class="flex flex-wrap gap-2">
+              @for (ref of refImages(); track ref.id) {
+                <button
+                  type="button"
+                  class="relative overflow-hidden rounded-lg border-2 transition-colors"
+                  [style.borderColor]="selectedRefIds().has(ref.id) ? 'var(--primary-500)' : 'transparent'"
+                  (click)="toggleRef(ref.id)"
+                  [title]="ref.filename"
+                >
+                  @if (ref.thumbnail_url || ref.url) {
+                    <img [src]="(ref.thumbnail_url || ref.url) | serverUrl" [alt]="ref.filename" class="h-16 w-16 object-cover" />
+                  } @else {
+                    <span class="flex h-16 w-16 items-center justify-center"><i class="pi pi-image text-xl"></i></span>
+                  }
+                  @if (selectedRefIds().has(ref.id)) {
+                    <span class="absolute right-0.5 top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--primary-500)] text-[10px] text-white">
+                      <i class="pi pi-check"></i>
+                    </span>
+                  }
+                </button>
+              }
+            </div>
+            <small class="text-[var(--text-muted)]">{{ selectedRefIds().size }} seleccionadas (máx. {{ maxSelectedRefs }}) — se envían como referencia al modelo.</small>
+          }
+        </div>
         <div class="mt-5 grid items-start gap-5 sm:grid-cols-2">
           <div class="flex flex-col gap-2">
             <div class="flex h-9 items-center">
@@ -525,4 +588,13 @@
       />
     </ng-template>
   </p-dialog>
+
+  <!-- Biblioteca de recursos existentes (misma galería que /admin/imagens) -->
+  <app-asset-picker-dialog
+    [visible]="libraryPickerVisible()"
+    (visibleChange)="libraryPickerVisible.set($event)"
+    (confirmed)="onLibraryPicked($event)"
+    title="Elegir referencias de la biblioteca"
+    [max]="maxSelectedRefs"
+  />
 </app-page-container>

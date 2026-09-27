@@ -23,6 +23,7 @@ import {
   UpsertCredentialRequest,
 } from '../interfaces';
 import { AgencyApiRepository } from '../repositories';
+import { ApiResponse } from '@interfaces/api.interface';
 
 const TERMINAL_STATUSES: readonly string[] = ['succeeded', 'failed', 'cancelled'];
 
@@ -114,12 +115,19 @@ export class AgencyService {
   }
 }
 
-function unwrap<T>(source: Observable<{ data: T | null; message: string }>): Observable<T> {
+function unwrap<T>(source: Observable<ApiResponse<T>>): Observable<T> {
   return new Observable<T>((subscriber) => {
     const subscription = source.subscribe({
       next: (response) => {
+        // success:false es error real; success:true con data:null es una
+        // respuesta de solo-mensaje.
+        if (response.success === false) {
+          subscriber.error(new Error(response.message || 'Request failed'));
+          return;
+        }
         if (response.data === null) {
-          subscriber.error(new Error(response.message || 'Unexpected empty response'));
+          subscriber.next(null as T);
+          subscriber.complete();
           return;
         }
         subscriber.next(response.data);

@@ -24,7 +24,9 @@ import { VideoService } from '../../services/video.service';
 import { AiModel, StatusResponse } from '@modules/agency/interfaces';
 import { EventsService } from '@modules/events/services/events.service';
 import { Event as Project, Piece, Program } from '@modules/events/interfaces';
-import { PageContainerComponent } from '@shared/components/index';
+import { LibraryService } from '@modules/library/services';
+import { FileAsset } from '@modules/library/interfaces';
+import { PageContainerComponent, AssetPickerDialogComponent } from '@shared/components/index';
 import { ServerUrlPipe } from '@pipes/server-url.pipe';
 
 @Component({
@@ -45,6 +47,7 @@ import { ServerUrlPipe } from '@pipes/server-url.pipe';
     Tag,
     Dialog,
     ServerUrlPipe,
+    AssetPickerDialogComponent,
   ],
   templateUrl: './video.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -52,6 +55,7 @@ import { ServerUrlPipe } from '@pipes/server-url.pipe';
 export class VideoComponent {
   private readonly videoService = inject(VideoService);
   private readonly eventsService = inject(EventsService);
+  private readonly libraryService = inject(LibraryService);
   private readonly formBuilder = inject(NonNullableFormBuilder);
   private readonly route = inject(ActivatedRoute);
 
@@ -104,6 +108,15 @@ export class VideoComponent {
   });
   protected readonly aspectRatioOptions = ['16:9', '9:16', '1:1', '4:3', '21:9'];
 
+  // ─── Imágenes de referencia del proyecto (centralización) ─────
+  protected readonly refImages = signal<FileAsset[]>([]);
+  protected readonly selectedRefIds = signal<Set<string>>(new Set());
+  protected readonly loadingRefs = signal(false);
+  protected readonly uploadingRef = signal(false);
+  protected readonly maxSelectedRefs = 12;
+  /** Modal de biblioteca para elegir referencias ya subidas. */
+  protected readonly libraryPickerVisible = signal(false);
+
   protected readonly form = this.formBuilder.group({
     eventId: ['', Validators.required],
     pieceId: ['', Validators.required],
@@ -117,6 +130,85 @@ export class VideoComponent {
   constructor() {
     this.loadModels();
     this.loadProjects();
+  }
+
+  // ─── Referencias de imagen del proyecto ────────────────────────
+  private loadRefImages(eventId: string): void {
+    this.loadingRefs.set(true);
+    this.libraryService
+      .listFilesByEvent(eventId, 'images')
+      .pipe(
+        catchError(() => EMPTY),
+        finalize(() => this.loadingRefs.set(false)),
+      )
+      .subscribe((files) => {
+        this.refImages.set(files);
+        // Keep only still-selected references that belong to this project.
+        const valid = new Set(files.map((f) => f.id));
+        this.selectedRefIds.update((prev) => new Set([...prev].filter((id) => valid.has(id))));
+      });
+  }
+
+  protected toggleRef(id: string): void {
+    const next = new Set(this.selectedRefIds());
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      if (next.size >= this.maxSelectedRefs) {
+        return;
+      }
+      next.add(id);
+    }
+    this.selectedRefIds.set(next);
+  }
+
+  protected onRefPicked(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    const project = this.selectedProject();
+    if (!file || !project) {
+      input.value = '';
+      return;
+    }
+    this.uploadingRef.set(true);
+    this.libraryService
+      .uploadFile(file, 'images', project.id)
+      .pipe(
+        catchError(() => {
+          this.error.set(`No se pudo subir "${file.name}".`);
+          return EMPTY;
+        }),
+        finalize(() => {
+          this.uploadingRef.set(false);
+          input.value = '';
+        }),
+      )
+      .subscribe((asset) => {
+        this.refImages.update((list) => [asset, ...list]);
+        this.toggleRef(asset.id);
+      });
+  }
+
+  /**
+   * Recursos elegidos en la modal de biblioteca: se agregan a la lista de
+   * referencias del proyecto y quedan seleccionados (hasta el máximo).
+   */
+  protected onLibraryPicked(picked: FileAsset[]): void {
+    if (picked.length === 0) {
+      return;
+    }
+    this.refImages.update((list) => {
+      const known = new Set(list.map((a) => a.id));
+      return [...list, ...picked.filter((p) => !known.has(p.id))];
+    });
+    const next = new Set(this.selectedRefIds());
+    for (const p of picked) {
+      if (next.size >= this.maxSelectedRefs) {
+        break;
+      }
+      next.add(p.id);
+    }
+    this.selectedRefIds.set(next);
   }
 
   protected loadModels(): void {
@@ -163,8 +255,11 @@ export class VideoComponent {
     this.pieces.set([]);
     this.form.patchValue({ eventId: '', pieceId: '', pieceCode: '' });
     if (!project) {
+      this.refImages.set([]);
+      this.selectedRefIds.set(new Set());
       return;
     }
+    this.loadRefImages(project.id);
     this.loadingPieces.set(true);
     this.eventsService
       .listPieces({ event_id: project.id })
@@ -316,7 +411,13 @@ export class VideoComponent {
     const value = this.form.getRawValue();
     const payload = {
       model: value.model,
-      content: [{ type: 'text' as const, text: value.prompt }],
+      content: [
+        { type: 'text' as const, text: value.prompt },
+        // Imágenes de referencia del proyecto seleccionadas (centralización).
+        ...this.refImages()
+          .filter((f) => this.selectedRefIds().has(f.id))
+          .map((f) => ({ type: 'image' as const, id: f.id, name: f.filename })),
+      ],
       duration: value.duration,
       event_id: value.eventId,
       piece_id: value.pieceId,

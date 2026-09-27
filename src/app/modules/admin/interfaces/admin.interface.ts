@@ -12,7 +12,7 @@ export interface CreateTenantRequest {
   slug: string;
 }
 
-export type CredentialProviderType = 'byteplus' | 'gemini' | 'anthropic';
+export type CredentialProviderType = 'byteplus' | 'gemini' | 'anthropic' | 'higgsfield';
 
 /** Modelo del catálogo anotado con el estado de credenciales del tenant. */
 export interface TenantModel {
@@ -141,7 +141,7 @@ export interface GenerationOutput {
 }
 
 /** One completed generation with its project/piece/user context. */
-export interface GeneratedVideo {
+export interface GeneratedMedia {
   id: string;
   task_id: string;
   model_name: string;
@@ -174,4 +174,10 @@ export interface GeneratedVideosPage {
   page: number;
   limit: number;
   total_pages: number;
+  /** Tenant dueño de los datos (visible para superadmin). */
+  tenant_slug?: string;
 }
+
+export type GeneratedImagesPage = GeneratedVideosPage;
+export type GeneratedImage = GeneratedMedia;
+export type GeneratedVideo = GeneratedMedia;

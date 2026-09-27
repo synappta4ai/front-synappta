@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
-import { Paginated } from '@interfaces/api.interface';
+import { ApiResponse, Paginated } from '@interfaces/api.interface';
 
 import {
   AddIngredientFileRequest,
@@ -25,8 +25,23 @@ import { LibraryApiRepository } from '../repositories';
 export class LibraryService {
   private readonly libraryApiRepository = inject(LibraryApiRepository);
 
-  uploadFile(file: File, category?: string): Observable<FileAsset> {
-    return unwrap(this.libraryApiRepository.uploadFile(file, category));
+  uploadFile(file: File, category?: string, eventId?: string): Observable<FileAsset> {
+    return unwrap(this.libraryApiRepository.uploadFile(file, category, eventId));
+  }
+
+  /** Asigna un recurso a un proyecto (evento). Idempotente. */
+  linkFileEvent(fileId: string, eventId: string): Observable<null> {
+    return unwrap(this.libraryApiRepository.linkFileEvent(fileId, eventId));
+  }
+
+  /** Quita la asignación de un recurso a un proyecto (evento). */
+  unlinkFileEvent(fileId: string, eventId: string): Observable<null> {
+    return unwrap(this.libraryApiRepository.unlinkFileEvent(fileId, eventId));
+  }
+
+  /** Recursos asignados a un proyecto (evento). */
+  listFilesByEvent(eventId: string, category?: string): Observable<FileAsset[]> {
+    return unwrap(this.libraryApiRepository.listFilesByEvent(eventId, category));
   }
 
   listFilesPaginated(filters: FileListFilters = {}): Observable<Paginated<FileAsset>> {
@@ -126,12 +141,19 @@ export class LibraryService {
   }
 }
 
-function unwrap<T>(source: Observable<{ data: T | null; message: string }>): Observable<T> {
+function unwrap<T>(source: Observable<ApiResponse<T>>): Observable<T> {
   return new Observable<T>((subscriber) => {
     const subscription = source.subscribe({
       next: (response) => {
+        // success:false es error real; success:true con data:null es una
+        // respuesta de solo-mensaje (p.ej. "file added to ingredient").
+        if (response.success === false) {
+          subscriber.error(new Error(response.message || 'Request failed'));
+          return;
+        }
         if (response.data === null) {
-          subscriber.error(new Error(response.message || 'Unexpected empty response'));
+          subscriber.next(null as T);
+          subscriber.complete();
           return;
         }
         subscriber.next(response.data);

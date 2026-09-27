@@ -5,7 +5,8 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { catchError, EMPTY, finalize } from 'rxjs';
+import { catchError, EMPTY, finalize, map, mergeMap, of } from 'rxjs';
+import { Observable } from 'rxjs';
 
 import { Button } from 'primeng/button';
 import { Card } from 'primeng/card';
@@ -16,10 +17,13 @@ import { Checkbox } from 'primeng/checkbox';
 import { Tag } from 'primeng/tag';
 import { Message } from 'primeng/message';
 import { ProgressSpinner } from 'primeng/progressspinner';
+import { Select } from 'primeng/select';
 import { MenuItem } from 'primeng/api';
 
 import { AgencyService } from '../../services/agency.service';
 import { AiModel, Modality, GeneratedAsset, StatusResponse } from '../../interfaces';
+import { EventsService } from '@modules/events/services';
+import { Event as Project, Piece } from '@modules/events/interfaces';
 import { PageContainerComponent } from '@shared/components/index';
 
 type WorkflowPhase = 'input' | 'angles' | 'storyboard' | 'scenes';
@@ -60,12 +64,14 @@ interface StoryboardShot {
     Tag,
     Message,
     ProgressSpinner,
+    Select,
   ],
   templateUrl: './agency.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AgencyComponent {
   private readonly agencyService = inject(AgencyService);
+  private readonly eventsService = inject(EventsService);
   private readonly formBuilder = inject(NonNullableFormBuilder);
 
   protected readonly currentPhase = signal<WorkflowPhase>('input');
@@ -121,11 +127,25 @@ export class AgencyComponent {
 
   protected readonly storyboard = signal<StoryboardScene[]>([]);
 
+  // ─── Proyecto (centralización de recursos) ────────────────────
+  protected readonly projects = signal<Project[]>([]);
+  protected readonly projectOptions = computed(() =>
+    this.projects().map((p) => ({ label: p.name, value: p.id })),
+  );
+  protected readonly selectedProjectId = signal<string | null>(null);
+
   protected readonly form = this.formBuilder.group({
     propertyName: ['', Validators.required],
     location: ['', Validators.required],
     description: [''],
   });
+
+  constructor() {
+    this.eventsService
+      .listEvents()
+      .pipe(catchError(() => EMPTY))
+      .subscribe((projects) => this.projects.set(projects));
+  }
 
   protected get canProceedToAngles(): boolean {
     return this.form.valid && this.projectDescription().length > 0;
@@ -255,61 +275,108 @@ export class AgencyComponent {
     const scene = this.storyboard().find((s) => s.id === sceneId);
     if (!scene) return;
 
-    this.agencyService
-      .generate('image', {
-        model: model.name,
-        content: [{ type: 'text', text: scene.description }],
-        event_id: 'agency-workflow',
-        piece_id: `scene-${sceneId}`,
-        piece_code: `SCENE-${sceneId.toUpperCase()}`,
-        generation_number: 1,
-      })
+    this.ensureSceneAnchor(scene)
       .pipe(
         catchError(() => {
-          this.error.set(`Error al generar la escena ${sceneId}.`);
+          this.error.set('No se pudo preparar el proyecto de la Agencia.');
           return EMPTY;
         }),
       )
-      .subscribe((response) => {
+      .subscribe(({ project, piece }) => {
         this.agencyService
-          .pollTaskUntilDone('image', response.taskId)
+          .generate('image', {
+            model: model.name,
+            content: [{ type: 'text', text: scene.description }],
+            event_id: project.id,
+            piece_id: piece.id,
+            piece_code: piece.piece_code ?? `SCENE-${sceneId.toUpperCase()}`,
+            generation_number: 1,
+          })
           .pipe(
             catchError(() => {
-              this.error.set(`Error al consultar estado de la escena ${sceneId}.`);
+              this.error.set(`Error al generar la escena ${sceneId}.`);
               return EMPTY;
             }),
           )
-          .subscribe((status: StatusResponse) => {
-            if (status.status === 'succeeded' && status.outputs?.[0]?.url) {
-              const url = status.outputs[0].url;
-              this.storyboard.update((scenes) =>
-                scenes.map((s) =>
-                  s.id === sceneId
-                    ? {
-                        ...s,
-                        shots: s.shots.map((shot, idx) => ({
-                          ...shot,
-                          imageUrl: idx === 0 ? url : shot.imageUrl,
-                          generating: false,
-                        })),
-                      }
-                    : s,
-                ),
-              );
-            } else {
-              this.storyboard.update((scenes) =>
-                scenes.map((s) =>
-                  s.id === sceneId
-                    ? {
-                        ...s,
-                        shots: s.shots.map((shot) => ({ ...shot, generating: false })),
-                      }
-                    : s,
-                ),
-              );
-            }
+          .subscribe((response) => {
+            this.agencyService
+              .pollTaskUntilDone('image', response.taskId)
+              .pipe(
+                catchError(() => {
+                  this.error.set(`Error al consultar estado de la escena ${sceneId}.`);
+                  return EMPTY;
+                }),
+              )
+              .subscribe((status: StatusResponse) => {
+                if (status.status === 'succeeded' && status.outputs?.[0]?.url) {
+                  const url = status.outputs[0].url;
+                  this.storyboard.update((scenes) =>
+                    scenes.map((s) =>
+                      s.id === sceneId
+                        ? {
+                            ...s,
+                            shots: s.shots.map((shot, idx) => ({
+                              ...shot,
+                              imageUrl: idx === 0 ? url : shot.imageUrl,
+                              generating: false,
+                            })),
+                          }
+                        : s,
+                    ),
+                  );
+                } else {
+                  this.storyboard.update((scenes) =>
+                    scenes.map((s) =>
+                      s.id === sceneId
+                        ? {
+                            ...s,
+                            shots: s.shots.map((shot) => ({ ...shot, generating: false })),
+                          }
+                        : s,
+                    ),
+                  );
+                }
+              });
           });
       });
+  }
+
+  /**
+   * Resuelve el proyecto/pieza real para una escena: usa el proyecto elegido
+   * en el formulario, o crea/reautiliza uno llamado como el proyecto cargado
+   * ("Agencia <nombre>") para que los recursos queden centralizados.
+   */
+  private ensureSceneAnchor(scene: StoryboardScene): Observable<{ project: Project; piece: Piece }> {
+    const chosenId = this.selectedProjectId();
+    const anchorName = chosenId
+      ? (this.projects().find((p) => p.id === chosenId)?.name ?? 'Agencia')
+      : this.form.getRawValue().propertyName || 'Agencia';
+    return this.eventsService.listEvents().pipe(
+      mergeMap((projects) => {
+        const existing = chosenId
+          ? projects.find((p) => p.id === chosenId)
+          : projects.find((p) => p.name === anchorName);
+        return existing ? of(existing) : this.eventsService.createEvent({ name: anchorName });
+      }),
+      mergeMap((project) =>
+        this.eventsService.listPieces({ event_id: project.id }).pipe(
+          mergeMap((pieces) => {
+            const pieceCode = `SCENE-${scene.id.toUpperCase()}`;
+            const existing = pieces.find((p) => p.piece_code === pieceCode);
+            return existing
+              ? of({ project, piece: existing })
+              : this.eventsService
+                  .createPiece(project.id, {
+                    number: pieces.length + 1,
+                    piece_code: pieceCode,
+                    name: scene.title,
+                    type: 'image',
+                  })
+                  .pipe(map((piece) => ({ project, piece })));
+          }),
+        ),
+      ),
+    );
   }
 
   protected resetWorkflow(): void {

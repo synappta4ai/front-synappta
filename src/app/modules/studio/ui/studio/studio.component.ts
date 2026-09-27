@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { catchError, EMPTY, finalize } from 'rxjs';
 
 import { Button } from 'primeng/button';
+import { Dialog } from 'primeng/dialog';
 import { Popover } from 'primeng/popover';
 import { Select } from 'primeng/select';
 import { PrimeTemplate } from 'primeng/api';
@@ -13,12 +14,15 @@ import { Message } from 'primeng/message';
 import { AgencyService } from '@modules/agency/services';
 import { LibraryService } from '@modules/library/services';
 import { FileAsset } from '@modules/library/interfaces';
+import { EventsService } from '@modules/events/services';
+import { Event as Project } from '@modules/events/interfaces';
 import { ServerUrlPipe } from '@core/pipes/server-url.pipe';
 import { GenerationEventsStore } from '@core/store/generation.events';
 import { environment } from '@env/environment';
 
 import { StudioService } from '../../services/studio.service';
 import { StudioModel, StudioTake } from '../../interfaces';
+import { AssetPickerDialogComponent } from '@shared/components/index';
 
 interface RatioOption {
   label: string;
@@ -41,7 +45,7 @@ const REF_SLOT_DEFS: RefSlotDef[] = [
 
 @Component({
   selector: 'app-studio',
-  imports: [FormsModule, Button, Popover, Select, PrimeTemplate, Tag, Tooltip, Message, ServerUrlPipe],
+  imports: [FormsModule, Button, Dialog, Popover, Select, PrimeTemplate, Tag, Tooltip, Message, ServerUrlPipe, AssetPickerDialogComponent],
   templateUrl: './studio.component.html',
   styleUrl: './studio.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -50,6 +54,7 @@ export class StudioComponent {
   private readonly studioService = inject(StudioService);
   private readonly agencyService = inject(AgencyService);
   private readonly libraryService = inject(LibraryService);
+  private readonly eventsService = inject(EventsService);
 
   // ─── Catalog ───────────────────────────────────────────────────
   protected readonly models = signal<StudioModel[]>([]);
@@ -77,19 +82,39 @@ export class StudioComponent {
     { label: '9:16', value: '9:16', w: 9, h: 16 },
     { label: '1:1', value: '1:1', w: 1, h: 1 },
     { label: '4:3', value: '4:3', w: 4, h: 3 },
+    { label: '3:4', value: '3:4', w: 3, h: 4 },
     { label: '21:9', value: '21:9', w: 21, h: 9 },
   ];
   protected readonly ratioSelectOptions = this.ratioOptions.map((r) => ({ label: r.label, value: r.value }));
-  protected readonly resolutionOptions = ['480p', '720p', '1080p'];
+
+  /** Resoluciones que soporta el modelo elegido (fallback: 480p-1080p). */
+  protected readonly resolutionOptions = computed<string[]>(() => {
+    const res = this.selectedModel()?.source?.defaults?.resolutions;
+    return res && res.length > 0 ? [...res] : ['480p', '720p', '1080p'];
+  });
+
+  /** Ratios que soporta el modelo elegido (null = mostrar todos). */
+  protected readonly allowedRatios = computed<Set<string> | null>(() => {
+    const ratios = this.selectedModel()?.source?.defaults?.ratios;
+    return ratios && ratios.length > 0 ? new Set(ratios) : null;
+  });
+
+  protected readonly visibleRatioOptions = computed<RatioOption[]>(() => {
+    const allowed = this.allowedRatios();
+    return allowed ? this.ratioOptions.filter((r) => allowed.has(r.value)) : this.ratioOptions;
+  });
   protected readonly refSlotDefs = REF_SLOT_DEFS;
   protected readonly refSlots = signal<Record<RefSlotDef['key'], string | null>>({
     character: null,
     location: null,
     props: null,
   });
+  /** Slot recibiendo upload en este momento (para el spinner del slot). */
+  protected readonly uploadingSlot = signal<RefSlotDef['key'] | null>(null);
   /** Límite de tamaño por imagen de referencia. */
   protected readonly maxRefBytes = 10 * 1024 * 1024;
   protected readonly maxRefLabel = '10 MB';
+  protected readonly maxSelectedRefs = 12;
   protected readonly refError = signal<string | null>(null);
   private refErrorTimer: ReturnType<typeof setTimeout> | null = null;
   /**
@@ -121,6 +146,17 @@ export class StudioComponent {
   protected readonly uploading = signal(false);
   protected readonly showAssetGallery = signal(false);
 
+  // ─── Proyecto (centralización de recursos) ──────────────
+  protected readonly projects = signal<Project[]>([]);
+  protected readonly projectOptions = computed(() =>
+    this.projects().map((p) => ({ label: p.name, value: p.id })),
+  );
+  protected readonly selectedProjectId = signal<string | null>(null);
+  protected readonly loadingProjects = signal(false);
+  protected readonly selectedProject = computed(
+    () => this.projects().find((p) => p.id === this.selectedProjectId()) ?? null,
+  );
+
   // ─── Takes (global generation-events store) ───────────────────
   protected readonly eventsStore = inject(GenerationEventsStore);
   protected readonly takes = this.eventsStore.events;
@@ -135,6 +171,21 @@ export class StudioComponent {
 
   /** Duration popover (slider) anchored to the prompt-foot chip. */
   private readonly durationPopover = viewChild<Popover>('durationPopover');
+  private readonly assetPopover = viewChild<Popover>('assetPopover');
+  /** Modal de asignación de proyecto (icono junto a Video/Imagen). */
+  protected readonly projectDialogVisible = signal(false);
+  /** Modal de la biblioteca para elegir referencias ya subidas. */
+  protected readonly libraryPickerVisible = signal(false);
+
+  /** Abre la modal de asignación de proyecto. */
+  protected projectAlert(): void {
+    this.projectDialogVisible.set(true);
+  }
+
+  /** Asset del popover de miniatura abierto (null = cerrado). */
+  protected readonly previewAsset = signal<FileAsset | null>(null);
+  /** Asset mostrado a pantalla completa en el modal. */
+  protected readonly fullscreenAsset = signal<FileAsset | null>(null);
 
   protected toggleDurationPopover(event: Event): void {
     this.durationPopover()?.toggle(event);
@@ -157,7 +208,23 @@ export class StudioComponent {
         this.duration.set(max);
       }
     });
+    // Keep resolution/ratio valid when switching models (e.g. MiniMax H3
+    // only offers 2K; Seedance i2v follows the image and hides ratios).
+    effect(() => {
+      const resolutions = this.resolutionOptions();
+      if (!resolutions.includes(this.resolution())) {
+        this.resolution.set(resolutions[0]);
+      }
+      const allowed = this.allowedRatios();
+      if (allowed && !allowed.has(this.ratio())) {
+        const fallback = this.visibleRatioOptions()[0];
+        if (fallback) {
+          this.ratio.set(fallback.value);
+        }
+      }
+    });
     this.loadModels();
+    this.loadProjects();
     this.loadAssets();
   }
 
@@ -185,15 +252,73 @@ export class StudioComponent {
       });
   }
 
+  private loadProjects(): void {
+    this.loadingProjects.set(true);
+    this.eventsService
+      .listEvents()
+      .pipe(
+        catchError(() => {
+          this.error.set('No se pudieron cargar los proyectos.');
+          return EMPTY;
+        }),
+        finalize(() => this.loadingProjects.set(false)),
+      )
+      .subscribe((projects) => this.projects.set(projects));
+  }
+
+  /** Cambio de proyecto: los recursos se filtran a los asignados a ese proyecto. */
+  protected onProjectChange(projectId: string | null): void {
+    this.selectedProjectId.set(projectId);
+    this.selectedAssetIds.set(new Set());
+    this.refSlots.update((slots) => ({ ...slots, character: null, location: null, props: null }));
+    this.loadAssets();
+  }
+
+  /** Quita la asignación de proyecto (vuelve a la biblioteca global + auto Studio). */
+  protected clearProject(): void {
+    this.onProjectChange(null);
+    this.projectDialogVisible.set(false);
+  }
+
   private loadAssets(): void {
     this.loadingAssets.set(true);
+    const eventId = this.selectedProjectId() ?? undefined;
     this.libraryService
-      .listFiles()
+      .listFilesPaginated({ page: 1, pageSize: 200, event_id: eventId })
       .pipe(
         catchError(() => EMPTY),
         finalize(() => this.loadingAssets.set(false)),
       )
-      .subscribe((files) => this.assets.set(files));
+      .subscribe((pageData) => {
+        const files = [...(pageData.items ?? [])] as FileAsset[];
+        this.assets.set(files);
+        this.autoAssignRefs(files);
+      });
+  }
+
+  /**
+   * Al elegir un proyecto que ya tiene imágenes asignadas, éstas se cargan
+   * como referencias: llenan los slots tipados y quedan seleccionadas para
+   * la generación (hasta maxSelectedRefs).
+   */
+  private autoAssignRefs(files: FileAsset[]): void {
+    if (!this.selectedProjectId()) {
+      return;
+    }
+    const images = files.filter((f) => (f.mime_type ?? '').startsWith('image/'));
+    if (images.length === 0) {
+      return;
+    }
+    const slots = { ...this.refSlots() };
+    (['character', 'location', 'props'] as RefSlotDef['key'][]).forEach((key, i) => {
+      if (images[i]) {
+        slots[key] = images[i].id;
+      }
+    });
+    this.refSlots.set(slots);
+    this.selectedAssetIds.set(
+      new Set(images.slice(0, this.maxSelectedRefs).map((f) => f.id)),
+    );
   }
 
   // ─── Mode & model ──────────────────────────────────────────────
@@ -214,15 +339,121 @@ export class StudioComponent {
     this.ratio.set(value);
   }
 
+  /** Cambio de ratio: ignora valores no soportados por el modelo elegido. */
+  protected onRatioChange(value: string | null): void {
+    if (!value) {
+      return;
+    }
+    const allowed = this.allowedRatios();
+    if (allowed && !allowed.has(value)) {
+      return;
+    }
+    this.ratio.set(value);
+  }
+
   // ─── Assets ────────────────────────────────────────────────────
+  /** Desvincula un slot (no borra el asset de la biblioteca). */
+  protected clearSlot(slot: RefSlotDef['key']): void {
+    this.refSlots.update((slots) => ({ ...slots, [slot]: null }));
+  }
+
+  /** Quita la miniatura de la lista local (sin borrar el asset en el backend). */
+  protected removeAsset(assetId: string): void {
+    this.assets.update((list) => list.filter((a) => a.id !== assetId));
+    const next = new Set(this.selectedAssetIds());
+    if (next.delete(assetId)) {
+      this.selectedAssetIds.set(next);
+    }
+    this.refSlots.update((slots) => {
+      let changed = false;
+      const out = { ...slots };
+      for (const key of Object.keys(out) as RefSlotDef['key'][]) {
+        if (out[key] === assetId) {
+          out[key] = null;
+          changed = true;
+        }
+      }
+      return changed ? out : slots;
+    });
+    if (this.previewAsset()?.id === assetId) {
+      this.previewAsset.set(null);
+      this.assetPopover()?.hide();
+    }
+  }
+
+  /** Abre el popover de vista previa de una miniatura. */
+  protected openPreview(asset: FileAsset, event: Event): void {
+    this.previewAsset.set(asset);
+    this.assetPopover()?.toggle(event);
+  }
+
+  protected closePreview(): void {
+    this.previewAsset.set(null);
+    this.assetPopover()?.hide();
+  }
+
+  /** Abre la imagen a pantalla completa desde el popover. */
+  protected openFullscreen(asset: FileAsset): void {
+    this.fullscreenAsset.set(asset);
+    this.closePreview();
+  }
+
+  protected closeFullscreen(): void {
+    this.fullscreenAsset.set(null);
+  }
+
+  /** Nombre corto del archivo para el popover. */
+  protected shortName(name: string): string {
+    return name.length > 28 ? name.slice(0, 26) + '…' : name;
+  }
+
   protected toggleAsset(id: string): void {
     const next = new Set(this.selectedAssetIds());
     if (next.has(id)) {
       next.delete(id);
     } else {
+      if (next.size >= this.maxSelectedRefs) {
+        this.flashRefError(`Podés seleccionar hasta ${this.maxSelectedRefs} referencias por generación.`);
+        return;
+      }
       next.add(id);
     }
     this.selectedAssetIds.set(next);
+  }
+
+  /**
+   * Recursos elegidos en la modal de biblioteca: se incorporan a la lista
+   * local, quedan seleccionados como referencias y llenan los slots vacíos.
+   */
+  protected onLibraryPicked(picked: FileAsset[]): void {
+    if (picked.length === 0) {
+      return;
+    }
+    this.assets.update((list) => {
+      const known = new Set(list.map((a) => a.id));
+      return [...list, ...picked.filter((p) => !known.has(p.id))];
+    });
+    const next = new Set(this.selectedAssetIds());
+    for (const p of picked) {
+      if (next.size >= this.maxSelectedRefs) {
+        break;
+      }
+      next.add(p.id);
+    }
+    this.selectedAssetIds.set(next);
+    const slots = { ...this.refSlots() };
+    let remaining = [...picked];
+    (['character', 'location', 'props'] as RefSlotDef['key'][]).forEach((key) => {
+      if (slots[key]) {
+        return;
+      }
+      const idx = remaining.findIndex((p) => (p.mime_type ?? '').startsWith('image/'));
+      if (idx >= 0) {
+        slots[key] = remaining[idx].id;
+        remaining = remaining.filter((_, i) => i !== idx);
+      }
+    });
+    this.refSlots.set(slots);
   }
 
   /** Muestra el aviso de límite solo en el momento de la violación; se auto-oculta. */
@@ -242,11 +473,20 @@ export class StudioComponent {
     this.refError.set(null);
   }
 
-  /** Upload a picked image into a typed reference slot (character/location/props). */
+  /**
+   * Upload a picked image into a typed reference slot (character/location/
+   * props). On success the asset is prepended to the gallery (thumbnail
+   * listed immediately) and bound to its slot.
+   */
   protected onSlotPicked(event: Event, slot: RefSlotDef['key']): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) {
+      return;
+    }
+    if (!/^image\/(png|jpeg)$/.test(file.type)) {
+      this.flashRefError(`"${file.name}" no es una imagen PNG o JPEG.`);
+      input.value = '';
       return;
     }
     if (file.size > this.maxRefBytes) {
@@ -255,16 +495,16 @@ export class StudioComponent {
       return;
     }
     this.clearRefError();
-    this.uploading.set(true);
+    this.uploadingSlot.set(slot);
     this.libraryService
-      .uploadFile(file)
+      .uploadFile(file, 'images', this.selectedProjectId() ?? undefined)
       .pipe(
         catchError(() => {
-          this.error.set('No se pudo subir el archivo.');
+          this.flashRefError(`No se pudo subir "${file.name}". Intentá de nuevo.`);
           return EMPTY;
         }),
         finalize(() => {
-          this.uploading.set(false);
+          this.uploadingSlot.set(null);
           input.value = '';
         }),
       )
@@ -287,37 +527,6 @@ export class StudioComponent {
     const origin = environment.apiUrl.replace(/\/api\/v1\/?$/, '');
     const path = url.startsWith('/') ? url : `/${url}`;
     return /^https?:\/\//i.test(url) ? url : `${origin}${path}`;
-  }
-
-  protected onFilePicked(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    if (!file) {
-      return;
-    }
-    if (file.size > this.maxRefBytes) {
-      this.flashRefError(`"${file.name}" supera el máximo de ${this.maxRefLabel} por referencia.`);
-      input.value = '';
-      return;
-    }
-    this.clearRefError();
-    this.uploading.set(true);
-    this.libraryService
-      .uploadFile(file)
-      .pipe(
-        catchError(() => {
-          this.error.set('No se pudo subir el archivo.');
-          return EMPTY;
-        }),
-        finalize(() => {
-          this.uploading.set(false);
-          input.value = '';
-        }),
-      )
-      .subscribe((asset) => {
-        this.assets.update((list) => [asset, ...list]);
-        this.toggleAsset(asset.id);
-      });
   }
 
   // ─── Generate ──────────────────────────────────────────────────
@@ -359,8 +568,9 @@ export class StudioComponent {
     this.eventsStore.upsert(take);
     this.selectedTakeId.set(takeId);
 
+    // Centralización: la generación se liga al proyecto elegido (o al auto "Studio").
     this.studioService
-      .ensureTakeSlot(`Studio ${new Date().toLocaleDateString()}`, this.takeCode())
+      .ensureTakeSlot(`Studio ${new Date().toLocaleDateString()}`, this.takeCode(), this.selectedProjectId() ?? undefined)
       .pipe(
         catchError(() => {
           this.error.set('No se pudo preparar el proyecto Studio.');

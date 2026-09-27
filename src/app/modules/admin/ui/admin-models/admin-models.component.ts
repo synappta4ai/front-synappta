@@ -87,6 +87,7 @@ export class AdminModelsComponent {
     { label: 'BytePlus', value: 'byteplus', icon: 'pi pi-video' },
     { label: 'Gemini', value: 'gemini', icon: 'pi pi-image' },
     { label: 'Anthropic', value: 'anthropic', icon: 'pi pi-file' },
+    { label: 'Higgsfield', value: 'higgsfield', icon: 'pi pi-sparkles' },
   ];
 
   protected readonly tenantOptions = computed<TenantOption[]>(() =>
@@ -103,7 +104,7 @@ export class AdminModelsComponent {
     provider: this.formBuilder.control<CredentialProviderType | null>(null, Validators.required),
     access_key_id: [''],
     secret_access_key: [''],
-    api_key: ['', Validators.required],
+    api_key: [''],
   });
 
   constructor() {
@@ -193,6 +194,18 @@ export class AdminModelsComponent {
 
     const { provider, access_key_id, secret_access_key, api_key } = this.credForm.getRawValue();
     if (!provider) return;
+
+    // Higgsfield autentica con Key ID + Key Secret (no usa api_key); el resto
+    // de proveedores requieren api_key.
+    if (provider === 'higgsfield') {
+      if (!access_key_id.trim() || !secret_access_key.trim()) {
+        this.error.set('Higgsfield necesita Key ID y Key Secret.');
+        return;
+      }
+    } else if (!api_key.trim()) {
+      this.error.set('La API Key es obligatoria para este proveedor.');
+      return;
+    }
 
     const payload: UpsertTenantCredentialRequest = { provider };
     if (api_key.trim()) payload.api_key = api_key.trim();

@@ -43,15 +43,29 @@ export class StudioService {
 
   /**
    * Studio generations need a project/piece anchor for the backend logs.
-   * Auto-provisions a "Studio" project (and a per-slot piece) so creators
-   * never fill forms mid-flow. Idempotent per piece code.
+   * When projectId is provided that project is used directly (centralización
+   * por proyecto); otherwise an auto "Studio" project is provisioned so
+   * creators never fill forms mid-flow. Idempotent per piece code.
    */
-  ensureTakeSlot(pieceName: string, pieceCode: string): Observable<{ project: Project; piece: Piece }> {
-    return this.eventsService.listEvents().pipe(
-      mergeMap((projects) => {
-        const existing = projects.find((p) => p.name === 'Studio');
-        return existing ? of(existing) : this.createStudioProject();
-      }),
+  ensureTakeSlot(
+    pieceName: string,
+    pieceCode: string,
+    projectId?: string,
+  ): Observable<{ project: Project; piece: Piece }> {
+    const project$ = projectId
+      ? this.eventsService.listEvents().pipe(
+          mergeMap((projects) => {
+            const chosen = projects.find((p) => p.id === projectId);
+            return chosen ? of(chosen) : this.createStudioProject();
+          }),
+        )
+      : this.eventsService.listEvents().pipe(
+          mergeMap((projects) => {
+            const existing = projects.find((p) => p.name === 'Studio');
+            return existing ? of(existing) : this.createStudioProject();
+          }),
+        );
+    return project$.pipe(
       mergeMap((project) =>
         this.eventsService.listPieces({ event_id: project.id }).pipe(
           mergeMap((pieces) => {

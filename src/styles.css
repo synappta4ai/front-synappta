@@ -845,6 +845,23 @@ p-button .p-button:disabled {
   border-color: var(--surface-200);
 }
 
+/* Filas: el token del preset de PrimeNG no conmuta con la clase .dark
+   del app → texto claro sobre fondo claro. Fuerzo superficie y texto
+   del tema en filas y hover. */
+.dark .p-datatable .p-datatable-tbody > tr,
+.dark .p-datatable .p-datatable-tbody > tr > td {
+  background: var(--surface-0);
+  color: var(--text-primary);
+}
+
+.dark .p-datatable .p-datatable-tbody > tr:hover > td {
+  background: var(--surface-100);
+}
+
+.dark .p-datatable .p-datatable-tbody > tr .p-tag {
+  opacity: 1;
+}
+
 .dark .p-datatable .p-datatable-tbody > tr > td {
   border-color: var(--surface-200);
 }
@@ -1485,6 +1502,126 @@ app-generation-events {
   width: 1.7rem !important;
 }
 
+/* ── Studio: popover de vista previa de referencias ────────────
+   Montado a nivel body: estilos globales con el tema actual. */
+.asset-popover.p-popover {
+  background: var(--surface-0) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.3) !important;
+  width: 260px !important;
+}
+
+.asset-popover .p-popover-content {
+  padding: 10px !important;
+}
+
+.asset-pop-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.asset-pop-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.asset-pop-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.asset-pop-close {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 999px;
+  background: var(--surface-100);
+  color: var(--text-secondary);
+  font-size: 10px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.asset-pop-close:hover {
+  background: var(--surface-200);
+  color: var(--text-primary);
+}
+
+.asset-pop-imgbtn {
+  padding: 0;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: zoom-in;
+  background: var(--surface-100);
+  transition: border-color 0.15s ease;
+}
+
+.asset-pop-imgbtn:hover {
+  border-color: var(--primary-500);
+}
+
+.asset-pop-imgbtn img {
+  display: block;
+  width: 100%;
+  max-height: 300px;
+  object-fit: contain;
+}
+
+.asset-pop-hint {
+  text-align: center;
+}
+
+/* ── Studio: modal fullscreen de referencia ──────────────────── */
+.asset-fullscreen-dialog {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.asset-fullscreen-dialog .p-dialog-content {
+  padding: 0 !important;
+  background: transparent;
+}
+
+.asset-fullscreen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  cursor: zoom-out;
+}
+
+.asset-fullscreen img {
+  max-width: 90vw;
+  max-height: 82vh;
+  object-fit: contain;
+  border-radius: 10px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+}
+
+.asset-fullscreen-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 90vw;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-950) 80%, transparent);
+  color: var(--surface-50);
+  font-size: 12px;
+}
+
 /* ── Studio: popover de duración (slider) ──────────────────────
    Se monta a nivel body: estilos globales con la paleta Studio. */
 .duration-popover.p-popover {
@@ -1591,4 +1728,138 @@ app-generation-events {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* ─── Consola Admin: tabs de sección (Modelos/Videos/…/Tenants) ──
+   styleClass de p-tabs no llega al host: se apunta por estructura.
+   .mx-auto > .p-tabs = solo la barra de navegación (no la de Logs). */
+app-admin-console .mx-auto > .p-tabs .p-tablist {
+  background: transparent;
+  width: fit-content;
+  max-width: 100%;
+  margin-inline: auto;
+}
+
+app-admin-console .mx-auto > .p-tabs .p-tablist-tab-list {
+  background: var(--surface-50);
+  border: 1px solid var(--surface-200);
+  border-radius: 14px;
+  padding: 5px;
+  gap: 6px;
+}
+
+app-admin-console .mx-auto > .p-tabs .p-tab {
+  border-radius: 10px;
+  padding: 9px 18px;
+  min-height: 40px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+app-admin-console .mx-auto > .p-tabs .p-tab .pi {
+  font-size: 15px;
+  opacity: 0.85;
+}
+
+app-admin-console .mx-auto > .p-tabs .p-tab:hover {
+  background: var(--surface-200);
+  color: var(--text-primary);
+}
+
+app-admin-console .mx-auto > .p-tabs .p-tab:hover .pi {
+  color: var(--primary-300);
+  opacity: 1;
+}
+
+app-admin-console .mx-auto > .p-tabs .p-tab.p-tab-active {
+  background: var(--primary-500);
+  color: #fff;
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--primary-500) 45%, transparent);
+}
+
+app-admin-console .mx-auto > .p-tabs .p-tab.p-tab-active .pi {
+  color: #fff;
+  opacity: 1;
+}
+
+app-admin-console .mx-auto > .p-tabs .p-tab:focus-visible {
+  outline: 2px solid var(--primary-400);
+  outline-offset: 2px;
+}
+
+app-admin-console .mx-auto > .p-tabs .p-tablist-active-bar {
+  display: none;
+}
+
+/* ─── Admin Imágenes: toolbar de secciones (Generadas | Recursos) ──
+   styleClass cae en cada p-togglebutton interno, no en el grupo. */
+p-selectbutton:has(.section-toggle) {
+  display: inline-flex;
+  gap: 4px;
+  background: var(--surface-100);
+  border: 1px solid var(--surface-300);
+  border-radius: 12px;
+  padding: 4px;
+}
+
+.p-togglebutton.section-toggle {
+  border: none !important;
+  background: transparent !important;
+  color: var(--text-secondary) !important;
+  border-radius: 8px !important;
+  font-weight: 600;
+  padding: 9px 16px;
+  white-space: nowrap;
+}
+
+/* El theme pinta el content interno: hay que pintar/fondo en AMBOS
+   (host y content) para que no se cuele el pill claro del theme. */
+.p-togglebutton.section-toggle .p-togglebutton-content {
+  background: transparent;
+  color: inherit;
+  border-radius: inherit;
+}
+
+.p-togglebutton.section-toggle .pi {
+  color: var(--surface-400);
+}
+
+.p-togglebutton.section-toggle:hover {
+  color: var(--text-primary) !important;
+  background: var(--surface-200) !important;
+}
+
+.p-togglebutton.section-toggle:hover .pi {
+  color: var(--primary-300);
+}
+
+.p-togglebutton.section-toggle.p-togglebutton-checked {
+  background: var(--primary-500) !important;
+  color: #fff !important;
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--primary-500) 50%, transparent);
+}
+
+.p-togglebutton.section-toggle.p-togglebutton-checked .p-togglebutton-content {
+  background: var(--primary-500) !important;
+  color: #fff !important;
+}
+
+.p-togglebutton.section-toggle.p-togglebutton-checked .pi {
+  color: #fff;
+}
+
+/* ─── Modal de biblioteca (asset-picker-dialog) ────────────────
+   El theme deja el host del p-dialog claro (surface-900 invertido). */
+.asset-picker-dialog {
+  background: var(--surface-0);
+  border: 1px solid var(--surface-200);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.asset-picker-dialog .p-dialog-footer {
+  background: transparent;
+  border-top: 1px solid var(--surface-200);
 }

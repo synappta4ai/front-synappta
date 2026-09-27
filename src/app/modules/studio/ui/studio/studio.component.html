@@ -1,6 +1,12 @@
 <div class="studio-shell h-full">
   <!-- ══════════ Left rail: prompt + params ══════════ -->
   <aside class="studio-left">
+    <!-- Proyecto seleccionado (caption sutil, solo si hay) -->
+    @if (selectedProject(); as project) {
+      <p class="project-caption" [title]="'Proyecto asignado: ' + project.name">
+        <i class="pi pi-briefcase"></i> {{ project.name }}
+      </p>
+    }
     <div class="studio-mode">
       <button
         type="button"
@@ -17,6 +23,24 @@
         (click)="setMode('image')"
       >
         <i class="pi pi-image"></i> Imagen
+      </button>
+      <!-- Proyecto: icono compacto, asignación opcional en modal -->
+      <button
+        type="button"
+        class="project-icon-btn"
+        [class.has-project]="!!selectedProject()"
+        (click)="projectAlert()"
+        [title]="
+          selectedProject()
+            ? 'Proyecto asignado (opcional) — clic para cambiar o quitar'
+            : 'Asignar proyecto (opcional)'
+        "
+      >
+        <i
+          class="pi"
+          [class.pi-check-circle]="selectedProject()"
+          [class.pi-briefcase]="!selectedProject()"
+        ></i>
       </button>
     </div>
 
@@ -35,16 +59,33 @@
         ></i>
       </button>
       @if (showAssetGallery()) {
+        <button
+          type="button"
+          class="library-picker-btn"
+          (click)="libraryPickerVisible.set(true)"
+        >
+          <i class="pi pi-folder-open"></i>
+          Elegir de la biblioteca
+        </button>
+      }
+      @if (showAssetGallery()) {
         <div class="slot-grid">
           @for (slot of refSlotDefs; track slot.key) {
-            <label
-              class="slot"
-              [class.filled]="!!refSlots()[slot.key]"
-              (click)="$event.preventDefault()"
-            >
-              @if (refSlots()[slot.key]; as assetId) {
+            <!-- label nativo: el click activa el input file oculto -->
+            <label class="slot" [class.filled]="!!refSlots()[slot.key]">
+              @if (uploadingSlot() === slot.key) {
+                <span class="slot-uploading"><i class="pi pi-spin pi-spinner"></i></span>
+              } @else if (refSlots()[slot.key]; as assetId) {
                 <img class="slot-img" [src]="assetThumbUrl(assetId)" [alt]="slot.label" />
                 <span class="slot-replace"><i class="pi pi-refresh"></i></span>
+                <button
+                  type="button"
+                  class="slot-clear"
+                  title="Quitar referencia"
+                  (click)="$event.preventDefault(); $event.stopPropagation(); clearSlot(slot.key)"
+                >
+                  <i class="pi pi-times"></i>
+                </button>
               } @else {
                 <i class="pi pi-plus slot-plus mb-3"></i>
                 <span class="slot-label">{{ slot.label }}</span>
@@ -60,7 +101,10 @@
           }
         </div>
         <div class="refs-meta muted small">
-          <span>{{ selectedAssetIds().size }}/12 seleccionadas</span>
+          <span>{{ selectedAssetIds().size }}/{{ maxSelectedRefs }} seleccionadas</span>
+          @if (uploading()) {
+            <span class="refs-uploading"><i class="pi pi-spin pi-spinner"></i> Subiendo…</span>
+          }
         </div>
         @if (refError(); as err) {
           <p class="ref-error small" role="alert">
@@ -70,15 +114,37 @@
         @if (assets().length > 0) {
           <div class="asset-grid">
             @for (asset of assets().slice(0, 8); track asset.id) {
-              <button
-                type="button"
+              <div
                 class="asset-thumb"
                 [class.selected]="selectedAssetIds().has(asset.id)"
+                role="button"
+                tabindex="0"
                 (click)="toggleAsset(asset.id)"
+                (keydown.enter)="toggleAsset(asset.id)"
                 [title]="asset.filename"
               >
-                <img [src]="asset.url | serverUrl" [alt]="asset.filename" />
-              </button>
+                <img
+                  [src]="asset.thumbnail_url || asset.url | serverUrl"
+                  [alt]="asset.filename"
+                  loading="lazy"
+                />
+                <span class="asset-check"><i class="pi pi-check"></i></span>
+                <button
+                  type="button"
+                  class="asset-remove"
+                  title="Quitar de la lista"
+                  (click)="$event.stopPropagation(); removeAsset(asset.id)"
+                >
+                  <i class="pi pi-times"></i>
+                </button>
+                <span
+                  class="asset-eye"
+                  title="Ver"
+                  (click)="$event.stopPropagation(); openPreview(asset, $event)"
+                >
+                  <i class="pi pi-eye"></i>
+                </span>
+              </div>
             }
           </div>
         }
@@ -112,7 +178,7 @@
         <p-select
           [ngModel]="resolution()"
           (ngModelChange)="resolution.set($event)"
-          [options]="resolutionOptions"
+          [options]="resolutionOptions()"
           inputId="studio-resolution"
           class="foot-select"
           appendTo="body"
@@ -127,8 +193,8 @@
         </p-select>
         <p-select
           [ngModel]="ratio()"
-          (ngModelChange)="ratio.set($event)"
-          [options]="ratioOptions"
+          (ngModelChange)="onRatioChange($event)"
+          [options]="visibleRatioOptions()"
           optionLabel="label"
           optionValue="value"
           inputId="studio-ratio"
@@ -181,6 +247,69 @@
         <div class="duration-pop-hint muted small">Model span · up to {{ durationHint() }}</div>
       </div>
     </p-popover>
+
+    <!-- Popover de vista previa de referencia (click en el ojo de la miniatura) -->
+    <p-popover #assetPopover styleClass="asset-popover" [style]="{ width: '260px' }">
+      @if (previewAsset(); as asset) {
+        <div class="asset-pop-body">
+          <div class="asset-pop-head">
+            <span class="asset-pop-name" [title]="asset.filename">{{
+              shortName(asset.filename)
+            }}</span>
+            <button
+              type="button"
+              class="asset-pop-close"
+              (click)="closePreview()"
+              aria-label="Cerrar"
+            >
+              <i class="pi pi-times"></i>
+            </button>
+          </div>
+          <button
+            type="button"
+            class="asset-pop-imgbtn"
+            (click)="openFullscreen(asset)"
+            [title]="'Ampliar ' + asset.filename"
+          >
+            <img [src]="asset.url || asset.thumbnail_url | serverUrl" [alt]="asset.filename" />
+          </button>
+          <small class="asset-pop-hint muted">Click en la imagen para pantalla completa</small>
+        </div>
+      }
+    </p-popover>
+
+    <!-- Modal fullscreen de referencia -->
+    <p-dialog
+      [visible]="!!fullscreenAsset()"
+      (visibleChange)="$event ? null : closeFullscreen()"
+      [modal]="true"
+      [draggable]="false"
+      [resizable]="false"
+      [showHeader]="false"
+      styleClass="asset-fullscreen-dialog"
+      [breakpoints]="{ '960px': '95vw' }"
+    >
+      @if (fullscreenAsset(); as asset) {
+        <div class="asset-fullscreen" (click)="closeFullscreen()">
+          <img
+            [src]="asset.url | serverUrl"
+            [alt]="asset.filename"
+            (click)="$event.stopPropagation()"
+          />
+          <div class="asset-fullscreen-meta">
+            <span class="truncate" [title]="asset.filename">{{ asset.filename }}</span>
+            <p-button
+              icon="pi pi-times"
+              [rounded]="true"
+              [text]="true"
+              severity="contrast"
+              (onClick)="closeFullscreen()"
+              ariaLabel="Cerrar"
+            />
+          </div>
+        </div>
+      }
+    </p-dialog>
     <div class="panel">
       <div class="panel-head">
         <span><i class="pi pi-sparkles"></i> Modelo</span>
@@ -398,4 +527,66 @@
       }
     </div>
   </aside>
+
+  <!-- Asignación de proyecto in-place (desde el icono) -->
+  <p-dialog
+    [visible]="projectDialogVisible()"
+    (visibleChange)="projectDialogVisible.set($event)"
+    [modal]="true"
+    [style]="{ width: 'min(92vw, 26rem)' }"
+    [draggable]="false"
+    [resizable]="false"
+    [closeOnEscape]="true"
+    [dismissableMask]="true"
+    header="Asignar proyecto"
+    styleClass="studio-project-dialog"
+  >
+    <div class="project-dialog-body">
+      @if (loadingProjects()) {
+        <p class="muted small">Cargando proyectos…</p>
+      } @else {
+        <p-select
+          [ngModel]="selectedProjectId()"
+          (ngModelChange)="onProjectChange($event)"
+          [options]="projectOptions()"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Sin proyecto (Studio auto)"
+          [showClear]="true"
+          [filter]="true"
+          styleClass="w-full"
+          appendTo="body"
+        />
+        <p class="muted small project-pop-hint">
+          @if (selectedProject(); as project) {
+            Recursos y generaciones se asignan a «{{ project.name }}».
+          } @else {
+            Opcional: sin proyecto se usa el auto «Studio».
+          }
+        </p>
+        @if (selectedProject()) {
+          <p-button
+            label="Quitar proyecto"
+            icon="pi pi-times"
+            size="small"
+            [text]="true"
+            severity="secondary"
+            (onClick)="clearProject()"
+          />
+        }
+      }
+    </div>
+    <ng-template #footer>
+      <p-button label="Cerrar" size="small" [text]="true" (onClick)="projectDialogVisible.set(false)" />
+    </ng-template>
+  </p-dialog>
+
+  <!-- Biblioteca de recursos existentes (misma galería que /admin/imagens) -->
+  <app-asset-picker-dialog
+    [visible]="libraryPickerVisible()"
+    (visibleChange)="libraryPickerVisible.set($event)"
+    (confirmed)="onLibraryPicked($event)"
+    title="Elegir referencias de la biblioteca"
+    [max]="maxSelectedRefs"
+  />
 </div>

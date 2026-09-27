@@ -27,13 +27,38 @@ export class LibraryApiRepository {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = environment.apiUrl;
 
-  uploadFile(file: File, category?: string): Observable<ApiResponse<FileAsset>> {
+  uploadFile(file: File, category?: string, eventId?: string): Observable<ApiResponse<FileAsset>> {
     const form = new FormData();
     form.append('file', file);
     if (category) {
       form.append('category', category);
     }
+    if (eventId) {
+      form.append('event_id', eventId);
+    }
     return this.http.post<ApiResponse<FileAsset>>(`${this.apiUrl}/files/upload`, form);
+  }
+
+  /** Asigna un recurso a un proyecto (evento). Idempotente. */
+  linkFileEvent(fileId: string, eventId: string): Observable<ApiResponse<null>> {
+    return this.http.put<ApiResponse<null>>(`${this.apiUrl}/files/${fileId}/event/${eventId}`, {});
+  }
+
+  /** Quita la asignación de un recurso a un proyecto (evento). */
+  unlinkFileEvent(fileId: string, eventId: string): Observable<ApiResponse<null>> {
+    return this.http.delete<ApiResponse<null>>(`${this.apiUrl}/files/${fileId}/event/${eventId}`);
+  }
+
+  /** Recursos asignados a un proyecto (evento). */
+  listFilesByEvent(eventId: string, category?: string): Observable<ApiResponse<FileAsset[]>> {
+    const params: Record<string, string> = {};
+    if (category) {
+      params['category'] = category;
+    }
+    return this.http.get<ApiResponse<FileAsset[]>>(
+      `${this.apiUrl}/files/by-event/${eventId}`,
+      { params },
+    );
   }
 
   listFilesPaginated(filters: FileListFilters = {}): Observable<ApiResponse<Paginated<FileAsset>>> {

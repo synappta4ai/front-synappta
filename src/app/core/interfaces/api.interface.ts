@@ -9,6 +9,8 @@ export interface Paginated<T> {
   total: number;
   page: number;
   page_size: number;
+  /** Tenant dueño de los datos (solo en vistas de superadmin). */
+  tenant_slug?: string;
 }
 
 export interface TableLazyLoadEvent {

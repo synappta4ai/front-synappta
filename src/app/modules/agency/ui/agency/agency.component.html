@@ -30,6 +30,29 @@
       <form [formGroup]="form" class="flex flex-col gap-6" novalidate>
         <div class="grid gap-6 sm:grid-cols-2">
           <div class="flex flex-col gap-2">
+            <label for="agencyProject" class="text-sm font-medium text-(--text-primary)">
+              Proyecto existente <span class="text-[var(--text-muted)] font-normal">(opcional)</span>
+            </label>
+            <p-select
+              inputId="agencyProject"
+              [ngModel]="selectedProjectId()"
+              (ngModelChange)="selectedProjectId.set($event)"
+              [ngModelOptions]="{ standalone: true }"
+              [options]="projectOptions()"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Crear a partir del nombre cargado"
+              [showClear]="true"
+              [filter]="true"
+              filterPlaceholder="Buscar proyecto..."
+              styleClass="w-full"
+              appendTo="body"
+            />
+            <small class="text-[var(--text-muted)]">
+              Si elegís uno, escenas e imágenes generadas se centralizan en ese proyecto.
+            </small>
+          </div>
+          <div class="flex flex-col gap-2">
             <label for="propertyName" class="text-sm font-medium text-(--text-primary)">
               Nombre del Proyecto <span class="text-red-500">*</span>
             </label>

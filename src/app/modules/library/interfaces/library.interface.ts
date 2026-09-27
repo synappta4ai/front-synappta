@@ -38,6 +38,12 @@ export interface AddIngredientFileRequest {
   role?: string;
 }
 
+export interface FileIngredientRef {
+  id: string;
+  type: string;
+  name: string;
+}
+
 export interface FileAsset {
   id: string;
   filename: string;
@@ -51,6 +57,10 @@ export interface FileAsset {
   storage: string | null;
   trashed: boolean;
   duplicate?: boolean;
+  /** IDs de los proyectos (eventos) a los que está asignado el recurso. */
+  project_ids?: string[];
+  /** Ingredientes (personaje/locación/prop) que referencian este recurso. */
+  ingredients?: FileIngredientRef[];
   created_at: string;
   updated_at: string;
 }
@@ -61,6 +71,8 @@ export interface FileListFilters {
   category?: string;
   storage?: string;
   q?: string;
+  /** Filtra solo recursos asignados a este proyecto (evento). */
+  event_id?: string;
 }
 
 export interface IngredientListFilters {
