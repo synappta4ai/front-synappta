@@ -15,6 +15,7 @@ import {
   FileListFilters,
   Ingredient,
   IngredientFile,
+  IngredientWithFiles,
   IngredientListFilters,
   Preset,
   PresetGroup,
@@ -97,8 +98,8 @@ export class LibraryApiRepository {
     });
   }
 
-  listIngredients(): Observable<ApiResponse<Ingredient[]>> {
-    return this.http.get<ApiResponse<Ingredient[]>>(`${this.apiUrl}/ingredients`);
+  listIngredients(): Observable<ApiResponse<IngredientWithFiles[]>> {
+    return this.http.get<ApiResponse<IngredientWithFiles[]>>(`${this.apiUrl}/ingredients`);
   }
 
   getIngredient(id: string): Observable<ApiResponse<Ingredient>> {

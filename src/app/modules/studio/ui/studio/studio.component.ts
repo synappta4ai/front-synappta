@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, signal, viewChild, ViewChild, ElementRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { catchError, EMPTY, finalize } from 'rxjs';
 
@@ -13,7 +13,7 @@ import { Message } from 'primeng/message';
 
 import { AgencyService } from '@modules/agency/services';
 import { LibraryService } from '@modules/library/services';
-import { FileAsset } from '@modules/library/interfaces';
+import { FileAsset, Ingredient, IngredientWithFiles } from '@modules/library/interfaces';
 import { EventsService } from '@modules/events/services';
 import { Event as Project } from '@modules/events/interfaces';
 import { ServerUrlPipe } from '@core/pipes/server-url.pipe';
@@ -87,6 +87,27 @@ export class StudioComponent {
   ];
   protected readonly ratioSelectOptions = this.ratioOptions.map((r) => ({ label: r.label, value: r.value }));
 
+  /**
+   * Ratio dibujado en el canvas del visor: el del take seleccionado cuando
+   * hay uno (cada toma guarda el suyo), o el elegido en el formulario.
+   */
+  protected readonly canvasRatio = computed<{ w: number; h: number }>(() => {
+    const take = this.selectedTake();
+    const value = (take?.ratio || this.ratio() || '16:9').trim();
+    const known = this.ratioOptions.find((r) => r.value === value);
+    if (known) {
+      return { w: known.w, h: known.h };
+    }
+    const [w, h] = value.split(':').map((n) => parseFloat(n));
+    return w > 0 && h > 0 ? { w, h } : { w: 16, h: 9 };
+  });
+
+  /** Aspect numérico (w/h) para la CSS var --canvas-ar del visor. */
+  protected readonly canvasAr = computed(() => {
+    const { w, h } = this.canvasRatio();
+    return (w / h).toFixed(4);
+  });
+
   /** Resoluciones que soporta el modelo elegido (fallback: 480p-1080p). */
   protected readonly resolutionOptions = computed<string[]>(() => {
     const res = this.selectedModel()?.source?.defaults?.resolutions;
@@ -145,6 +166,467 @@ export class StudioComponent {
   protected readonly loadingAssets = signal(false);
   protected readonly uploading = signal(false);
   protected readonly showAssetGallery = signal(false);
+
+  // ─── Menciones @ en el prompt ─────────────────────────────────
+  /** Assets citados en el prompt como @Nombre (en orden de aparición). */
+  protected readonly mentionedAssets = signal<FileAsset[]>([]);
+  /** Ingredientes citados en el prompt como @Nombre (expanden a sus archivos). */
+  protected readonly mentionedIngredients = signal<IngredientWithFiles[]>([]);
+  /** Catálogo de ingredientes (con sus archivos) disponible para el menú @. */
+  protected readonly ingredients = signal<IngredientWithFiles[]>([]);
+  /** true mientras el menú @ está abierto con candidatos filtrados. */
+  protected readonly mentionMenuOpen = signal(false);
+  /** Consulta activa tras el @ (sin incluirlo). */
+  protected readonly mentionQuery = signal('');
+  /** Índice resaltado en el menú de candidatos (teclado). */
+  protected readonly mentionHighlight = signal(0);
+  /** Posición (en px) del menú relativa al wrapper del textarea. */
+  protected readonly mentionMenuPos = signal<{ top: number; left: number } | null>(null);
+  /** @-query abierto actualmente: [start, end) dentro del texto. */
+  private mentionRange: { start: number; end: number } | null = null;
+  @ViewChild('promptTextarea') private promptTextareaRef?: ElementRef<HTMLTextAreaElement>;
+
+  /** Textarea del prompt (viewChild con locator string devuelve ElementRef). */
+  private get promptTextarea(): HTMLTextAreaElement | undefined {
+    return this.promptTextareaRef?.nativeElement;
+  }
+
+  /** Filas del menú @: recursos (imágenes) + ingredientes, filtradas por query. */
+  protected readonly mentionRows = computed<
+    { kind: 'asset' | 'ingredient'; asset?: FileAsset; ingredient?: Ingredient; wrapper?: IngredientWithFiles; label: string }[]
+  >(() => {
+    const query = this.mentionQuery().trim().toLowerCase();
+    const mentionedAssets = new Set(this.mentionedAssets().map((a) => a.id));
+    const mentionedIngs = new Set(this.mentionedIngredients().map((i) => i.ingredient.name));
+    const matches = (label: string) => !query || label.toLowerCase().includes(query);
+
+    const rows: { kind: 'asset' | 'ingredient'; asset?: FileAsset; ingredient?: Ingredient; wrapper?: IngredientWithFiles; label: string }[] = [];
+    for (const a of this.assets()) {
+      if ((a.mime_type ?? '').startsWith('image/') && !mentionedAssets.has(a.id) && matches(a.filename)) {
+        rows.push({ kind: 'asset', asset: a, label: a.filename });
+      }
+    }
+    for (const ing of this.ingredients()) {
+      if (!mentionedIngs.has(ing.ingredient.name) && matches(ing.ingredient.name)) {
+        rows.push({ kind: 'ingredient', ingredient: ing.ingredient, wrapper: ing, label: ing.ingredient.name });
+      }
+    }
+    return rows.slice(0, 8);
+  });
+
+  /** Compat: filas planas del menú. */
+  protected readonly mentionCandidates = computed(() => this.mentionRows());
+
+  /** Tokens @ del texto para el overlay: válidos = asset conocido. */
+  protected readonly promptMentionTokens = computed<
+    { start: number; end: number; filename: string; valid: boolean }[]
+  >(() => {
+    const byName = this.mentionNameMap();
+    return this.scanMentionTokens(this.prompt(), byName).map((t) => ({
+      start: t.start,
+      end: t.end,
+      filename: t.name,
+      valid: true,
+    }));
+  });
+
+  /**
+   * Mapa de nombres citables tras un @: filenames de assets + nombres de
+   * ingredientes (un ingrediente no pisa el nombre de un asset existente).
+   */
+  private mentionNameMap(): Map<
+    string,
+    { kind: 'asset' | 'ingredient'; asset?: FileAsset; ing?: IngredientWithFiles }
+  > {
+    const map = new Map<
+      string,
+      { kind: 'asset' | 'ingredient'; asset?: FileAsset; ing?: IngredientWithFiles }
+    >();
+    for (const a of this.assets()) {
+      map.set(a.filename, { kind: 'asset', asset: a });
+    }
+    for (const ing of this.ingredients()) {
+      if (!map.has(ing.ingredient.name)) {
+        map.set(ing.ingredient.name, { kind: 'ingredient', ing });
+      }
+    }
+    return map;
+  }
+
+  /**
+   * Escanea el texto buscando menciones @citables: tras cada @ matchea el
+   * nombre conocido MÁS LARGO (ingredientes y filenames pueden contener
+   * espacios, así que el regex por palabra no alcanza).
+   * Devuelve tokens [start, end) solo para nombres presentes en el mapa.
+   */
+  private scanMentionTokens(
+    text: string,
+    byName: Map<string, { kind: 'asset' | 'ingredient'; asset?: FileAsset; ing?: IngredientWithFiles }>,
+  ): { start: number; end: number; name: string }[] {
+    if (!byName.size) {
+      return [];
+    }
+    const sorted = [...byName.keys()].sort((a, b) => b.length - a.length);
+    const tokens: { start: number; end: number; name: string }[] = [];
+    let i = text.indexOf('@');
+    while (i !== -1) {
+      const rest = text.slice(i + 1);
+      const name = sorted.find((n) => rest.startsWith(n));
+      if (name) {
+        tokens.push({ start: i, end: i + 1 + name.length, name });
+        i = text.indexOf('@', i + 1 + name.length);
+      } else {
+        i = text.indexOf('@', i + 1);
+      }
+    }
+    return tokens;
+  }
+
+  /** Quita los tokens @citables del texto (deja el prompt limpio para el backend). */
+  private stripMentions(text: string): string {
+    const byName = this.mentionNameMap();
+    let out = '';
+    let cursor = 0;
+    for (const t of this.scanMentionTokens(text, byName)) {
+      out += text.slice(cursor, t.start);
+      cursor = t.end;
+    }
+    return out + text.slice(cursor);
+  }
+
+  /**
+   * HTML del overlay que espeja el textarea: texto plano con los tokens @
+   * de assets conocidos envueltos en <span class="mention-token">. El escape
+   * de HTML evita inyección desde filenames con caracteres especiales.
+   */
+  protected readonly mentionOverlayHtml = computed<string>(() => {
+    const text = this.prompt();
+    if (!text) {
+      return '';
+    }
+    const escape = (s: string) =>
+      s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const byName = this.mentionNameMap();
+    let html = '';
+    let cursor = 0;
+    for (const t of this.scanMentionTokens(text, byName)) {
+      html += escape(text.slice(cursor, t.start));
+      html += `<span class="mention-token">${escape(text.slice(t.start, t.end))}</span>`;
+      cursor = t.end;
+    }
+    html += escape(text.slice(cursor));
+    return html + '\n';
+  });
+
+  /** Re-parsea las menciones @ válidas (assets e ingredientes) del texto. */
+  private syncMentionsFromText(): void {
+    const byName = this.mentionNameMap();
+    const foundAssets: FileAsset[] = [];
+    const foundIngs: IngredientWithFiles[] = [];
+    const seenAssets = new Set<string>();
+    const seenIngs = new Set<string>();
+    for (const t of this.scanMentionTokens(this.prompt(), byName)) {
+      const entry = byName.get(t.name);
+      if (!entry) {
+        continue;
+      }
+      if (entry.kind === 'asset' && entry.asset && !seenAssets.has(entry.asset.id)) {
+        seenAssets.add(entry.asset.id);
+        foundAssets.push(entry.asset);
+      } else if (entry.kind === 'ingredient' && entry.ing && !seenIngs.has(entry.ing.ingredient.id)) {
+        seenIngs.add(entry.ing.ingredient.id);
+        foundIngs.push(entry.ing);
+      }
+    }
+    this.mentionedAssets.set(foundAssets);
+    this.mentionedIngredients.set(foundIngs);
+  }
+
+  /** Ingrediente citado → TODOS sus file_ids vinculados (via /ingredients). */
+  private assetsOfIngredient(ing: IngredientWithFiles): FileAsset[] {
+    const byId = new Map(this.assets().map((a) => [a.id, a]));
+    const out: FileAsset[] = [];
+    for (const file of ing.files ?? []) {
+      const known = byId.get(file.file_id);
+      if (known) {
+        out.push(known);
+        continue;
+      }
+      // Recurso no presente en la lista local: sintetizarlo desde el índice.
+      out.push({
+        id: file.file_id,
+        filename: file.filename ?? file.file_id,
+        url: file.url,
+        thumbnail_url: file.thumbnail_url,
+        mime_type: file.mime_type,
+        size: null,
+        sha256: null,
+        category: file.category,
+        format: file.format,
+        storage: null,
+        trashed: false,
+        ingredients: [{ id: ing.ingredient.id, type: ing.ingredient.type, name: ing.ingredient.name }],
+        created_at: '',
+        updated_at: '',
+      });
+    }
+    return out;
+  }
+
+  /** Conteo de recursos de un ingrediente (para el chip). */
+  protected assetsOfIngredientCount(ing: IngredientWithFiles): number {
+    return (ing.files ?? []).length;
+  }
+
+  /** Sincroniza selección y slots con las menciones @ (recursos + ingredientes). */
+  private syncSelectionWithMentions(): void {
+    // Los ingredientes expanden a TODOS sus recursos citables.
+    const expanded: FileAsset[] = [...this.mentionedAssets()];
+    for (const ing of this.mentionedIngredients()) {
+      for (const asset of this.assetsOfIngredient(ing)) {
+        if (!expanded.some((a) => a.id === asset.id)) {
+          expanded.push(asset);
+        }
+      }
+    }
+
+    // Selección: toda mención/expansión queda seleccionada (hasta el máximo).
+    this.selectedAssetIds.update((prev) => {
+      const next = new Set(prev);
+      for (const a of expanded) {
+        if (next.size >= this.maxSelectedRefs) break;
+        next.add(a.id);
+      }
+      return next;
+    });
+
+    // Slots: llenar vacíos con menciones tipadas por orden (character → location → props).
+    const slots = { ...this.refSlots() };
+    const keys: RefSlotDef['key'][] = ['character', 'location', 'props'];
+    for (const asset of expanded) {
+      if ((asset.mime_type ?? '').startsWith('image/')) {
+        // Idempotencia: un asset ya ubicado en algún slot no se vuelve a colocar.
+        if (Object.values(slots).includes(asset.id)) {
+          continue;
+        }
+        const free = keys.find((k) => !slots[k]);
+        if (free) {
+          slots[free] = asset.id;
+        }
+      }
+    }
+    this.refSlots.set(slots);
+  }
+
+  /** ngModelChange del textarea: re-parsea menciones y menú @. */
+  protected onPromptInput(value: string): void {
+    this.prompt.set(value);
+    this.syncMentionsFromText();
+    this.syncSelectionWithMentions();
+    this.updateMentionState();
+  }
+
+  /** Detecta el @ bajo el cursor y abre/cierra/actualiza el menú. */
+  private updateMentionState(): void {
+    const textarea = this.promptTextarea;
+    if (!textarea) {
+      this.closeMentionMenu();
+      return;
+    }
+    const caret = textarea.selectionStart ?? 0;
+    const upto = this.prompt().slice(0, caret);
+    const match = upto.match(/@([^@\s]*)$/);
+    if (!match) {
+      this.closeMentionMenu();
+      return;
+    }
+    const start = caret - match[0].length;
+    this.mentionRange = { start, end: caret };
+    this.mentionQuery.set(match[1]);
+    if (this.mentionCandidates().length === 0) {
+      this.closeMentionMenu();
+      return;
+    }
+    if (!this.mentionMenuOpen()) {
+      this.mentionHighlight.set(0);
+    }
+    this.mentionMenuOpen.set(true);
+    this.mentionMenuPos.set(this.computeMenuPos(textarea, start));
+  }
+
+  /** Posición del menú: sobre el caret usando un espejo de texto oculto. */
+  private computeMenuPos(
+    textarea: HTMLTextAreaElement,
+    caretIndex: number,
+  ): { top: number; left: number } {
+    const mirror = document.createElement('div');
+    const style = getComputedStyle(textarea);
+    const props = [
+      'fontFamily', 'fontSize', 'fontWeight', 'letterSpacing', 'lineHeight',
+      'paddingTop', 'paddingLeft', 'paddingRight', 'borderWidth', 'boxSizing',
+      'width', 'whiteSpace', 'wordWrap',
+    ] as const;
+    for (const prop of props) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (mirror.style as any)[prop] = (style as any)[prop];
+    }
+    mirror.style.position = 'absolute';
+    mirror.style.visibility = 'hidden';
+    mirror.style.whiteSpace = 'pre-wrap';
+    mirror.style.wordWrap = 'break-word';
+    mirror.textContent = this.prompt().slice(0, caretIndex);
+    const marker = document.createElement('span');
+    marker.textContent = '\u200b';
+    mirror.appendChild(marker);
+    document.body.appendChild(mirror);
+    const mirrorRect = mirror.getBoundingClientRect();
+    const markerRect = marker.getBoundingClientRect();
+    document.body.removeChild(mirror);
+    const wrapperRect = (textarea.parentElement ?? textarea).getBoundingClientRect();
+    const hostRect = textarea.getBoundingClientRect();
+    const styleFloat = parseFloat(style.paddingTop) || 0;
+    const left = Math.max(
+      0,
+      Math.min(markerRect.left - mirrorRect.left + (parseFloat(style.paddingLeft) || 0), wrapperRect.width - 280),
+    );
+    // Línea del caret (top relativo al textarea) + padding + borde del host.
+    const caretLineTop = markerRect.top - mirrorRect.top + styleFloat;
+    const hostOffsetTop = hostRect.top - wrapperRect.top + (parseFloat(style.borderTopWidth) || 0);
+    const below = hostOffsetTop + caretLineTop + 8;
+    // Si el menú (240px) no entra por abajo, abrir hacia arriba.
+    const top = below + 240 > wrapperRect.height ? Math.max(0, hostOffsetTop + caretLineTop - 248) : below;
+    return { top, left };
+  }
+
+  protected closeMentionMenu(): void {
+    this.mentionMenuOpen.set(false);
+    this.mentionQuery.set('');
+    this.mentionRange = null;
+    this.mentionMenuPos.set(null);
+  }
+
+  /** Inserta la mención elegida (recurso o ingrediente) en el token @ parcial. */
+  protected pickMention(row: {
+    kind: 'asset' | 'ingredient';
+    asset?: FileAsset;
+    ingredient?: Ingredient;
+    wrapper?: IngredientWithFiles;
+  }): void {
+    const range = this.mentionRange;
+    const textarea = this.promptTextarea;
+    if (!range || !textarea) {
+      return;
+    }
+    const label = row.kind === 'asset' ? row.asset!.filename : row.ingredient!.name;
+    const text = this.prompt();
+    const insert = `@${label} `;
+    const next = text.slice(0, range.start) + insert + text.slice(range.end);
+    this.prompt.set(next);
+    this.closeMentionMenu();
+    this.syncMentionsFromText();
+    this.syncSelectionWithMentions();
+    const caret = range.start + insert.length;
+    requestAnimationFrame(() => {
+      textarea.focus();
+      textarea.setSelectionRange(caret, caret);
+    });
+  }
+
+  /** Teclas del menú @: flechas, Enter/Tab eligen, Escape cierra. */
+  protected onMentionKeydown(event: KeyboardEvent): void {
+    if (!this.mentionMenuOpen()) {
+      return;
+    }
+    const candidates = this.mentionCandidates();
+    if (candidates.length === 0) {
+      return;
+    }
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      this.mentionHighlight.update((i) => (i + 1) % candidates.length);
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      this.mentionHighlight.update((i) => (i - 1 + candidates.length) % candidates.length);
+    } else if (event.key === 'Enter' || event.key === 'Tab') {
+      event.preventDefault();
+      const picked = candidates[this.mentionHighlight()];
+      if (picked) {
+        this.pickMention(picked);
+      }
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      this.closeMentionMenu();
+    }
+  }
+
+  /** Quita una mención @ del texto (chip de recurso o ingrediente). */
+  protected removeMention(target: FileAsset | IngredientWithFiles): void {
+    const isAsset = 'filename' in target;
+    const label = isAsset ? target.filename : target.ingredient.name;
+    const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp(`@${escaped}\\s?`, 'g');
+    this.prompt.update((text) => text.replace(re, ''));
+    // Quitar la mención también libera sus recursos: selección y slots.
+    const removedIds = new Set(
+      isAsset ? [target.id] : this.assetsOfIngredient(target).map((a) => a.id),
+    );
+    this.selectedAssetIds.update((prev) => {
+      const next = new Set(prev);
+      for (const id of removedIds) {
+        next.delete(id);
+      }
+      return next;
+    });
+    this.refSlots.update((slots) => {
+      const out = { ...slots };
+      for (const key of Object.keys(out) as RefSlotDef['key'][]) {
+        if (out[key] && removedIds.has(out[key]!)) {
+          out[key] = null;
+        }
+      }
+      return out;
+    });
+    this.syncMentionsFromText();
+    this.syncSelectionWithMentions();
+  }
+
+  /** Icono PrimeNG por tipo de ingrediente (menú y chips). */
+  protected ingredientIcon(type: string): string {
+    switch (type) {
+      case 'character':
+        return 'pi pi-user';
+      case 'location':
+        return 'pi pi-map-marker';
+      case 'prop':
+        return 'pi pi-box';
+      default:
+        return 'pi pi-tag';
+    }
+  }
+
+  /** Etiqueta legible del tipo de ingrediente. */
+  protected ingredientTypeLabel(type: string): string {
+    switch (type) {
+      case 'character':
+        return 'Personaje';
+      case 'location':
+        return 'Locación';
+      case 'prop':
+        return 'Prop';
+      default:
+        return type;
+    }
+  }
+
+  /** Carga el catálogo de ingredientes para el menú @. */
+  private loadIngredients(): void {
+    this.libraryService
+      .listIngredients()
+      .pipe(
+        catchError(() => EMPTY),
+      )
+      .subscribe((ings) => this.ingredients.set(ings));
+  }
 
   // ─── Proyecto (centralización de recursos) ──────────────
   protected readonly projects = signal<Project[]>([]);
@@ -226,6 +708,7 @@ export class StudioComponent {
     this.loadModels();
     this.loadProjects();
     this.loadAssets();
+    this.loadIngredients();
   }
 
   // ─── Loaders ───────────────────────────────────────────────────
@@ -540,19 +1023,35 @@ export class StudioComponent {
 
   protected generate(): void {
     const model = this.selectedModel();
-    const text = this.prompt().trim();
-    if (!model || !text || this.submitting()) {
+    const rawText = this.prompt().trim();
+    if (!model || !rawText || this.submitting()) {
       return;
     }
     this.error.set(null);
     this.submitting.set(true);
+
+    // Menciones @ válidas → content items image; el texto se envía limpio
+    // (sin tokens @) porque el backend compila el prompt del texto puro.
+    // Los ingredientes citados expanden a TODOS sus recursos.
+    this.syncMentionsFromText();
+    const mentions = [...this.mentionedAssets()];
+    for (const ing of this.mentionedIngredients()) {
+      for (const asset of this.assetsOfIngredient(ing)) {
+        if (!mentions.some((a) => a.id === asset.id)) {
+          mentions.push(asset);
+        }
+      }
+    }
+    const text = mentions.length
+      ? this.stripMentions(rawText).replace(/\s{2,}/g, ' ').trim()
+      : rawText;
 
     const ratio = this.ratio();
     const duration = this.mode() === 'video' ? this.duration() : 0;
     const takeId = `pending_${Date.now()}`;
     const take: StudioTake = {
       id: takeId,
-      prompt: text,
+      prompt: rawText,
       modelName: model.name,
       modelDisplayName: model.displayName,
       modelType: model.type,
@@ -580,9 +1079,16 @@ export class StudioComponent {
         }),
       )
       .subscribe(({ project, piece }) => {
+        // Menciones @ → items image (el core resuelve IDs a URLs públicas
+        // o asset:// si el recurso está sincronizado con la galería).
+        const mentionItems = mentions.map((a) => ({
+          type: 'image' as const,
+          id: a.id,
+          name: a.filename,
+        }));
         const payload = {
           model: model.name,
-          content: [{ type: 'text' as const, text }],
+          content: [...mentionItems, { type: 'text' as const, text }],
           ratio,
           duration: duration || undefined,
           resolution: this.resolution(),

@@ -17,6 +17,26 @@
   pointer-events: none;
 }
 
+/* Contador de resultados no vistos (terminadas OK/error) sobre la campana. */
+.bell-count {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--red-500, #ef4444);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  box-shadow: 0 0 0 2px var(--surface-900, #0f1115);
+  pointer-events: none;
+  z-index: 1;
+}
+
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.45; }
@@ -96,6 +116,25 @@
   text-decoration: none;
   color: inherit;
   transition: background 0.12s ease;
+}
+
+/* Resultado terminado no visto: resaltado suave + etiqueta "nuevo". */
+.pop-item.pop-unread {
+  background: rgba(96, 165, 250, 0.08);
+  border-left: 2px solid #60a5fa;
+}
+
+.pop-unread .pop-new {
+  display: inline-block;
+  margin-top: 2px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(96, 165, 250, 0.16);
+  color: #93c5fd;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .pop-item:hover {

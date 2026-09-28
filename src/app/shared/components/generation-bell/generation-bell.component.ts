@@ -34,8 +34,14 @@ export class GenerationBellComponent {
   });
 
   protected readonly hasActive = computed(() => this.store.activeCount() > 0);
+  /** Finished takes not seen yet (bell shows the count, clears on open). */
+  protected readonly unreadCount = computed(() => this.store.unreadCount());
 
   protected toggle(event: Event): void {
+    // Opening the popover acknowledges everything the user can now see.
+    if (this.unreadCount() > 0) {
+      this.store.markAllRead();
+    }
     this.popoverRef().toggle(event);
   }
 

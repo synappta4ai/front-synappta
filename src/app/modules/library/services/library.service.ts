@@ -13,6 +13,7 @@ import {
   FileListFilters,
   Ingredient,
   IngredientFile,
+  IngredientWithFiles,
   IngredientListFilters,
   Preset,
   PresetGroup,
@@ -72,7 +73,7 @@ export class LibraryService {
     return unwrap(this.libraryApiRepository.listIngredientsPaginated(filters));
   }
 
-  listIngredients(): Observable<Ingredient[]> {
+  listIngredients(): Observable<IngredientWithFiles[]> {
     return unwrap(this.libraryApiRepository.listIngredients());
   }
 

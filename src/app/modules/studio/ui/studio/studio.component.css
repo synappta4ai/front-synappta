@@ -192,6 +192,239 @@
   resize: vertical;
 }
 
+/* ── Menciones @: wrapper, overlay espejo y chips ─────────── */
+.prompt-wrap {
+  position: relative;
+}
+
+.prompt-overlay {
+  position: absolute;
+  inset: 0;
+  padding: 10px;
+  font-size: 13px;
+  font-family: inherit;
+  line-height: 1.5;
+  color: var(--st-text);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow: hidden;
+  pointer-events: none;
+  border-radius: 10px;
+}
+
+.prompt-wrap .prompt-input {
+  position: relative;
+  background: transparent;
+  color: transparent;
+  caret-color: var(--st-text);
+}
+
+.prompt-wrap .prompt-input::selection {
+  background: color-mix(in srgb, var(--st-accent) 35%, transparent);
+  color: transparent;
+}
+
+.mention-token {
+  background: color-mix(in srgb, var(--st-accent) 22%, transparent);
+  color: var(--st-accent);
+  border-radius: 5px;
+  padding: 0 4px;
+  font-weight: 600;
+}
+
+.mention-menu {
+  position: absolute;
+  z-index: 60;
+  width: 272px;
+  max-height: 248px;
+  overflow-y: auto;
+  padding: 6px;
+  background: var(--st-panel, var(--surface-100));
+  border: 1px solid var(--st-line);
+  border-radius: 12px;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45);
+}
+
+.mention-menu-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 2px 4px 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--st-muted);
+}
+
+.mention-menu-title .pi {
+  color: var(--st-accent);
+}
+
+.mention-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--st-text);
+  cursor: pointer;
+  text-align: left;
+}
+
+.mention-option.active {
+  background: color-mix(in srgb, var(--st-accent) 18%, transparent);
+}
+
+.mention-thumb {
+  width: 34px;
+  height: 34px;
+  border-radius: 7px;
+  object-fit: cover;
+  background: var(--st-bg);
+  flex-shrink: 0;
+}
+
+.mention-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mention-ing {
+  flex-shrink: 0;
+  max-width: 84px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--st-accent);
+  background: color-mix(in srgb, var(--st-accent) 14%, transparent);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.mention-ing.badge-type {
+  max-width: none;
+}
+
+/* Icono cuadrado del tipo de ingrediente (menú y chips) */
+.mention-ing-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 7px;
+  flex-shrink: 0;
+  font-size: 14px;
+  background: color-mix(in srgb, var(--st-accent) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--st-accent) 30%, transparent);
+  color: var(--st-accent);
+}
+
+.mention-ing-icon[data-type='character'] {
+  color: #60a5fa;
+  background: rgba(96, 165, 250, 0.14);
+  border-color: rgba(96, 165, 250, 0.3);
+}
+
+.mention-ing-icon[data-type='location'] {
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.14);
+  border-color: rgba(74, 222, 128, 0.3);
+}
+
+.mention-ing-icon[data-type='prop'] {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.14);
+  border-color: rgba(251, 191, 36, 0.3);
+}
+
+.mention-menu-empty {
+  margin: 8px 4px;
+  font-size: 12px;
+  color: var(--st-muted);
+}
+
+.mention-chip.ingredient {
+  border-style: dashed;
+}
+
+.mention-chip-count {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--st-muted);
+  white-space: nowrap;
+}
+
+.mention-menu-hint {
+  margin: 6px 4px 2px;
+  font-size: 10px;
+  color: var(--st-muted);
+}
+
+.mention-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.mention-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px 3px 4px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--st-accent) 35%, transparent);
+  background: color-mix(in srgb, var(--st-accent) 14%, transparent);
+}
+
+.mention-chip-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  object-fit: cover;
+}
+
+.mention-chip-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--st-accent);
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mention-chip-x {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--st-muted);
+  cursor: pointer;
+  font-size: 9px;
+}
+
+.mention-chip-x:hover {
+  background: color-mix(in srgb, var(--st-accent) 25%, transparent);
+  color: var(--st-accent);
+}
+
 .prompt-input:focus,
 .negative-input:focus,
 .seed-input:focus {
@@ -752,9 +985,18 @@
 }
 
 /* ── Viewer ─────────────────────────────────────────────────── */
+/*
+ * Visor en dos capas:
+ *   .viewer        → stage: llena el espacio disponible y centra el lienzo.
+ *   .viewer-canvas → lienzo con la forma del aspect ratio (del take
+ *                    seleccionado o del form) que encaja sin recortes.
+ */
 .viewer {
+  --canvas-ar: 1.7778;
   flex: 1;
   min-height: 320px;
+  /* El lienzo no debe empujar la página: máx ~viewport menos header/meta. */
+  max-height: calc(100vh - 130px);
   border-radius: 16px;
   border: 1px solid var(--st-line);
   background: var(--st-bg);
@@ -762,6 +1004,25 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  container-type: size;
+}
+
+.viewer-canvas {
+  aspect-ratio: var(--canvas-ar);
+  /* Encajar en el stage: limitar por ancho o por alto según convenga. */
+  width: min(100cqw, calc(100cqh * var(--canvas-ar)));
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 12px;
+  background: #0a0c10;
+  box-shadow:
+    0 0 0 1px var(--st-line),
+    0 18px 44px rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: aspect-ratio 0.25s ease, width 0.25s ease;
 }
 
 .viewer-media {

@@ -33,6 +33,12 @@ export interface IngredientFile {
   format: string | null;
 }
 
+/** Respuesta de GET /ingredients: ingrediente + sus archivos vinculados. */
+export interface IngredientWithFiles {
+  ingredient: Ingredient;
+  files: IngredientFile[];
+}
+
 export interface AddIngredientFileRequest {
   file_id: string;
   role?: string;

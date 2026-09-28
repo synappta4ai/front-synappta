@@ -66,6 +66,13 @@ export class AgencyApiRepository {
     );
   }
 
+  /** Recent tasks of the authenticated user (take-reel hydration). */
+  listRecentTasks(limit = 20): Observable<ApiResponse<GenerationLog[]>> {
+    return this.http.get<ApiResponse<GenerationLog[]>>(`${this.apiUrl}/agency/tasks/recent`, {
+      params: { limit },
+    });
+  }
+
   cancelTask(modality: Modality, taskId: string): Observable<ApiResponse<null>> {
     return this.http.delete<ApiResponse<null>>(`${this.apiUrl}/agency/${modality}/task/${taskId}`);
   }

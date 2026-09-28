@@ -8,7 +8,9 @@
   (onClick)="toggle($event)"
   ariaLabel="Eventos de generación"
 />
-@if (hasActive()) {
+@if (unreadCount() > 0) {
+  <span class="bell-count">{{ unreadCount() > 9 ? '9+' : unreadCount() }}</span>
+} @else if (hasActive()) {
   <span class="bell-badge"></span>
 }
 
@@ -26,7 +28,7 @@
 
   <div class="pop-list">
     @for (take of visible(); track take.id) {
-      <a routerLink="/events" class="pop-item">
+      <a routerLink="/events" class="pop-item" [class.pop-unread]="store.isUnread(take.id)">
         @if (take.status === 'succeeded' && take.videoUrl) {
           <video class="pop-thumb" [src]="take.videoUrl | serverUrl" preload="metadata" muted></video>
         } @else {
@@ -45,6 +47,9 @@
             <span class="pop-track">
               <span class="pop-fill" [style.width.%]="take.progress"></span>
             </span>
+          }
+          @if (store.isUnread(take.id)) {
+            <span class="pop-new">nuevo</span>
           }
         </span>
       </a>

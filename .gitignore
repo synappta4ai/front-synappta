@@ -49,3 +49,11 @@ Thumbs.db
 /playwright-report
 /blob-report
 /playwright/.cache
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Dev server and tool logs
+*.log

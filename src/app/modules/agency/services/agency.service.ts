@@ -99,6 +99,11 @@ export class AgencyService {
     return unwrap(this.agencyApiRepository.listGeneratedAssets(pieceId));
   }
 
+  /** Recent tasks of the authenticated user (take-reel hydration). */
+  listRecentTasks(limit = 20): Observable<GenerationLog[]> {
+    return unwrap(this.agencyApiRepository.listRecentTasks(limit));
+  }
+
   pollTaskUntilDone(
     modality: Modality,
     taskId: string,
