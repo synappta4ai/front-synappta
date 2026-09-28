@@ -480,9 +480,9 @@
         @switch (take.status) {
           @case ('succeeded') {
             @if (mode() === 'video') {
-              <video controls autoplay loop class="viewer-media">
-                <source [src]="take.videoUrl | serverUrl" type="video/mp4" />
-              </video>
+              <!-- src directo en <video>: mutar un <source> hijo no
+                   dispara la recarga al cambiar de take. -->
+              <video controls autoplay loop class="viewer-media" [src]="take.videoUrl | serverUrl"></video>
             } @else {
               <img [src]="take.videoUrl | serverUrl" [alt]="take.prompt" class="viewer-media" />
             }
