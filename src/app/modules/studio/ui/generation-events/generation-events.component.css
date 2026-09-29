@@ -1,14 +1,9 @@
-/* Eventos de generación: lista + visor.
-   Lienzo y paleta propias (mismo lenguaje visual que el Studio). */
+/* Eventos de generación: lista + visor sobre el canvas de la app. */
 :host {
   display: block;
-  background:
-    radial-gradient(1100px 460px at 85% -8%, rgba(139, 92, 246, 0.1), transparent 60%),
-    radial-gradient(900px 420px at -10% 30%, rgba(34, 211, 238, 0.05), transparent 55%),
-    #0d0f14;
   min-height: calc(100vh - 64px);
   padding: 26px clamp(20px, 4vw, 56px);
-  color: #f4f6fb;
+  color: var(--color-ink);
 }
 
 .events-header {
@@ -19,9 +14,8 @@
 .events-header h1 {
   margin: 0;
   font-size: 30px;
-  font-weight: 800;
-  letter-spacing: -0.01em;
-  color: #f4f6fb;
+  font-weight: 900;
+  color: var(--color-ink);
 }
 
 .header-underline {
@@ -29,7 +23,7 @@
   height: 4px;
   width: 280px;
   border-radius: 999px;
-  background: linear-gradient(90deg, #8b5cf6, #22d3ee);
+  background: var(--color-surface);
 }
 
 .events-layout {
@@ -52,25 +46,31 @@
 .filter-chip {
   padding: 8px 16px;
   border-radius: 999px;
-  border: 1px solid #2c3242;
-  background: #14171f;
-  color: #a8b0c2;
-  font-size: 13px;
-  font-weight: 600;
+  border: 1px solid var(--color-secondary);
+  background: var(--color-secondary);
+  color: var(--color-ink);
+  font-size: 12px;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .filter-chip:hover {
-  color: #f4f6fb;
-  border-color: #8d96aa;
+  background: var(--color-secondary-hover);
+  border-color: var(--color-secondary-hover);
 }
 
-.filter-chip.active {
-  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
-  border-color: #8b5cf6;
-  color: #fff;
-  box-shadow: 0 4px 14px rgba(139, 92, 246, 0.35);
+.filter-chip.active,
+.filter-chip.active:hover {
+  background: var(--color-accent);
+  border-color: var(--color-ink);
+  color: var(--color-on-accent);
+}
+
+.filter-chip:focus-visible,
+.new-btn:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
 }
 
 .new-btn {
@@ -80,16 +80,15 @@
   gap: 6px;
   padding: 8px 16px;
   border-radius: 999px;
-  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
-  color: #fff;
-  font-size: 13px;
-  font-weight: 600;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-size: 12px;
+  font-weight: 700;
   text-decoration: none;
-  box-shadow: 0 4px 14px rgba(139, 92, 246, 0.35);
 }
 
 .new-btn:hover {
-  filter: brightness(1.12);
+  background: var(--color-accent-hover);
 }
 
 /* ── Lista de eventos ───────────────────────────────────────── */
@@ -104,20 +103,23 @@
   gap: 12px;
   padding: 10px;
   border-radius: 14px;
-  border: 1px solid #2c3242;
-  background: #14171f;
+  border: 1px solid var(--color-surface-border);
+  background: var(--color-surface);
+  color: var(--color-ink-on-dark);
   cursor: pointer;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
 }
 
 .event-card:hover {
-  border-color: #8d96aa;
+  border-color: var(--color-surface-border-strong);
 }
 
 .event-card.selected {
-  border-color: #8b5cf6;
-  background: #1b1f2a;
-  box-shadow: 0 0 0 1px #8b5cf6;
+  border-color: var(--color-accent);
+  background: var(--color-surface-2);
+  box-shadow: 0 0 0 1px var(--color-accent);
 }
 
 .card-thumb {
@@ -125,7 +127,7 @@
   height: 76px;
   border-radius: 10px;
   object-fit: cover;
-  background: #0d0f14;
+  background: var(--color-ink);
   flex-shrink: 0;
 }
 
@@ -133,7 +135,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-muted, #6b7280);
+  color: var(--color-ink-muted-on-dark);
 }
 
 .card-body {
@@ -150,13 +152,13 @@
 
 .card-model {
   font-size: 13px;
-  font-weight: 600;
-  color: #f4f6fb;
+  font-weight: 700;
+  color: var(--color-ink-on-dark);
 }
 
 .card-prompt {
   font-size: 12px;
-  color: #a8b0c2;
+  color: var(--color-ink-muted-on-dark);
   margin: 4px 0 6px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -173,26 +175,26 @@
 .card-foot .pct {
   font-size: 12px;
   font-weight: 700;
-  color: #22d3ee;
+  color: var(--color-accent);
 }
 
 .card-foot .meta {
-  font-size: 11px;
-  color: #6d7688;
+  font-size: 12px;
+  color: var(--color-ink-muted-on-dark);
 }
 
 /* ── Progreso ───────────────────────────────────────────────── */
 .progress-track {
   height: 6px;
   border-radius: 999px;
-  background: #2c3242;
+  background: var(--color-surface-border);
   overflow: hidden;
   margin: 6px 0;
 }
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #8b5cf6, #22d3ee);
+  background: var(--color-accent);
   transition: width 0.4s ease;
 }
 
@@ -208,8 +210,8 @@
 .viewer-video {
   width: 100%;
   border-radius: 16px;
-  border: 1px solid #2c3242;
-  background: #0d0f14;
+  border: 1px solid var(--color-surface-border);
+  background: var(--color-ink);
 }
 
 .viewer-empty {
@@ -220,18 +222,27 @@
   gap: 10px;
   min-height: 380px;
   border-radius: 16px;
-  border: 1px dashed #2c3242;
-  color: #6d7688;
+  border: 1px dashed var(--color-secondary);
+  color: var(--color-ink-muted);
 }
 
 .viewer-empty.error {
-  color: #f87171;
+  color: var(--color-danger-strong);
+  border-color: var(--color-danger-strong);
   border-style: solid;
 }
 
 .viewer-empty .pct {
   font-weight: 700;
-  color: #22d3ee;
+  color: var(--color-ink);
+}
+
+.viewer-empty .progress-track {
+  background: var(--color-secondary);
+}
+
+.viewer-empty .progress-fill {
+  background: var(--color-ink);
 }
 
 .viewer-meta {
@@ -239,26 +250,26 @@
   align-items: center;
   gap: 10px;
   font-size: 13px;
-  color: #a8b0c2;
+  color: var(--color-ink-muted);
 }
 
 .viewer-model {
-  font-weight: 600;
-  color: #f4f6fb;
+  font-weight: 700;
+  color: var(--color-ink);
 }
 
 .viewer-prompt {
   font-size: 13px;
-  color: #a8b0c2;
+  color: var(--color-ink-on-dark);
   padding: 12px 14px;
   border-radius: 12px;
-  background: #14171f;
-  border: 1px solid #2c3242;
+  background: var(--color-surface);
+  border: 1px solid var(--color-surface-border);
 }
 
 .meta {
   font-size: 12px;
-  color: #6d7688;
+  color: var(--color-ink-muted);
 }
 
 .empty-state {
@@ -267,7 +278,7 @@
   align-items: center;
   gap: 10px;
   padding: 40px 0;
-  color: #6d7688;
+  color: var(--color-ink-muted);
 }
 
 @media (max-width: 1000px) {

@@ -31,18 +31,17 @@
         >
           Listos
         </button>
-        <a routerLink="/studio" class="new-btn">
-          <i class="pi pi-plus"></i> Nuevo
-        </a>
+        <a routerLink="/studio" class="new-btn"> <i class="pi pi-plus"></i> Nuevo </a>
       </div>
 
       @if (filtered().length === 0) {
         <div class="empty-state">
           <i class="pi pi-inboxes text-3xl"></i>
-          <p>No hay eventos {{ filter() === 'done' ? 'listos' : filter() === 'active' ? 'en curso' : 'todavía' }}.</p>
-          <a routerLink="/studio" class="new-btn">
-            <i class="pi pi-sparkles"></i> Ir al Studio
-          </a>
+          <p>
+            No hay eventos
+            {{ filter() === 'done' ? 'listos' : filter() === 'active' ? 'en curso' : 'todavía' }}.
+          </p>
+          <a routerLink="/studio" class="new-btn"> <i class="pi pi-sparkles"></i> Ir al Studio </a>
         </div>
       }
 
@@ -55,7 +54,12 @@
             (click)="select(take)"
           >
             @if (take.status === 'succeeded' && take.videoUrl) {
-              <video class="card-thumb" [src]="take.videoUrl | serverUrl" preload="metadata" muted></video>
+              <video
+                class="card-thumb"
+                [src]="take.videoUrl | serverUrl"
+                preload="metadata"
+                muted
+              ></video>
             } @else {
               <div class="card-thumb placeholder">
                 <i class="pi" [class.pi-spin.pi-spinner]="take.status === 'running'"></i>
@@ -64,7 +68,11 @@
             <div class="card-body">
               <div class="card-top">
                 <span class="card-model">{{ take.modelDisplayName }}</span>
-                <p-tag [value]="label(take.status)" [severity]="severity(take.status)" styleClass="text-[10px]" />
+                <p-tag
+                  [value]="label(take.status)"
+                  [severity]="severity(take.status)"
+                  styleClass="text-xs"
+                />
               </div>
               <p class="card-prompt">{{ take.prompt }}</p>
               @if (take.status === 'running' || take.status === 'queued') {
@@ -84,7 +92,12 @@
                 </div>
               } @else {
                 <div class="card-foot">
-                  <span class="meta">{{ take.ratio }} @if (take.duration) {· {{ take.duration }}s}</span>
+                  <span class="meta"
+                    >{{ take.ratio }}
+                    @if (take.duration) {
+                      · {{ take.duration }}s
+                    }
+                  </span>
                   <span class="meta">{{ time(take.createdAt) }}</span>
                   <p-button
                     icon="pi pi-trash"
@@ -110,7 +123,12 @@
           </video>
           <div class="viewer-meta">
             <span class="viewer-model">{{ take.modelDisplayName }}</span>
-            <span class="meta">{{ take.ratio }} @if (take.duration) {· {{ take.duration }}s}</span>
+            <span class="meta"
+              >{{ take.ratio }}
+              @if (take.duration) {
+                · {{ take.duration }}s
+              }
+            </span>
           </div>
           <p class="viewer-prompt">{{ take.prompt }}</p>
         } @else if (take.status === 'failed') {

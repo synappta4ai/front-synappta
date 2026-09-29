@@ -56,10 +56,9 @@ export class LibraryApiRepository {
     if (category) {
       params['category'] = category;
     }
-    return this.http.get<ApiResponse<FileAsset[]>>(
-      `${this.apiUrl}/files/by-event/${eventId}`,
-      { params },
-    );
+    return this.http.get<ApiResponse<FileAsset[]>>(`${this.apiUrl}/files/by-event/${eventId}`, {
+      params,
+    });
   }
 
   listFilesPaginated(filters: FileListFilters = {}): Observable<ApiResponse<Paginated<FileAsset>>> {

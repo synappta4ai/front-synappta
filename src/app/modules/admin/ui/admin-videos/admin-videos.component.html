@@ -7,7 +7,7 @@
 <!-- Header / filters -->
 <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
   <div class="flex items-center gap-2">
-    <span class="text-sm font-medium text-(--text-primary)">Videos generados</span>
+    <span class="text-sm font-bold text-ink">Videos generados</span>
     <p-tag [value]="total() + ' videos'" severity="info" />
   </div>
   <div class="flex items-center gap-2">
@@ -24,23 +24,23 @@
 
 @if (loading()) {
   <div
-    class="flex flex-col items-center gap-4 rounded-xl border border-[var(--surface-200)] bg-[var(--surface-0)] py-16"
+    class="flex flex-col items-center gap-4 rounded-xl border border-surface-border bg-surface py-16"
   >
     <p-progressSpinner styleClass="w-12 h-12" strokeWidth="3" />
-    <p class="text-sm text-(--text-secondary)">Cargando videos...</p>
+    <p class="text-sm text-ink-muted-on-dark">Cargando videos...</p>
   </div>
 } @else {
   <!-- Cards grid -->
   @if (filtered().length === 0) {
     <div
-      class="flex flex-col items-center gap-4 rounded-xl border border-[var(--surface-200)] bg-[var(--surface-0)] py-16"
+      class="flex flex-col items-center gap-4 rounded-xl border border-surface-border bg-surface py-16"
     >
-      <div class="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--surface-100)]">
-        <i class="pi pi-video text-3xl text-[var(--surface-400)]"></i>
+      <div class="flex h-16 w-16 items-center justify-center rounded-full bg-surface-2">
+        <i class="pi pi-video text-3xl text-ink-muted-on-dark"></i>
       </div>
       <div class="text-center">
-        <p class="font-medium text-(--text-primary)">No hay videos generados</p>
-        <p class="mt-1 text-sm text-(--text-secondary)">
+        <p class="font-bold text-ink-on-dark">No hay videos generados</p>
+        <p class="mt-1 text-sm text-ink-muted-on-dark">
           Los videos completados aparecerán aquí con su proyecto e información
         </p>
       </div>
@@ -49,27 +49,30 @@
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       @for (v of filtered(); track v.id) {
         <div
-          class="group overflow-hidden rounded-xl border border-[var(--surface-200)] bg-[var(--surface-0)] transition-shadow hover:shadow-md"
+          class="group overflow-hidden rounded-xl border border-surface-border bg-surface transition-shadow hover:border-surface-border-strong"
         >
           <!-- Preview -->
-          <div class="relative aspect-video cursor-pointer overflow-hidden bg-black" (click)="openPlayer(v)">
+          <div
+            class="relative aspect-video cursor-pointer overflow-hidden bg-ink"
+            (click)="openPlayer(v)"
+          >
             <video
               [src]="outputUrl(v) | serverUrl"
               preload="metadata"
               class="h-full w-full object-cover opacity-90 transition-opacity group-hover:opacity-100"
             ></video>
             <div
-              class="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 transition-opacity group-hover:opacity-100"
+              class="absolute inset-0 flex items-center justify-center bg-ink/30 opacity-0 transition-opacity group-hover:opacity-100"
             >
               <div
-                class="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-[var(--primary-600)]"
+                class="flex h-12 w-12 items-center justify-center rounded-full bg-ink/90 text-accent"
               >
                 <i class="pi pi-play ml-0.5 text-lg"></i>
               </div>
             </div>
             @if (v.video_duration > 0) {
               <span
-                class="absolute right-2 bottom-2 rounded bg-black/70 px-1.5 py-0.5 text-xs font-medium text-white"
+                class="absolute right-2 bottom-2 rounded bg-ink/70 px-1.5 py-0.5 text-xs font-bold text-ink-on-dark"
               >
                 {{ formatDuration(v.video_duration) }}
               </span>
@@ -80,13 +83,17 @@
           <div class="flex flex-col gap-2 p-4">
             <div class="flex items-start justify-between gap-2">
               <div class="min-w-0">
-                <p class="truncate font-medium text-(--text-primary)">
+                <p class="truncate font-bold text-ink-on-dark">
                   {{ v.event_name || 'Proyecto sin nombre' }}
                 </p>
-                <p class="truncate text-xs text-(--text-secondary)">
+                <p class="truncate text-xs text-ink-muted-on-dark">
                   {{ v.piece_code }}
-                  @if (v.piece_name) {<span> · {{ v.piece_name }}</span>}
-                  @if (v.generation_number) {<span> · G{{ v.generation_number }}</span>}
+                  @if (v.piece_name) {
+                    <span> · {{ v.piece_name }}</span>
+                  }
+                  @if (v.generation_number) {
+                    <span> · G{{ v.generation_number }}</span>
+                  }
                 </p>
               </div>
               <p-tag
@@ -96,40 +103,34 @@
               />
             </div>
 
-            <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-(--text-secondary)">
+            <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-ink-muted-on-dark">
               <span class="flex items-center gap-1">
-                <i class="pi pi-user text-[0.65rem]"></i>
-                {{ v.user_display_name || ('u' + (v.user_id ?? '—')) }}
+                <i class="pi pi-user text-xs"></i>
+                {{ v.user_display_name || 'u' + (v.user_id ?? '—') }}
               </span>
               <span class="flex items-center gap-1">
-                <i class="pi pi-calendar text-[0.65rem]"></i>
+                <i class="pi pi-calendar text-xs"></i>
                 {{ v.created_at | date: 'short' }}
               </span>
               @if (v.usage_tokens > 0) {
                 <span class="flex items-center gap-1">
-                  <i class="pi pi-bolt text-[0.65rem]"></i>
+                  <i class="pi pi-bolt text-xs"></i>
                   {{ v.usage_tokens | number: '1.0-0' }} tokens
                 </span>
               }
               @if (v.video_ratio) {
                 <span class="flex items-center gap-1">
-                  <i class="pi pi-th-large text-[0.65rem]"></i>
+                  <i class="pi pi-th-large text-xs"></i>
                   {{ v.video_ratio }}
                 </span>
               }
             </div>
 
-            <div class="mt-1 flex items-center justify-between border-t border-[var(--surface-100)] pt-2">
-              <code class="truncate text-[0.65rem] text-[var(--text-muted)]" [pTooltip]="v.task_id">
+            <div class="mt-1 flex items-center justify-between border-t border-surface-border pt-2">
+              <code class="truncate text-xs text-ink-muted-on-dark" [pTooltip]="v.task_id">
                 {{ v.task_id }}
               </code>
-              <p-button
-                icon="pi pi-play"
-                label="Ver"
-                size="small"
-                text
-                (onClick)="openPlayer(v)"
-              />
+              <p-button icon="pi pi-play" label="Ver" size="small" text (onClick)="openPlayer(v)" />
             </div>
           </div>
         </div>
@@ -138,9 +139,9 @@
 
     <!-- Pagination -->
     <div
-      class="mt-4 flex items-center justify-between rounded-xl border border-[var(--surface-200)] bg-[var(--surface-0)] px-5 py-3"
+      class="mt-4 flex items-center justify-between rounded-xl border border-surface-border bg-surface px-5 py-3"
     >
-      <span class="text-sm text-(--text-secondary)">
+      <span class="text-sm text-ink-muted-on-dark">
         Página {{ page() }} — {{ total() }} videos
       </span>
       <div class="flex gap-2">
@@ -174,19 +175,21 @@
   @if (selected(); as v) {
     <ng-template #header>
       <div class="flex items-center gap-3">
-        <div
-          class="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-[var(--primary-500)] to-[var(--primary-700)] text-white"
-        >
+        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-2 text-accent">
           <i class="pi pi-video text-sm"></i>
         </div>
         <div>
-          <h3 class="text-lg font-semibold text-(--text-primary)">
+          <h3 class="text-lg font-bold text-ink-on-dark">
             {{ v.event_name || 'Video generado' }}
           </h3>
-          <p class="text-xs text-(--text-secondary)">
+          <p class="text-xs text-ink-muted-on-dark">
             {{ v.piece_code }}
-            @if (v.piece_name) {<span> · {{ v.piece_name }}</span>}
-            @if (v.generation_number) {<span> · Generación #{{ v.generation_number }}</span>}
+            @if (v.piece_name) {
+              <span> · {{ v.piece_name }}</span>
+            }
+            @if (v.generation_number) {
+              <span> · Generación #{{ v.generation_number }}</span>
+            }
           </p>
         </div>
       </div>
@@ -196,59 +199,64 @@
       [src]="outputUrl(v) | serverUrl"
       controls
       autoplay
-      class="max-h-[70vh] w-full rounded-lg bg-black"
+      class="max-h-[70vh] w-full rounded-lg bg-ink"
     ></video>
 
     <!-- Metadata -->
     <div
-      class="mt-4 grid gap-3 rounded-xl border border-[var(--surface-200)] bg-[var(--surface-50)] p-4 text-sm sm:grid-cols-4"
+      class="mt-4 grid gap-3 rounded-xl border border-surface-border bg-surface-2 p-4 text-sm sm:grid-cols-4"
     >
       <div>
-        <p class="text-xs text-[var(--text-muted)]">Modelo</p>
-        <p class="font-medium text-(--text-primary)">{{ v.model_name }}</p>
+        <p class="text-xs text-ink-muted-on-dark">Modelo</p>
+        <p class="font-bold text-ink-on-dark">{{ v.model_name }}</p>
       </div>
       <div>
-        <p class="text-xs text-[var(--text-muted)]">Duración</p>
-        <p class="font-medium text-(--text-primary)">{{ formatDuration(v.video_duration) }}</p>
+        <p class="text-xs text-ink-muted-on-dark">Duración</p>
+        <p class="font-bold text-ink-on-dark">{{ formatDuration(v.video_duration) }}</p>
       </div>
       <div>
-        <p class="text-xs text-[var(--text-muted)]">Resolución</p>
-        <p class="font-medium text-(--text-primary)">
+        <p class="text-xs text-ink-muted-on-dark">Resolución</p>
+        <p class="font-bold text-ink-on-dark">
           {{ v.video_resolution || '—' }}
-          @if (v.video_fps) {<span> · {{ v.video_fps }}fps</span>}
+          @if (v.video_fps) {
+            <span> · {{ v.video_fps }}fps</span>
+          }
         </p>
       </div>
       <div>
-        <p class="text-xs text-[var(--text-muted)]">Ratio / Seed</p>
-        <p class="font-medium text-(--text-primary)">
+        <p class="text-xs text-ink-muted-on-dark">Ratio / Seed</p>
+        <p class="font-bold text-ink-on-dark">
           {{ v.video_ratio || '—' }}
-          @if (v.video_seed) {<span> · {{ v.video_seed }}</span>}
+          @if (v.video_seed) {
+            <span> · {{ v.video_seed }}</span>
+          }
         </p>
       </div>
       <div>
-        <p class="text-xs text-[var(--text-muted)]">Tokens</p>
-        <p class="font-medium text-(--text-primary)">
+        <p class="text-xs text-ink-muted-on-dark">Tokens</p>
+        <p class="font-bold text-ink-on-dark">
           {{ v.usage_tokens | number: '1.0-0' }}
           @if (v.usage_completion_tokens) {
-            <span class="text-xs text-(--text-secondary)">
+            <span class="text-xs text-ink-muted-on-dark">
               ({{ v.usage_completion_tokens | number: '1.0-0' }} completion)</span
             >
           }
         </p>
       </div>
       <div>
-        <p class="text-xs text-[var(--text-muted)]">Generado por</p>
-        <p class="font-medium text-(--text-primary)">
-          {{ v.user_display_name || ('u' + (v.user_id ?? '—')) }}
+        <p class="text-xs text-ink-muted-on-dark">Generado por</p>
+        <p class="font-bold text-ink-on-dark">
+          {{ v.user_display_name || 'u' + (v.user_id ?? '—') }}
         </p>
       </div>
       <div>
-        <p class="text-xs text-[var(--text-muted)]">Fecha</p>
-        <p class="font-medium text-(--text-primary)">{{ v.created_at | date: 'medium' }}</p>
+        <p class="text-xs text-ink-muted-on-dark">Fecha</p>
+        <p class="font-bold text-ink-on-dark">{{ v.created_at | date: 'medium' }}</p>
       </div>
       <div>
-        <p class="text-xs text-[var(--text-muted)]">Task ID</p>
-        <code class="text-xs text-(--text-primary)">{{ v.task_id }}</code>
+        <p class="text-xs text-ink-muted-on-dark">Task ID</p>
+        <code class="text-xs text-ink-on-dark">{{ v.task_id }}</code>
       </div>
     </div>
   }
+</p-dialog>

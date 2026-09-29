@@ -1,6 +1,11 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { FormsModule, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  FormsModule,
+  NonNullableFormBuilder,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { catchError, EMPTY, finalize, forkJoin, switchMap, tap } from 'rxjs';
 import { HttpResponse } from '@angular/common/http';
 
@@ -180,8 +185,7 @@ export class AdminModelsComponent {
 
   protected isModelConfigured(model: TenantModel): boolean {
     return (
-      this.credentialForProvider(model.credential_provider) !== null ||
-      model.credential_configured
+      this.credentialForProvider(model.credential_provider) !== null || model.credential_configured
     );
   }
 

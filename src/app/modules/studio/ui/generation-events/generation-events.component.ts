@@ -56,7 +56,9 @@ export class GenerationEventsComponent {
     this.store.remove(take.id);
   }
 
-  protected severity(status: StudioTake['status']): 'success' | 'danger' | 'info' | 'warn' | 'secondary' {
+  protected severity(
+    status: StudioTake['status'],
+  ): 'success' | 'danger' | 'info' | 'warn' | 'secondary' {
     switch (status) {
       case 'succeeded':
         return 'success';

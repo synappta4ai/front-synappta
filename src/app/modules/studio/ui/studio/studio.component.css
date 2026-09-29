@@ -4,43 +4,30 @@
    raíz:Budget anyComponentStyle (8 kB) se respeta sin moverlos. */
 :host {
   display: block;
-  background:
-    radial-gradient(
-      1100px 460px at 85% -8%,
-      color-mix(in srgb, var(--primary-500) 10%, transparent),
-      transparent 60%
-    ),
-    radial-gradient(
-      900px 420px at -10% 30%,
-      color-mix(in srgb, var(--primary-400) 5%, transparent),
-      transparent 55%
-    ),
-    var(--content-bg);
   min-height: calc(100vh - 64px);
   padding: 18px 20px;
 }
 
 /* Studio workspace: 3 columnas (params | viewer | takes).
-   Las variables --st-* se mapean al tema global (claro/oscuro + paleta dinámica). */
+   Las variables --st-* apuntan a los tokens de superficie oscura. */
 .studio-shell {
-  --st-bg: var(--surface-100);
-  --st-panel: var(--surface-0);
-  --st-panel-2: var(--surface-100);
-  --st-line: var(--border-color);
-  --st-text: var(--text-primary);
-  --st-text-2: var(--text-secondary);
-  --st-muted: var(--text-muted);
-  --st-accent: var(--primary-500);
-  --st-accent-2: var(--primary-400);
-  --st-ok: #34d399;
-  --st-err: var(--red-400);
-  --st-warn: var(--yellow-400);
+  --st-bg: var(--color-surface-2);
+  --st-panel: var(--color-surface);
+  --st-panel-2: var(--color-surface-2);
+  --st-line: var(--color-surface-border);
+  --st-text: var(--color-ink-on-dark);
+  --st-text-2: var(--color-ink-muted-on-dark);
+  --st-muted: var(--color-ink-muted-on-dark);
+  --st-accent: var(--color-accent);
+  --st-ok: var(--color-success);
+  --st-err: var(--color-danger);
+  --st-warn: var(--color-warning);
 
   display: grid;
   grid-template-columns: 340px minmax(0, 1fr) 320px;
   gap: 16px;
   min-height: 640px;
-  color: var(--st-text);
+  color: var(--color-ink);
 }
 
 /* Responsive: apilar en pantallas angostas */

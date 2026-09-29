@@ -5,172 +5,99 @@
    overrides every PrimeNG component style. */
 @layer theme, base, primeng, components, utilities;
 
-/* Class-based dark mode for Tailwind v4 */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* PrimeNG icons */
 @import 'primeicons/primeicons.css';
 
 /* ============================================
-   SISTEMA DE TEMAS DINAMICOS
+   Tipografía: Lato self-hosted (public/fonts)
    ============================================ */
+@font-face {
+  font-family: 'Lato';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/lato-400.woff2') format('woff2');
+}
 
-/* Definición de las 7 paletas de colores */
-:root {
-  /* Paleta Base (Rojo) */
-  --base-50: #fef2f2;
-  --base-100: #fee2e2;
-  --base-200: #fecaca;
-  --base-300: #fca5a5;
-  --base-400: #f87171;
-  --base-500: #ef4444;
-  --base-600: #dc2626;
-  --base-700: #b91c1c;
-  --base-800: #991b1b;
-  --base-900: #7f1d1d;
-  --base-950: #450a0a;
+@font-face {
+  font-family: 'Lato';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/lato-700.woff2') format('woff2');
+}
 
-  /* Paleta Yellow */
-  --yellow-50: #fefce8;
-  --yellow-100: #fef9c3;
-  --yellow-200: #fef08a;
-  --yellow-300: #fde047;
-  --yellow-400: #facc15;
-  --yellow-500: #eab308;
-  --yellow-600: #ca8a04;
-  --yellow-700: #a16207;
-  --yellow-800: #854d0e;
-  --yellow-900: #713f12;
-  --yellow-950: #422006;
-
-  /* Paleta Green */
-  --green-50: #f0fdf4;
-  --green-100: #dcfce7;
-  --green-200: #bbf7d0;
-  --green-300: #86efac;
-  --green-400: #4ade80;
-  --green-500: #22c55e;
-  --green-600: #16a34a;
-  --green-700: #15803d;
-  --green-800: #166534;
-  --green-900: #14532d;
-  --green-950: #052e16;
-
-  /* Paleta Blue */
-  --blue-50: #eff6ff;
-  --blue-100: #dbeafe;
-  --blue-200: #bfdbfe;
-  --blue-300: #93c5fd;
-  --blue-400: #60a5fa;
-  --blue-500: #3b82f6;
-  --blue-600: #2563eb;
-  --blue-700: #1d4ed8;
-  --blue-800: #1e40af;
-  --blue-900: #1e3a8a;
-  --blue-950: #172554;
-
-  /* Paleta Orange */
-  --orange-50: #fff7ed;
-  --orange-100: #ffedd5;
-  --orange-200: #fed7aa;
-  --orange-300: #fdba74;
-  --orange-400: #fb923c;
-  --orange-500: #f97316;
-  --orange-600: #ea580c;
-  --orange-700: #c2410c;
-  --orange-800: #9a3412;
-  --orange-900: #7c2d12;
-  --orange-950: #431407;
-
-  /* Paleta Red */
-  --red-50: #fef2f2;
-  --red-100: #fee2e2;
-  --red-200: #fecaca;
-  --red-300: #fca5a5;
-  --red-400: #f87171;
-  --red-500: #ef4444;
-  --red-600: #dc2626;
-  --red-700: #b91c1c;
-  --red-800: #991b1b;
-  --red-900: #7f1d1d;
-  --red-950: #450a0a;
-
-  /* Paleta Violet */
-  --violet-50: #f5f3ff;
-  --violet-100: #ede9fe;
-  --violet-200: #ddd6fe;
-  --violet-300: #c4b5fd;
-  --violet-400: #a78bfa;
-  --violet-500: #8b5cf6;
-  --violet-600: #7c3aed;
-  --violet-700: #6d28d9;
-  --violet-800: #5b21b6;
-  --violet-900: #4c1d95;
-  --violet-950: #2e1065;
-
-  /* Color primario por defecto (Violet) */
-  --primary-50: var(--violet-50);
-  --primary-100: var(--violet-100);
-  --primary-200: var(--violet-200);
-  --primary-300: var(--violet-300);
-  --primary-400: var(--violet-400);
-  --primary-500: var(--violet-500);
-  --primary-600: var(--violet-600);
-  --primary-700: var(--violet-700);
-  --primary-800: var(--violet-800);
-  --primary-900: var(--violet-900);
-  --primary-950: var(--violet-950);
-
-  /* Color secundario por defecto (Zinc) */
-  --secondary-50: #fafafa;
-  --secondary-100: #f4f4f5;
-  --secondary-200: #e4e4e7;
-  --secondary-300: #d4d4d8;
-  --secondary-400: #a1a1aa;
-  --secondary-500: #71717a;
-  --secondary-600: #52525b;
-  --secondary-700: #3f3f46;
-  --secondary-800: #27272a;
-  --secondary-900: #18181b;
-  --secondary-950: #09090b;
+@font-face {
+  font-family: 'Lato';
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url('/fonts/lato-900.woff2') format('woff2');
 }
 
 /* ============================================
-   Tema Claro
+   Design tokens (única fuente de hex del proyecto)
+
+   Paleta Figma (no modificar):
+     background #DFDFDF · accent #E7FE64 · choice #656565 · secondary #ACACAC
+
+   Contraste (WCAG 2.x):
+     ink #111 / background ............ 14.2:1
+     ink-muted #595959 / background ... 5.3:1
+     choice #656565 / background ...... 4.4:1 (solo iconos/estados; texto usa ink-muted)
+     ink #111 / secondary ............. 8.3:1
+     on-accent #0F0F0F / accent ....... 17.1:1
+     accent / surface ................. 15.2:1 (texto/iconos/líneas solo sobre surface)
+     accent / background .............. 1.2:1 (solo relleno con on-accent, nunca texto)
+     ink-on-dark #F2F2F2 / surface .... 15.2:1 · / surface-2 12.8:1
+     ink-muted-on-dark #A8A8A8 / surface 7.2:1 · / surface-2 6.0:1 · / surface-hover 5.3:1
+     surface-border-strong / surface .. 4.3:1 · / surface-2 3.6:1 (bordes de inputs)
+     success · warning · danger · info / surface-2 ≥ 4.9:1
+     danger-strong #A33A3A / background 4.9:1
    ============================================ */
+@theme {
+  --color-*: initial;
+  --font-*: initial;
+
+  --font-sans: 'Lato', ui-sans-serif, system-ui, sans-serif;
+
+  --color-background: #dfdfdf;
+  --color-accent: #e7fe64;
+  --color-choice: #656565;
+  --color-secondary: #acacac;
+
+  --color-accent-hover: #d4eb50;
+  --color-accent-active: #c3da42;
+  --color-secondary-hover: #bababa;
+  --color-secondary-active: #a0a0a0;
+
+  --color-surface: #1c1c1c;
+  --color-surface-2: #2a2a2a;
+  --color-surface-hover: #333333;
+  --color-surface-active: #3d3d3d;
+  --color-surface-border: #3a3a3a;
+  --color-surface-border-strong: #808080;
+
+  --color-ink: #111111;
+  --color-ink-muted: #595959;
+  --color-ink-on-dark: #f2f2f2;
+  --color-ink-muted-on-dark: #a8a8a8;
+  --color-on-accent: #0f0f0f;
+
+  --color-success: #7fbf8e;
+  --color-warning: #d9b45a;
+  --color-danger: #e07a7a;
+  --color-danger-strong: #a33a3a;
+  --color-info: #7fa8cc;
+
+  --color-disabled: var(--color-secondary);
+  --color-disabled-ink: var(--color-choice);
+  --color-focus-ring: var(--color-accent);
+}
+
+/* Radios y espaciados de la app (sin cambios) */
 :root {
-  /* Superficies */
-  --surface-0: #ffffff;
-  --surface-50: #fafafa;
-  --surface-100: #f4f4f5;
-  --surface-200: #e4e4e7;
-  --surface-300: #d4d4d8;
-  --surface-400: #a1a1aa;
-  --surface-500: #71717a;
-  --surface-600: #52525b;
-  --surface-700: #3f3f46;
-  --surface-800: #27272a;
-  --surface-900: #18181b;
-  --surface-950: #09090b;
-
-  /* Layout */
-  --sidebar-bg: #f8fafc;
-  --sidebar-text: #1e293b;
-  --sidebar-text-muted: #64748b;
-  --sidebar-border: #e2e8f0;
-  --sidebar-hover: #f1f5f9;
-  --sidebar-active: var(--primary-50);
-
-  --header-bg: #ffffff;
-  --header-text: #1e293b;
-  --header-border: #e2e8f0;
-
-  --content-bg: #f8fafc;
-  --content-text: #1e293b;
-
-  --border-color: #e2e8f0;
-
-  /* Border radius */
   --radius-none: 0;
   --radius-sm: 0.25rem;
   --radius-md: 0.5rem;
@@ -179,7 +106,6 @@
   --radius-2xl: 1.5rem;
   --radius-full: 9999px;
 
-  /* Padding */
   --space-0: 0;
   --space-1: 0.25rem;
   --space-2: 0.5rem;
@@ -193,184 +119,133 @@
   --space-16: 4rem;
   --space-20: 5rem;
 
-  /* Texto */
-  --text-primary: #1e293b;
-  --text-secondary: #64748b;
-  --text-muted: #94a3b8;
+  /* Anillo de foco de doble capa: accent (visible sobre surface) + ink
+     (visible sobre background, donde accent no llega a 3:1) */
+  --focus-shadow: 0 0 0 5px var(--color-ink);
 }
 
 /* ============================================
-   Tema Oscuro
+   PrimeNG: tokens semánticos (Aura) → tema Synappta.
+   Los componentes PrimeNG viven dentro de paneles oscuros
+   (surface); lo que se apoya sobre el canvas se ajusta
+   con clases locales.
    ============================================ */
-.dark {
-  /* Superficies */
-  --surface-0: #1a1d2e;
-  --surface-50: #1e2132;
-  --surface-100: #252838;
-  --surface-200: #303348;
-  --surface-300: #404460;
-  --surface-400: #6b7094;
-  --surface-500: #9098b8;
-  --surface-600: #b4b9d0;
-  --surface-700: #d0d4e4;
-  --surface-800: #e8eaf2;
-  --surface-900: #f4f5f9;
-  --surface-950: #ffffff;
-
-  /* Layout */
-  --sidebar-bg: #12152a;
-  --sidebar-text: #e2e8f0;
-  --sidebar-text-muted: #64748b;
-  --sidebar-border: #2a2e45;
-  --sidebar-hover: #252840;
-  --sidebar-active: rgba(139, 92, 246, 0.15);
-
-  --header-bg: #12152a;
-  --header-text: #e2e8f0;
-  --header-border: #2a2e45;
-
-  --content-bg: #0e1125;
-  --content-text: #e2e8f0;
-
-  --border-color: #2a2e45;
-
-  /* Texto */
-  --text-primary: #f1f3f9;
-  --text-secondary: #9ba3c0;
-  --text-muted: #6b7094;
-}
-
-/* ============================================
-   PrimeNG Component Overrides
-   ============================================ */
-
-/* PrimeNG theme token overrides */
 :root {
-  --p-primary-50: var(--primary-50);
-  --p-primary-100: var(--primary-100);
-  --p-primary-200: var(--primary-200);
-  --p-primary-300: var(--primary-300);
-  --p-primary-400: var(--primary-400);
-  --p-primary-500: var(--primary-500);
-  --p-primary-600: var(--primary-600);
-  --p-primary-700: var(--primary-700);
-  --p-primary-800: var(--primary-800);
-  --p-primary-900: var(--primary-900);
-  --p-primary-950: var(--primary-950);
+  --p-font-family: var(--font-sans);
 
-  --p-surface-0: var(--surface-0);
-  --p-surface-50: var(--surface-50);
-  --p-surface-100: var(--surface-100);
-  --p-surface-200: var(--surface-200);
-  --p-surface-300: var(--surface-300);
-  --p-surface-400: var(--surface-400);
-  --p-surface-500: var(--surface-500);
-  --p-surface-600: var(--surface-600);
-  --p-surface-700: var(--surface-700);
-  --p-surface-800: var(--surface-800);
-  --p-surface-900: var(--surface-900);
-  --p-surface-950: var(--surface-950);
+  --p-primary-color: var(--color-accent);
+  --p-primary-contrast-color: var(--color-on-accent);
+  --p-primary-hover-color: var(--color-accent-hover);
+  --p-primary-active-color: var(--color-accent-active);
 
-  --p-card-background: var(--surface-0);
-  --p-card-color: var(--text-primary);
-  --p-inputtext-background: var(--surface-0);
-  --p-inputtext-color: var(--text-primary);
-  --p-inputtext-border-color: var(--surface-300);
-  --p-inputtext-hover-border-color: var(--surface-400);
-  --p-inputtext-focus-border-color: var(--primary-500);
+  --p-text-color: var(--color-ink-on-dark);
+  --p-text-hover-color: var(--color-ink-on-dark);
+  --p-text-muted-color: var(--color-ink-muted-on-dark);
+  --p-text-hover-muted-color: var(--color-ink-on-dark);
 
-  --p-select-background: var(--surface-0);
-  --p-select-color: var(--text-primary);
-  --p-select-border-color: var(--surface-300);
-  --p-select-hover-border-color: var(--surface-400);
-  --p-select-focus-border-color: var(--primary-500);
-  --p-select-focus-ring-color: rgba(139, 92, 246, 0.15);
-  --p-select-dropdown-color: var(--text-secondary);
+  --p-content-background: var(--color-surface);
+  --p-content-border-color: var(--color-surface-border);
+  --p-content-color: var(--color-ink-on-dark);
+  --p-content-hover-background: var(--color-surface-hover);
+  --p-content-hover-color: var(--color-ink-on-dark);
 
-  --p-select-option-background: var(--surface-0);
-  --p-select-option-color: var(--text-primary);
-  --p-select-option-hover-background: var(--primary-50);
-  --p-select-option-hover-color: var(--primary-700);
-  --p-select-option-selected-background: var(--primary-100);
-  --p-select-option-selected-color: var(--primary-700);
+  --p-highlight-background: var(--color-accent);
+  --p-highlight-color: var(--color-on-accent);
+  --p-highlight-focus-background: var(--color-accent-hover);
+  --p-highlight-focus-color: var(--color-on-accent);
 
-  --p-select-overlay-background: var(--surface-0);
-  --p-select-overlay-border-color: var(--surface-200);
-  --p-select-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --p-mask-background: color-mix(in srgb, var(--color-ink) 65%, transparent);
+  --p-mask-color: var(--color-ink-on-dark);
 
-  --p-datatable-header-cell-background: var(--primary-500);
-  --p-datatable-header-cell-color: white;
-  --p-checkbox-checked-border-color: var(--primary-600);
-  --p-checkbox-checked-color: var(--primary-600);
-  --p-checkbox-checked-icon-color: var(--primary-600);
-  --p-checkbox-checked-background: var(--primary-600);
-  --p-select-focus-border-color: var(--primary-600);
-  --p-select-focus-ring-color: var(--primary-600);
-  --p-checkbox-checked-hover-background: var(--primary-300);
-  --p-checkbox-checked-hover-border-color: var(--primary-300);
-  --p-radiobutton-checked-border-color: var(--primary-600);
-  --p-radiobutton-checked-background: var(--primary-600);
-  --p-radiobutton-checked-icon-color: var(--primary-600);
-  --p-radiobutton-checked-hover-border-color: var(--primary-600);
-  --p-radiobutton-checked-hover-background: var(--primary-600);
-  --p-radiobutton-checked-hover-icon-color: var(--primary-600);
-  --p-button-primary-background: var(--primary-500);
-  --p-button-primary-border-color: var(--primary-500);
-  --p-button-primary-hover-background: var(--primary-600);
-  --p-button-primary-hover-border-color: var(--primary-600);
-  --p-button-primary-active-background: var(--primary-700);
-  --p-button-primary-active-border-color: var(--primary-700);
-  --p-button-text-primary-color: var(--primary-500);
-  --p-button-text-primary-hover-color: var(--primary-600);
-  --p-button-text-primary-active-color: var(--primary-700);
-  --p-button-text-primary-active-background: var(--primary-100);
-  --p-button-text-primary-hover-background: var(--primary-50);
-  --p-button-outlined-primary-border-color: var(--primary-100);
-  --p-button-outlined-primary-color: var(--primary-500);
-  --p-button-outlined-primary-active-background: var(--primary-100);
-  --p-button-outlined-primary-hover-background: var(--primary-50);
-  --p-inputtext-focus-border-color: var(--primary-500);
-  --p-datepicker-date-selected-background: var(--primary-600);
-  --p-breadcrumb-item-icon-color: var(--primary-500) !important;
-  --p-chip-background: var(--primary-500) !important;
-  --p-chip-color: #ffffff !important;
-  --p-chip-remove-icon-color: inherit !important;
-  --p-popover-background: #f1f5f9 !important;
-  --p-datepicker-dropdown-background: var(--primary-500) !important;
-  --p-datepicker-dropdown-color: #ffffff !important;
-  --p-toggleswitch-checked-background: var(--primary-500);
-  --p-toggleswitch-checked-hover-background: var(--primary-600);
-  --p-progressbar-value-background: var(--primary-500);
-  --p-progressbar-label-color: #ffffff;
-  --fc-button-bg-color: var(--primary-500);
-  --fc-button-border-color: var(--primary-500);
-  --fc-button-active-bg-color: var(--primary-600);
-  --fc-button-active-border-color: var(--primary-600);
-  --p-breadcrumb-item-color: var(--primary-500);
-  --p-text-hover-color: var(--primary-500);
+  --p-form-field-background: var(--color-surface-2);
+  --p-form-field-filled-background: var(--color-surface-2);
+  --p-form-field-filled-hover-background: var(--color-surface-2);
+  --p-form-field-filled-focus-background: var(--color-surface-2);
+  --p-form-field-disabled-background: var(--color-disabled);
+  --p-form-field-border-color: var(--color-surface-border-strong);
+  --p-form-field-hover-border-color: var(--color-ink-muted-on-dark);
+  --p-form-field-focus-border-color: var(--color-accent);
+  --p-form-field-invalid-border-color: var(--color-danger);
+  --p-form-field-color: var(--color-ink-on-dark);
+  --p-form-field-disabled-color: var(--color-disabled-ink);
+  --p-form-field-placeholder-color: var(--color-ink-muted-on-dark);
+  --p-form-field-invalid-placeholder-color: var(--color-danger);
+  --p-form-field-float-label-color: var(--color-ink-muted-on-dark);
+  --p-form-field-float-label-focus-color: var(--color-accent);
+  --p-form-field-float-label-active-color: var(--color-ink-muted-on-dark);
+  --p-form-field-float-label-invalid-color: var(--color-danger);
+  --p-form-field-icon-color: var(--color-ink-muted-on-dark);
+  --p-form-field-shadow: none;
+
+  --p-focus-ring-width: 2px;
+  --p-focus-ring-style: solid;
+  --p-focus-ring-color: var(--color-focus-ring);
+  --p-focus-ring-offset: 2px;
+  --p-focus-ring-shadow: var(--focus-shadow);
+
+  --p-overlay-select-background: var(--color-surface);
+  --p-overlay-select-border-color: var(--color-surface-border);
+  --p-overlay-select-color: var(--color-ink-on-dark);
+  --p-overlay-popover-background: var(--color-surface);
+  --p-overlay-popover-border-color: var(--color-surface-border);
+  --p-overlay-popover-color: var(--color-ink-on-dark);
+  --p-overlay-modal-background: var(--color-surface);
+  --p-overlay-modal-border-color: var(--color-surface-border);
+  --p-overlay-modal-color: var(--color-ink-on-dark);
+
+  --p-list-option-focus-background: var(--color-surface-hover);
+  --p-list-option-focus-color: var(--color-ink-on-dark);
+  --p-list-option-selected-background: var(--color-accent);
+  --p-list-option-selected-color: var(--color-on-accent);
+  --p-list-option-selected-focus-background: var(--color-accent-hover);
+  --p-list-option-selected-focus-color: var(--color-on-accent);
+  --p-list-option-icon-color: var(--color-ink-muted-on-dark);
+  --p-list-option-icon-focus-color: var(--color-ink-on-dark);
+
+  --p-navigation-item-focus-background: var(--color-surface-hover);
+  --p-navigation-item-focus-color: var(--color-ink-on-dark);
+  --p-navigation-item-icon-color: var(--color-ink-muted-on-dark);
+
+  --p-card-background: var(--color-surface);
+  --p-card-color: var(--color-ink-on-dark);
+  --p-card-subtitle-color: var(--color-ink-muted-on-dark);
+  --p-card-shadow: none;
+
+  --p-checkbox-background: var(--color-surface-2);
+  --p-checkbox-border-color: var(--color-surface-border-strong);
+  --p-checkbox-hover-border-color: var(--color-ink-muted-on-dark);
+  --p-checkbox-checked-background: var(--color-accent);
+  --p-checkbox-checked-border-color: var(--color-accent);
+  --p-checkbox-checked-hover-background: var(--color-accent-hover);
+  --p-checkbox-checked-hover-border-color: var(--color-accent-hover);
+  --p-checkbox-icon-checked-color: var(--color-on-accent);
+  --p-checkbox-icon-checked-hover-color: var(--color-on-accent);
+
+  --p-progressbar-background: var(--color-surface-2);
+  --p-progressbar-value-background: var(--color-accent);
+  --p-progressbar-label-color: var(--color-on-accent);
+
+  --p-tag-font-size: 0.75rem;
+  --p-tag-font-weight: 700;
+
+  --p-message-border-width: 1px;
+  --p-message-text-font-weight: 400;
 }
 
 /* ============================================
-   Estilos Base
+   Estilos base
    ============================================ */
-
 html,
 body {
   height: 100%;
-  font-family:
-    'Inter',
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-  background-color: var(--content-bg);
-  color: var(--content-text);
+  background-color: var(--color-background);
+  color: var(--color-ink);
 }
 
 input {
@@ -385,141 +260,213 @@ input {
   margin-top: calc(-1 * var(--space-2)) !important;
 }
 
-/* ============================================
-   Utilidades
-   ============================================ */
+::placeholder {
+  color: var(--color-ink-muted-on-dark);
+  opacity: 1;
+}
 
-/* Scrollbar personalizada */
+/* Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--surface-100);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--surface-400);
+  background: var(--color-secondary);
   border-radius: var(--radius-sm);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--surface-500);
+  background: var(--color-choice);
 }
 
-/* Focus visible */
+/* Foco visible: doble anillo accent + ink */
 *:focus-visible {
-  outline: 2px solid var(--primary-500);
+  outline: 2px solid var(--color-focus-ring);
   outline-offset: 2px;
+  box-shadow: var(--focus-shadow);
 }
 
 /* ============================================
-   PrimeNG Custom Styles
+   PrimeNG: botones
+   Reglas sin layer: ganan a Tailwind preflight y a Aura.
+   Las variantes solo aplican a :not(:disabled); el estado
+   deshabilitado es siempre secondary + choice.
    ============================================ */
-
-/* Buttons — explicit unlayered rules so they always beat Tailwind preflight
-   and reflect the active theme palette via --primary-* variables. */
-p-button .p-button,
 .p-button {
-  background: var(--p-button-primary-background, var(--primary-500));
-  border: 1px solid var(--p-button-primary-border-color, var(--primary-500));
-  color: #ffffff;
+  background: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  color: var(--color-on-accent);
   border-radius: var(--radius-md);
   padding: var(--space-3) var(--space-4);
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
 }
 
-p-button .p-button:hover:not(:disabled),
 .p-button:hover:not(:disabled) {
-  background: var(--p-button-primary-hover-background, var(--primary-600));
-  border-color: var(--p-button-primary-hover-border-color, var(--primary-600));
+  background: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+  color: var(--color-on-accent);
 }
 
-p-button .p-button:active:not(:disabled),
 .p-button:active:not(:disabled) {
-  background: var(--p-button-primary-active-background, var(--primary-700));
-  border-color: var(--p-button-primary-active-border-color, var(--primary-700));
+  background: var(--color-accent-active);
+  border-color: var(--color-accent-active);
 }
 
-/* Severity variants */
-.p-button-secondary,
-p-button .p-button-secondary {
-  background: var(--p-button-secondary-background, var(--secondary-500)) !important;
-  border-color: var(--p-button-secondary-border-color, var(--secondary-500)) !important;
+.p-button .p-button-label {
+  font-weight: 700;
 }
 
-.p-button-secondary:hover:not(:disabled),
-p-button .p-button-secondary:hover:not(:disabled) {
-  background: var(--p-button-secondary-hover-background, var(--secondary-600)) !important;
-  border-color: var(--p-button-secondary-hover-border-color, var(--secondary-600)) !important;
+/* Secondary: neutro sobre superficies oscuras */
+.p-button.p-button-secondary:not(:disabled) {
+  background: var(--color-surface-2);
+  border-color: var(--color-surface-border);
+  color: var(--color-ink-on-dark);
 }
 
-.p-button-danger,
-p-button .p-button-danger {
-  background: var(--p-danger-color, #ef4444) !important;
-  border-color: var(--p-danger-color, #ef4444) !important;
+.p-button.p-button-secondary:hover:not(:disabled) {
+  background: var(--color-surface-hover);
+  border-color: var(--color-surface-border-strong);
+  color: var(--color-ink-on-dark);
 }
 
-.p-button-danger:hover:not(:disabled),
-p-button .p-button-danger:hover:not(:disabled) {
-  background: #dc2626 !important;
-  border-color: #dc2626 !important;
+.p-button.p-button-secondary:active:not(:disabled) {
+  background: var(--color-surface-active);
 }
 
-.p-button-success,
-p-button .p-button-success {
-  background: var(--p-success-color, #22c55e) !important;
-  border-color: var(--p-success-color, #22c55e) !important;
+/* Contrast: acciones neutras claras (p. ej. cerrar visores) */
+.p-button.p-button-contrast:not(:disabled) {
+  background: var(--color-ink-on-dark);
+  border-color: var(--color-ink-on-dark);
+  color: var(--color-ink);
 }
 
-.p-button-success:hover:not(:disabled),
-p-button .p-button-success:hover:not(:disabled) {
-  background: #16a34a !important;
-  border-color: #16a34a !important;
+.p-button.p-button-danger:not(:disabled) {
+  background: var(--color-danger);
+  border-color: var(--color-danger);
+  color: var(--color-on-accent);
 }
 
-/* Text variant keeps transparent background */
-.p-button-text,
-p-button .p-button-text {
-  background: transparent !important;
-  border-color: transparent !important;
-  color: var(--p-button-text-primary-color, var(--primary-500)) !important;
+.p-button.p-button-danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-danger) 85%, var(--color-ink));
+  border-color: color-mix(in srgb, var(--color-danger) 85%, var(--color-ink));
 }
 
-.p-button-text:hover:not(:disabled),
-p-button .p-button-text:hover:not(:disabled) {
-  background: var(--p-button-text-primary-hover-background, var(--primary-50)) !important;
-  color: var(--p-button-text-primary-hover-color, var(--primary-600)) !important;
+.p-button.p-button-success:not(:disabled) {
+  background: var(--color-success);
+  border-color: var(--color-success);
+  color: var(--color-on-accent);
 }
 
-/* Outlined variant */
-.p-button-outlined,
-p-button .p-button-outlined {
-  background: transparent !important;
-  border: 1px solid var(--p-button-outlined-primary-border-color, var(--primary-300)) !important;
-  color: var(--p-button-outlined-primary-color, var(--primary-500)) !important;
+.p-button.p-button-success:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-success) 85%, var(--color-ink));
+  border-color: color-mix(in srgb, var(--color-success) 85%, var(--color-ink));
 }
 
-.p-button-outlined:hover:not(:disabled),
-p-button .p-button-outlined:hover:not(:disabled) {
-  background: var(--p-button-outlined-primary-hover-background, var(--primary-50)) !important;
+.p-button.p-button-info:not(:disabled) {
+  background: var(--color-info);
+  border-color: var(--color-info);
+  color: var(--color-on-accent);
 }
 
-/* Disabled state */
-.p-button:disabled,
-p-button .p-button:disabled {
-  opacity: 0.6;
+.p-button.p-button-warn:not(:disabled) {
+  background: var(--color-warning);
+  border-color: var(--color-warning);
+  color: var(--color-on-accent);
+}
+
+/* Text */
+.p-button.p-button-text:not(:disabled) {
+  background: transparent;
+  border-color: transparent;
+  color: var(--color-accent);
+}
+
+.p-button.p-button-text:hover:not(:disabled) {
+  background: var(--color-surface-hover);
+  border-color: transparent;
+  color: var(--color-accent-hover);
+}
+
+.p-button.p-button-text.p-button-secondary:not(:disabled) {
+  color: var(--color-ink-muted-on-dark);
+}
+
+.p-button.p-button-text.p-button-secondary:hover:not(:disabled) {
+  color: var(--color-ink-on-dark);
+}
+
+.p-button.p-button-text.p-button-contrast:not(:disabled) {
+  color: var(--color-ink-on-dark);
+}
+
+.p-button.p-button-text.p-button-danger:not(:disabled) {
+  color: var(--color-danger);
+}
+
+.p-button.p-button-text.p-button-danger:hover:not(:disabled) {
+  background: var(--color-surface-hover);
+  color: var(--color-danger);
+}
+
+/* Outlined */
+.p-button.p-button-outlined:not(:disabled) {
+  background: transparent;
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.p-button.p-button-outlined:hover:not(:disabled) {
+  background: var(--color-surface-hover);
+}
+
+.p-button.p-button-outlined.p-button-secondary:not(:disabled) {
+  border-color: var(--color-surface-border-strong);
+  color: var(--color-ink-on-dark);
+}
+
+.p-button.p-button-outlined.p-button-danger:not(:disabled) {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+/* Deshabilitado */
+.p-button:disabled {
+  background: var(--color-disabled);
+  border-color: var(--color-disabled);
+  color: var(--color-disabled-ink);
+  opacity: 1;
   cursor: not-allowed;
 }
 
-/* Cards */
+.p-button.p-button-text:disabled {
+  background: transparent;
+  border-color: transparent;
+}
+
+.p-button.p-button-outlined:disabled {
+  background: transparent;
+}
+
+/* ============================================
+   PrimeNG: cards, dialogs, inputs
+   ============================================ */
 .p-card {
   border-radius: var(--radius-xl);
-  box-shadow:
-    0 1px 3px 0 rgb(0 0 0 / 0.15),
-    0 4px 12px -2px rgb(0 0 0 / 0.1);
-  border: 1px solid var(--border-color);
-  background: var(--surface-0);
+  border: 1px solid var(--color-surface-border);
+  background: var(--color-surface);
+  color: var(--color-ink-on-dark);
+  box-shadow: none;
   overflow: hidden;
 }
 
@@ -527,61 +474,56 @@ p-button .p-button:disabled {
   padding: var(--space-6);
 }
 
-.dark .p-card {
-  border-color: var(--surface-200);
-  box-shadow:
-    0 2px 8px 0 rgb(0 0 0 / 0.3),
-    0 8px 24px -4px rgb(0 0 0 / 0.2);
+.p-card-title {
+  font-weight: 700;
 }
 
-/* Dialogs */
 .p-dialog {
   border-radius: var(--radius-xl);
-  border: 1px solid var(--border-color);
-  box-shadow:
-    0 10px 30px -6px rgb(0 0 0 / 0.25),
-    0 24px 64px -12px rgb(0 0 0 / 0.35);
+  border: 1px solid var(--color-surface-border);
+  background: var(--color-surface);
+  color: var(--color-ink-on-dark);
+  box-shadow: none;
   overflow: hidden;
 }
 
 .p-dialog .p-dialog-header {
   padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid var(--surface-200);
-  background: var(--surface-0);
+  border-bottom: 1px solid var(--color-surface-border);
+  background: var(--color-surface);
+  color: var(--color-ink-on-dark);
   align-items: center;
 }
 
 .p-dialog .p-dialog-header .p-dialog-title {
   font-size: 1.05rem;
+  font-weight: 700;
 }
 
 .p-dialog .p-dialog-content {
   padding: 1.5rem;
-  background: var(--surface-0);
+  background: var(--color-surface);
+  color: var(--color-ink-on-dark);
 }
 
 .p-dialog .p-dialog-footer {
   padding: 1rem 1.5rem 1.25rem;
-  border-top: 1px solid var(--surface-200);
+  border-top: 1px solid var(--color-surface-border);
+  background: var(--color-surface);
 }
 
 .p-dialog .p-dialog-header-actions .p-dialog-close-button {
   width: 2.25rem;
   height: 2.25rem;
   border-radius: var(--radius-md);
-  color: var(--text-secondary);
+  color: var(--color-ink-muted-on-dark);
 }
 
 .p-dialog .p-dialog-header-actions .p-dialog-close-button:hover {
-  background: var(--surface-100);
-  color: var(--text-primary);
+  background: var(--color-surface-hover);
+  color: var(--color-ink-on-dark);
 }
 
-.dark .p-dialog {
-  border-color: var(--surface-200);
-}
-
-/* Confirm dialogs */
 .custom-confirm-dialog .p-dialog-content {
   padding: 1.5rem;
   display: flex;
@@ -590,7 +532,7 @@ p-button .p-button:disabled {
 }
 
 .custom-confirm-dialog .p-confirm-dialog-message {
-  color: var(--text-secondary);
+  color: var(--color-ink-muted-on-dark);
   line-height: 1.5;
 }
 
@@ -602,8 +544,6 @@ p-button .p-button:disabled {
 }
 
 .tenant-manage-dialog-content .p-datatable .p-datatable-thead > tr > th {
-  background: var(--surface-100);
-  color: var(--text-primary);
   position: sticky;
   top: 0;
   z-index: 1;
@@ -613,73 +553,145 @@ p-button .p-button:disabled {
   padding: 0.75rem 1rem;
 }
 
-/* Inputs */
 .p-inputtext,
 .p-textarea {
   border-radius: var(--radius-md);
-  border: 1px solid var(--surface-300);
+  border: 1px solid var(--color-surface-border-strong);
   padding: var(--space-3) var(--space-4);
+  font-family: inherit;
   font-size: 0.875rem;
-  transition: all 0.2s;
-  background: var(--surface-0);
-  color: var(--text-primary);
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+  background: var(--color-surface-2);
+  color: var(--color-ink-on-dark);
 }
 
-.dark .p-inputtext,
-.dark .p-textarea {
-  background: var(--surface-50);
-  border-color: var(--surface-200);
+.p-inputtext:enabled:hover,
+.p-textarea:enabled:hover {
+  border-color: var(--color-ink-muted-on-dark);
 }
 
-.p-inputtext:focus,
-.p-textarea:focus {
-  border-color: var(--primary-500);
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+.p-inputtext:enabled:focus,
+.p-textarea:enabled:focus {
+  border-color: var(--color-accent);
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 0;
+  box-shadow: none;
 }
 
-/* Table */
+.p-inputtext:disabled,
+.p-textarea:disabled {
+  background: var(--color-disabled);
+  border-color: var(--color-disabled);
+  color: var(--color-disabled-ink);
+  opacity: 1;
+}
+
+.p-inputtext.p-invalid,
+.p-inputtext.ng-invalid.ng-touched,
+.p-textarea.ng-invalid.ng-touched {
+  border-color: var(--color-danger);
+}
+
+/* ============================================
+   PrimeNG: tablas
+   ============================================ */
 .p-datatable {
   border-radius: var(--radius-lg);
   overflow: hidden;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--color-surface-border);
+  color: var(--color-ink-on-dark);
 }
 
 .p-datatable .p-datatable-thead > tr > th {
-  background: var(--primary-500);
-  color: white;
-  font-weight: 600;
+  background: var(--color-surface-2);
+  color: var(--color-ink-on-dark);
+  font-weight: 700;
   padding: var(--space-4);
-  text-transform: uppercase;
   font-size: 0.75rem;
-  letter-spacing: 0.05em;
+  border-color: var(--color-surface-border);
 }
 
 .p-datatable .p-datatable-tbody > tr {
-  transition: background-color 0.2s;
+  background: var(--color-surface);
+  color: var(--color-ink-on-dark);
+  transition: background-color 0.15s ease;
+}
+
+.p-datatable.p-datatable-striped .p-datatable-tbody > tr:nth-child(even) {
+  background: color-mix(in srgb, var(--color-surface-2) 55%, var(--color-surface));
 }
 
 .p-datatable .p-datatable-tbody > tr:hover {
-  background-color: var(--primary-50);
+  background: var(--color-surface-hover);
 }
 
 .p-datatable .p-datatable-tbody > tr > td {
   padding: var(--space-4);
-  border-color: var(--border-color);
+  border-color: var(--color-surface-border);
 }
 
-/* Tags */
+/* ============================================
+   PrimeNG: tags. Neutros por defecto; severidades con
+   tinte suave + borde del mismo token.
+   ============================================ */
 .p-tag {
   border-radius: var(--radius-sm);
   font-size: 0.75rem;
-  font-weight: 500;
+  font-weight: 700;
   padding: var(--space-1) var(--space-2);
+  background: var(--color-surface-2);
+  color: var(--color-ink-on-dark);
+  border: 1px solid var(--color-surface-border);
 }
 
-/* Steps */
+.p-tag.p-tag-secondary {
+  background: var(--color-surface-2);
+  color: var(--color-ink-muted-on-dark);
+  border-color: var(--color-surface-border);
+}
+
+.p-tag.p-tag-success {
+  background: color-mix(in srgb, var(--color-success) 14%, var(--color-surface));
+  color: var(--color-success);
+  border-color: color-mix(in srgb, var(--color-success) 40%, transparent);
+}
+
+.p-tag.p-tag-info {
+  background: color-mix(in srgb, var(--color-info) 14%, var(--color-surface));
+  color: var(--color-info);
+  border-color: color-mix(in srgb, var(--color-info) 40%, transparent);
+}
+
+.p-tag.p-tag-danger {
+  background: color-mix(in srgb, var(--color-danger) 14%, var(--color-surface));
+  color: var(--color-danger);
+  border-color: color-mix(in srgb, var(--color-danger) 40%, transparent);
+}
+
+.p-tag.p-tag-warn {
+  background: color-mix(in srgb, var(--color-warning) 14%, var(--color-surface));
+  color: var(--color-warning);
+  border-color: color-mix(in srgb, var(--color-warning) 40%, transparent);
+}
+
+.p-tag.p-tag-contrast {
+  background: var(--color-ink-on-dark);
+  color: var(--color-ink);
+  border-color: var(--color-ink-on-dark);
+}
+
+/* ============================================
+   PrimeNG: steps (sobre canvas claro)
+   Paso activo: relleno accent con on-accent y borde ink
+   (accent/background = 1.2:1, el borde garantiza ≥3:1).
+   ============================================ */
 .p-steps {
   display: flex;
   justify-content: center;
   width: 100%;
+  --p-steps-separator-background: var(--color-secondary);
 }
 
 .p-steps .p-steps-list {
@@ -687,55 +699,283 @@ p-button .p-button:disabled {
   max-width: 800px;
 }
 
-.p-steps .p-steps-item .p-steps-number {
-  background: var(--surface-200);
-  color: var(--surface-600);
+.p-steps .p-steps-item .p-steps-item-number {
+  background: var(--color-secondary);
+  border: 2px solid var(--color-secondary);
+  color: var(--color-ink);
   width: 2.5rem;
   height: 2.5rem;
   border-radius: var(--radius-full);
   font-size: 0.875rem;
-  font-weight: 600;
+  font-weight: 700;
 }
 
-.p-steps .p-steps-item.p-highlight .p-steps-number {
-  background: var(--primary-500);
-  color: white;
+.p-steps .p-steps-item .p-steps-item-label {
+  color: var(--color-ink-muted);
+  font-size: 0.75rem;
+  font-weight: 400;
 }
 
-.p-steps .p-steps-item .p-steps-title {
-  color: var(--text-secondary);
-  font-size: 0.875rem;
+.p-steps .p-steps-item.p-steps-item-active .p-steps-item-number {
+  background: var(--color-accent);
+  border-color: var(--color-ink);
+  color: var(--color-on-accent);
 }
 
-.p-steps .p-steps-item.p-highlight .p-steps-title {
-  color: var(--primary-600);
-  font-weight: 600;
+.p-steps .p-steps-item.p-steps-item-active .p-steps-item-label {
+  color: var(--color-ink);
+  font-weight: 700;
 }
 
-/* Checkbox */
+.p-steps .p-steps-item .p-steps-item-link {
+  color: inherit;
+}
+
+/* ============================================
+   PrimeNG: checkbox, spinner, progress
+   ============================================ */
 .p-checkbox .p-checkbox-box {
-  border: 2px solid var(--surface-300);
+  border: 2px solid var(--color-surface-border-strong);
+  background: var(--color-surface-2);
   border-radius: var(--radius-sm);
   width: 1.25rem;
   height: 1.25rem;
-  transition: all 0.2s;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
 }
 
-.p-checkbox .p-checkbox-box.p-highlight {
-  background: var(--primary-500);
-  border-color: var(--primary-500);
+.p-checkbox .p-checkbox-box.p-checkbox-checked,
+.p-checkbox.p-checkbox-checked .p-checkbox-box {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
 }
 
-/* ProgressSpinner */
+.p-checkbox .p-checkbox-icon {
+  color: var(--color-on-accent);
+}
+
 .p-progressspinner-circle {
-  stroke: var(--primary-500);
+  stroke: var(--color-accent);
 }
 
-/* Menubar */
-.p-menubar {
-  background: var(--surface-0);
+/* ============================================
+   PrimeNG: select
+   ============================================ */
+.p-select {
+  border-radius: var(--radius-md);
+  min-height: 2.75rem;
+  background: var(--color-surface-2);
+  color: var(--color-ink-on-dark);
+  border: 1px solid var(--color-surface-border-strong) !important;
+}
+
+.p-select:not(.p-disabled):hover {
+  border-color: var(--color-ink-muted-on-dark) !important;
+}
+
+.p-select.p-inputwrapper-focus,
+.p-select.p-focus,
+.p-select.p-select-open {
+  border-color: var(--color-accent) !important;
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 0;
+  box-shadow: none;
+}
+
+.p-select .p-select-label {
+  padding: var(--space-2) var(--space-4);
+  font-size: 0.75rem;
+  color: var(--color-ink-on-dark);
+}
+
+.p-select .p-select-label.p-placeholder {
+  color: var(--color-ink-muted-on-dark);
+}
+
+.p-select .p-select-dropdown {
+  color: var(--color-ink-muted-on-dark);
+}
+
+.p-select.p-disabled {
+  background: var(--color-disabled);
+  border-color: var(--color-disabled) !important;
+  opacity: 1;
+}
+
+.p-select.p-disabled .p-select-label,
+.p-select.p-disabled .p-select-dropdown {
+  color: var(--color-disabled-ink);
+}
+
+.p-select-overlay {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-surface-border) !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+  color: var(--color-ink-on-dark) !important;
+}
+
+.p-select-overlay .p-select-list-container,
+.p-select-overlay .p-select-list {
+  background: transparent !important;
+}
+
+.p-select-overlay .p-select-option {
+  padding: var(--space-2) var(--space-4);
+  color: var(--color-ink-on-dark) !important;
+  font-size: 0.75rem;
+  border-radius: 8px !important;
+  margin: 2px 6px !important;
+  transition: background-color 0.12s ease;
+}
+
+.p-select-overlay .p-select-option:not(.p-disabled):hover,
+.p-select-overlay .p-select-option.p-focus {
+  background: var(--color-surface-hover) !important;
+  color: var(--color-ink-on-dark) !important;
+}
+
+.p-select-overlay .p-select-option.p-select-option-selected {
+  background: var(--color-accent) !important;
+  color: var(--color-on-accent) !important;
+}
+
+.p-select-overlay .p-select-option.p-select-option-selected:hover,
+.p-select-overlay .p-select-option.p-select-option-selected.p-focus {
+  background: var(--color-accent-hover) !important;
+  color: var(--color-on-accent) !important;
+}
+
+.p-select-overlay .p-select-option.p-focus {
+  outline: 1px solid var(--color-accent) !important;
+  outline-offset: -1px;
+}
+
+.p-select-overlay .p-select-option .opacity-60 {
+  color: var(--color-ink-muted-on-dark) !important;
+  opacity: 1 !important;
+}
+
+.p-select-overlay .p-select-option.p-select-option-selected .opacity-60 {
+  color: var(--color-on-accent) !important;
+}
+
+.p-select-overlay .p-select-filter-container,
+.p-select-overlay .p-select-filter-inputtoken,
+.p-select-overlay .p-inputtoken,
+.p-select-overlay .p-iconfield {
+  background: transparent;
+  width: 100%;
+}
+
+.p-select-overlay .p-iconfield,
+.p-select-overlay .p-select-filter-container {
+  padding: 8px 10px 4px;
+}
+
+.p-select-overlay .p-select-filter {
+  margin: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface-2) !important;
+  border: 1px solid var(--color-surface-border-strong) !important;
+  color: var(--color-ink-on-dark) !important;
+  border-radius: 8px !important;
+  width: calc(100% - var(--space-4));
+  font-size: 0.75rem;
+}
+
+.p-select-overlay .p-select-filter::placeholder {
+  color: var(--color-ink-muted-on-dark);
+}
+
+.p-select-overlay .p-select-filter:focus {
+  border-color: var(--color-accent) !important;
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 0;
+  box-shadow: none !important;
+}
+
+.p-select-overlay .p-select-empty-message {
+  color: var(--color-ink-muted-on-dark) !important;
+}
+
+/* ============================================
+   PrimeNG: message, popover
+   ============================================ */
+.p-message {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-surface-border);
+  background: var(--color-surface-2);
+  color: var(--color-ink-on-dark);
+  padding: var(--space-3) var(--space-4);
+  font-size: 0.875rem;
+}
+
+.p-message .p-message-text,
+.p-message .p-message-content {
+  color: var(--color-ink-on-dark);
+}
+
+.p-message.p-message-error {
+  border-color: var(--color-danger);
+}
+
+.p-message.p-message-error .p-message-icon {
+  color: var(--color-danger);
+}
+
+.p-message.p-message-info {
+  border-color: var(--color-info);
+}
+
+.p-message.p-message-info .p-message-icon {
+  color: var(--color-info);
+}
+
+.p-message.p-message-success {
+  border-color: var(--color-success);
+}
+
+.p-message.p-message-success .p-message-icon {
+  color: var(--color-success);
+}
+
+.p-message.p-message-warn {
+  border-color: var(--color-warning);
+}
+
+.p-message.p-message-warn .p-message-icon {
+  color: var(--color-warning);
+}
+
+.p-popover {
+  background: var(--color-surface);
+  color: var(--color-ink-on-dark);
+  border: 1px solid var(--color-surface-border);
+  box-shadow: none;
+}
+
+.theme-popover.p-popover {
+  padding: 0;
+  border-radius: var(--radius-lg);
+}
+
+.theme-popover.p-popover .p-popover-content {
+  padding: 0;
+  margin: 0;
   border: none;
-  border-bottom: 1px solid var(--border-color);
+}
+
+/* ============================================
+   Navbar (p-menubar): superficie oscura.
+   Ítem activo = píldora accent con on-accent.
+   ============================================ */
+.p-menubar {
+  background: var(--color-surface);
+  color: var(--color-ink-on-dark);
+  border: none;
+  border-bottom: 1px solid var(--color-surface-border);
   padding: var(--space-2) var(--space-4);
   border-radius: 0;
   width: 100%;
@@ -750,181 +990,20 @@ p-button .p-button:disabled {
 /* En móvil, el hamburger va después del bloque derecho */
 .p-menubar .p-menubar-button {
   order: 1;
+  color: var(--color-ink-on-dark);
 }
 
-/* En móvil (lista oculta), empuja campana/tema a la derecha */
+.p-menubar .p-menubar-button:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-ink-on-dark);
+}
+
 @media (max-width: 960px) {
   .p-menubar .p-menubar-end {
     margin-left: auto;
   }
 }
 
-/* Select */
-.p-select {
-  border-radius: var(--radius-md);
-  min-height: 2.75rem;
-  border: 1px solid var(--p-select-border-color) !important;
-}
-
-/* Keep border visible when filled (value selected) or focused */
-.p-select.p-inputwrapper-filled,
-.p-select.ng-dirty,
-.p-select.ng-touched {
-  border: 1px solid var(--p-select-border-color) !important;
-}
-
-.p-select.p-focus,
-.p-select.p-inputwrapper-focus {
-  border: 1px solid var(--p-select-focus-border-color) !important;
-}
-
-.p-select .p-select-label {
-  padding: var(--space-2) var(--space-4);
-}
-
-.p-select-panel {
-  border-radius: var(--radius-md);
-  border: 1px solid var(--surface-200);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.p-select-option {
-  padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius-sm);
-  margin: var(--space-1) var(--space-2);
-  transition: all 0.15s;
-}
-
-.p-select-option.p-highlight {
-  background: var(--primary-100);
-  color: var(--primary-700);
-}
-
-.p-select-filter {
-  margin: var(--space-2);
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--surface-200);
-  width: calc(100% - var(--space-4));
-}
-
-/* Message */
-.p-message {
-  border-radius: var(--radius-md);
-  border: none;
-  padding: var(--space-3) var(--space-4);
-}
-
-/* Popover */
-.theme-popover.p-popover {
-  padding: 0;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--surface-200);
-  box-shadow:
-    0 10px 25px -5px rgb(0 0 0 / 0.1),
-    0 8px 10px -6px rgb(0 0 0 / 0.1);
-}
-
-.theme-popover.p-popover .p-popover-content {
-  padding: 0;
-  margin: 0;
-  border: none;
-}
-
-/* Dark mode adjustments */
-.dark .p-component {
-  color: var(--text-primary);
-}
-
-.dark table tbody tr:hover {
-  background-color: rgba(139, 92, 246, 0.1) !important;
-}
-
-.dark .p-datatable .p-datatable-thead > tr > th {
-  background: var(--surface-100);
-  border-color: var(--surface-200);
-}
-
-/* Filas: el token del preset de PrimeNG no conmuta con la clase .dark
-   del app → texto claro sobre fondo claro. Fuerzo superficie y texto
-   del tema en filas y hover. */
-.dark .p-datatable .p-datatable-tbody > tr,
-.dark .p-datatable .p-datatable-tbody > tr > td {
-  background: var(--surface-0);
-  color: var(--text-primary);
-}
-
-.dark .p-datatable .p-datatable-tbody > tr:hover > td {
-  background: var(--surface-100);
-}
-
-.dark .p-datatable .p-datatable-tbody > tr .p-tag {
-  opacity: 1;
-}
-
-.dark .p-datatable .p-datatable-tbody > tr > td {
-  border-color: var(--surface-200);
-}
-
-.dark .p-datatable {
-  border-color: var(--surface-200);
-}
-
-.dark .p-tag {
-  opacity: 0.9;
-}
-
-.dark .p-steps .p-steps-item .p-steps-number {
-  background: var(--surface-200);
-  color: var(--surface-600);
-}
-
-.dark .p-steps .p-steps-item .p-steps-line {
-  background: var(--surface-200);
-}
-
-.p-menubar-item-label {
-  color: var(--text-primary);
-}
-
-/* Ensure all text is visible */
-.dark label,
-.dark p,
-.dark h1,
-.dark h2,
-.dark h3 {
-  color: var(--text-primary);
-}
-
-.dark small {
-  color: var(--text-muted);
-}
-
-/* Card header in dark mode */
-.dark .p-card-header {
-  background: var(--surface-50);
-}
-
-/* Angle selection cards in dark mode */
-.dark .border-\[var\(--surface-200\)\].bg-\[var\(--surface-0\)\] {
-  background: var(--surface-50) !important;
-  border-color: var(--surface-200) !important;
-}
-
-/* Message component */
-.dark .p-message-error {
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-}
-
-.dark .p-message-error .p-message-text {
-  color: #fca5a5;
-}
-
-.dark .p-message-info {
-  background: rgba(139, 92, 246, 0.1);
-  border: 1px solid rgba(139, 92, 246, 0.3);
-}
 .p-menubar-root-list > .p-menubar-item > .p-menubar-item-content {
   padding: 0 !important;
   min-height: 40px;
@@ -932,79 +1011,87 @@ p-button .p-button:disabled {
   align-items: center;
 }
 
-/* El enlace llena toda la fila en desktop y móvil:
-   click y hover en cualquier zona de la fila */
+.p-menubar-root-list {
+  gap: 0 !important;
+}
+
+/* El enlace llena toda la fila: click y hover en cualquier zona */
 .p-menubar .p-menubar-item-link {
   flex: 1 1 auto;
   align-self: stretch;
   display: flex;
   align-items: center;
   padding: 0 14px;
+  color: var(--color-ink-on-dark);
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 700;
 }
 
-.p-menubar-root-list {
-  gap: 0 !important;
-}
-
-.p-menubar-item-label {
+.p-menubar .p-menubar-item-label {
+  color: inherit;
   line-height: 1.5;
 }
 
-/* ── Contraste y accesibilidad del menú ──────────────────────
-   - Texto de ítems en color primario (AA/AAA en ambos temas).
-   - Panel móvil con superficie y borde temáticos: antes quedaba
-     con fondo claro y texto claro en modo oscuro (ilegible).
-   - Estados hover/activo/focus de teclado visibles.
-   ──────────────────────────────────────────────────────────── */
-.p-menubar .p-menubar-item-link {
-  color: var(--text-primary);
-}
-
 .p-menubar .p-menubar-item-icon {
-  color: var(--text-secondary);
+  color: inherit;
 }
 
 .p-menubar .p-menubar-item-link:hover {
-  background: color-mix(in srgb, var(--primary-500) 14%, transparent);
-  color: var(--primary-700);
+  background: var(--color-surface-hover);
+  color: var(--color-ink-on-dark);
 }
 
-.dark .p-menubar .p-menubar-item-link:hover {
-  color: var(--primary-300);
+.p-menubar .p-menubar-item-link.p-menubar-item-link-active,
+.p-menubar .p-menubar-item-link.p-menubar-item-link-active:hover {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
 }
 
-.p-menubar .p-menubar-item-link.p-menubar-item-link-active {
-  color: var(--primary-700);
-  font-weight: 600;
+/* Neutraliza los fondos de hover/focus de PrimeNG sobre el content:
+   los estados van en el enlace, que llena la fila. */
+.p-menubar .p-menubar-item-content,
+.p-menubar .p-menubar-item-content:hover,
+.p-menubar .p-menubar-item.p-focus > .p-menubar-item-content,
+.p-menubar .p-menubar-item.p-focus > .p-menubar-item-content:hover {
+  background-color: transparent;
 }
 
-.dark .p-menubar .p-menubar-item-link.p-menubar-item-link-active {
-  color: var(--primary-300);
+/* El foco real vive en el <ul role="menubar"> (aria-activedescendant),
+   por eso antes se dibujaba un rectángulo alrededor de todo el grupo de
+   links. Se quita del contenedor y se dibuja solo sobre el ítem activo. */
+.p-menubar .p-menubar-root-list:focus,
+.p-menubar .p-menubar-root-list:focus-visible {
+  outline: none;
+  box-shadow: none;
 }
 
-/* Ítem activo (ruta actual): tinte de la paleta activa en el enlace */
-.p-menubar .p-menubar-item-link.p-menubar-item-link-active {
-  background: color-mix(in srgb, var(--primary-500) 16%, transparent);
+.p-menubar
+  .p-menubar-root-list:focus-visible
+  .p-menubar-item.p-focus
+  > .p-menubar-item-content
+  .p-menubar-item-link {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
 }
 
 .p-menubar .p-menubar-item-link:focus-visible {
-  outline: 2px solid var(--primary-400);
+  outline: 2px solid var(--color-focus-ring);
   outline-offset: 2px;
-  border-radius: var(--radius-sm);
+  box-shadow: none;
 }
 
-/* Logotipo con texto: el PNG es negro y desaparece en modo oscuro */
-.dark .navbar-title {
+/* Logotipo con texto: el PNG es negro y desaparece sobre superficie oscura */
+.navbar-title {
   filter: invert(1) brightness(1.15);
 }
 
-/* Panel desplegado en móvil: superficie legible en claro y oscuro,
-   con margen lateral en vez de ocupar todo el ancho */
+/* Panel desplegado en móvil */
 .p-menubar.p-menubar-mobile .p-menubar-root-list {
-  background: var(--surface-0);
-  border: 1px solid var(--border-color);
+  background: var(--color-surface);
+  border: 1px solid var(--color-surface-border);
   border-radius: var(--radius-lg);
-  box-shadow: 0 16px 40px rgb(0 0 0 / 0.35);
+  box-shadow: none;
   padding: var(--space-2);
   gap: 2px !important;
   left: var(--space-3);
@@ -1017,43 +1104,18 @@ p-button .p-button:disabled {
   border-radius: var(--radius-md);
 }
 
-/* Neutraliza los fondos de hover/focus de PrimeNG sobre el content
-   (tokens claros fijos: píldora blanca ilegible en oscuro). Los tintes
-   van en el enlace, que llena la fila y sigue la paleta activa. */
-.p-menubar .p-menubar-item-content,
-.p-menubar .p-menubar-item-content:hover,
-.p-menubar .p-menubar-item.p-focus > .p-menubar-item-content,
-.p-menubar .p-menubar-item.p-focus > .p-menubar-item-content:hover {
-  background-color: transparent;
-}
-
-/* Estado focus de teclado/flechas sobre el enlace. Con :focus-within:
-   solo se pinta mientras el menú tiene el foco real del navegador;
-   el p-focus residual de PrimeNG (tras cerrar/reabrir) no se pinta. */
-.p-menubar .p-menubar-item.p-focus > .p-menubar-item-content .p-menubar-item-link {
-  background: transparent;
-}
-
-.p-menubar
-  .p-menubar-root-list:focus-within
-  .p-menubar-item.p-focus
-  > .p-menubar-item-content
-  .p-menubar-item-link {
-  background: color-mix(in srgb, var(--primary-500) 10%, transparent);
-}
-
 /* ═══════════════════════════════════════════════════════════════
    Popover de generaciones (campana del navbar).
    PrimeNG lo monta en <body>, fuera del componente: los estilos
-   van acá, con paleta oscura de alto contraste propia.
+   van acá.
    ═══════════════════════════════════════════════════════════════ */
 .gen-bell-popover {
   width: 350px;
   padding: 0 !important;
-  background: #14171f !important;
-  border: 1px solid #2c3242 !important;
-  color: #f4f6fb !important;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.55) !important;
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-surface-border) !important;
+  color: var(--color-ink-on-dark) !important;
+  box-shadow: none !important;
   border-radius: 14px !important;
 }
 
@@ -1062,7 +1124,7 @@ p-button .p-button:disabled {
 }
 
 .gen-bell-popover .p-popover-arrow::before {
-  border-bottom-color: #2c3242 !important;
+  border-bottom-color: var(--color-surface-border) !important;
   border-top-color: transparent !important;
 }
 
@@ -1071,16 +1133,14 @@ p-button .p-button:disabled {
   align-items: center;
   justify-content: space-between;
   padding: 12px 14px;
-  border-bottom: 1px solid #2c3242;
+  border-bottom: 1px solid var(--color-surface-border);
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: #a8b0c2;
+  color: var(--color-ink-muted-on-dark);
 }
 
 .gen-bell-popover .pop-head i {
-  color: #8b5cf6;
+  color: var(--color-accent);
   margin-right: 6px;
 }
 
@@ -1090,14 +1150,14 @@ p-button .p-button:disabled {
   gap: 6px;
   font-size: 11px;
   font-weight: 700;
-  color: #22d3ee;
+  color: var(--color-accent);
 }
 
 .gen-bell-popover .pop-live .dot {
   width: 7px;
   height: 7px;
   border-radius: 999px;
-  background: #22d3ee;
+  background: var(--color-accent);
   animation: gen-bell-pulse 1.6s ease-in-out infinite;
 }
 
@@ -1115,7 +1175,7 @@ p-button .p-button:disabled {
   padding: 22px 14px;
   text-align: center;
   font-size: 12px;
-  color: #6d7688;
+  color: var(--color-ink-muted-on-dark);
 }
 
 .gen-bell-popover .pop-list {
@@ -1127,14 +1187,14 @@ p-button .p-button:disabled {
   display: flex;
   gap: 10px;
   padding: 10px 14px;
-  border-bottom: 1px solid #1d2129;
+  border-bottom: 1px solid var(--color-surface-border);
   text-decoration: none;
   color: inherit;
-  transition: background 0.12s ease;
+  transition: background-color 0.12s ease;
 }
 
 .gen-bell-popover .pop-item:hover {
-  background: #1b1f2a;
+  background: var(--color-surface-hover);
 }
 
 .gen-bell-popover .pop-thumb {
@@ -1142,7 +1202,7 @@ p-button .p-button:disabled {
   height: 42px;
   border-radius: 8px;
   object-fit: cover;
-  background: #0d0f14;
+  background: var(--color-ink);
   flex-shrink: 0;
 }
 
@@ -1150,11 +1210,11 @@ p-button .p-button:disabled {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #6d7688;
+  color: var(--color-ink-muted-on-dark);
 }
 
 .gen-bell-popover .pop-thumb.icon.spin {
-  color: #22d3ee;
+  color: var(--color-accent);
 }
 
 .gen-bell-popover .pop-info {
@@ -1174,8 +1234,8 @@ p-button .p-button:disabled {
 
 .gen-bell-popover .pop-model {
   font-size: 12px;
-  font-weight: 600;
-  color: #f4f6fb;
+  font-weight: 700;
+  color: var(--color-ink-on-dark);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1183,7 +1243,7 @@ p-button .p-button:disabled {
 
 .gen-bell-popover .pop-prompt {
   font-size: 11px;
-  color: #a8b0c2;
+  color: var(--color-ink-muted-on-dark);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1192,7 +1252,7 @@ p-button .p-button:disabled {
 .gen-bell-popover .pop-track {
   height: 4px;
   border-radius: 999px;
-  background: #2c3242;
+  background: var(--color-surface-border);
   overflow: hidden;
   display: block;
 }
@@ -1200,7 +1260,7 @@ p-button .p-button:disabled {
 .gen-bell-popover .pop-fill {
   display: block;
   height: 100%;
-  background: linear-gradient(90deg, #8b5cf6, #22d3ee);
+  background: var(--color-accent);
   transition: width 0.4s ease;
 }
 
@@ -1212,232 +1272,28 @@ p-button .p-button:disabled {
   padding: 12px;
   font-size: 12px;
   font-weight: 700;
-  color: #c4b5fd;
+  color: var(--color-accent);
   text-decoration: none;
 }
 
 .gen-bell-popover .pop-footer:hover {
-  background: #1b1f2a;
+  background: var(--color-surface-hover);
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   Superficies oscuras del Studio — independientes del tema global.
-   El select overlay (appendTo=body), sus opciones/filtro y los
-   p-tag usan los colores claros del theme: se re-estilan acá.
-   ═══════════════════════════════════════════════════════════════ */
-
-/* ── Dropdown del selector de modelos ─────────────────────────
-   Tematizado con variables globales: sigue modo claro/oscuro y
-   paleta dinámica del usuario. */
-.p-select-overlay {
-  background: var(--surface-0) !important;
-  border: 1px solid var(--border-color) !important;
-  border-radius: 12px !important;
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.25) !important;
-  color: var(--text-primary) !important;
-}
-
-.p-select-overlay .p-select-list-container,
-.p-select-overlay .p-select-list {
-  background: transparent !important;
-}
-
-.p-select-overlay .p-select-option {
-  color: var(--text-primary) !important;
-  border-radius: 8px !important;
-  margin: 2px 6px !important;
-  transition: background 0.12s ease;
-}
-
-.p-select-overlay .p-select-option:not(.p-disabled):hover {
-  background: var(--surface-100) !important;
-  color: var(--text-primary) !important;
-}
-
-.p-select-overlay .p-select-option.p-focus,
-.p-select-overlay .p-select-option.p-highlight {
-  background: color-mix(in srgb, var(--primary-500) 16%, transparent) !important;
-  color: var(--text-primary) !important;
-  outline: 1px solid var(--primary-500) !important;
-  outline-offset: -1px;
-}
-
-/* Filtro del dropdown */
-.p-select-overlay .p-select-filter-container,
-.p-select-overlay .p-select-filter-inputtoken,
-.p-select-overlay .p-inputtoken {
-  background: transparent;
-  width: 100%;
-}
-
-.p-select-overlay .p-select-filter {
-  background: var(--surface-100) !important;
-  border: 1px solid var(--border-color) !important;
-  color: var(--text-primary) !important;
-  border-radius: 8px !important;
-  width: 100%;
-}
-
-.p-select-overlay .p-select-filter::placeholder {
-  color: var(--text-muted);
-}
-
-.p-select-overlay .p-select-filter-container .p-inputtext {
-  color: var(--text-primary) !important;
-}
-
-.p-select-overlay .p-select-empty-message {
-  color: var(--text-muted) !important;
-}
-
-.p-select-overlay .p-iconfield,
-.p-select-overlay .p-select-filter-container {
-  background: transparent;
-  padding: 8px 10px 4px;
-}
-
-/* ── Tags (badges) con contraste sobre superficies oscuras ──── */
-.studio-shell .p-tag,
-.gen-bell-popover .p-tag,
-.gen-bell-popover.p-popover .p-tag {
-  border-radius: 6px;
-  font-weight: 600;
-}
-
-.studio-shell .p-tag.p-tag-secondary,
-.gen-bell-popover .p-tag.p-tag-secondary {
-  background: #2c3242 !important;
-  color: #c7cede !important;
-}
-
-.studio-shell .p-tag.p-tag-success,
-.gen-bell-popover .p-tag.p-tag-success {
-  background: rgba(52, 211, 153, 0.16) !important;
-  color: #34d399 !important;
-  border: 1px solid rgba(52, 211, 153, 0.4);
-}
-
-.studio-shell .p-tag.p-tag-info,
-.gen-bell-popover .p-tag.p-tag-info {
-  background: rgba(34, 211, 238, 0.14) !important;
-  color: #22d3ee !important;
-  border: 1px solid rgba(34, 211, 238, 0.4);
-}
-
-.studio-shell .p-tag.p-tag-danger,
-.gen-bell-popover .p-tag.p-tag-danger {
-  background: rgba(248, 113, 113, 0.14) !important;
-  color: #f87171 !important;
-  border: 1px solid rgba(248, 113, 113, 0.4);
-}
-
-.studio-shell .p-tag.p-tag-warn,
-.gen-bell-popover .p-tag.p-tag-warn {
-  background: rgba(251, 191, 36, 0.14) !important;
-  color: #fbbf24 !important;
-  border: 1px solid rgba(251, 191, 36, 0.4);
-}
-
-/* Texto secundario dentro de opciones del dropdown (nombre técnico) */
-.p-select-overlay .p-select-option .opacity-60 {
-  color: #8d96aa !important;
-  opacity: 1 !important;
-}
-
-/* Popover: cubrir también la flecha y el borde interno */
 .gen-bell-popover.p-popover > .p-popover-content {
   background: transparent;
 }
 
-/* ── Focus ring con la paleta activa ─────────────────────────── */
-.studio-shell .p-select.p-focus,
-.studio-shell .p-select:focus,
-.p-select-overlay .p-select-filter:focus,
-.p-select-overlay .p-select-filter.p-filled {
-  outline: none !important;
-  border-color: var(--primary-500) !important;
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-500) 25%, transparent) !important;
-}
-
-.studio-shell .prompt-input:focus,
-.studio-shell .negative-input:focus,
-.studio-shell .seed-input:focus {
-  outline: none !important;
-  border-color: #8b5cf6 !important;
-  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.25) !important;
-}
-
-/* ── Tags dentro del overlay del select (vive fuera del shell) ── */
-.p-select-overlay .p-tag {
-  border-radius: 6px;
-  font-weight: 600;
-}
-
-.p-select-overlay .p-tag.p-tag-secondary {
-  background: #2c3242 !important;
-  color: #c7cede !important;
-}
-
-.p-select-overlay .p-tag.p-tag-success {
-  background: rgba(52, 211, 153, 0.16) !important;
-  color: #34d399 !important;
-  border: 1px solid rgba(52, 211, 153, 0.4);
-}
-
-.p-select-overlay .p-tag.p-tag-danger {
-  background: rgba(248, 113, 113, 0.14) !important;
-  color: #f87171 !important;
-  border: 1px solid rgba(248, 113, 113, 0.4);
-}
-
-.p-select-overlay .p-tag.p-tag-info {
-  background: rgba(34, 211, 238, 0.14) !important;
-  color: #22d3ee !important;
-  border: 1px solid rgba(34, 211, 238, 0.4);
-}
-
-.p-select-overlay .p-tag.p-tag-warn {
-  background: rgba(251, 191, 36, 0.14) !important;
-  color: #fbbf24 !important;
-  border: 1px solid rgba(251, 191, 36, 0.4);
-}
-
-/* PrimeNG 21: el focus del select marca el wrapper, no el select */
-.studio-shell .p-select.p-inputwrapper-focus,
-.studio-shell .p-select.p-select-open {
-  border-color: var(--primary-500) !important;
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-500) 25%, transparent) !important;
-}
-
 /* ═══════════════════════════════════════════════════════════════
-   Lienzo oscuro del Studio y de Eventos de generación, por elemento
-   (fallback global: no depende del CSS encapsulado del componente).
+   Lienzo de Studio y de Eventos de generación
    ═══════════════════════════════════════════════════════════════ */
 app-studio,
 app-generation-events {
   display: block;
-  background:
-    radial-gradient(
-      1100px 460px at 85% -8%,
-      color-mix(in srgb, var(--primary-500) 10%, transparent),
-      transparent 60%
-    ),
-    radial-gradient(
-      900px 420px at -10% 30%,
-      color-mix(in srgb, var(--primary-400) 5%, transparent),
-      transparent 55%
-    ),
-    var(--content-bg);
   min-height: calc(100vh - 64px);
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   Modo claro — fugas finales del Studio:
-   1. Scrollbar clara del tema (track surface-100) entre paneles.
-   2. Borde del p-select que pierde contra el theme.
-   ═══════════════════════════════════════════════════════════════ */
-
-/* ── Scrollbars oscuras dentro del workspace ─────────────────── */
+/* ── Scrollbars dentro del workspace ─────────────────────────── */
 .studio-shell ::-webkit-scrollbar,
 app-generation-events ::-webkit-scrollbar {
   width: 10px;
@@ -1451,33 +1307,33 @@ app-generation-events ::-webkit-scrollbar-track {
 
 .studio-shell ::-webkit-scrollbar-thumb,
 app-generation-events ::-webkit-scrollbar-thumb {
-  background: var(--border-color);
+  background: var(--color-secondary);
   border-radius: 8px;
   border: 2px solid transparent;
 }
 
 .studio-shell ::-webkit-scrollbar-thumb:hover,
 app-generation-events ::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
+  background: var(--color-choice);
 }
 
-/* Firefox */
 .studio-left,
 .studio-right,
 .studio-shell,
 app-generation-events {
   scrollbar-width: thin;
-  scrollbar-color: var(--border-color) transparent;
+  scrollbar-color: var(--color-secondary) transparent;
 }
 
-/* ── Select de modelos: sigue el tema (--st-* mapea a global) ── */
+/* ── Studio: selects del panel y del pie del prompt ──────────── */
 .studio-shell .p-select {
   background: var(--st-bg) !important;
-  border: 1px solid var(--st-line) !important;
+  border: 1px solid var(--color-surface-border-strong) !important;
+  border-radius: 10px;
 }
 
 .studio-shell .p-select:not(.p-disabled):hover {
-  border-color: var(--st-text-2) !important;
+  border-color: var(--color-ink-muted-on-dark) !important;
 }
 
 .studio-shell .p-select .p-select-label {
@@ -1488,35 +1344,48 @@ app-generation-events {
   color: var(--st-text-2) !important;
 }
 
-/* ── Studio: selects compactos del pie del prompt ──────────────
-   (globales: el label interno de p-select no lleva el atributo
-   _ngcontent del componente, el CSS encapsulado no lo alcanza) */
+.studio-shell .p-select.p-inputwrapper-focus,
+.studio-shell .p-select.p-select-open {
+  border-color: var(--color-accent) !important;
+}
+
 .prompt-foot .p-select {
-  height: 32px;
+  height: 34px !important;
+  min-height: 34px !important;
+  padding: 0 !important;
+  box-sizing: border-box;
   font-size: 12px;
   border-radius: 8px;
-  background: var(--st-bg) !important;
-  border: 1px solid var(--st-line) !important;
 }
 
 .prompt-foot .p-select .p-select-label {
-  color: var(--st-text) !important;
+  display: flex;
+  align-items: center;
+  height: 100%;
   padding: 0 8px !important;
   font-size: 12px !important;
+  line-height: 1;
 }
 
 .prompt-foot .p-select .p-select-dropdown {
-  color: var(--st-text-2) !important;
-  width: 1.7rem !important;
+  height: 100% !important;
+  width: 1.9rem !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* ── Studio: popover de vista previa de referencias ────────────
-   Montado a nivel body: estilos globales con el tema actual. */
+.prompt-foot .foot-chip {
+  height: 34px;
+  padding: 0 10px;
+}
+
+/* ── Studio: popover de vista previa de referencias ──────────── */
 .asset-popover.p-popover {
-  background: var(--surface-0) !important;
-  border: 1px solid var(--border-color) !important;
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-surface-border) !important;
   border-radius: 14px !important;
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.3) !important;
+  box-shadow: none !important;
   width: 260px !important;
 }
 
@@ -1539,8 +1408,8 @@ app-generation-events {
 
 .asset-pop-name {
   font-size: 12px;
-  font-weight: 600;
-  color: var(--text-primary);
+  font-weight: 700;
+  color: var(--color-ink-on-dark);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1554,30 +1423,30 @@ app-generation-events {
   justify-content: center;
   border: none;
   border-radius: 999px;
-  background: var(--surface-100);
-  color: var(--text-secondary);
+  background: var(--color-surface-2);
+  color: var(--color-ink-muted-on-dark);
   font-size: 10px;
   cursor: pointer;
   flex-shrink: 0;
 }
 
 .asset-pop-close:hover {
-  background: var(--surface-200);
-  color: var(--text-primary);
+  background: var(--color-surface-hover);
+  color: var(--color-ink-on-dark);
 }
 
 .asset-pop-imgbtn {
   padding: 0;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--color-surface-border);
   border-radius: 10px;
   overflow: hidden;
   cursor: zoom-in;
-  background: var(--surface-100);
+  background: var(--color-surface-2);
   transition: border-color 0.15s ease;
 }
 
 .asset-pop-imgbtn:hover {
-  border-color: var(--primary-500);
+  border-color: var(--color-accent);
 }
 
 .asset-pop-imgbtn img {
@@ -1589,11 +1458,13 @@ app-generation-events {
 
 .asset-pop-hint {
   text-align: center;
+  color: var(--color-ink-muted-on-dark);
 }
 
 /* ── Studio: modal fullscreen de referencia ──────────────────── */
 .asset-fullscreen-dialog {
   background: transparent !important;
+  border: none !important;
   box-shadow: none !important;
 }
 
@@ -1615,7 +1486,6 @@ app-generation-events {
   max-height: 82vh;
   object-fit: contain;
   border-radius: 10px;
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
 }
 
 .asset-fullscreen-meta {
@@ -1625,19 +1495,19 @@ app-generation-events {
   max-width: 90vw;
   padding: 6px 12px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--surface-950) 80%, transparent);
-  color: var(--surface-50);
+  background: var(--color-surface);
+  border: 1px solid var(--color-surface-border);
+  color: var(--color-ink-on-dark);
   font-size: 12px;
 }
 
-/* ── Studio: popover de duración (slider) ──────────────────────
-   Se monta a nivel body: estilos globales con la paleta Studio. */
+/* ── Studio: popover de duración (slider) ────────────────────── */
 .duration-popover.p-popover {
-  background: var(--surface-0) !important;
-  border: 1px solid var(--border-color) !important;
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-surface-border) !important;
   border-radius: 14px !important;
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.25) !important;
-  color: var(--text-primary) !important;
+  box-shadow: none !important;
+  color: var(--color-ink-on-dark) !important;
   width: 240px !important;
 }
 
@@ -1656,18 +1526,15 @@ app-generation-events {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-secondary);
+  color: var(--color-ink-muted-on-dark);
 }
 
 .duration-popover .duration-value {
-  color: var(--text-primary);
+  color: var(--color-ink-on-dark);
   font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0;
 }
 
 .duration-popover .duration-range {
@@ -1675,10 +1542,16 @@ app-generation-events {
   height: 4px;
   appearance: none;
   -webkit-appearance: none;
-  background: linear-gradient(90deg, var(--primary-500), var(--primary-400));
+  background: var(--color-surface-border-strong);
   border-radius: 4px;
   outline: none;
   cursor: pointer;
+}
+
+.duration-popover .duration-range:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 4px;
+  box-shadow: none;
 }
 
 .duration-popover .duration-range::-webkit-slider-thumb {
@@ -1687,55 +1560,22 @@ app-generation-events {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: var(--surface-50);
-  border: 2px solid var(--primary-500);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-500) 25%, transparent);
+  background: var(--color-accent);
+  border: 2px solid var(--color-surface);
 }
 
 .duration-popover .duration-range::-moz-range-thumb {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: var(--surface-50);
-  border: 2px solid var(--primary-500);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-500) 25%, transparent);
+  background: var(--color-accent);
+  border: 2px solid var(--color-surface);
 }
 
 .duration-popover .duration-pop-hint {
-  color: var(--text-muted);
-  font-size: 10px;
+  color: var(--color-ink-muted-on-dark);
+  font-size: 11px;
   text-align: right;
-}
-
-/* ── Studio: fila del pie del prompt uniforme ─────────────────
-   Chips y selects a la misma altura (el theme les mete padding
-   vertical al select que lo desalinea). */
-.prompt-foot .foot-chip {
-  height: 34px;
-  padding: 0 10px;
-}
-
-.prompt-foot .p-select {
-  height: 34px !important;
-  min-height: 34px !important;
-  padding: 0 !important;
-  box-sizing: border-box;
-}
-
-.prompt-foot .p-select .p-select-label {
-  display: flex;
-  align-items: center;
-  height: 100%;
-  padding: 0 8px !important;
-  line-height: 1;
-}
-
-.prompt-foot .p-select .p-select-dropdown {
-  height: 100% !important;
-  width: 1.9rem !important;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 /* ─── Consola Admin: tabs de sección (Modelos/Videos/…/Tenants) ──
@@ -1749,8 +1589,8 @@ app-admin-console .mx-auto > .p-tabs .p-tablist {
 }
 
 app-admin-console .mx-auto > .p-tabs .p-tablist-tab-list {
-  background: var(--surface-50);
-  border: 1px solid var(--surface-200);
+  background: var(--color-surface);
+  border: 1px solid var(--color-surface-border);
   border-radius: 14px;
   padding: 5px;
   gap: 6px;
@@ -1760,43 +1600,32 @@ app-admin-console .mx-auto > .p-tabs .p-tab {
   border-radius: 10px;
   padding: 9px 18px;
   min-height: 40px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-ink-muted-on-dark);
+  background: transparent;
+  border: none;
   transition:
-    background 0.15s ease,
-    color 0.15s ease,
-    box-shadow 0.15s ease;
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
 app-admin-console .mx-auto > .p-tabs .p-tab .pi {
   font-size: 15px;
-  opacity: 0.85;
 }
 
 app-admin-console .mx-auto > .p-tabs .p-tab:hover {
-  background: var(--surface-200);
-  color: var(--text-primary);
-}
-
-app-admin-console .mx-auto > .p-tabs .p-tab:hover .pi {
-  color: var(--primary-300);
-  opacity: 1;
+  background: var(--color-surface-hover);
+  color: var(--color-ink-on-dark);
 }
 
 app-admin-console .mx-auto > .p-tabs .p-tab.p-tab-active {
-  background: var(--primary-500);
-  color: #fff;
-  box-shadow: 0 2px 10px color-mix(in srgb, var(--primary-500) 45%, transparent);
-}
-
-app-admin-console .mx-auto > .p-tabs .p-tab.p-tab-active .pi {
-  color: #fff;
-  opacity: 1;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
 }
 
 app-admin-console .mx-auto > .p-tabs .p-tab:focus-visible {
-  outline: 2px solid var(--primary-400);
+  outline: 2px solid var(--color-focus-ring);
   outline-offset: 2px;
 }
 
@@ -1809,8 +1638,8 @@ app-admin-console .mx-auto > .p-tabs .p-tablist-active-bar {
 p-selectbutton:has(.section-toggle) {
   display: inline-flex;
   gap: 4px;
-  background: var(--surface-100);
-  border: 1px solid var(--surface-300);
+  background: var(--color-surface);
+  border: 1px solid var(--color-surface-border);
   border-radius: 12px;
   padding: 4px;
 }
@@ -1818,14 +1647,15 @@ p-selectbutton:has(.section-toggle) {
 .p-togglebutton.section-toggle {
   border: none !important;
   background: transparent !important;
-  color: var(--text-secondary) !important;
+  color: var(--color-ink-muted-on-dark) !important;
   border-radius: 8px !important;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
   padding: 9px 16px;
   white-space: nowrap;
 }
 
-/* El theme pinta el content interno: hay que pintar/fondo en AMBOS
+/* El theme pinta el content interno: hay que pintar el fondo en AMBOS
    (host y content) para que no se cuele el pill claro del theme. */
 .p-togglebutton.section-toggle .p-togglebutton-content {
   background: transparent;
@@ -1834,45 +1664,36 @@ p-selectbutton:has(.section-toggle) {
 }
 
 .p-togglebutton.section-toggle .pi {
-  color: var(--surface-400);
+  color: inherit;
 }
 
 .p-togglebutton.section-toggle:hover {
-  color: var(--text-primary) !important;
-  background: var(--surface-200) !important;
+  color: var(--color-ink-on-dark) !important;
+  background: var(--color-surface-hover) !important;
 }
 
-.p-togglebutton.section-toggle:hover .pi {
-  color: var(--primary-300);
-}
-
-.p-togglebutton.section-toggle.p-togglebutton-checked {
-  background: var(--primary-500) !important;
-  color: #fff !important;
-  box-shadow: 0 2px 10px color-mix(in srgb, var(--primary-500) 50%, transparent);
+.p-togglebutton.section-toggle.p-togglebutton-checked,
+.p-togglebutton.section-toggle.p-togglebutton-checked:hover {
+  background: var(--color-accent) !important;
+  color: var(--color-on-accent) !important;
 }
 
 .p-togglebutton.section-toggle.p-togglebutton-checked .p-togglebutton-content {
-  background: var(--primary-500) !important;
-  color: #fff !important;
+  background: var(--color-accent) !important;
+  color: var(--color-on-accent) !important;
 }
 
-.p-togglebutton.section-toggle.p-togglebutton-checked .pi {
-  color: #fff;
-}
-
-/* ─── Modal de biblioteca (asset-picker-dialog) ────────────────
-   El theme deja el host del p-dialog claro (surface-900 invertido). */
+/* ─── Modal de biblioteca (asset-picker-dialog) ──────────────── */
 .asset-picker-dialog {
-  background: var(--surface-0);
-  border: 1px solid var(--surface-200);
+  background: var(--color-surface);
+  border: 1px solid var(--color-surface-border);
   border-radius: 14px;
   overflow: hidden;
 }
 
 .asset-picker-dialog .p-dialog-footer {
   background: transparent;
-  border-top: 1px solid var(--surface-200);
+  border-top: 1px solid var(--color-surface-border);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1901,7 +1722,7 @@ p-selectbutton:has(.section-toggle) {
   flex-direction: column;
   gap: 8px;
   min-width: 0;
-  color: var(--st-text);
+  color: var(--color-ink);
 }
 
 /* ── Panels ──────────────────────────────────────────────────── */
@@ -1918,14 +1739,12 @@ p-selectbutton:has(.section-toggle) {
   justify-content: space-between;
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   margin-bottom: 10px;
   color: var(--st-text-2);
 }
 
 .studio-shell .panel-head i {
-  color: var(--st-accent);
+  color: var(--st-text-2);
   margin-right: 6px;
 }
 
@@ -1942,8 +1761,8 @@ p-selectbutton:has(.section-toggle) {
   align-items: center;
   gap: 5px;
   margin: 0 2px 6px;
-  font-size: 11px;
-  color: var(--st-text-2);
+  font-size: 12px;
+  color: var(--color-ink-muted);
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -1951,7 +1770,7 @@ p-selectbutton:has(.section-toggle) {
 
 .studio-shell .project-caption .pi {
   font-size: 11px;
-  color: var(--primary-400);
+  color: var(--color-ink-muted);
 }
 
 /* Proyecto (opcional): icono compacto al lado de Video/Imagen */
@@ -1961,25 +1780,25 @@ p-selectbutton:has(.section-toggle) {
   justify-content: center;
   width: 36px;
   border-radius: 10px;
-  border: 1px solid var(--st-line);
-  background: var(--st-panel);
-  color: var(--st-text-2);
+  border: 1px solid var(--color-secondary);
+  background: var(--color-secondary);
+  color: var(--color-ink);
   font-size: 13px;
-  opacity: 0.65;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .studio-shell .project-icon-btn:hover {
-  opacity: 1;
-  border-color: var(--st-accent);
-  color: var(--st-text);
+  background: var(--color-secondary-hover);
+  border-color: var(--color-secondary-hover);
 }
 
 .studio-shell .project-icon-btn.has-project {
-  opacity: 1;
-  border-color: color-mix(in srgb, var(--primary-500) 55%, transparent);
-  color: var(--primary-400);
+  background: var(--color-accent);
+  border-color: var(--color-ink);
+  color: var(--color-on-accent);
 }
 
 .studio-shell .project-dialog-body {
@@ -1995,30 +1814,33 @@ p-selectbutton:has(.section-toggle) {
   gap: 6px;
   padding: 9px 0;
   border-radius: 10px;
-  border: 1px solid var(--st-line);
-  background: var(--st-panel);
-  color: var(--st-text-2);
-  font-size: 13px;
-  font-weight: 600;
+  border: 1px solid var(--color-secondary);
+  background: var(--color-secondary);
+  color: var(--color-ink);
+  font-size: 12px;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .studio-shell .mode-btn:hover {
-  border-color: var(--st-accent);
-  color: var(--st-text);
+  background: var(--color-secondary-hover);
+  border-color: var(--color-secondary-hover);
 }
 
-.studio-shell .mode-btn.active {
-  background: linear-gradient(135deg, var(--st-accent), var(--primary-700));
-  border-color: var(--st-accent);
-  color: #ffffff;
-  box-shadow: 0 4px 14px color-mix(in srgb, var(--primary-500) 35%, transparent);
+.studio-shell .mode-btn.active,
+.studio-shell .mode-btn.active:hover {
+  background: var(--color-accent);
+  border-color: var(--color-ink);
+  color: var(--color-on-accent);
 }
 
 /* ── Prompt ──────────────────────────────────────────────────── */
 .studio-shell .prompt-panel {
   padding: 8px;
+  border-color: var(--color-surface-border-strong);
 }
 
 .studio-shell .prompt-input,
@@ -2026,11 +1848,11 @@ p-selectbutton:has(.section-toggle) {
 .studio-shell .seed-input {
   width: 100%;
   background: var(--st-bg);
-  border: 1px solid var(--st-line);
+  border: 1px solid var(--color-surface-border-strong);
   border-radius: 10px;
   color: var(--st-text);
   padding: 10px;
-  font-size: 13px;
+  font-size: 14px;
   resize: vertical;
 }
 
@@ -2039,7 +1861,7 @@ p-selectbutton:has(.section-toggle) {
 .studio-shell .seed-input:focus {
   outline: none;
   border-color: var(--st-accent);
-  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.25);
+  box-shadow: none;
 }
 
 .studio-shell .prompt-input {
@@ -2053,12 +1875,16 @@ p-selectbutton:has(.section-toggle) {
 .studio-shell .negative-input::placeholder,
 .studio-shell .seed-input::placeholder {
   color: var(--st-muted);
-  letter-spacing: 0.08em;
+  letter-spacing: normal;
+}
+
+.studio-shell .negative-input,
+.studio-shell .seed-input {
+  font-size: 12px;
 }
 
 .studio-shell .negative-input {
   margin-top: 6px;
-  font-size: 12px;
 }
 
 .studio-shell .negative-input:focus,
@@ -2075,7 +1901,7 @@ p-selectbutton:has(.section-toggle) {
   position: absolute;
   inset: 0;
   padding: 10px;
-  font-size: 13px;
+  font-size: 14px;
   font-family: inherit;
   line-height: 1.5;
   color: var(--st-text);
@@ -2105,7 +1931,7 @@ p-selectbutton:has(.section-toggle) {
   color: var(--st-accent);
   border-radius: 5px;
   padding: 0 4px;
-  font-weight: 600;
+  font-weight: inherit;
 }
 
 .studio-shell .mention-menu {
@@ -2115,10 +1941,10 @@ p-selectbutton:has(.section-toggle) {
   max-height: 248px;
   overflow-y: auto;
   padding: 6px;
-  background: var(--st-panel, var(--surface-100));
-  border: 1px solid var(--st-line);
+  background: var(--st-panel);
+  border: 1px solid var(--color-surface-border-strong);
   border-radius: 12px;
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45);
+  box-shadow: none;
 }
 
 .studio-shell .mention-menu-title {
@@ -2126,15 +1952,13 @@ p-selectbutton:has(.section-toggle) {
   align-items: center;
   gap: 6px;
   margin: 2px 4px 6px;
-  font-size: 10.5px;
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   color: var(--st-muted);
 }
 
 .studio-shell .mention-menu-title .pi {
-  color: var(--st-accent);
+  color: var(--st-muted);
 }
 
 .studio-shell .mention-option {
@@ -2152,7 +1976,7 @@ p-selectbutton:has(.section-toggle) {
 }
 
 .studio-shell .mention-option.active {
-  background: color-mix(in srgb, var(--st-accent) 18%, transparent);
+  background: var(--color-surface-hover);
 }
 
 .studio-shell .mention-thumb {
@@ -2167,8 +1991,8 @@ p-selectbutton:has(.section-toggle) {
 .studio-shell .mention-name {
   flex: 1;
   min-width: 0;
-  font-size: 12.5px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2182,8 +2006,8 @@ p-selectbutton:has(.section-toggle) {
   white-space: nowrap;
   font-size: 10px;
   font-weight: 700;
-  color: var(--st-accent);
-  background: color-mix(in srgb, var(--st-accent) 14%, transparent);
+  color: var(--st-text-2);
+  background: var(--st-bg);
   border-radius: 999px;
   padding: 2px 8px;
 }
@@ -2202,27 +2026,27 @@ p-selectbutton:has(.section-toggle) {
   border-radius: 7px;
   flex-shrink: 0;
   font-size: 14px;
-  background: color-mix(in srgb, var(--st-accent) 16%, transparent);
-  border: 1px solid color-mix(in srgb, var(--st-accent) 30%, transparent);
-  color: var(--st-accent);
+  background: var(--st-bg);
+  border: 1px solid var(--st-line);
+  color: var(--st-text-2);
 }
 
 .studio-shell .mention-ing-icon[data-type='character'] {
-  color: #60a5fa;
-  background: rgba(96, 165, 250, 0.14);
-  border-color: rgba(96, 165, 250, 0.3);
+  color: var(--color-info);
+  background: color-mix(in srgb, var(--color-info) 14%, var(--color-surface));
+  border-color: color-mix(in srgb, var(--color-info) 40%, transparent);
 }
 
 .studio-shell .mention-ing-icon[data-type='location'] {
-  color: #4ade80;
-  background: rgba(74, 222, 128, 0.14);
-  border-color: rgba(74, 222, 128, 0.3);
+  color: var(--color-success);
+  background: color-mix(in srgb, var(--color-success) 14%, var(--color-surface));
+  border-color: color-mix(in srgb, var(--color-success) 40%, transparent);
 }
 
 .studio-shell .mention-ing-icon[data-type='prop'] {
-  color: #fbbf24;
-  background: rgba(251, 191, 36, 0.14);
-  border-color: rgba(251, 191, 36, 0.3);
+  color: var(--color-warning);
+  background: color-mix(in srgb, var(--color-warning) 14%, var(--color-surface));
+  border-color: color-mix(in srgb, var(--color-warning) 40%, transparent);
 }
 
 .studio-shell .mention-menu-empty {
@@ -2236,8 +2060,8 @@ p-selectbutton:has(.section-toggle) {
 }
 
 .studio-shell .mention-chip-count {
-  font-size: 10px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
   color: var(--st-muted);
   white-space: nowrap;
 }
@@ -2261,8 +2085,8 @@ p-selectbutton:has(.section-toggle) {
   gap: 6px;
   padding: 3px 6px 3px 4px;
   border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--st-accent) 35%, transparent);
-  background: color-mix(in srgb, var(--st-accent) 14%, transparent);
+  border: 1px solid var(--color-surface-border-strong);
+  background: var(--st-bg);
 }
 
 .studio-shell .mention-chip-thumb {
@@ -2273,9 +2097,9 @@ p-selectbutton:has(.section-toggle) {
 }
 
 .studio-shell .mention-chip-name {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--st-accent);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--st-text);
   max-width: 160px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2297,8 +2121,8 @@ p-selectbutton:has(.section-toggle) {
 }
 
 .studio-shell .mention-chip-x:hover {
-  background: color-mix(in srgb, var(--st-accent) 25%, transparent);
-  color: var(--st-accent);
+  background: var(--color-surface-hover);
+  color: var(--st-text);
 }
 
 /* ── Referencias: slots tipados + galería ────────────────────── */
@@ -2311,8 +2135,6 @@ p-selectbutton:has(.section-toggle) {
   font: inherit;
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   margin-bottom: 0;
   padding: 0;
 }
@@ -2337,22 +2159,22 @@ p-selectbutton:has(.section-toggle) {
   padding: 9px 12px;
   margin-bottom: 12px;
   border-radius: 10px;
-  border: 1px dashed color-mix(in srgb, var(--primary-500) 40%, transparent);
-  background: color-mix(in srgb, var(--primary-500) 10%, transparent);
-  color: var(--primary-300);
-  font-size: 13px;
-  font-weight: 600;
+  border: 1px dashed var(--color-surface-border-strong);
+  background: transparent;
+  color: var(--st-text);
+  font-size: 12px;
+  font-weight: 700;
   cursor: pointer;
   transition:
-    background 0.15s ease,
+    background-color 0.15s ease,
     color 0.15s ease,
     border-color 0.15s ease;
 }
 
 .studio-shell .library-picker-btn:hover {
-  background: color-mix(in srgb, var(--primary-500) 20%, transparent);
-  border-color: color-mix(in srgb, var(--primary-500) 60%, transparent);
-  color: var(--primary-200);
+  background: var(--color-surface-hover);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
 }
 
 .studio-shell .library-picker-btn .pi {
@@ -2373,7 +2195,7 @@ p-selectbutton:has(.section-toggle) {
   width: 26px;
   height: 26px;
   border-radius: 8px;
-  border: 1px dashed var(--st-line);
+  border: 1px dashed var(--color-surface-border-strong);
   cursor: pointer;
   color: var(--st-text-2);
   background: transparent;
@@ -2409,7 +2231,6 @@ p-selectbutton:has(.section-toggle) {
 
 .studio-shell .slot:hover {
   border-color: var(--st-accent);
-  box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.35);
 }
 
 .studio-shell .slot-plus {
@@ -2418,8 +2239,8 @@ p-selectbutton:has(.section-toggle) {
 }
 
 .studio-shell .slot-label {
-  font-size: 9px;
-  font-weight: 600;
+  font-size: 10px;
+  font-weight: 700;
   color: var(--st-text);
   text-align: center;
   line-height: 1.15;
@@ -2440,8 +2261,8 @@ p-selectbutton:has(.section-toggle) {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: color-mix(in srgb, var(--surface-950) 55%, transparent);
-  color: var(--surface-50);
+  background: color-mix(in srgb, var(--color-ink) 55%, transparent);
+  color: var(--color-ink-on-dark);
   opacity: 0;
   transition: opacity 0.15s ease;
   pointer-events: none;
@@ -2463,8 +2284,8 @@ p-selectbutton:has(.section-toggle) {
   justify-content: center;
   border: none;
   border-radius: 999px;
-  background: rgba(13, 15, 20, 0.75);
-  color: #ffffff;
+  background: color-mix(in srgb, var(--color-ink) 80%, transparent);
+  color: var(--color-ink-on-dark);
   font-size: 9px;
   cursor: pointer;
   opacity: 0;
@@ -2479,7 +2300,8 @@ p-selectbutton:has(.section-toggle) {
 }
 
 .studio-shell .slot-clear:hover {
-  background: var(--red-500);
+  background: var(--color-danger);
+  color: var(--color-on-accent);
 }
 
 /* Estado subiendo dentro del slot */
@@ -2510,8 +2332,8 @@ p-selectbutton:has(.section-toggle) {
   margin: 0 0 8px;
   padding: 6px 10px;
   border-radius: 8px;
-  border: 1px solid rgba(248, 113, 113, 0.35);
-  background: rgba(248, 113, 113, 0.1);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 40%, transparent);
+  background: color-mix(in srgb, var(--color-danger) 14%, var(--color-surface));
   color: var(--st-err);
 }
 
@@ -2546,8 +2368,7 @@ p-selectbutton:has(.section-toggle) {
 }
 
 .studio-shell .asset-thumb.selected {
-  border-color: var(--st-accent-2);
-  box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.3);
+  border-color: var(--st-accent);
 }
 
 /* Botón ver (popover) sobre la miniatura */
@@ -2558,8 +2379,8 @@ p-selectbutton:has(.section-toggle) {
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  background: rgba(13, 15, 20, 0.55);
-  color: #ffffff;
+  background: color-mix(in srgb, var(--color-ink) 60%, transparent);
+  color: var(--color-ink-on-dark);
   font-size: 12px;
   opacity: 0;
   transition: opacity 0.12s ease;
@@ -2580,7 +2401,7 @@ p-selectbutton:has(.section-toggle) {
   justify-content: center;
   border-radius: 999px;
   background: var(--st-accent);
-  color: #ffffff;
+  color: var(--color-on-accent);
   font-size: 7px;
   opacity: 0;
   transition: opacity 0.12s ease;
@@ -2601,16 +2422,17 @@ p-selectbutton:has(.section-toggle) {
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  background: rgba(13, 15, 20, 0.75);
-  color: #ffffff;
+  background: color-mix(in srgb, var(--color-ink) 80%, transparent);
+  color: var(--color-ink-on-dark);
   font-size: 7px;
   cursor: pointer;
   z-index: 2;
-  transition: background 0.12s ease;
+  transition: background-color 0.12s ease;
 }
 
 .studio-shell .asset-remove:hover {
-  background: var(--red-500);
+  background: var(--color-danger);
+  color: var(--color-on-accent);
 }
 
 /* ── Prompt footer: attach count + compact selects ───────────── */
@@ -2629,17 +2451,17 @@ p-selectbutton:has(.section-toggle) {
   padding: 0 10px;
   height: 34px;
   border-radius: 8px;
-  border: 1px solid var(--st-line);
+  border: 1px solid var(--color-surface-border-strong);
   background: var(--st-bg);
   color: var(--st-text-2);
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   flex-shrink: 0;
 }
 
 .studio-shell .foot-chip i {
   font-size: 11px;
-  color: var(--st-accent);
+  color: var(--st-text-2);
 }
 
 .studio-shell .foot-select {
@@ -2659,7 +2481,7 @@ p-selectbutton:has(.section-toggle) {
 
 .studio-shell .foot-icon {
   font-size: 11px;
-  color: var(--st-accent);
+  color: var(--st-text-2);
   flex-shrink: 0;
 }
 
@@ -2691,26 +2513,25 @@ p-selectbutton:has(.section-toggle) {
   padding: 13px;
   border-radius: 12px;
   border: none;
-  background: linear-gradient(135deg, var(--st-accent), var(--primary-700) 60%, var(--primary-900));
-  color: #ffffff;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
   font-size: 14px;
   font-weight: 700;
-  letter-spacing: 0.02em;
   cursor: pointer;
-  box-shadow: 0 6px 20px color-mix(in srgb, var(--primary-500) 40%, transparent);
-  transition:
-    transform 0.12s ease,
-    box-shadow 0.12s ease,
-    opacity 0.15s ease;
+  transition: background-color 0.15s ease;
 }
 
 .studio-shell .generate-btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 8px 26px color-mix(in srgb, var(--primary-500) 55%, transparent);
+  background: var(--color-accent-hover);
+}
+
+.studio-shell .generate-btn:active:not(:disabled) {
+  background: var(--color-accent-active);
 }
 
 .studio-shell .generate-btn:disabled {
-  opacity: 0.45;
+  background: var(--color-disabled);
+  color: var(--color-disabled-ink);
   cursor: not-allowed;
 }
 
@@ -2727,7 +2548,7 @@ p-selectbutton:has(.section-toggle) {
   max-height: calc(100vh - 130px);
   border-radius: 16px;
   border: 1px solid var(--st-line);
-  background: var(--st-bg);
+  background: var(--color-surface);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2742,10 +2563,8 @@ p-selectbutton:has(.section-toggle) {
   max-width: 100%;
   max-height: 100%;
   border-radius: 12px;
-  background: #0a0c10;
-  box-shadow:
-    0 0 0 1px var(--st-line),
-    0 18px 44px rgba(0, 0, 0, 0.35);
+  background: var(--color-ink);
+  box-shadow: 0 0 0 1px var(--st-line);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2780,13 +2599,18 @@ p-selectbutton:has(.section-toggle) {
   align-items: center;
   gap: 8px;
   font-size: 12px;
-  color: var(--st-text-2);
+  color: var(--color-ink-muted);
   padding: 0 4px;
 }
 
 .studio-shell .meta-model {
-  font-weight: 600;
-  color: var(--st-text);
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.studio-shell .viewer-meta .muted,
+.studio-shell .studio-right > .muted {
+  color: var(--color-ink-muted);
 }
 
 .studio-shell .prompt-ellipsis {
@@ -2814,7 +2638,7 @@ p-selectbutton:has(.section-toggle) {
 
 .studio-shell .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--st-accent), var(--st-accent-2));
+  background: var(--st-accent);
   transition: width 0.4s ease;
 }
 
@@ -2826,15 +2650,13 @@ p-selectbutton:has(.section-toggle) {
   justify-content: space-between;
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--st-text-2);
+  color: var(--color-ink);
   padding: 2px 4px;
 }
 
 .studio-shell .reel-head i,
 .studio-shell .queue-head i {
-  color: var(--st-accent);
+  color: var(--color-ink-muted);
   margin-right: 6px;
 }
 
@@ -2869,6 +2691,10 @@ p-selectbutton:has(.section-toggle) {
   box-shadow: 0 0 0 1px var(--st-accent);
 }
 
+.studio-shell .take-card:focus-visible {
+  box-shadow: var(--focus-shadow);
+}
+
 .studio-shell .take-thumb {
   width: 96px;
   height: 54px;
@@ -2892,7 +2718,7 @@ p-selectbutton:has(.section-toggle) {
 
 .studio-shell .take-title {
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .studio-shell .take-sub {
@@ -2930,7 +2756,7 @@ p-selectbutton:has(.section-toggle) {
 }
 
 .studio-shell .queue-item i {
-  color: var(--st-accent-2);
+  color: var(--st-accent);
 }
 
 .studio-shell .queue-info {
@@ -2944,7 +2770,7 @@ p-selectbutton:has(.section-toggle) {
 }
 
 .studio-shell .small {
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .studio-shell .pad {
@@ -2990,7 +2816,7 @@ p-selectbutton:has(.section-toggle) {
 
 .studio-project-dialog .p-dialog-header .p-dialog-title {
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .studio-project-dialog .p-dialog-content {

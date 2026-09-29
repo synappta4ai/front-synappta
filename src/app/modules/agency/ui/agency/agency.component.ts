@@ -346,7 +346,9 @@ export class AgencyComponent {
    * en el formulario, o crea/reautiliza uno llamado como el proyecto cargado
    * ("Agencia <nombre>") para que los recursos queden centralizados.
    */
-  private ensureSceneAnchor(scene: StoryboardScene): Observable<{ project: Project; piece: Piece }> {
+  private ensureSceneAnchor(
+    scene: StoryboardScene,
+  ): Observable<{ project: Project; piece: Piece }> {
     const chosenId = this.selectedProjectId();
     const anchorName = chosenId
       ? (this.projects().find((p) => p.id === chosenId)?.name ?? 'Agencia')

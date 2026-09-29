@@ -2,7 +2,14 @@
   <div class="error-banner">
     <i class="pi pi-exclamation-triangle"></i>
     <span>{{ message }}</span>
-    <p-button icon="pi pi-times" size="small" [text]="true" [rounded]="true" severity="secondary" (onClick)="error.set(null)" />
+    <p-button
+      icon="pi pi-times"
+      size="small"
+      [text]="true"
+      [rounded]="true"
+      severity="secondary"
+      (onClick)="error.set(null)"
+    />
   </div>
 }
 
@@ -33,9 +40,7 @@
         type="text"
         [ngModel]="search()"
         (ngModelChange)="search.set($event)"
-        [placeholder]="
-          section() === 'generated' ? 'Proyecto, pieza o task…' : 'Buscar por nombre…'
-        "
+        [placeholder]="section() === 'generated' ? 'Proyecto, pieza o task…' : 'Buscar por nombre…'"
       />
     </p-iconfield>
   </div>
@@ -72,7 +77,7 @@
 @if (loading()) {
   <div class="empty-state">
     <p-progressSpinner styleClass="w-12 h-12" strokeWidth="3" />
-    <p class="text-sm text-(--text-secondary)">
+    <p class="text-sm text-ink-muted-on-dark">
       {{ section() === 'generated' ? 'Cargando imágenes…' : 'Cargando recursos…' }}
     </p>
   </div>
@@ -88,10 +93,10 @@
     <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
       @for (img of filtered(); track img.id) {
         <div
-          class="group cursor-pointer overflow-hidden rounded-xl border border-[var(--surface-200)] bg-[var(--surface-0)] transition-shadow hover:shadow-md"
+          class="group cursor-pointer overflow-hidden rounded-xl border border-surface-border bg-surface transition-shadow hover:border-surface-border-strong"
           (click)="openViewer(img)"
         >
-          <div class="relative aspect-square overflow-hidden bg-[var(--surface-100)]">
+          <div class="relative aspect-square overflow-hidden bg-surface-2">
             <img
               [src]="outputUrl(img) | serverUrl"
               [alt]="img.event_name || img.task_id"
@@ -99,20 +104,20 @@
               class="h-full w-full object-cover transition-transform group-hover:scale-[1.03]"
             />
             <div
-              class="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 transition-opacity group-hover:opacity-100"
+              class="absolute inset-0 flex items-center justify-center bg-ink/30 opacity-0 transition-opacity group-hover:opacity-100"
             >
               <div
-                class="flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-[var(--primary-600)]"
+                class="flex h-10 w-10 items-center justify-center rounded-full bg-ink/90 text-accent"
               >
                 <i class="pi pi-eye"></i>
               </div>
             </div>
           </div>
           <div class="flex flex-col gap-1 p-3">
-            <p class="truncate text-sm font-medium text-(--text-primary)">
+            <p class="truncate text-sm font-bold text-ink-on-dark">
               {{ img.event_name || 'Sin proyecto' }}
             </p>
-            <div class="flex items-center justify-between text-xs text-(--text-secondary)">
+            <div class="flex items-center justify-between text-xs text-ink-muted-on-dark">
               <span class="truncate">{{ img.piece_code }}</span>
               <span>{{ img.created_at | date: 'short' }}</span>
             </div>
@@ -132,8 +137,16 @@
         [class.opacity-60]="uploadingType() !== null"
         [title]="btn.hint"
       >
-        <i class="pi" [class.pi-spin.pi-spinner]="uploadingType() === btn.type" [class]="uploadingType() === btn.type ? '' : btn.icon"></i>
-        {{ uploadingType() === btn.type && uploadProgress() ? 'Subiendo ' + uploadProgress()!.done + '/' + uploadProgress()!.total : btn.label }}
+        <i
+          class="pi"
+          [class.pi-spin.pi-spinner]="uploadingType() === btn.type"
+          [class]="uploadingType() === btn.type ? '' : btn.icon"
+        ></i>
+        {{
+          uploadingType() === btn.type && uploadProgress()
+            ? 'Subiendo ' + uploadProgress()!.done + '/' + uploadProgress()!.total
+            : btn.label
+        }}
         <input
           type="file"
           class="hidden"
@@ -157,19 +170,26 @@
       >
         <i class="pi {{ opt.icon }}"></i>
         {{ opt.label }}
-        <span class="count" [class.badge]="ingFilter() === opt.value">{{ ingCounts()[opt.value] ?? 0 }}</span>
+        <span class="count" [class.badge]="ingFilter() === opt.value">{{
+          ingCounts()[opt.value] ?? 0
+        }}</span>
       </button>
     }
   </div>
 
   @if (selectedAssetIds().size > 0) {
     <div
-      class="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-[var(--surface-200)] bg-[var(--surface-50)] px-4 py-2"
+      class="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-surface-border bg-surface-2 px-4 py-2"
     >
-      <span class="text-sm font-medium text-(--text-primary)">
+      <span class="text-sm font-bold text-ink-on-dark">
         {{ selectedAssetIds().size }} seleccionado(s)
       </span>
-      <p-button label="Asignar a proyecto" icon="pi pi-briefcase" size="small" (onClick)="openAssign()" />
+      <p-button
+        label="Asignar a proyecto"
+        icon="pi pi-briefcase"
+        size="small"
+        (onClick)="openAssign()"
+      />
       @if (filterProjectId(); as filteredProject) {
         <p-button
           label="Quitar de «{{ filterProjectName() }}»"
@@ -200,7 +220,7 @@
     <div class="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-6">
       @for (asset of filteredAssets(); track asset.id) {
         <div class="resource-card group cursor-pointer" (click)="openViewer(asset)">
-          <div class="relative aspect-square overflow-hidden bg-[var(--surface-100)]">
+          <div class="relative aspect-square overflow-hidden bg-surface-2">
             @if (asset.mime_type?.startsWith('image/')) {
               <img
                 [src]="assetThumb(asset) | serverUrl"
@@ -209,10 +229,14 @@
                 class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.05]"
               />
             } @else if (asset.mime_type?.startsWith('video/')) {
-              <video [src]="asset.url | serverUrl" preload="metadata" class="h-full w-full object-cover"></video>
+              <video
+                [src]="asset.url | serverUrl"
+                preload="metadata"
+                class="h-full w-full object-cover"
+              ></video>
             } @else {
               <div class="flex h-full w-full items-center justify-center">
-                <i class="pi pi-file text-2xl text-[var(--surface-400)]"></i>
+                <i class="pi pi-file text-2xl text-ink-muted-on-dark"></i>
               </div>
             }
             @if (asset.trashed) {
@@ -222,14 +246,18 @@
               type="button"
               class="select-chip"
               [class.checked]="selectedAssetIds().has(asset.id)"
-              [attr.title]="selectedAssetIds().has(asset.id) ? 'Quitar de la selección' : 'Seleccionar para asignar'"
+              [attr.title]="
+                selectedAssetIds().has(asset.id)
+                  ? 'Quitar de la selección'
+                  : 'Seleccionar para asignar'
+              "
               (click)="$event.stopPropagation(); toggleAssetSel(asset.id)"
             >
-              <i class="pi text-[10px]" [class.pi-check]="selectedAssetIds().has(asset.id)"></i>
+              <i class="pi text-xs" [class.pi-check]="selectedAssetIds().has(asset.id)"></i>
             </button>
             @if (!filterProjectId() && (asset.project_ids?.length ?? 0) > 0) {
               <span class="overlay-badge" style="bottom: 8px; left: 8px">
-                <i class="pi pi-briefcase" style="font-size: 9px"></i>
+                <i class="pi pi-briefcase" style="font-size: 12px"></i>
                 {{ asset.project_ids!.length }}
               </span>
             }
@@ -257,14 +285,24 @@
 <!-- Pagination (both sections) -->
 @if (!loading() && totalLabel() > 0) {
   <div class="pagination-bar mt-4 flex items-center justify-between px-5 py-3">
-    <span class="text-sm text-(--text-secondary)">
+    <span class="text-sm text-ink-muted-on-dark">
       Página
       {{ section() === 'generated' ? page() : assetsPage() }}
       — {{ totalLabel() }} {{ section() === 'generated' ? 'imágenes' : 'recursos' }}
     </span>
     <div class="flex gap-2">
-      <p-button icon="pi pi-chevron-left" size="small" [disabled]="!hasPrev()" (onClick)="prevPage()" />
-      <p-button icon="pi pi-chevron-right" size="small" [disabled]="!hasNext()" (onClick)="nextPage()" />
+      <p-button
+        icon="pi pi-chevron-left"
+        size="small"
+        [disabled]="!hasPrev()"
+        (onClick)="prevPage()"
+      />
+      <p-button
+        icon="pi pi-chevron-right"
+        size="small"
+        [disabled]="!hasNext()"
+        (onClick)="nextPage()"
+      />
     </div>
   </div>
 }
@@ -282,16 +320,14 @@
   @if (selected(); as item) {
     <ng-template #header>
       <div class="flex items-center gap-3">
-        <div
-          class="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-[var(--primary-500)] to-[var(--primary-700)] text-white"
-        >
+        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-2 text-accent">
           <i class="pi pi-image text-sm"></i>
         </div>
         <div class="min-w-0">
-          <h3 class="truncate text-lg font-semibold text-(--text-primary)">
+          <h3 class="truncate text-lg font-bold text-ink-on-dark">
             {{ selectedName() }}
           </h3>
-          <p class="text-xs text-(--text-secondary)">
+          <p class="text-xs text-ink-muted-on-dark">
             {{ section() === 'generated' ? 'Imagen generada' : 'Recurso subido' }}
           </p>
         </div>
@@ -305,33 +341,33 @@
         class="max-h-[70vh] w-full rounded-lg object-contain"
       />
       <div
-        class="mt-4 grid gap-3 rounded-xl border border-[var(--surface-200)] bg-[var(--surface-50)] p-4 text-sm sm:grid-cols-3"
+        class="mt-4 grid gap-3 rounded-xl border border-surface-border bg-surface-2 p-4 text-sm sm:grid-cols-3"
       >
         <div>
-          <p class="text-xs text-[var(--text-muted)]">Modelo</p>
-          <p class="font-medium text-(--text-primary)">{{ item.model_name }}</p>
+          <p class="text-xs text-ink-muted-on-dark">Modelo</p>
+          <p class="font-bold text-ink-on-dark">{{ item.model_name }}</p>
         </div>
         <div>
-          <p class="text-xs text-[var(--text-muted)]">Proyecto</p>
-          <p class="font-medium text-(--text-primary)">{{ item.event_name || '—' }}</p>
+          <p class="text-xs text-ink-muted-on-dark">Proyecto</p>
+          <p class="font-bold text-ink-on-dark">{{ item.event_name || '—' }}</p>
         </div>
         <div>
-          <p class="text-xs text-[var(--text-muted)]">Pieza</p>
-          <p class="font-medium text-(--text-primary)">{{ item.piece_code }} {{ item.piece_name }}</p>
+          <p class="text-xs text-ink-muted-on-dark">Pieza</p>
+          <p class="font-bold text-ink-on-dark">{{ item.piece_code }} {{ item.piece_name }}</p>
         </div>
         <div>
-          <p class="text-xs text-[var(--text-muted)]">Generado por</p>
-          <p class="font-medium text-(--text-primary)">
-            {{ item.user_display_name || ('u' + (item.user_id ?? '—')) }}
+          <p class="text-xs text-ink-muted-on-dark">Generado por</p>
+          <p class="font-bold text-ink-on-dark">
+            {{ item.user_display_name || 'u' + (item.user_id ?? '—') }}
           </p>
         </div>
         <div>
-          <p class="text-xs text-[var(--text-muted)]">Fecha</p>
-          <p class="font-medium text-(--text-primary)">{{ item.created_at | date: 'medium' }}</p>
+          <p class="text-xs text-ink-muted-on-dark">Fecha</p>
+          <p class="font-bold text-ink-on-dark">{{ item.created_at | date: 'medium' }}</p>
         </div>
         <div>
-          <p class="text-xs text-[var(--text-muted)]">Task ID</p>
-          <code class="text-xs text-(--text-primary)">{{ item.task_id }}</code>
+          <p class="text-xs text-ink-muted-on-dark">Task ID</p>
+          <code class="text-xs text-ink-on-dark">{{ item.task_id }}</code>
         </div>
       </div>
     } @else {
@@ -342,41 +378,45 @@
           class="max-h-[70vh] w-full rounded-lg object-contain"
         />
       } @else if (item.mime_type?.startsWith('video/')) {
-        <video [src]="item.url | serverUrl" controls class="max-h-[70vh] w-full rounded-lg bg-black"></video>
+        <video
+          [src]="item.url | serverUrl"
+          controls
+          class="max-h-[70vh] w-full rounded-lg bg-ink"
+        ></video>
       }
       <div
-        class="mt-4 grid gap-3 rounded-xl border border-[var(--surface-200)] bg-[var(--surface-50)] p-4 text-sm sm:grid-cols-4"
+        class="mt-4 grid gap-3 rounded-xl border border-surface-border bg-surface-2 p-4 text-sm sm:grid-cols-4"
       >
         <div>
-          <p class="text-xs text-[var(--text-muted)]">Archivo</p>
-          <p class="truncate font-medium text-(--text-primary)" [title]="item.filename">
+          <p class="text-xs text-ink-muted-on-dark">Archivo</p>
+          <p class="truncate font-bold text-ink-on-dark" [title]="item.filename">
             {{ item.filename }}
           </p>
         </div>
         <div>
-          <p class="text-xs text-[var(--text-muted)]">Tamaño</p>
-          <p class="font-medium text-(--text-primary)">
+          <p class="text-xs text-ink-muted-on-dark">Tamaño</p>
+          <p class="font-bold text-ink-on-dark">
             {{ item.size ? (item.size / 1024 | number: '1.0-0') + ' KB' : '—' }}
           </p>
         </div>
         <div>
-          <p class="text-xs text-[var(--text-muted)]">Tipo</p>
-          <p class="font-medium text-(--text-primary)">{{ item.mime_type || '—' }}</p>
+          <p class="text-xs text-ink-muted-on-dark">Tipo</p>
+          <p class="font-bold text-ink-on-dark">{{ item.mime_type || '—' }}</p>
         </div>
         <div>
-          <p class="text-xs text-[var(--text-muted)]">Subido</p>
-          <p class="font-medium text-(--text-primary)">{{ item.created_at | date: 'medium' }}</p>
+          <p class="text-xs text-ink-muted-on-dark">Subido</p>
+          <p class="font-bold text-ink-on-dark">{{ item.created_at | date: 'medium' }}</p>
         </div>
         @if (item.ingredients?.length) {
           <div class="sm:col-span-4">
-            <p class="mb-1 text-xs text-[var(--text-muted)]">Ingredientes</p>
+            <p class="mb-1 text-xs text-ink-muted-on-dark">Ingredientes</p>
             <div class="flex flex-wrap gap-1">
               @for (ing of item.ingredients; track ing.id) {
                 <button
                   type="button"
-                  class="rounded px-2 py-0.5 text-xs font-semibold"
-                  [style.background]="'color-mix(in srgb, var(--primary-500) 18%, transparent)'"
-                  [style.color]="'var(--primary-300)'"
+                  class="rounded border border-surface-border-strong px-2 py-0.5 text-xs font-bold"
+                  [style.background]="'var(--color-surface)'"
+                  [style.color]="'var(--color-ink-on-dark)'"
                   [title]="'Clic para editar'"
                   (click)="startIngEdit(ing)"
                 >
@@ -423,8 +463,8 @@
         </div>
         @if (isSuperadmin() && tenantSlug()) {
           <div class="sm:col-span-4">
-            <p class="text-xs text-[var(--text-muted)]">Tenant</p>
-            <p class="font-medium text-(--text-primary)">{{ tenantSlug() }}</p>
+            <p class="text-xs text-ink-muted-on-dark">Tenant</p>
+            <p class="font-bold text-ink-on-dark">{{ tenantSlug() }}</p>
           </div>
         }
       </div>
@@ -453,7 +493,7 @@
   header="Asignar a proyecto"
 >
   <div class="flex flex-col gap-3">
-    <p class="text-sm text-(--text-secondary)">
+    <p class="text-sm text-ink-muted-on-dark">
       {{ selectedAssetIds().size }} recurso(s) se asignarán al proyecto elegido.
     </p>
     <p-select

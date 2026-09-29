@@ -1,4 +1,4 @@
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:8099/api/v1',
+  apiUrl: 'https://drako-synaptaback-i2at0w-5d9ff3-187-124-148-219.sslip.io/api/v1',
 };

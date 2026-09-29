@@ -326,9 +326,7 @@ export class VideoComponent {
     this.pieceDialogVisible.set(true);
     this.eventsService
       .listPrograms(project.id)
-      .pipe(
-        catchError(() => EMPTY),
-      )
+      .pipe(catchError(() => EMPTY))
       .subscribe((programs) => this.programs.set(programs));
   }
 

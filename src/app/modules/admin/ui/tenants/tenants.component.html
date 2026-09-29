@@ -9,41 +9,35 @@
 
   <!-- Stats Row -->
   <div class="mb-6 grid gap-4 sm:grid-cols-3">
-    <div
-      class="flex items-center gap-4 rounded-xl border border-[var(--surface-200)] bg-[var(--surface-0)] p-5"
-    >
-      <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--primary-100)]">
-        <i class="pi pi-building text-xl text-[var(--primary-600)]"></i>
+    <div class="flex items-center gap-4 rounded-xl border border-surface-border bg-surface p-5">
+      <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-surface-2">
+        <i class="pi pi-building text-xl text-accent"></i>
       </div>
       <div>
-        <p class="text-2xl font-bold text-(--text-primary)">{{ tenants().length }}</p>
-        <p class="text-sm text-(--text-secondary)">Total Tenants</p>
+        <p class="text-2xl font-bold text-ink-on-dark">{{ tenants().length }}</p>
+        <p class="text-sm text-ink-muted-on-dark">Total Tenants</p>
       </div>
     </div>
-    <div
-      class="flex items-center gap-4 rounded-xl border border-[var(--surface-200)] bg-[var(--surface-0)] p-5"
-    >
-      <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-green-100">
-        <i class="pi pi-check-circle text-xl text-green-600"></i>
+    <div class="flex items-center gap-4 rounded-xl border border-surface-border bg-surface p-5">
+      <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-surface-2">
+        <i class="pi pi-check-circle text-xl text-success"></i>
       </div>
       <div>
-        <p class="text-2xl font-bold text-(--text-primary)">
+        <p class="text-2xl font-bold text-ink-on-dark">
           {{ tenants().filter((t) => t.active).length }}
         </p>
-        <p class="text-sm text-(--text-secondary)">Activos</p>
+        <p class="text-sm text-ink-muted-on-dark">Activos</p>
       </div>
     </div>
-    <div
-      class="flex items-center gap-4 rounded-xl border border-[var(--surface-200)] bg-[var(--surface-0)] p-5"
-    >
-      <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-red-100">
-        <i class="pi pi-times-circle text-xl text-red-600"></i>
+    <div class="flex items-center gap-4 rounded-xl border border-surface-border bg-surface p-5">
+      <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-surface-2">
+        <i class="pi pi-times-circle text-xl text-danger"></i>
       </div>
       <div>
-        <p class="text-2xl font-bold text-(--text-primary)">
+        <p class="text-2xl font-bold text-ink-on-dark">
           {{ tenants().filter((t) => !t.active).length }}
         </p>
-        <p class="text-sm text-(--text-secondary)">Inactivos</p>
+        <p class="text-sm text-ink-muted-on-dark">Inactivos</p>
       </div>
     </div>
   </div>
@@ -51,11 +45,11 @@
   <!-- Create Tenant Form -->
   <p-card styleClass="mb-6">
     <ng-template #header>
-      <div class="flex items-center gap-3 border-b border-[var(--surface-200)] px-6 py-4">
-        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--primary-100)]">
-          <i class="pi pi-plus-circle text-lg text-[var(--primary-600)]"></i>
+      <div class="flex items-center gap-3 border-b border-surface-border px-6 py-4">
+        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-2">
+          <i class="pi pi-plus-circle text-lg text-accent"></i>
         </div>
-        <h2 class="text-lg font-semibold text-(--text-primary)">Crear Nuevo Tenant</h2>
+        <h2 class="text-lg font-bold text-ink-on-dark">Crear Nuevo Tenant</h2>
       </div>
     </ng-template>
 
@@ -66,8 +60,8 @@
       novalidate
     >
       <div class="flex flex-1 flex-col gap-2">
-        <label for="tenant-name" class="text-sm font-medium text-(--text-primary)">
-          Nombre <span class="text-red-500">*</span>
+        <label for="tenant-name" class="text-xs font-bold text-ink-on-dark">
+          Nombre <span class="text-danger">*</span>
         </label>
         <input
           pInputText
@@ -77,11 +71,11 @@
           placeholder="Ej: Empresa XYZ"
           class="w-full"
         />
-        <small class="text-[var(--text-muted)]">Nombre descriptivo del tenant</small>
+        <small class="text-ink-muted-on-dark">Nombre descriptivo del tenant</small>
       </div>
       <div class="flex flex-1 flex-col gap-2">
-        <label for="tenant-slug" class="text-sm font-medium text-(--text-primary)">
-          Slug <span class="text-red-500">*</span>
+        <label for="tenant-slug" class="text-xs font-bold text-ink-on-dark">
+          Slug <span class="text-danger">*</span>
         </label>
         <input
           pInputText
@@ -91,7 +85,7 @@
           placeholder="Ej: empresa-xyz"
           class="w-full"
         />
-        <small class="text-[var(--text-muted)]">Identificador URL (minúsculas, sin espacios)</small>
+        <small class="text-ink-muted-on-dark">Identificador URL (minúsculas, sin espacios)</small>
       </div>
       <p-button
         type="submit"
@@ -107,28 +101,24 @@
   <!-- Tenants Table -->
   @if (loading()) {
     <div
-      class="flex flex-col items-center gap-4 rounded-xl border border-[var(--surface-200)] bg-[var(--surface-0)] py-16"
+      class="flex flex-col items-center gap-4 rounded-xl border border-surface-border bg-surface py-16"
     >
       <p-progressSpinner styleClass="w-12 h-12" strokeWidth="3" />
-      <p class="text-sm text-(--text-secondary)">Cargando tenants...</p>
+      <p class="text-sm text-ink-muted-on-dark">Cargando tenants...</p>
     </div>
   } @else {
     <p-card>
       <ng-template #header>
-        <div
-          class="flex items-center justify-between border-b border-[var(--surface-200)] px-6 py-4"
-        >
+        <div class="flex items-center justify-between border-b border-surface-border px-6 py-4">
           <div class="flex items-center gap-3">
-            <div
-              class="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--primary-100)]"
-            >
-              <i class="pi pi-list text-lg text-[var(--primary-600)]"></i>
+            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-2">
+              <i class="pi pi-list text-lg text-accent"></i>
             </div>
             <div>
-              <h2 class="text-lg font-semibold text-(--text-primary)">Lista de Tenants</h2>
-              <p class="text-sm text-(--text-secondary)">
-                {{ tenants().length }} tenants configurados · sus modelos y API keys se gestionan
-                en la pestaña "Modelos"
+              <h2 class="text-lg font-bold text-ink-on-dark">Lista de Tenants</h2>
+              <p class="text-sm text-ink-muted-on-dark">
+                {{ tenants().length }} tenants configurados · sus modelos y API keys se gestionan en
+                la pestaña "Modelos"
               </p>
             </div>
           </div>
@@ -155,24 +145,24 @@
             <td>
               <div class="flex items-center gap-3">
                 <div
-                  class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--primary-500)] to-[var(--primary-700)] text-white"
+                  class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2 text-ink-muted-on-dark"
                 >
                   <i class="pi pi-building text-sm"></i>
                 </div>
                 <div>
-                  <p class="font-semibold text-(--text-primary)">{{ tenant.name }}</p>
-                  <p class="text-xs text-[var(--text-muted)]">ID: {{ tenant.id }}</p>
+                  <p class="font-bold text-ink-on-dark">{{ tenant.name }}</p>
+                  <p class="text-xs text-ink-muted-on-dark">ID: {{ tenant.id }}</p>
                 </div>
               </div>
             </td>
             <td>
               <code
-                class="rounded-lg bg-[var(--surface-100)] px-3 py-1.5 text-sm font-medium text-[var(--primary-600)]"
+                class="rounded-lg bg-surface-2 px-3 py-1.5 text-sm font-bold text-ink-on-dark"
                 >{{ tenant.slug }}</code
               >
             </td>
             <td>
-              <span class="text-sm text-(--text-secondary)">
+              <span class="text-sm text-ink-muted-on-dark">
                 {{ tenant.created_at | date: 'medium' }}
               </span>
             </td>
@@ -194,7 +184,7 @@
                   (onClick)="confirmDeactivate(tenant)"
                 />
               } @else {
-                <span class="text-sm text-[var(--text-muted)]">—</span>
+                <span class="text-sm text-ink-muted-on-dark">—</span>
               }
             </td>
           </tr>
@@ -203,14 +193,12 @@
           <tr>
             <td colspan="5">
               <div class="flex flex-col items-center gap-4 py-16">
-                <div
-                  class="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--surface-100)]"
-                >
-                  <i class="pi pi-building text-3xl text-[var(--surface-400)]"></i>
+                <div class="flex h-16 w-16 items-center justify-center rounded-full bg-surface-2">
+                  <i class="pi pi-building text-3xl text-ink-muted-on-dark"></i>
                 </div>
                 <div class="text-center">
-                  <p class="font-medium text-(--text-primary)">No hay tenants configurados</p>
-                  <p class="mt-1 text-sm text-(--text-secondary)">
+                  <p class="font-bold text-ink-on-dark">No hay tenants configurados</p>
+                  <p class="mt-1 text-sm text-ink-muted-on-dark">
                     Crea tu primer tenant para comenzar
                   </p>
                 </div>

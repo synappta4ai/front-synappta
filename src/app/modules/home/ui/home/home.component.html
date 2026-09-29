@@ -1,37 +1,26 @@
-<section class="relative overflow-hidden bg-[var(--primary-950)] text-white">
-  <div
-    class="absolute inset-0 [background-image:radial-gradient(circle,rgba(255,255,255,0.06)_1px,transparent_1px)] [background-size:32px_32px]"
-    aria-hidden="true"
-  ></div>
-  <div
-    class="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-[var(--primary-500)] opacity-20 blur-3xl"
-    aria-hidden="true"
-  ></div>
-  <div
-    class="absolute -bottom-32 -left-32 h-96 w-96 rounded-full bg-[var(--primary-700)] opacity-20 blur-3xl"
-    aria-hidden="true"
-  ></div>
+<section class="relative overflow-hidden bg-surface text-ink-on-dark">
+  <div class="absolute inset-0" aria-hidden="true"></div>
+  <div class="absolute -right-32 -top-32 h-96 w-96 rounded-full" aria-hidden="true"></div>
+  <div class="absolute -bottom-32 -left-32 h-96 w-96 rounded-full" aria-hidden="true"></div>
 
   <div class="relative mx-auto max-w-6xl px-4 py-24 sm:px-6 sm:py-32 lg:py-40">
-    <p class="mb-4 text-sm font-semibold uppercase tracking-widest text-[var(--primary-300)]">
-      Estudio creativo
-    </p>
-    <h1 class="max-w-3xl text-4xl font-semibold tracking-tight sm:text-6xl lg:text-7xl">
-      Hacemos que las ideas <span class="text-[var(--primary-400)]">conecten</span>
+    <p class="mb-4 text-sm font-bold text-ink-muted-on-dark">Estudio creativo</p>
+    <h1 class="max-w-3xl text-4xl font-black sm:text-6xl lg:text-7xl">
+      Hacemos que las ideas <span class="text-accent">conecten</span>
     </h1>
-    <p class="mt-6 max-w-xl text-lg text-[var(--secondary-300)]">
+    <p class="mt-6 max-w-xl text-lg font-normal text-ink-muted-on-dark">
       Synapta es un estudio de producción de video y estrategia de contenido. Del concepto a la
       distribución, ayudamos a las marcas a contar historias que importan.
     </p>
     <div class="mt-10 flex flex-col gap-3 sm:flex-row">
       <a
         routerLink="/agency"
-        class="inline-flex items-center justify-center rounded-lg bg-white px-6 py-3 text-sm font-semibold text-[var(--primary-950)] transition-colors hover:bg-[var(--primary-100)]"
+        class="inline-flex items-center justify-center rounded-lg bg-accent px-6 py-3 text-sm font-bold text-on-accent transition-colors hover:bg-accent-hover"
         >Conoce la agencia</a
       >
       <a
         routerLink="/video"
-        class="inline-flex items-center justify-center rounded-lg border border-[var(--primary-400)] px-6 py-3 text-sm font-semibold text-[var(--primary-200)] transition-colors hover:border-[var(--primary-300)] hover:text-white"
+        class="inline-flex items-center justify-center rounded-lg border border-surface-border-strong px-6 py-3 text-sm font-bold text-ink-on-dark transition-colors hover:bg-surface-hover"
         >Ver videos</a
       >
     </div>
@@ -39,21 +28,17 @@
 </section>
 
 <section class="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
-  <p class="mb-3 text-sm font-semibold uppercase tracking-widest text-[var(--primary-600)]">
-    Servicios
-  </p>
-  <h2 class="max-w-xl text-3xl font-semibold tracking-tight text-(--text-primary) sm:text-4xl">
-    Qué hacemos
-  </h2>
+  <p class="mb-3 text-sm font-bold text-ink-muted">Servicios</p>
+  <h2 class="max-w-xl text-3xl font-bold text-ink sm:text-4xl">Qué hacemos</h2>
   <div class="mt-12 grid gap-6 md:grid-cols-3">
     @for (service of services; track service.title) {
       <article
-        class="rounded-2xl border border-(--border-color) bg-[var(--surface-0)] p-6 transition-shadow hover:shadow-md"
+        class="rounded-2xl border border-surface-border bg-surface p-6 transition-shadow hover:shadow-md"
       >
-        <h3 class="text-lg font-semibold text-[var(--primary-600)] dark:text-[var(--primary-400)]">
+        <h3 class="text-lg font-bold text-ink-on-dark">
           {{ service.title }}
         </h3>
-        <p class="mt-2 text-sm leading-relaxed text-(--text-secondary)">
+        <p class="mt-2 text-sm leading-relaxed text-ink-muted-on-dark">
           {{ service.description }}
         </p>
       </article>
@@ -61,16 +46,14 @@
   </div>
 </section>
 
-<section class="bg-[var(--primary-600)] text-white">
+<section class="bg-accent text-on-accent">
   <div
     class="mx-auto flex max-w-6xl flex-col items-start gap-6 px-4 py-16 sm:px-6 md:flex-row md:items-center md:justify-between lg:py-20"
   >
-    <h2 class="max-w-md text-3xl font-semibold tracking-tight sm:text-4xl">
-      ¿Tienes un proyecto en mente?
-    </h2>
+    <h2 class="max-w-md text-3xl font-bold sm:text-4xl">¿Tienes un proyecto en mente?</h2>
     <a
       href="mailto:hola@synapta.com"
-      class="inline-flex items-center justify-center rounded-lg bg-white px-6 py-3 text-sm font-semibold text-[var(--primary-700)] transition-colors hover:bg-[var(--primary-50)]"
+      class="inline-flex items-center justify-center rounded-lg bg-surface px-6 py-3 text-sm font-bold text-ink-on-dark transition-colors hover:bg-surface-hover"
       >Escribenos</a
     >
   </div>

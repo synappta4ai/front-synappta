@@ -62,7 +62,8 @@ export const routes: Routes = [
       {
         path: 'projects',
         canActivate: [authGuard],
-        loadChildren: () => import('@modules/projects/projects.routes').then((m) => m.projectsRoutes),
+        loadChildren: () =>
+          import('@modules/projects/projects.routes').then((m) => m.projectsRoutes),
       },
       {
         path: 'admin',

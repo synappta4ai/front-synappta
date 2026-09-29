@@ -2,7 +2,7 @@
   @switch (errorKey()) {
     @case ('required') {
       @if (!omitErrors().includes(errorKey() ?? '')) {
-        <span class="text-red-500 text-sm block">
+        <span class="text-danger text-sm block">
           {{
             required()
               ? (required() | translate: errorParams())
@@ -13,7 +13,7 @@
     }
     @case ('maxlength') {
       @if (!omitErrors().includes(errorKey() ?? '')) {
-        <span class="text-red-500 text-sm block">
+        <span class="text-danger text-sm block">
           {{
             maxlength()
               ? (maxlength() | translate: errorParams())
@@ -24,7 +24,7 @@
     }
     @case ('minlength') {
       @if (!omitErrors().includes(errorKey() ?? '')) {
-        <span class="text-red-500 text-sm block">
+        <span class="text-danger text-sm block">
           {{
             minlength()
               ? (minlength() | translate: errorParams())
@@ -35,7 +35,7 @@
     }
     @case ('pattern') {
       @if (!omitErrors().includes(errorKey() ?? '')) {
-        <span class="text-red-500 text-sm block">
+        <span class="text-danger text-sm block">
           {{
             pattern()
               ? (pattern() | translate: errorParams())
@@ -46,7 +46,7 @@
     }
     @case ('email') {
       @if (!omitErrors().includes(errorKey() ?? '')) {
-        <span class="text-red-500 text-sm block">
+        <span class="text-danger text-sm block">
           {{
             email()
               ? (email() | translate: errorParams())
@@ -57,7 +57,7 @@
     }
     @case ('min') {
       @if (!omitErrors().includes(errorKey() ?? '')) {
-        <span class="text-red-500 text-sm block">
+        <span class="text-danger text-sm block">
           {{
             min()
               ? (min() | translate: errorParams())
@@ -68,7 +68,7 @@
     }
     @case ('max') {
       @if (!omitErrors().includes(errorKey() ?? '')) {
-        <span class="text-red-500 text-sm block">
+        <span class="text-danger text-sm block">
           {{
             max()
               ? (max() | translate: errorParams())
@@ -79,7 +79,7 @@
     }
     @case ('unique') {
       @if (!omitErrors().includes(errorKey() ?? '')) {
-        <span class="text-red-500 text-sm block">
+        <span class="text-danger text-sm block">
           {{
             unique()
               ? (unique() | translate: errorParams())
@@ -91,14 +91,14 @@
   }
 } @else {
   @if (errorKey() === customErrorType() && !omitErrors().includes(errorKey() ?? '')) {
-    <span class="text-red-500 text-sm block">
+    <span class="text-danger text-sm block">
       {{ customErrorMessage() | translate: errorParams() }}
     </span>
   }
 
   @for (error of customErrors(); track error.type) {
     @if (errorKey() === error.type) {
-      <span class="text-red-500 text-sm block">
+      <span class="text-danger text-sm block">
         {{ error.message | translate: errorParams() }}
       </span>
     }

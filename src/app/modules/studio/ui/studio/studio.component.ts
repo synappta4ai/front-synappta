@@ -1,4 +1,15 @@
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, signal, viewChild, ViewChild, ElementRef } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  inject,
+  signal,
+  viewChild,
+  ViewChild,
+  ElementRef,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { catchError, EMPTY, finalize } from 'rxjs';
 
@@ -45,7 +56,19 @@ const REF_SLOT_DEFS: RefSlotDef[] = [
 
 @Component({
   selector: 'app-studio',
-  imports: [FormsModule, Button, Dialog, Popover, Select, PrimeTemplate, Tag, Tooltip, Message, ServerUrlPipe, AssetPickerDialogComponent],
+  imports: [
+    FormsModule,
+    Button,
+    Dialog,
+    Popover,
+    Select,
+    PrimeTemplate,
+    Tag,
+    Tooltip,
+    Message,
+    ServerUrlPipe,
+    AssetPickerDialogComponent,
+  ],
   templateUrl: './studio.component.html',
   styleUrl: './studio.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -61,8 +84,12 @@ export class StudioComponent {
   protected readonly loadingModels = signal(false);
   protected readonly selectedModel = signal<StudioModel | null>(null);
 
-  protected readonly videoModels = computed(() => this.models().filter((m) => m.modality === 'video'));
-  protected readonly imageModels = computed(() => this.models().filter((m) => m.modality === 'image'));
+  protected readonly videoModels = computed(() =>
+    this.models().filter((m) => m.modality === 'video'),
+  );
+  protected readonly imageModels = computed(() =>
+    this.models().filter((m) => m.modality === 'image'),
+  );
 
   protected readonly mode = signal<'video' | 'image'>('video');
   protected readonly modeModels = computed(() =>
@@ -85,7 +112,10 @@ export class StudioComponent {
     { label: '3:4', value: '3:4', w: 3, h: 4 },
     { label: '21:9', value: '21:9', w: 21, h: 9 },
   ];
-  protected readonly ratioSelectOptions = this.ratioOptions.map((r) => ({ label: r.label, value: r.value }));
+  protected readonly ratioSelectOptions = this.ratioOptions.map((r) => ({
+    label: r.label,
+    value: r.value,
+  }));
 
   /**
    * Ratio dibujado en el canvas del visor: el del take seleccionado cuando
@@ -193,22 +223,43 @@ export class StudioComponent {
 
   /** Filas del menú @: recursos (imágenes) + ingredientes, filtradas por query. */
   protected readonly mentionRows = computed<
-    { kind: 'asset' | 'ingredient'; asset?: FileAsset; ingredient?: Ingredient; wrapper?: IngredientWithFiles; label: string }[]
+    {
+      kind: 'asset' | 'ingredient';
+      asset?: FileAsset;
+      ingredient?: Ingredient;
+      wrapper?: IngredientWithFiles;
+      label: string;
+    }[]
   >(() => {
     const query = this.mentionQuery().trim().toLowerCase();
     const mentionedAssets = new Set(this.mentionedAssets().map((a) => a.id));
     const mentionedIngs = new Set(this.mentionedIngredients().map((i) => i.ingredient.name));
     const matches = (label: string) => !query || label.toLowerCase().includes(query);
 
-    const rows: { kind: 'asset' | 'ingredient'; asset?: FileAsset; ingredient?: Ingredient; wrapper?: IngredientWithFiles; label: string }[] = [];
+    const rows: {
+      kind: 'asset' | 'ingredient';
+      asset?: FileAsset;
+      ingredient?: Ingredient;
+      wrapper?: IngredientWithFiles;
+      label: string;
+    }[] = [];
     for (const a of this.assets()) {
-      if ((a.mime_type ?? '').startsWith('image/') && !mentionedAssets.has(a.id) && matches(a.filename)) {
+      if (
+        (a.mime_type ?? '').startsWith('image/') &&
+        !mentionedAssets.has(a.id) &&
+        matches(a.filename)
+      ) {
         rows.push({ kind: 'asset', asset: a, label: a.filename });
       }
     }
     for (const ing of this.ingredients()) {
       if (!mentionedIngs.has(ing.ingredient.name) && matches(ing.ingredient.name)) {
-        rows.push({ kind: 'ingredient', ingredient: ing.ingredient, wrapper: ing, label: ing.ingredient.name });
+        rows.push({
+          kind: 'ingredient',
+          ingredient: ing.ingredient,
+          wrapper: ing,
+          label: ing.ingredient.name,
+        });
       }
     }
     return rows.slice(0, 8);
@@ -261,7 +312,10 @@ export class StudioComponent {
    */
   private scanMentionTokens(
     text: string,
-    byName: Map<string, { kind: 'asset' | 'ingredient'; asset?: FileAsset; ing?: IngredientWithFiles }>,
+    byName: Map<
+      string,
+      { kind: 'asset' | 'ingredient'; asset?: FileAsset; ing?: IngredientWithFiles }
+    >,
   ): { start: number; end: number; name: string }[] {
     if (!byName.size) {
       return [];
@@ -333,7 +387,11 @@ export class StudioComponent {
       if (entry.kind === 'asset' && entry.asset && !seenAssets.has(entry.asset.id)) {
         seenAssets.add(entry.asset.id);
         foundAssets.push(entry.asset);
-      } else if (entry.kind === 'ingredient' && entry.ing && !seenIngs.has(entry.ing.ingredient.id)) {
+      } else if (
+        entry.kind === 'ingredient' &&
+        entry.ing &&
+        !seenIngs.has(entry.ing.ingredient.id)
+      ) {
         seenIngs.add(entry.ing.ingredient.id);
         foundIngs.push(entry.ing);
       }
@@ -365,7 +423,9 @@ export class StudioComponent {
         format: file.format,
         storage: null,
         trashed: false,
-        ingredients: [{ id: ing.ingredient.id, type: ing.ingredient.type, name: ing.ingredient.name }],
+        ingredients: [
+          { id: ing.ingredient.id, type: ing.ingredient.type, name: ing.ingredient.name },
+        ],
         created_at: '',
         updated_at: '',
       });
@@ -462,9 +522,19 @@ export class StudioComponent {
     const mirror = document.createElement('div');
     const style = getComputedStyle(textarea);
     const props = [
-      'fontFamily', 'fontSize', 'fontWeight', 'letterSpacing', 'lineHeight',
-      'paddingTop', 'paddingLeft', 'paddingRight', 'borderWidth', 'boxSizing',
-      'width', 'whiteSpace', 'wordWrap',
+      'fontFamily',
+      'fontSize',
+      'fontWeight',
+      'letterSpacing',
+      'lineHeight',
+      'paddingTop',
+      'paddingLeft',
+      'paddingRight',
+      'borderWidth',
+      'boxSizing',
+      'width',
+      'whiteSpace',
+      'wordWrap',
     ] as const;
     for (const prop of props) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -487,14 +557,18 @@ export class StudioComponent {
     const styleFloat = parseFloat(style.paddingTop) || 0;
     const left = Math.max(
       0,
-      Math.min(markerRect.left - mirrorRect.left + (parseFloat(style.paddingLeft) || 0), wrapperRect.width - 280),
+      Math.min(
+        markerRect.left - mirrorRect.left + (parseFloat(style.paddingLeft) || 0),
+        wrapperRect.width - 280,
+      ),
     );
     // Línea del caret (top relativo al textarea) + padding + borde del host.
     const caretLineTop = markerRect.top - mirrorRect.top + styleFloat;
     const hostOffsetTop = hostRect.top - wrapperRect.top + (parseFloat(style.borderTopWidth) || 0);
     const below = hostOffsetTop + caretLineTop + 8;
     // Si el menú (240px) no entra por abajo, abrir hacia arriba.
-    const top = below + 240 > wrapperRect.height ? Math.max(0, hostOffsetTop + caretLineTop - 248) : below;
+    const top =
+      below + 240 > wrapperRect.height ? Math.max(0, hostOffsetTop + caretLineTop - 248) : below;
     return { top, left };
   }
 
@@ -622,9 +696,7 @@ export class StudioComponent {
   private loadIngredients(): void {
     this.libraryService
       .listIngredients()
-      .pipe(
-        catchError(() => EMPTY),
-      )
+      .pipe(catchError(() => EMPTY))
       .subscribe((ings) => this.ingredients.set(ings));
   }
 
@@ -727,7 +799,11 @@ export class StudioComponent {
         this.models.set(models);
         // Preselect the lightest downloaded video model for instant play.
         const preferred = models.find(
-          (m) => m.modality === 'video' && m.type === 'downloaded' && m.available && m.name.includes('1.3B'),
+          (m) =>
+            m.modality === 'video' &&
+            m.type === 'downloaded' &&
+            m.available &&
+            m.name.includes('1.3B'),
         );
         if (preferred) {
           this.selectedModel.set(preferred);
@@ -799,9 +875,7 @@ export class StudioComponent {
       }
     });
     this.refSlots.set(slots);
-    this.selectedAssetIds.set(
-      new Set(images.slice(0, this.maxSelectedRefs).map((f) => f.id)),
-    );
+    this.selectedAssetIds.set(new Set(images.slice(0, this.maxSelectedRefs).map((f) => f.id)));
   }
 
   // ─── Mode & model ──────────────────────────────────────────────
@@ -896,7 +970,9 @@ export class StudioComponent {
       next.delete(id);
     } else {
       if (next.size >= this.maxSelectedRefs) {
-        this.flashRefError(`Podés seleccionar hasta ${this.maxSelectedRefs} referencias por generación.`);
+        this.flashRefError(
+          `Podés seleccionar hasta ${this.maxSelectedRefs} referencias por generación.`,
+        );
         return;
       }
       next.add(id);
@@ -1014,11 +1090,7 @@ export class StudioComponent {
 
   // ─── Generate ──────────────────────────────────────────────────
   protected canGenerate(): boolean {
-    return (
-      !!this.selectedModel() &&
-      this.prompt().trim().length > 0 &&
-      !this.submitting()
-    );
+    return !!this.selectedModel() && this.prompt().trim().length > 0 && !this.submitting();
   }
 
   protected generate(): void {
@@ -1043,7 +1115,9 @@ export class StudioComponent {
       }
     }
     const text = mentions.length
-      ? this.stripMentions(rawText).replace(/\s{2,}/g, ' ').trim()
+      ? this.stripMentions(rawText)
+          .replace(/\s{2,}/g, ' ')
+          .trim()
       : rawText;
 
     const ratio = this.ratio();
@@ -1069,7 +1143,11 @@ export class StudioComponent {
 
     // Centralización: la generación se liga al proyecto elegido (o al auto "Studio").
     this.studioService
-      .ensureTakeSlot(`Studio ${new Date().toLocaleDateString()}`, this.takeCode(), this.selectedProjectId() ?? undefined)
+      .ensureTakeSlot(
+        `Studio ${new Date().toLocaleDateString()}`,
+        this.takeCode(),
+        this.selectedProjectId() ?? undefined,
+      )
       .pipe(
         catchError(() => {
           this.error.set('No se pudo preparar el proyecto Studio.');
@@ -1133,7 +1211,9 @@ export class StudioComponent {
     return `STU-${stamp.getFullYear()}${pad(stamp.getMonth() + 1)}${pad(stamp.getDate())}-${pad(stamp.getHours())}${pad(stamp.getMinutes())}`;
   }
 
-  protected takeStatusSeverity(status: StudioTake['status']): 'success' | 'danger' | 'info' | 'warn' | 'secondary' {
+  protected takeStatusSeverity(
+    status: StudioTake['status'],
+  ): 'success' | 'danger' | 'info' | 'warn' | 'secondary' {
     switch (status) {
       case 'succeeded':
         return 'success';

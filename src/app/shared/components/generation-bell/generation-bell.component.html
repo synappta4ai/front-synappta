@@ -30,17 +30,31 @@
     @for (take of visible(); track take.id) {
       <a routerLink="/events" class="pop-item" [class.pop-unread]="store.isUnread(take.id)">
         @if (take.status === 'succeeded' && take.videoUrl) {
-          <video class="pop-thumb" [src]="take.videoUrl | serverUrl" preload="metadata" muted></video>
+          <video
+            class="pop-thumb"
+            [src]="take.videoUrl | serverUrl"
+            preload="metadata"
+            muted
+          ></video>
         } @else {
           <span class="pop-thumb icon" [class.spin]="take.status === 'running'">
-            <i class="pi" [class.pi-spin.pi-spinner]="take.status === 'running'"
-               [class.pi-image]="take.status !== 'running' && take.status !== 'failed' && take.status !== 'cancelled'"></i>
+            <i
+              class="pi"
+              [class.pi-spin.pi-spinner]="take.status === 'running'"
+              [class.pi-image]="
+                take.status !== 'running' && take.status !== 'failed' && take.status !== 'cancelled'
+              "
+            ></i>
           </span>
         }
         <span class="pop-info">
           <span class="pop-title-row">
             <span class="pop-model">{{ take.modelDisplayName }}</span>
-            <p-tag [value]="take.progress + '%'" [severity]="severity(take.status)" styleClass="text-[10px]" />
+            <p-tag
+              [value]="take.progress + '%'"
+              [severity]="severity(take.status)"
+              styleClass="text-xs"
+            />
           </span>
           <span class="pop-prompt">{{ shortPrompt(take.prompt) }}</span>
           @if (take.status === 'running' || take.status === 'queued') {

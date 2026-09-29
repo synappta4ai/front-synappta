@@ -13,7 +13,9 @@ test.describe('admin console', () => {
     const tabs = ['Videos', 'Imágenes', 'Logs'];
     for (const tab of tabs) {
       await page.locator('.p-tab').filter({ hasText: tab }).click();
-      await page.waitForURL(new RegExp(`/admin/${tab === 'Imágenes' ? 'imagens' : tab.toLowerCase()}`));
+      await page.waitForURL(
+        new RegExp(`/admin/${tab === 'Imágenes' ? 'imagens' : tab.toLowerCase()}`),
+      );
       await expect(page.locator('.p-tab.p-tab-active')).toHaveText(new RegExp(tab));
     }
   });

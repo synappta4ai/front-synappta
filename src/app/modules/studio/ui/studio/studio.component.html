@@ -59,11 +59,7 @@
         ></i>
       </button>
       @if (showAssetGallery()) {
-        <button
-          type="button"
-          class="library-picker-btn"
-          (click)="libraryPickerVisible.set(true)"
-        >
+        <button type="button" class="library-picker-btn" (click)="libraryPickerVisible.set(true)">
           <i class="pi pi-folder-open"></i>
           Elegir de la biblioteca
         </button>
@@ -171,11 +167,7 @@
 
         <!-- Menú de candidatos @: recursos + ingredientes de la biblioteca -->
         @if (mentionMenuOpen() && mentionMenuPos(); as menuPos) {
-          <div
-            class="mention-menu"
-            [style.top.px]="menuPos.top"
-            [style.left.px]="menuPos.left"
-          >
+          <div class="mention-menu" [style.top.px]="menuPos.top" [style.left.px]="menuPos.left">
             <p class="mention-menu-title">
               <i class="pi pi-at"></i> Biblioteca: recursos e ingredientes
             </p>
@@ -221,7 +213,11 @@
         <div class="mention-chips">
           @for (asset of mentionedAssets(); track asset.id) {
             <span class="mention-chip" [title]="asset.filename">
-              <img class="mention-chip-thumb" [src]="assetThumbUrl(asset.id)" [alt]="asset.filename" />
+              <img
+                class="mention-chip-thumb"
+                [src]="assetThumbUrl(asset.id)"
+                [alt]="asset.filename"
+              />
               <span class="mention-chip-name">@{{ asset.filename }}</span>
               <button
                 type="button"
@@ -239,7 +235,10 @@
                 <i class="pi {{ ingredientIcon(ing.ingredient.type) }}"></i>
               </span>
               <span class="mention-chip-name">@{{ ing.ingredient.name }}</span>
-              <span class="mention-chip-count">{{ assetsOfIngredientCount(ing) }} {{ assetsOfIngredientCount(ing) === 1 ? 'recurso' : 'recursos' }}</span>
+              <span class="mention-chip-count"
+                >{{ assetsOfIngredientCount(ing) }}
+                {{ assetsOfIngredientCount(ing) === 1 ? 'recurso' : 'recursos' }}</span
+              >
               <button
                 type="button"
                 class="mention-chip-x"
@@ -423,24 +422,20 @@
           <ng-template #item let-m>
             <div class="flex items-center justify-between gap-2 w-full">
               <div class="min-w-0">
-                <p class="font-medium truncate">{{ m.displayName }}</p>
+                <p class="font-bold truncate">{{ m.displayName }}</p>
                 <p class="text-xs opacity-60 truncate">{{ m.name }}</p>
               </div>
               <div class="flex items-center gap-1 shrink-0">
                 @if (m.type === 'downloaded') {
-                  <p-tag value="worker" severity="success" styleClass="text-[10px]" />
+                  <p-tag value="worker" severity="success" styleClass="text-xs" />
                   @if (m.vramGb) {
-                    <p-tag
-                      [value]="m.vramGb + ' GB'"
-                      severity="secondary"
-                      styleClass="text-[10px]"
-                    />
+                    <p-tag [value]="m.vramGb + ' GB'" severity="secondary" styleClass="text-xs" />
                   }
                 } @else {
-                  <p-tag [value]="m.badge" severity="info" styleClass="text-[10px]" />
+                  <p-tag [value]="m.badge" severity="info" styleClass="text-xs" />
                 }
                 @if (!m.available) {
-                  <p-tag value="no disp." severity="danger" styleClass="text-[10px]" />
+                  <p-tag value="no disp." severity="danger" styleClass="text-xs" />
                 }
               </div>
             </div>
@@ -477,42 +472,48 @@
     @if (selectedTake(); as take) {
       <div class="viewer" [style.--canvas-ar]="canvasAr()">
         <div class="viewer-canvas">
-        @switch (take.status) {
-          @case ('succeeded') {
-            @if (mode() === 'video') {
-              <!-- src directo en <video>: mutar un <source> hijo no
+          @switch (take.status) {
+            @case ('succeeded') {
+              @if (mode() === 'video') {
+                <!-- src directo en <video>: mutar un <source> hijo no
                    dispara la recarga al cambiar de take. -->
-              <video controls autoplay loop class="viewer-media" [src]="take.videoUrl | serverUrl"></video>
-            } @else {
-              <img [src]="take.videoUrl | serverUrl" [alt]="take.prompt" class="viewer-media" />
+                <video
+                  controls
+                  autoplay
+                  loop
+                  class="viewer-media"
+                  [src]="take.videoUrl | serverUrl"
+                ></video>
+              } @else {
+                <img [src]="take.videoUrl | serverUrl" [alt]="take.prompt" class="viewer-media" />
+              }
+            }
+            @case ('failed') {
+              <div class="viewer-placeholder error">
+                <i class="pi pi-times-circle text-3xl"></i>
+                <p>La generación falló</p>
+                @if (take.error) {
+                  <p class="small muted">{{ take.error }}</p>
+                }
+              </div>
+            }
+            @case ('cancelled') {
+              <div class="viewer-placeholder">
+                <i class="pi pi-ban text-3xl"></i>
+                <p>Generación cancelada</p>
+              </div>
+            }
+            @default {
+              <div class="viewer-placeholder">
+                <i class="pi pi-spin pi-spinner text-3xl"></i>
+                <p>{{ take.status === 'queued' ? 'En cola…' : 'Generando…' }}</p>
+                <div class="progress-track">
+                  <div class="progress-fill" [style.width.%]="take.progress"></div>
+                </div>
+                <p class="muted small">{{ take.progress }}%</p>
+              </div>
             }
           }
-          @case ('failed') {
-            <div class="viewer-placeholder error">
-              <i class="pi pi-times-circle text-3xl"></i>
-              <p>La generación falló</p>
-              @if (take.error) {
-                <p class="small muted">{{ take.error }}</p>
-              }
-            </div>
-          }
-          @case ('cancelled') {
-            <div class="viewer-placeholder">
-              <i class="pi pi-ban text-3xl"></i>
-              <p>Generación cancelada</p>
-            </div>
-          }
-          @default {
-            <div class="viewer-placeholder">
-              <i class="pi pi-spin pi-spinner text-3xl"></i>
-              <p>{{ take.status === 'queued' ? 'En cola…' : 'Generando…' }}</p>
-              <div class="progress-track">
-                <div class="progress-fill" [style.width.%]="take.progress"></div>
-              </div>
-              <p class="muted small">{{ take.progress }}%</p>
-            </div>
-          }
-        }
         </div>
       </div>
       <div class="viewer-meta">
@@ -576,7 +577,7 @@
               <p-tag
                 [value]="takeStatusLabel(take.status)"
                 [severity]="takeStatusSeverity(take.status)"
-                styleClass="text-[10px]"
+                styleClass="text-xs"
               />
               @if (take.status === 'running' || take.status === 'queued') {
                 <span class="small muted">{{ take.progress }}%</span>
@@ -672,7 +673,12 @@
       }
     </div>
     <ng-template #footer>
-      <p-button label="Cerrar" size="small" [text]="true" (onClick)="projectDialogVisible.set(false)" />
+      <p-button
+        label="Cerrar"
+        size="small"
+        [text]="true"
+        (onClick)="projectDialogVisible.set(false)"
+      />
     </ng-template>
   </p-dialog>
 

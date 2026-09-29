@@ -72,9 +72,10 @@ export const appConfig: ApplicationConfig = {
           models.map((m) => ({
             name: m.name,
             displayName: m.display_name || m.name,
-            type: (m as { type?: string }).type === 'downloaded'
-              ? ('downloaded' as const)
-              : ('api' as const),
+            type:
+              (m as { type?: string }).type === 'downloaded'
+                ? ('downloaded' as const)
+                : ('api' as const),
           })),
         );
         eventsStore.hydrate();

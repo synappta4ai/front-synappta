@@ -41,7 +41,9 @@ export class AdminApiRepository {
   }
 
   listTenantCredentials(id: number): Observable<ApiResponse<TenantCredential[]>> {
-    return this.http.get<ApiResponse<TenantCredential[]>>(`${this.apiUrl}/tenants/${id}/credentials`);
+    return this.http.get<ApiResponse<TenantCredential[]>>(
+      `${this.apiUrl}/tenants/${id}/credentials`,
+    );
   }
 
   upsertTenantCredential(
@@ -62,9 +64,7 @@ export class AdminApiRepository {
 
   /** Usuarios miembros de un tenant (para el selector de logs/modelos). */
   listTenantUsers(id: number): Observable<ApiResponse<TenantUser[]>> {
-    return this.http.get<ApiResponse<TenantUser[]>>(
-      `${this.apiUrl}/admin/tenants/${id}/users`,
-    );
+    return this.http.get<ApiResponse<TenantUser[]>>(`${this.apiUrl}/admin/tenants/${id}/users`);
   }
 
   /** Descarga el archivo de exportación de credenciales (secretos en claro). */
@@ -96,20 +96,32 @@ export class AdminApiRepository {
   }
 
   /** Videos generados completados, con contexto de proyecto/pieza/usuario. */
-  listGeneratedVideos(page = 1, limit = 20, eventId?: string): Observable<ApiResponse<GeneratedVideosPage>> {
+  listGeneratedVideos(
+    page = 1,
+    limit = 20,
+    eventId?: string,
+  ): Observable<ApiResponse<GeneratedVideosPage>> {
     const params: Record<string, number | string> = { page, limit };
     if (eventId) {
       params['event_id'] = eventId;
     }
-    return this.http.get<ApiResponse<GeneratedVideosPage>>(`${this.apiUrl}/agency/videos`, { params });
+    return this.http.get<ApiResponse<GeneratedVideosPage>>(`${this.apiUrl}/agency/videos`, {
+      params,
+    });
   }
 
   /** Imágenes generadas completadas (misma forma que videos). */
-  listGeneratedImages(page = 1, limit = 20, eventId?: string): Observable<ApiResponse<GeneratedImagesPage>> {
+  listGeneratedImages(
+    page = 1,
+    limit = 20,
+    eventId?: string,
+  ): Observable<ApiResponse<GeneratedImagesPage>> {
     const params: Record<string, number | string> = { page, limit };
     if (eventId) {
       params['event_id'] = eventId;
     }
-    return this.http.get<ApiResponse<GeneratedImagesPage>>(`${this.apiUrl}/agency/images`, { params });
+    return this.http.get<ApiResponse<GeneratedImagesPage>>(`${this.apiUrl}/agency/images`, {
+      params,
+    });
   }
 }

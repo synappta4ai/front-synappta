@@ -9,36 +9,36 @@
   @if (resultUrl(); as url) {
     <p-card styleClass="mb-6">
       <ng-template #header>
-        <div class="flex items-center gap-3 border-b border-green-200 bg-green-50 px-6 py-4">
-          <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100">
-            <i class="pi pi-check-circle text-lg text-green-600"></i>
+        <div class="flex items-center gap-3 border-b border-surface-border bg-surface-2 px-6 py-4">
+          <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-surface">
+            <i class="pi pi-check-circle text-lg text-success"></i>
           </div>
           <div>
-            <h2 class="text-lg font-semibold text-green-800">¡Video generado exitosamente!</h2>
-            <p class="text-sm text-green-600">Tu video está listo para descargar</p>
+            <h2 class="text-lg font-bold text-success">¡Video generado exitosamente!</h2>
+            <p class="text-sm text-ink-muted-on-dark">Tu video está listo para descargar</p>
           </div>
         </div>
       </ng-template>
 
       <div class="flex flex-col gap-4">
-        <video controls class="w-full rounded-lg shadow-lg">
+        <video controls class="w-full rounded-lg shadow-sm">
           <source [src]="url | serverUrl" type="video/mp4" />
           Tu navegador no soporta video HTML5.
         </video>
 
-        <div class="flex items-center justify-between rounded-lg bg-[var(--surface-50)] p-4">
+        <div class="flex items-center justify-between rounded-lg bg-surface-2 p-4">
           <div class="flex items-center gap-3">
-            <i class="pi pi-file-video text-xl text-[var(--primary-500)]"></i>
+            <i class="pi pi-file-video text-xl text-accent"></i>
             <div>
-              <p class="font-medium text-(--text-primary)">Video generado</p>
-              <p class="text-sm text-(--text-secondary)">Haz clic derecho para descargar</p>
+              <p class="font-bold text-ink-on-dark">Video generado</p>
+              <p class="text-sm text-ink-muted-on-dark">Haz clic derecho para descargar</p>
             </div>
           </div>
           <a
             [href]="url | serverUrl"
             target="_blank"
             rel="noopener noreferrer"
-            class="inline-flex items-center gap-2 rounded-lg bg-[var(--primary-500)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--primary-600)]"
+            class="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-xs font-bold text-on-accent transition-colors hover:bg-accent-hover"
           >
             <i class="pi pi-external-link"></i>
             Abrir en nueva pestaña
@@ -51,13 +51,13 @@
   <!-- Generation Form -->
   <p-card>
     <ng-template #header>
-      <div class="flex items-center gap-3 border-b border-[var(--surface-200)] px-6 py-4">
-        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--primary-100)]">
-          <i class="pi pi-video text-lg text-[var(--primary-600)]"></i>
+      <div class="flex items-center gap-3 border-b border-surface-border px-6 py-4">
+        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-2">
+          <i class="pi pi-video text-lg text-accent"></i>
         </div>
         <div>
-          <h2 class="text-lg font-semibold text-(--text-primary)">Configurar Generación</h2>
-          <p class="text-sm text-(--text-secondary)">Define los parámetros para tu video</p>
+          <h2 class="text-lg font-bold text-ink-on-dark">Configurar Generación</h2>
+          <p class="text-sm text-ink-muted-on-dark">Define los parámetros para tu video</p>
         </div>
       </div>
     </ng-template>
@@ -65,16 +65,16 @@
     <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-6" novalidate>
       <!-- Model Selection -->
       <div class="flex flex-col gap-2">
-        <label for="model" class="text-sm font-medium text-(--text-primary)">
-          Modelo de Video <span class="text-red-500">*</span>
+        <label for="model" class="text-xs font-bold text-ink-on-dark">
+          Modelo de Video <span class="text-danger">*</span>
         </label>
 
         @if (loadingModels()) {
           <div
-            class="flex items-center gap-2 rounded-lg border border-[var(--surface-200)] bg-[var(--surface-50)] p-3"
+            class="flex items-center gap-2 rounded-lg border border-surface-border bg-surface-2 p-3"
           >
-            <i class="pi pi-spin pi-spinner text-[var(--primary-500)]"></i>
-            <span class="text-sm text-(--text-secondary)">Cargando modelos...</span>
+            <i class="pi pi-spin pi-spinner text-accent"></i>
+            <span class="text-sm text-ink-muted-on-dark">Cargando modelos...</span>
           </div>
         } @else {
           <p-select
@@ -94,7 +94,7 @@
             <ng-template #selectedItem let-model>
               @if (model) {
                 <div class="flex items-center gap-2">
-                  <i class="pi pi-video text-(--primary-500)"></i>
+                  <i class="pi pi-video text-accent"></i>
                   <span>{{ model.display_name }}</span>
                   <p-tag [value]="model.modality" severity="info" styleClass="text-xs" />
                 </div>
@@ -103,14 +103,12 @@
             <ng-template #item let-model>
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                  <div
-                    class="flex h-8 w-8 items-center justify-center rounded-lg bg-(--primary-100)"
-                  >
-                    <i class="pi pi-video text-sm text-(--primary-600)"></i>
+                  <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-surface-2">
+                    <i class="pi pi-video text-sm text-accent"></i>
                   </div>
                   <div>
-                    <p class="font-medium text-(--text-primary)">{{ model.display_name }}</p>
-                    <p class="text-xs text-(--text-muted)">{{ model.name }}</p>
+                    <p class="font-bold text-ink-on-dark">{{ model.display_name }}</p>
+                    <p class="text-xs text-ink-muted-on-dark">{{ model.name }}</p>
                   </div>
                 </div>
                 <p-tag
@@ -125,48 +123,42 @@
 
         <!-- Model Info Card -->
         @if (selectedModel(); as model) {
-          <div
-            class="mt-2 rounded-lg border border-[var(--primary-200)] bg-[var(--primary-50)] p-4"
-          >
+          <div class="mt-2 rounded-lg border border-surface-border bg-surface-2 p-4">
             <div class="mb-3 flex items-center gap-2">
-              <i class="pi pi-info-circle text-[var(--primary-600)]"></i>
-              <span class="text-sm font-semibold text-[var(--primary-700)]"
-                >Información del Modelo</span
-              >
+              <i class="pi pi-info-circle text-accent"></i>
+              <span class="text-xs font-bold text-ink-on-dark">Información del Modelo</span>
             </div>
             <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <div>
-                <p class="text-xs font-medium text-[var(--text-muted)]">Proveedor</p>
-                <p class="text-sm font-medium text-(--text-primary)">
+                <p class="text-xs font-bold text-ink-muted-on-dark">Proveedor</p>
+                <p class="text-sm font-bold text-ink-on-dark">
                   {{ model.credential_provider }}
                 </p>
               </div>
               <div>
-                <p class="text-xs font-medium text-[var(--text-muted)]">Generador</p>
-                <p class="text-sm font-medium text-(--text-primary)">{{ model.generator }}</p>
+                <p class="text-xs font-bold text-ink-muted-on-dark">Generador</p>
+                <p class="text-sm font-bold text-ink-on-dark">{{ model.generator }}</p>
               </div>
               @if (model.defaults.ratios?.length) {
                 <div>
-                  <p class="text-xs font-medium text-[var(--text-muted)]">Ratios</p>
+                  <p class="text-xs font-bold text-ink-muted-on-dark">Ratios</p>
                   <div class="mt-1 flex flex-wrap gap-1">
                     @for (ratio of model.defaults.ratios; track ratio) {
-                      <span
-                        class="rounded bg-[var(--surface-100)] px-1.5 py-0.5 text-xs text-(--text-secondary)"
-                        >{{ ratio }}</span
-                      >
+                      <span class="rounded bg-surface px-1.5 py-0.5 text-xs text-ink-on-dark">{{
+                        ratio
+                      }}</span>
                     }
                   </div>
                 </div>
               }
               @if (model.defaults.resolutions?.length) {
                 <div>
-                  <p class="text-xs font-medium text-[var(--text-muted)]">Resoluciones</p>
+                  <p class="text-xs font-bold text-ink-muted-on-dark">Resoluciones</p>
                   <div class="mt-1 flex flex-wrap gap-1">
                     @for (res of model.defaults.resolutions; track res) {
-                      <span
-                        class="rounded bg-[var(--surface-100)] px-1.5 py-0.5 text-xs text-(--text-secondary)"
-                        >{{ res }}</span
-                      >
+                      <span class="rounded bg-surface px-1.5 py-0.5 text-xs text-ink-on-dark">{{
+                        res
+                      }}</span>
                     }
                   </div>
                 </div>
@@ -178,8 +170,8 @@
 
       <!-- Prompt -->
       <div class="flex flex-col gap-2">
-        <label for="prompt" class="text-sm font-medium text-(--text-primary)">
-          Prompt <span class="text-red-500">*</span>
+        <label for="prompt" class="text-xs font-bold text-ink-on-dark">
+          Prompt <span class="text-danger">*</span>
         </label>
         <textarea
           pTextarea
@@ -189,26 +181,27 @@
           placeholder="Describe la escena que quieres generar con detalle..."
           class="w-full"
         ></textarea>
-        <small class="text-[var(--text-muted)]"
-          >Sé específico para obtener mejores resultados</small
-        >
-      </div>      <!-- Project / Piece selection -->
-      <div class="rounded-xl border border-[var(--surface-200)] bg-[var(--surface-50)] p-5">
-        <h3 class="mb-4 flex items-center gap-2 text-sm font-semibold text-(--text-primary)">
-          <i class="pi pi-folder text-[var(--primary-500)]"></i>
+        <small class="text-ink-muted-on-dark">Sé específico para obtener mejores resultados</small>
+      </div>
+      <!-- Project / Piece selection -->
+      <div class="rounded-xl border border-surface-border bg-surface-2 p-5">
+        <h3 class="mb-4 flex items-center gap-2 text-xs font-bold text-ink-on-dark">
+          <i class="pi pi-folder text-ink-muted-on-dark"></i>
           Proyecto y pieza
         </h3>
         <div class="grid gap-5 sm:grid-cols-2">
           <div class="flex flex-col gap-2">
             <div class="flex h-9 items-center">
-              <label for="projectSelect" class="text-sm font-medium text-(--text-primary)">
-                Proyecto <span class="text-red-500">*</span>
+              <label for="projectSelect" class="text-xs font-bold text-ink-on-dark">
+                Proyecto <span class="text-danger">*</span>
               </label>
             </div>
             @if (loadingProjects()) {
-              <div class="flex items-center gap-2 rounded-lg border border-[var(--surface-200)] bg-[var(--surface-0)] p-3">
-                <i class="pi pi-spin pi-spinner text-[var(--primary-500)]"></i>
-                <span class="text-sm text-(--text-secondary)">Cargando proyectos...</span>
+              <div
+                class="flex items-center gap-2 rounded-lg border border-surface-border bg-surface p-3"
+              >
+                <i class="pi pi-spin pi-spinner text-accent"></i>
+                <span class="text-sm text-ink-muted-on-dark">Cargando proyectos...</span>
               </div>
             } @else {
               <p-select
@@ -227,25 +220,27 @@
               >
                 <ng-template #item let-project>
                   <div class="flex items-center gap-2">
-                    <i class="pi pi-folder text-sm text-(--primary-500)"></i>
+                    <i class="pi pi-folder text-sm text-accent"></i>
                     <span>{{ project.name }}</span>
                     @if (project.program_count) {
-                      <span class="ml-auto text-xs text-(--text-muted)">{{ project.program_count }} programas</span>
+                      <span class="ml-auto text-xs text-ink-muted-on-dark"
+                        >{{ project.program_count }} programas</span
+                      >
                     }
                   </div>
                 </ng-template>
               </p-select>
             }
-            <small class="text-[var(--text-muted)]">
+            <small class="text-ink-muted-on-dark">
               Administra proyectos en
-              <a class="text-[var(--primary-600)] underline" href="/projects">/projects</a>
+              <a class="text-accent underline" href="/projects">/projects</a>
             </small>
           </div>
 
           <div class="flex flex-col gap-2">
             <div class="flex h-9 items-center justify-between">
-              <label for="pieceSelect" class="text-sm font-medium text-(--text-primary)">
-                Pieza <span class="text-red-500">*</span>
+              <label for="pieceSelect" class="text-xs font-bold text-ink-on-dark">
+                Pieza <span class="text-danger">*</span>
               </label>
               @if (selectedProject()) {
                 <p-button
@@ -258,18 +253,30 @@
               }
             </div>
             @if (!selectedProject()) {
-              <div class="rounded-lg border border-dashed border-[var(--surface-200)] bg-[var(--surface-0)] p-3 text-center text-sm text-(--text-muted)">
+              <div
+                class="rounded-lg border border-dashed border-surface-border bg-surface p-3 text-center text-sm text-ink-muted-on-dark"
+              >
                 Selecciona primero un proyecto
               </div>
             } @else if (loadingPieces()) {
-              <div class="flex items-center gap-2 rounded-lg border border-[var(--surface-200)] bg-[var(--surface-0)] p-3">
-                <i class="pi pi-spin pi-spinner text-[var(--primary-500)]"></i>
-                <span class="text-sm text-(--text-secondary)">Cargando piezas...</span>
+              <div
+                class="flex items-center gap-2 rounded-lg border border-surface-border bg-surface p-3"
+              >
+                <i class="pi pi-spin pi-spinner text-accent"></i>
+                <span class="text-sm text-ink-muted-on-dark">Cargando piezas...</span>
               </div>
             } @else if (pieces().length === 0) {
-              <div class="rounded-lg border border-dashed border-[var(--surface-200)] bg-[var(--surface-0)] p-3 text-center">
-                <p class="text-sm text-(--text-muted)">Este proyecto no tiene piezas.</p>
-                <p-button label="Crear la primera pieza" icon="pi pi-plus" text size="small" (onClick)="openPieceDialog()" />
+              <div
+                class="rounded-lg border border-dashed border-surface-border bg-surface p-3 text-center"
+              >
+                <p class="text-sm text-ink-muted-on-dark">Este proyecto no tiene piezas.</p>
+                <p-button
+                  label="Crear la primera pieza"
+                  icon="pi pi-plus"
+                  text
+                  size="small"
+                  (onClick)="openPieceDialog()"
+                />
               </div>
             } @else {
               <p-select
@@ -288,17 +295,20 @@
                 <ng-template #selectedItem let-piece>
                   @if (piece) {
                     <div class="flex items-center gap-2">
-                      <i class="pi pi-file-video text-sm text-(--primary-500)"></i>
+                      <i class="pi pi-file-video text-sm text-accent"></i>
                       <span>#{{ piece.number }} {{ piece.name || piece.piece_code }}</span>
                     </div>
                   }
                 </ng-template>
                 <ng-template #item let-piece>
                   <div class="flex items-center gap-2">
-                    <span class="font-medium text-(--text-primary)">#{{ piece.number }}</span>
+                    <span class="font-bold text-ink-on-dark">#{{ piece.number }}</span>
                     <span>{{ piece.name || piece.piece_code || 'Pieza' }}</span>
                     @if (piece.piece_code) {
-                      <code class="ml-auto rounded bg-[var(--surface-100)] px-1.5 py-0.5 text-xs text-(--text-secondary)">{{ piece.piece_code }}</code>
+                      <code
+                        class="ml-auto rounded bg-surface-2 px-1.5 py-0.5 text-xs text-ink-muted-on-dark"
+                        >{{ piece.piece_code }}</code
+                      >
                     }
                   </div>
                 </ng-template>
@@ -322,8 +332,8 @@
         <!-- Imágenes de referencia del proyecto (centralización de recursos) -->
         <div class="mt-5">
           <div class="flex h-9 items-center justify-between">
-            <label class="text-sm font-medium text-(--text-primary)">
-              <i class="pi pi-images mr-1 text-[var(--primary-500)]"></i>
+            <label class="text-xs font-bold text-ink-on-dark">
+              <i class="pi pi-images mr-1 text-ink-muted-on-dark"></i>
               Imágenes de referencia del proyecto
             </label>
             @if (selectedProject()) {
@@ -335,26 +345,46 @@
                   [text]="true"
                   (onClick)="libraryPickerVisible.set(true)"
                 />
-                <label class="p-button p-button-text p-button-sm" [class.p-disabled]="uploadingRef()">
-                  <i class="pi" [class.pi-spin.pi-spinner]="uploadingRef()" [class.pi-upload]="!uploadingRef()"></i>
+                <label
+                  class="p-button p-button-text p-button-sm"
+                  [class.p-disabled]="uploadingRef()"
+                >
+                  <i
+                    class="pi"
+                    [class.pi-spin.pi-spinner]="uploadingRef()"
+                    [class.pi-upload]="!uploadingRef()"
+                  ></i>
                   <span class="ml-1">Subir</span>
-                  <input type="file" accept="image/png,image/jpeg" class="hidden" (change)="onRefPicked($event)" [disabled]="uploadingRef()" />
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg"
+                    class="hidden"
+                    (change)="onRefPicked($event)"
+                    [disabled]="uploadingRef()"
+                  />
                 </label>
               </div>
             }
           </div>
           @if (!selectedProject()) {
-            <div class="rounded-lg border border-dashed border-[var(--surface-200)] bg-[var(--surface-0)] p-3 text-center text-sm text-(--text-muted)">
+            <div
+              class="rounded-lg border border-dashed border-surface-border bg-surface p-3 text-center text-sm text-ink-muted-on-dark"
+            >
               Selecciona un proyecto para ver y subir sus imágenes de referencia
             </div>
           } @else if (loadingRefs()) {
-            <div class="flex items-center gap-2 rounded-lg border border-[var(--surface-200)] bg-[var(--surface-0)] p-3">
-              <i class="pi pi-spin pi-spinner text-[var(--primary-500)]"></i>
-              <span class="text-sm text-(--text-secondary)">Cargando referencias...</span>
+            <div
+              class="flex items-center gap-2 rounded-lg border border-surface-border bg-surface p-3"
+            >
+              <i class="pi pi-spin pi-spinner text-accent"></i>
+              <span class="text-sm text-ink-muted-on-dark">Cargando referencias...</span>
             </div>
           } @else if (refImages().length === 0) {
-            <div class="rounded-lg border border-dashed border-[var(--surface-200)] bg-[var(--surface-0)] p-3 text-center text-sm text-(--text-muted)">
-              Este proyecto todavía no tiene imágenes asignadas. Sube una o asígnalas desde Admin → Imágenes.
+            <div
+              class="rounded-lg border border-dashed border-surface-border bg-surface p-3 text-center text-sm text-ink-muted-on-dark"
+            >
+              Este proyecto todavía no tiene imágenes asignadas. Sube una o asígnalas desde Admin →
+              Imágenes.
             </div>
           } @else {
             <div class="flex flex-wrap gap-2">
@@ -362,30 +392,45 @@
                 <button
                   type="button"
                   class="relative overflow-hidden rounded-lg border-2 transition-colors"
-                  [style.borderColor]="selectedRefIds().has(ref.id) ? 'var(--primary-500)' : 'transparent'"
+                  [style.borderColor]="
+                    selectedRefIds().has(ref.id) ? 'var(--color-accent)' : 'transparent'
+                  "
                   (click)="toggleRef(ref.id)"
                   [title]="ref.filename"
                 >
                   @if (ref.thumbnail_url || ref.url) {
-                    <img [src]="(ref.thumbnail_url || ref.url) | serverUrl" [alt]="ref.filename" class="h-16 w-16 object-cover" />
+                    <img
+                      [src]="ref.thumbnail_url || ref.url | serverUrl"
+                      [alt]="ref.filename"
+                      class="h-16 w-16 object-cover"
+                    />
                   } @else {
-                    <span class="flex h-16 w-16 items-center justify-center"><i class="pi pi-image text-xl"></i></span>
+                    <span class="flex h-16 w-16 items-center justify-center"
+                      ><i class="pi pi-image text-xl"></i
+                    ></span>
                   }
                   @if (selectedRefIds().has(ref.id)) {
-                    <span class="absolute right-0.5 top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--primary-500)] text-[10px] text-white">
+                    <span
+                      class="absolute right-0.5 top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-accent text-xs text-on-accent"
+                    >
                       <i class="pi pi-check"></i>
                     </span>
                   }
                 </button>
               }
             </div>
-            <small class="text-[var(--text-muted)]">{{ selectedRefIds().size }} seleccionadas (máx. {{ maxSelectedRefs }}) — se envían como referencia al modelo.</small>
+            <small class="text-ink-muted-on-dark"
+              >{{ selectedRefIds().size }} seleccionadas (máx. {{ maxSelectedRefs }}) — se envían
+              como referencia al modelo.</small
+            >
           }
         </div>
         <div class="mt-5 grid items-start gap-5 sm:grid-cols-2">
           <div class="flex flex-col gap-2">
             <div class="flex h-9 items-center">
-              <label for="generationNumber" class="text-sm font-medium text-(--text-primary)">Generation #</label>
+              <label for="generationNumber" class="text-xs font-bold text-ink-on-dark"
+                >Generation #</label
+              >
             </div>
             <p-inputNumber
               inputId="generationNumber"
@@ -397,10 +442,10 @@
           </div>
           <div class="flex flex-col gap-2">
             <div class="flex h-9 items-center justify-between">
-              <label for="duration" class="text-sm font-medium text-(--text-primary)">Duración (seg)</label>
-              <span
-                class="rounded bg-[var(--primary-100)] px-2 py-0.5 text-xs font-semibold text-[var(--primary-700)]"
+              <label for="duration" class="text-xs font-bold text-ink-on-dark"
+                >Duración (seg)</label
               >
+              <span class="rounded bg-surface px-2 py-0.5 text-xs font-bold text-accent">
                 {{ form.controls.duration.value }}s
               </span>
             </div>
@@ -408,13 +453,13 @@
               <input
                 id="duration"
                 type="range"
-                class="w-full accent-[var(--primary-500)]"
+                class="w-full accent-accent"
                 [min]="durationRange().min"
                 [max]="durationRange().max"
                 [value]="form.controls.duration.value"
                 (input)="onDurationInput($any($event.target).value)"
               />
-              <div class="flex items-center justify-between px-0.5 text-[0.65rem] text-[var(--text-muted)]">
+              <div class="flex items-center justify-between px-0.5 text-xs text-ink-muted-on-dark">
                 @for (tick of durationTicks(); track tick) {
                   <span>{{ tick }}s</span>
                 }
@@ -430,24 +475,26 @@
                 class="w-full"
               />
             }
-            <small class="text-[var(--text-muted)]">
+            <small class="text-ink-muted-on-dark">
               {{ selectedModel()?.display_name || 'El modelo' }} soporta
               {{ durationRange().min }}–{{ durationRange().max }}s
             </small>
           </div>
         </div>
         @if (selectedProject() && selectedPiece()) {
-          <p class="mt-3 flex items-center gap-2 text-xs text-(--text-muted)">
-            <i class="pi pi-check-circle text-green-500"></i>
+          <p class="mt-3 flex items-center gap-2 text-xs text-ink-muted-on-dark">
+            <i class="pi pi-check-circle text-success"></i>
             Se generará como
-            <code class="rounded bg-[var(--surface-100)] px-1.5 py-0.5">{{ selectedPiece()?.piece_code || 'SIN-CODIGO' }}</code>
+            <code class="rounded bg-surface px-1.5 py-0.5">{{
+              selectedPiece()?.piece_code || 'SIN-CODIGO'
+            }}</code>
             · generación #{{ form.controls.generationNumber.value }}
           </p>
         }
       </div>
 
-      <div class="flex items-center justify-between border-t border-[var(--surface-200)] pt-4">
-        <p class="text-sm text-[var(--text-muted)]">
+      <div class="flex items-center justify-between border-t border-surface-border pt-4">
+        <p class="text-sm text-ink-muted-on-dark">
           <i class="pi pi-info-circle mr-1"></i>
           La generación puede tomar varios minutos
         </p>
@@ -469,28 +516,22 @@
 
   <!-- Polling Status -->
   @if (polling()) {
-    <div
-      class="mt-6 rounded-xl border border-[var(--primary-200)] bg-gradient-to-r from-[var(--primary-50)] to-[var(--surface-50)] p-8"
-    >
+    <div class="mt-6 rounded-xl border border-surface-border bg-surface p-8">
       <div class="flex flex-col items-center gap-4 text-center">
         <div class="relative">
           <p-progressSpinner styleClass="w-16 h-16" strokeWidth="2" />
           <div class="absolute inset-0 flex items-center justify-center">
-            <span class="text-sm font-bold text-(--text-primary)">{{ progress() }}%</span>
+            <span class="text-sm font-bold text-ink-on-dark">{{ progress() }}%</span>
           </div>
         </div>
         <div>
-          <p class="text-lg font-semibold text-(--text-primary)">Generando video…</p>
-          <p class="mt-1 text-sm text-(--text-secondary)">
+          <p class="text-lg font-bold text-ink-on-dark">Generando video…</p>
+          <p class="mt-1 text-sm text-ink-muted-on-dark">
             Esto puede tomar varios minutos. No cierres esta página.
           </p>
         </div>
-        <p-progressBar
-          [value]="progress()"
-          [showValue]="true"
-          styleClass="w-full max-w-md"
-        />
-        <div class="flex items-center gap-2 text-sm text-[var(--primary-600)]">
+        <p-progressBar [value]="progress()" [showValue]="true" styleClass="w-full max-w-md" />
+        <div class="flex items-center gap-2 text-sm text-accent">
           <i class="pi pi-spin pi-spinner"></i>
           <span>Procesando con IA — {{ progress() }}% estimado</span>
         </div>
@@ -501,7 +542,8 @@
   <!-- Quick-create piece dialog -->
   <p-dialog
     header="Nueva pieza"
-    [visible]="pieceDialogVisible()" (visibleChange)="pieceDialogVisible.set($event)"
+    [visible]="pieceDialogVisible()"
+    (visibleChange)="pieceDialogVisible.set($event)"
     [modal]="true"
     [style]="{ width: 'min(92vw, 30rem)' }"
     [draggable]="false"
@@ -509,14 +551,14 @@
   >
     <div class="flex flex-col gap-4 pt-2">
       @if (selectedProject(); as project) {
-        <p class="text-sm text-(--text-secondary)">
-          Proyecto: <strong class="text-(--text-primary)">{{ project.name }}</strong>
+        <p class="text-sm text-ink-muted-on-dark">
+          Proyecto: <strong class="text-ink-on-dark">{{ project.name }}</strong>
         </p>
       }
       <div class="grid gap-4 sm:grid-cols-2">
         <div class="flex flex-col gap-2">
-          <label for="qc-name" class="text-sm font-medium text-(--text-primary)">
-            Nombre <span class="text-red-500">*</span>
+          <label for="qc-name" class="text-xs font-bold text-ink-on-dark">
+            Nombre <span class="text-danger">*</span>
           </label>
           <input
             pInputText
@@ -528,7 +570,7 @@
           />
         </div>
         <div class="flex flex-col gap-2">
-          <label for="qc-code" class="text-sm font-medium text-(--text-primary)">Código</label>
+          <label for="qc-code" class="text-xs font-bold text-ink-on-dark">Código</label>
           <input
             pInputText
             id="qc-code"
@@ -540,10 +582,17 @@
         </div>
       </div>
       <div class="flex flex-col gap-2">
-        <label for="qc-program" class="text-sm font-medium text-(--text-primary)">Programa</label>
+        <label for="qc-program" class="text-xs font-bold text-ink-on-dark">Programa</label>
         <p-select
           inputId="qc-program"
-          [options]="$any(programs().map((p) => ({ label: '#' + p.number + (p.name ? ' ' + p.name : ''), value: p.id })))"
+          [options]="
+            $any(
+              programs().map((p) => ({
+                label: '#' + p.number + (p.name ? ' ' + p.name : ''),
+                value: p.id,
+              }))
+            )
+          "
           [ngModel]="newPiece().program_id"
           (ngModelChange)="newPiece().program_id = $event"
           placeholder="Sin programa"
@@ -554,7 +603,9 @@
       </div>
       <div class="grid gap-4 sm:grid-cols-2">
         <div class="flex flex-col gap-2">
-          <label for="qc-duration" class="text-sm font-medium text-(--text-primary)">Duración planeada (s)</label>
+          <label for="qc-duration" class="text-xs font-bold text-ink-on-dark"
+            >Duración planeada (s)</label
+          >
           <p-inputNumber
             inputId="qc-duration"
             [ngModel]="newPiece().duration"
@@ -564,7 +615,9 @@
           />
         </div>
         <div class="flex flex-col gap-2">
-          <label for="qc-ratio" class="text-sm font-medium text-(--text-primary)">Relación de aspecto</label>
+          <label for="qc-ratio" class="text-xs font-bold text-ink-on-dark"
+            >Relación de aspecto</label
+          >
           <p-select
             inputId="qc-ratio"
             [options]="$any(aspectRatioOptions)"
@@ -578,7 +631,12 @@
       </div>
     </div>
     <ng-template #footer>
-      <p-button label="Cancelar" severity="secondary" text (onClick)="pieceDialogVisible.set(false)" />
+      <p-button
+        label="Cancelar"
+        severity="secondary"
+        text
+        (onClick)="pieceDialogVisible.set(false)"
+      />
       <p-button
         label="Crear y seleccionar"
         icon="pi pi-check"

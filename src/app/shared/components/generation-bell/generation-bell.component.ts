@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { Button } from 'primeng/button';
@@ -45,7 +52,9 @@ export class GenerationBellComponent {
     this.popoverRef().toggle(event);
   }
 
-  protected severity(status: StudioTake['status']): 'success' | 'danger' | 'info' | 'warn' | 'secondary' {
+  protected severity(
+    status: StudioTake['status'],
+  ): 'success' | 'danger' | 'info' | 'warn' | 'secondary' {
     switch (status) {
       case 'succeeded':
         return 'success';
