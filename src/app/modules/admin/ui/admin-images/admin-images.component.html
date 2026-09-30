@@ -1,10 +1,10 @@
 <div animate.enter="anim-page">
   @if (error(); as message) {
     <div class="error-banner">
-      <i class="pi pi-exclamation-triangle"></i>
+      <i class="md md-warning"></i>
       <span>{{ message }}</span>
       <p-button
-        icon="pi pi-times"
+        icon="md md-close"
         size="small"
         [text]="true"
         [rounded]="true"
@@ -37,7 +37,7 @@
       </p-selectButton>
 
       <p-iconfield iconPosition="left" styleClass="images-search">
-        <p-inputicon styleClass="pi pi-search" />
+        <p-inputicon styleClass="md md-search" />
         <input
           pInputText
           type="text"
@@ -54,7 +54,7 @@
     <div class="images-toolbar__group">
       @if (isSuperadmin() && tenantSlug()) {
         <span class="tenant-chip" [title]="'Recursos del tenant «' + tenantSlug() + '»'">
-          <i class="pi pi-building"></i>
+          <i class="md md-business"></i>
           {{ tenantSlug() }}
         </span>
       }
@@ -93,7 +93,7 @@
     <!-- ══════════ Generated images grid ══════════ -->
     @if (filtered().length === 0) {
       <div class="empty-state">
-        <div class="empty-icon"><i class="pi pi-image"></i></div>
+        <div class="empty-icon"><i class="md md-image"></i></div>
         <h3>No hay imágenes generadas</h3>
         <p>Las imágenes completadas aparecerán aquí con su proyecto e información</p>
       </div>
@@ -124,7 +124,7 @@
                 <div
                   class="flex h-10 w-10 items-center justify-center rounded-full bg-ink/90 text-accent"
                 >
-                  <i class="pi pi-eye"></i>
+                  <i class="md md-visibility"></i>
                 </div>
               </div>
             </div>
@@ -156,8 +156,9 @@
           (keydown.enter)="typedInput.click()"
         >
           <i
-            class="pi"
-            [class.pi-spin.pi-spinner]="uploadingType() === btn.type"
+            class="md"
+            [class.md-autorenew]="uploadingType() === btn.type"
+            [class.md-spin]="uploadingType() === btn.type"
             [class]="uploadingType() === btn.type ? '' : btn.icon"
           ></i>
           {{
@@ -187,7 +188,7 @@
           [class.active]="ingFilter() === opt.value"
           (click)="ingFilter.set(opt.value)"
         >
-          <i class="pi {{ opt.icon }}"></i>
+          <i class="md {{ opt.icon }}"></i>
           {{ opt.label }}
           <span class="count" [class.badge]="ingFilter() === opt.value">{{
             ingCounts()[opt.value] ?? 0
@@ -205,7 +206,7 @@
         </span>
         <p-button
           label="Asignar a proyecto"
-          icon="pi pi-briefcase"
+          icon="md md-work"
           size="small"
           (onClick)="openAssign()"
           styleClass="active:scale-[0.98]"
@@ -213,7 +214,7 @@
         @if (filterProjectId(); as filteredProject) {
           <p-button
             label="Quitar de «{{ filterProjectName() }}»"
-            icon="pi pi-minus"
+            icon="md md-remove"
             severity="warn"
             size="small"
             [text]="true"
@@ -222,7 +223,7 @@
         }
         <p-button
           label="Cancelar"
-          icon="pi pi-times"
+          icon="md md-close"
           severity="secondary"
           size="small"
           [text]="true"
@@ -232,7 +233,7 @@
     }
     @if (filteredAssets().length === 0) {
       <div class="empty-state">
-        <div class="empty-icon"><i class="pi pi-upload"></i></div>
+        <div class="empty-icon"><i class="md md-upload"></i></div>
         <h3>No hay recursos subidos</h3>
         <p>Los archivos que subas (referencias del Studio, etc.) aparecerán aquí</p>
       </div>
@@ -266,7 +267,7 @@
                 ></video>
               } @else {
                 <div class="flex h-full w-full items-center justify-center">
-                  <i class="pi pi-file text-2xl text-ink-muted-on-dark"></i>
+                  <i class="md md-description text-2xl text-ink-muted-on-dark"></i>
                 </div>
               }
               @if (asset.trashed) {
@@ -289,11 +290,11 @@
                 (click)="$event.stopPropagation(); toggleAssetSel(asset.id)"
                 (keydown.enter)="$event.stopPropagation()"
               >
-                <i class="pi text-xs" [class.pi-check]="selectedAssetIds().has(asset.id)"></i>
+                <i class="md text-xs" [class.md-check]="selectedAssetIds().has(asset.id)"></i>
               </button>
               @if (!filterProjectId() && (asset.project_ids?.length ?? 0) > 0) {
                 <span class="overlay-badge" style="bottom: 8px; left: 8px">
-                  <i class="pi pi-briefcase" style="font-size: 12px"></i>
+                  <i class="md md-work" style="font-size: 12px"></i>
                   {{ asset.project_ids!.length }}
                 </span>
               }
@@ -328,7 +329,7 @@
       </span>
       <div class="flex gap-2">
         <p-button
-          icon="pi pi-chevron-left"
+          icon="md md-chevron_left"
           size="small"
           severity="secondary"
           pTooltip="Página anterior"
@@ -337,7 +338,7 @@
           (onClick)="prevPage()"
         />
         <p-button
-          icon="pi pi-chevron-right"
+          icon="md md-chevron_right"
           size="small"
           severity="secondary"
           pTooltip="Página siguiente"
@@ -365,7 +366,7 @@
           <div
             class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2 text-accent"
           >
-            <i class="pi pi-image text-sm"></i>
+            <i class="md md-image text-sm"></i>
           </div>
           <div class="min-w-0">
             <h3 class="truncate text-lg font-bold text-ink-on-dark">
@@ -500,7 +501,7 @@
               />
               <p-button
                 [label]="editIngId() ? 'Guardar' : 'Asignar'"
-                icon="pi pi-check"
+                icon="md md-check"
                 size="small"
                 [loading]="savingIng()"
                 (onClick)="saveIngredient()"
@@ -516,7 +517,7 @@
         </div>
         <div class="mt-4 flex justify-end">
           <p-button
-            icon="pi pi-trash"
+            icon="md md-delete"
             label="Eliminar recurso"
             severity="danger"
             size="small"
@@ -564,7 +565,7 @@
         <span pTooltip="Elegí un proyecto para asignar" showDelay="400" class="inline-flex">
           <p-button
             label="Asignar"
-            icon="pi pi-check"
+            icon="md md-check"
             size="small"
             [disabled]="!assignProjectId()"
             [loading]="assigning()"

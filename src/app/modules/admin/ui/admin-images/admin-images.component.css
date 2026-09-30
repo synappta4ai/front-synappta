@@ -134,7 +134,7 @@
   border-bottom-color: var(--color-ink);
 }
 
-.type-tab .pi {
+.type-tab .md {
   font-size: 12px;
 }
 
@@ -270,7 +270,7 @@
   white-space: nowrap;
 }
 
-.tenant-chip .pi {
+.tenant-chip .md {
   color: var(--color-ink-muted-on-dark);
 }
 
@@ -314,7 +314,7 @@
   font-weight: 700;
 }
 
-.error-banner .pi {
+.error-banner .md {
   flex-shrink: 0;
 }
 

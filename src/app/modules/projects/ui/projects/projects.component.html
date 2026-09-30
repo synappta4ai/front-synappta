@@ -18,7 +18,7 @@
           <div class="flex items-center justify-between border-b border-surface-border px-6 py-4">
             <div class="flex items-center gap-3">
               <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
-                <i class="pi pi-briefcase text-lg text-accent"></i>
+                <i class="md md-work text-lg text-accent"></i>
               </div>
               <div>
                 <h2 class="text-lg font-bold text-ink-on-dark">Proyectos</h2>
@@ -27,7 +27,7 @@
             </div>
             <p-button
               label="Nuevo"
-              icon="pi pi-plus"
+              icon="md md-add"
               size="small"
               (onClick)="openProjectDialog()"
               styleClass="active:scale-[0.98]"
@@ -45,7 +45,7 @@
         } @else if (projects().length === 0) {
           <div class="flex flex-col items-center gap-3 py-12 text-center">
             <div class="flex h-14 w-14 items-center justify-center rounded-full bg-surface-2">
-              <i class="pi pi-briefcase text-2xl text-ink-muted-on-dark"></i>
+              <i class="md md-work text-2xl text-ink-muted-on-dark"></i>
             </div>
             <p class="font-bold text-ink-on-dark">Aún no hay proyectos</p>
             <p class="text-sm text-ink-muted-on-dark">
@@ -53,7 +53,7 @@
             </p>
             <p-button
               label="Crear proyecto"
-              icon="pi pi-plus"
+              icon="md md-add"
               (onClick)="openProjectDialog()"
               styleClass="active:scale-[0.98]"
             />
@@ -99,7 +99,7 @@
                     <p-tag value="Inactivo" severity="warn" />
                   }
                   <p-button
-                    icon="pi pi-chevron-right"
+                    icon="md md-chevron_right"
                     severity="secondary"
                     text
                     size="small"
@@ -108,7 +108,7 @@
                     tooltipPosition="left"
                   />
                   <p-button
-                    icon="pi pi-trash"
+                    icon="md md-delete"
                     severity="danger"
                     text
                     size="small"
@@ -134,7 +134,7 @@
             <div class="flex items-center justify-between border-b border-surface-border px-6 py-4">
               <div class="flex items-center gap-3">
                 <p-button
-                  icon="pi pi-arrow-left"
+                  icon="md md-arrow_back"
                   severity="secondary"
                   text
                   (onClick)="closeDetail()"
@@ -143,7 +143,7 @@
                   tooltipPosition="bottom"
                 />
                 <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
-                  <i class="pi pi-folder-open text-lg text-accent"></i>
+                  <i class="md md-folder_open text-lg text-accent"></i>
                 </div>
                 <div>
                   <h2 class="text-lg font-bold text-ink-on-dark">{{ project.name }}</h2>
@@ -156,14 +156,14 @@
               <div class="flex items-center gap-2">
                 <p-button
                   label="Programa"
-                  icon="pi pi-plus"
+                  icon="md md-add"
                   severity="secondary"
                   size="small"
                   (onClick)="openProgramDialog()"
                 />
                 <p-button
                   label="Pieza"
-                  icon="pi pi-plus"
+                  icon="md md-add"
                   severity="secondary"
                   size="small"
                   (onClick)="openPieceDialog()"
@@ -182,7 +182,7 @@
           } @else if (programs().length === 0) {
             <div class="flex flex-col items-center gap-3 py-12 text-center">
               <div class="flex h-14 w-14 items-center justify-center rounded-full bg-surface-2">
-                <i class="pi pi-list text-2xl text-ink-muted-on-dark"></i>
+                <i class="md md-list text-2xl text-ink-muted-on-dark"></i>
               </div>
               <p class="font-bold text-ink-on-dark">Sin programas todavía</p>
               <p class="text-sm text-ink-muted-on-dark">
@@ -190,7 +190,7 @@
               </p>
               <p-button
                 label="Crear programa"
-                icon="pi pi-plus"
+                icon="md md-add"
                 (onClick)="openProgramDialog()"
                 styleClass="active:scale-[0.98]"
               />
@@ -218,13 +218,13 @@
                     <div class="flex items-center gap-1">
                       <p-button
                         label="Pieza"
-                        icon="pi pi-plus"
+                        icon="md md-add"
                         text
                         size="small"
                         (onClick)="openPieceDialog(pw.program.id)"
                       />
                       <p-button
-                        icon="pi pi-trash"
+                        icon="md md-delete"
                         severity="danger"
                         text
                         size="small"
@@ -274,7 +274,7 @@
                           <div class="flex shrink-0 items-center gap-1">
                             <p-button
                               label="Generar"
-                              icon="pi pi-play"
+                              icon="md md-play_arrow"
                               text
                               size="small"
                               pTooltip="Generar en /video con esta pieza"
@@ -283,7 +283,7 @@
                               (keydown.enter)="$event.stopPropagation()"
                             />
                             <p-button
-                              icon="pi pi-trash"
+                              icon="md md-delete"
                               severity="danger"
                               text
                               size="small"
@@ -365,7 +365,7 @@
       <span pTooltip="Escribí un nombre para crear el proyecto" showDelay="400" class="inline-flex">
         <p-button
           label="Crear"
-          icon="pi pi-check"
+          icon="md md-check"
           [loading]="saving()"
           [disabled]="!newProject().name.trim()"
           (onClick)="saveProject()"
@@ -433,7 +433,7 @@
       />
       <p-button
         label="Crear"
-        icon="pi pi-check"
+        icon="md md-check"
         [loading]="saving()"
         (onClick)="saveProgram()"
         styleClass="active:scale-[0.98]"
@@ -574,7 +574,7 @@
       />
       <p-button
         label="Crear"
-        icon="pi pi-check"
+        icon="md md-check"
         [loading]="saving()"
         (onClick)="savePiece()"
         styleClass="active:scale-[0.98]"

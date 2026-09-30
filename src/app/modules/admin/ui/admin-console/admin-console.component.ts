@@ -23,16 +23,16 @@ export class AdminConsoleComponent {
 
   protected readonly tabItems = computed(() => {
     const items = [
-      { value: 'models', label: 'Modelos', icon: 'pi pi-microchip', routerLink: '/admin/models' },
-      { value: 'videos', label: 'Videos', icon: 'pi pi-video', routerLink: '/admin/videos' },
-      { value: 'imagens', label: 'Imágenes', icon: 'pi pi-image', routerLink: '/admin/imagens' },
-      { value: 'logs', label: 'Logs', icon: 'pi pi-list', routerLink: '/admin/logs' },
+      { value: 'models', label: 'Modelos', icon: 'md md-memory', routerLink: '/admin/models' },
+      { value: 'videos', label: 'Videos', icon: 'md md-videocam', routerLink: '/admin/videos' },
+      { value: 'imagens', label: 'Imágenes', icon: 'md md-image', routerLink: '/admin/imagens' },
+      { value: 'logs', label: 'Logs', icon: 'md md-list', routerLink: '/admin/logs' },
     ];
     if (this.isSuperadmin()) {
       items.push({
         value: 'tenants',
         label: 'Tenants',
-        icon: 'pi pi-building',
+        icon: 'md md-business',
         routerLink: '/admin/tenants',
       });
     }

@@ -168,7 +168,7 @@ export class ProjectsComponent {
     this.confirmationService.confirm({
       message: `¿Eliminar el proyecto "${project.name}"? Se eliminarán también sus programas y piezas.`,
       header: 'Eliminar proyecto',
-      icon: 'pi pi-exclamation-triangle',
+      icon: 'md md-warning',
       acceptButtonProps: { label: 'Eliminar', severity: 'danger' },
       rejectButtonProps: { label: 'Cancelar', severity: 'secondary' },
       accept: () => {
@@ -260,7 +260,7 @@ export class ProjectsComponent {
     this.confirmationService.confirm({
       message: `¿Eliminar el programa #${program.number}${program.name ? ` "${program.name}"` : ''}?`,
       header: 'Eliminar programa',
-      icon: 'pi pi-exclamation-triangle',
+      icon: 'md md-warning',
       acceptButtonProps: { label: 'Eliminar', severity: 'danger' },
       rejectButtonProps: { label: 'Cancelar', severity: 'secondary' },
       accept: () => {
@@ -329,7 +329,7 @@ export class ProjectsComponent {
     this.confirmationService.confirm({
       message: `¿Eliminar la pieza #${piece.number}${piece.name ? ` "${piece.name}"` : ''}?`,
       header: 'Eliminar pieza',
-      icon: 'pi pi-exclamation-triangle',
+      icon: 'md md-warning',
       acceptButtonProps: { label: 'Eliminar', severity: 'danger' },
       rejectButtonProps: { label: 'Cancelar', severity: 'secondary' },
       accept: () => {

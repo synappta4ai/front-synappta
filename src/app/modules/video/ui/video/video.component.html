@@ -11,7 +11,7 @@
       <ng-template #header>
         <div class="flex items-center gap-3 border-b border-surface-border bg-surface-2 px-6 py-4">
           <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface">
-            <i class="pi pi-check-circle text-lg text-success"></i>
+            <i class="md md-check_circle text-lg text-success"></i>
           </div>
           <div>
             <h2 class="text-lg font-bold text-success">¡Video generado exitosamente!</h2>
@@ -28,7 +28,7 @@
 
         <div class="flex items-center justify-between rounded-xl bg-surface-2 p-4">
           <div class="flex items-center gap-3">
-            <i class="pi pi-file-video text-xl text-accent"></i>
+            <i class="md md-video_file text-xl text-accent"></i>
             <div>
               <p class="font-bold text-ink-on-dark">Video generado</p>
               <p class="text-sm text-ink-muted-on-dark">Haz clic derecho para descargar</p>
@@ -40,7 +40,7 @@
             rel="noopener noreferrer"
             class="inline-flex items-center gap-2 rounded-xl bg-accent px-4 py-2 text-xs font-bold text-on-accent transition-colors hover:bg-accent-hover active:scale-[0.98]"
           >
-            <i class="pi pi-external-link"></i>
+            <i class="md md-open_in_new"></i>
             Abrir en nueva pestaña
           </a>
         </div>
@@ -53,7 +53,7 @@
     <ng-template #header>
       <div class="flex items-center gap-3 border-b border-surface-border px-6 py-4">
         <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
-          <i class="pi pi-video text-lg text-accent"></i>
+          <i class="md md-videocam text-lg text-accent"></i>
         </div>
         <div>
           <h2 class="text-lg font-bold text-ink-on-dark">Configurar Generación</h2>
@@ -95,7 +95,7 @@
             <ng-template #selectedItem let-model>
               @if (model) {
                 <div class="flex items-center gap-2">
-                  <i class="pi pi-video text-accent"></i>
+                  <i class="md md-videocam text-accent"></i>
                   <span>{{ model.display_name }}</span>
                   <p-tag [value]="model.modality" severity="info" styleClass="text-xs" />
                 </div>
@@ -105,7 +105,7 @@
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
                   <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-surface-2">
-                    <i class="pi pi-video text-sm text-accent"></i>
+                    <i class="md md-videocam text-sm text-accent"></i>
                   </div>
                   <div>
                     <p class="font-bold text-ink-on-dark">{{ model.display_name }}</p>
@@ -126,7 +126,7 @@
         @if (selectedModel(); as model) {
           <div class="mt-2 rounded-2xl border border-surface-border bg-surface-2 p-4">
             <div class="mb-3 flex items-center gap-2">
-              <i class="pi pi-info-circle text-accent"></i>
+              <i class="md md-info text-accent"></i>
               <span class="text-xs font-bold text-ink-on-dark">Información del Modelo</span>
             </div>
             <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -189,7 +189,7 @@
       <!-- Project / Piece selection -->
       <div class="rounded-2xl border border-surface-border bg-surface-2 p-5">
         <h3 class="mb-4 flex items-center gap-2 text-xs font-bold text-ink-on-dark">
-          <i class="pi pi-folder text-ink-muted-on-dark"></i>
+          <i class="md md-folder text-ink-muted-on-dark"></i>
           Proyecto y pieza
         </h3>
         <div class="grid gap-5 sm:grid-cols-2">
@@ -224,7 +224,7 @@
               >
                 <ng-template #item let-project>
                   <div class="flex items-center gap-2">
-                    <i class="pi pi-folder text-sm text-accent"></i>
+                    <i class="md md-folder text-sm text-accent"></i>
                     <span>{{ project.name }}</span>
                     @if (project.program_count) {
                       <span class="ml-auto text-xs text-ink-muted-on-dark"
@@ -249,7 +249,7 @@
               @if (selectedProject()) {
                 <p-button
                   label="Nueva pieza"
-                  icon="pi pi-plus"
+                  icon="md md-add"
                   text
                   size="small"
                   (onClick)="openPieceDialog()"
@@ -277,7 +277,7 @@
                 <p class="text-sm text-ink-muted-on-dark">Este proyecto no tiene piezas.</p>
                 <p-button
                   label="Crear la primera pieza"
-                  icon="pi pi-plus"
+                  icon="md md-add"
                   text
                   size="small"
                   (onClick)="openPieceDialog()"
@@ -300,7 +300,7 @@
                 <ng-template #selectedItem let-piece>
                   @if (piece) {
                     <div class="flex items-center gap-2">
-                      <i class="pi pi-file-video text-sm text-accent"></i>
+                      <i class="md md-video_file text-sm text-accent"></i>
                       <span>#{{ piece.number }} {{ piece.name || piece.piece_code }}</span>
                     </div>
                   }
@@ -322,13 +322,17 @@
             @if (selectedPiece(); as piece) {
               <div class="flex flex-wrap items-center gap-2">
                 @if (piece.piece_code) {
-                  <p-tag icon="pi pi-tag" [value]="piece.piece_code" severity="info" />
+                  <p-tag icon="md md-label" [value]="piece.piece_code" severity="info" />
                 }
                 @if (piece.duration) {
-                  <p-tag icon="pi pi-clock" [value]="piece.duration + 's'" />
+                  <p-tag icon="md md-schedule" [value]="piece.duration + 's'" />
                 }
                 @if (piece.aspect_ratio) {
-                  <p-tag icon="pi pi-desktop" [value]="piece.aspect_ratio" severity="secondary" />
+                  <p-tag
+                    icon="md md-desktop_windows"
+                    [value]="piece.aspect_ratio"
+                    severity="secondary"
+                  />
                 }
               </div>
             }
@@ -338,14 +342,14 @@
         <div class="mt-5">
           <div class="flex h-9 items-center justify-between">
             <label class="text-xs font-bold text-ink-on-dark">
-              <i class="pi pi-images mr-1 text-ink-muted-on-dark"></i>
+              <i class="md md-photo_library mr-1 text-ink-muted-on-dark"></i>
               Imágenes de referencia del proyecto
             </label>
             @if (selectedProject()) {
               <div class="flex items-center gap-1">
                 <p-button
                   label="Biblioteca"
-                  icon="pi pi-folder-open"
+                  icon="md md-folder_open"
                   size="small"
                   [text]="true"
                   (onClick)="libraryPickerVisible.set(true)"
@@ -359,9 +363,10 @@
                   (keydown.enter)="refInput.click()"
                 >
                   <i
-                    class="pi"
-                    [class.pi-spin.pi-spinner]="uploadingRef()"
-                    [class.pi-upload]="!uploadingRef()"
+                    class="md"
+                    [class.md-spin]="uploadingRef()"
+                    [class.md-autorenew]="uploadingRef()"
+                    [class.md-upload]="!uploadingRef()"
                   ></i>
                   <span class="ml-1">Subir</span>
                   <input
@@ -421,14 +426,14 @@
                     />
                   } @else {
                     <span class="flex h-16 w-16 items-center justify-center"
-                      ><i class="pi pi-image text-xl"></i
+                      ><i class="md md-image text-xl"></i
                     ></span>
                   }
                   @if (selectedRefIds().has(ref.id)) {
                     <span
                       class="absolute right-0.5 top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-accent text-xs text-on-accent"
                     >
-                      <i class="pi pi-check"></i>
+                      <i class="md md-check"></i>
                     </span>
                   }
                 </button>
@@ -498,7 +503,7 @@
         </div>
         @if (selectedProject() && selectedPiece()) {
           <p class="mt-3 flex items-center gap-2 text-xs text-ink-muted-on-dark">
-            <i class="pi pi-check-circle text-success"></i>
+            <i class="md md-check_circle text-success"></i>
             Se generará como
             <code class="rounded-full bg-surface px-1.5 py-0.5">{{
               selectedPiece()?.piece_code || 'SIN-CODIGO'
@@ -510,14 +515,14 @@
 
       <div class="flex items-center justify-between border-t border-surface-border pt-4">
         <p class="text-sm text-ink-muted-on-dark">
-          <i class="pi pi-info-circle mr-1"></i>
+          <i class="md md-info mr-1"></i>
           La generación puede tomar varios minutos
         </p>
         <span pTooltip="Elegí un modelo para generar" showDelay="400" class="inline-flex">
           <p-button
             type="submit"
             label="Generar video"
-            icon="pi pi-play"
+            icon="md md-play_arrow"
             [loading]="submitting() || polling()"
             [disabled]="submitting() || polling() || !form.controls.model.value"
             styleClass="px-6 active:scale-[0.98]"
@@ -549,7 +554,7 @@
         </div>
         <p-progressBar [value]="progress()" [showValue]="true" styleClass="w-full max-w-md" />
         <div class="flex items-center gap-2 text-sm text-accent">
-          <i class="pi pi-spin pi-spinner"></i>
+          <i class="md md-autorenew md-spin"></i>
           <span>Procesando con IA — {{ progress() }}% estimado</span>
         </div>
       </div>
@@ -657,7 +662,7 @@
       <span pTooltip="Escribí un nombre para crear la pieza" showDelay="400" class="inline-flex">
         <p-button
           label="Crear y seleccionar"
-          icon="pi pi-check"
+          icon="md md-check"
           [loading]="savingPiece()"
           [disabled]="!newPiece().name.trim()"
           (onClick)="savePiece()"

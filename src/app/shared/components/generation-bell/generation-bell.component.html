@@ -1,6 +1,6 @@
 <p-button
   #bell
-  icon="pi pi-bell"
+  icon="md md-notifications"
   [rounded]="true"
   [text]="true"
   severity="contrast"
@@ -18,7 +18,7 @@
 
 <p-popover #popoverRef styleClass="gen-bell-popover">
   <div class="pop-head">
-    <span><i class="pi pi-bolt"></i> Generaciones</span>
+    <span><i class="md md-bolt"></i> Generaciones</span>
     @if (hasActive()) {
       <span class="pop-live"><span class="dot"></span> {{ store.activeCount() }} en curso</span>
     }
@@ -41,9 +41,10 @@
         } @else {
           <span class="pop-thumb icon" [class.spin]="take.status === 'running'">
             <i
-              class="pi"
-              [class.pi-spin.pi-spinner]="take.status === 'running'"
-              [class.pi-image]="
+              class="md"
+              [class.md-spin]="take.status === 'running'"
+              [class.md-autorenew]="take.status === 'running'"
+              [class.md-image]="
                 take.status !== 'running' && take.status !== 'failed' && take.status !== 'cancelled'
               "
             ></i>
@@ -73,6 +74,6 @@
   </div>
 
   <a routerLink="/events" class="pop-footer">
-    Ver todos los eventos <i class="pi pi-arrow-right"></i>
+    Ver todos los eventos <i class="md md-arrow_forward"></i>
   </a>
 </p-popover>

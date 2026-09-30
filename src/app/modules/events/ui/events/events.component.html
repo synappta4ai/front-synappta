@@ -10,7 +10,7 @@
     <ng-template #header>
       <div class="flex items-center gap-3 border-b border-surface-border px-6 py-4">
         <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
-          <i class="pi pi-plus-circle text-lg text-accent"></i>
+          <i class="md md-add_circle text-lg text-accent"></i>
         </div>
         <h2 class="text-lg font-bold text-ink-on-dark">Crear Nuevo Evento</h2>
       </div>
@@ -22,7 +22,7 @@
           Nombre del Evento <span class="text-danger">*</span>
         </label>
         <p-iconfield iconPosition="left">
-          <p-inputicon styleClass="pi pi-calendar-plus" />
+          <p-inputicon styleClass="md md-event_available" />
           <input
             pInputText
             id="new-event"
@@ -49,7 +49,7 @@
         <span pTooltip="Escribí un nombre para crear el evento" showDelay="400" class="inline-flex">
           <p-button
             label="Crear Evento"
-            icon="pi pi-plus"
+            icon="md md-add"
             [loading]="loading()"
             [disabled]="loading() || !newName().trim()"
             (onClick)="createEvent()"
@@ -77,7 +77,7 @@
         <div class="flex items-center justify-between border-b border-surface-border px-6 py-4">
           <div class="flex items-center gap-3">
             <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
-              <i class="pi pi-list text-lg text-accent"></i>
+              <i class="md md-list text-lg text-accent"></i>
             </div>
             <div>
               <h2 class="text-lg font-bold text-ink-on-dark">Lista de Eventos</h2>
@@ -110,7 +110,7 @@
             <td>
               <div class="flex items-center gap-3">
                 <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-surface-2">
-                  <i class="pi pi-calendar text-sm text-ink-muted-on-dark"></i>
+                  <i class="md md-calendar_month text-sm text-ink-muted-on-dark"></i>
                 </div>
                 <span class="font-bold text-ink-on-dark">{{ event.name }}</span>
               </div>
@@ -141,7 +141,7 @@
             </td>
             <td>
               <p-button
-                icon="pi pi-chevron-right"
+                icon="md md-chevron_right"
                 severity="secondary"
                 text
                 rounded
@@ -157,7 +157,7 @@
             <td colspan="6">
               <div class="flex flex-col items-center gap-4 py-16">
                 <div class="flex h-16 w-16 items-center justify-center rounded-full bg-surface-2">
-                  <i class="pi pi-calendar text-3xl text-ink-muted-on-dark"></i>
+                  <i class="md md-calendar_month text-3xl text-ink-muted-on-dark"></i>
                 </div>
                 <div class="text-center">
                   <p class="font-bold text-ink-on-dark">No hay eventos todavía</p>

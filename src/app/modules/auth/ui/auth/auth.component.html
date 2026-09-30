@@ -36,7 +36,7 @@
             [invalid]="form.get('username') | formControlErrorClass"
             class="w-full"
           />
-          <p-inputicon class="pi pi-user" />
+          <p-inputicon class="md md-person" />
         </p-iconfield>
         <validator-errors
           [control]="form.get('username')"
@@ -72,7 +72,7 @@
         [loading]="submitting()"
         [disabled]="submitting()"
         styleClass="w-full active:scale-[0.98]"
-        icon="pi pi-sign-in"
+        icon="md md-login"
       />
     </form>
   </p-card>

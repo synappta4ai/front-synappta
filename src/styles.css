@@ -7,7 +7,7 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-@import 'primeicons/primeicons.css';
+/* PrimeNG v21 usa iconos SVG internos: no necesita primeicons. */
 
 /* ============================================
    Tipografía: Lato self-hosted (public/fonts)
@@ -34,6 +34,243 @@
   font-weight: 900;
   font-display: swap;
   src: url('/fonts/lato-900.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Material Icons';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url('/fonts/material-icons.woff2') format('woff2');
+}
+
+/* Iconos Material Design (filled, self-hosted, Apache 2.0). */
+.md {
+  font-family: 'Material Icons';
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: 'liga';
+}
+.md-add::before {
+  content: 'add';
+}
+.md-add_circle::before {
+  content: 'add_circle';
+}
+.md-all_inbox::before {
+  content: 'all_inbox';
+}
+.md-alternate_email::before {
+  content: 'alternate_email';
+}
+.md-arrow_back::before {
+  content: 'arrow_back';
+}
+.md-arrow_forward::before {
+  content: 'arrow_forward';
+}
+.md-arrow_upward::before {
+  content: 'arrow_upward';
+}
+.md-attach_file::before {
+  content: 'attach_file';
+}
+.md-block::before {
+  content: 'block';
+}
+.md-bolt::before {
+  content: 'bolt';
+}
+.md-business::before {
+  content: 'business';
+}
+.md-calendar_month::before {
+  content: 'calendar_month';
+}
+.md-cancel::before {
+  content: 'cancel';
+}
+.md-check::before {
+  content: 'check';
+}
+.md-check_circle::before {
+  content: 'check_circle';
+}
+.md-chevron_left::before {
+  content: 'chevron_left';
+}
+.md-chevron_right::before {
+  content: 'chevron_right';
+}
+.md-close::before {
+  content: 'close';
+}
+.md-content_copy::before {
+  content: 'content_copy';
+}
+.md-dark_mode::before {
+  content: 'dark_mode';
+}
+.md-delete::before {
+  content: 'delete';
+}
+.md-description::before {
+  content: 'description';
+}
+.md-desktop_windows::before {
+  content: 'desktop_windows';
+}
+.md-download::before {
+  content: 'download';
+}
+.md-edit_note::before {
+  content: 'edit_note';
+}
+.md-error::before {
+  content: 'error';
+}
+.md-event_available::before {
+  content: 'event_available';
+}
+.md-expand_more::before {
+  content: 'expand_more';
+}
+.md-explore::before {
+  content: 'explore';
+}
+.md-folder::before {
+  content: 'folder';
+}
+.md-folder_open::before {
+  content: 'folder_open';
+}
+.md-gps_fixed::before {
+  content: 'gps_fixed';
+}
+.md-grid_view::before {
+  content: 'grid_view';
+}
+.md-hourglass_empty::before {
+  content: 'hourglass_empty';
+}
+.md-image::before {
+  content: 'image';
+}
+.md-inbox::before {
+  content: 'inbox';
+}
+.md-info::before {
+  content: 'info';
+}
+.md-inventory_2::before {
+  content: 'inventory_2';
+}
+.md-key::before {
+  content: 'key';
+}
+.md-label::before {
+  content: 'label';
+}
+.md-light_mode::before {
+  content: 'light_mode';
+}
+.md-list::before {
+  content: 'list';
+}
+.md-lock::before {
+  content: 'lock';
+}
+.md-login::before {
+  content: 'login';
+}
+.md-logout::before {
+  content: 'logout';
+}
+.md-memory::before {
+  content: 'memory';
+}
+.md-movie::before {
+  content: 'movie';
+}
+.md-notifications::before {
+  content: 'notifications';
+}
+.md-open_in_new::before {
+  content: 'open_in_new';
+}
+.md-person::before {
+  content: 'person';
+}
+.md-photo_library::before {
+  content: 'photo_library';
+}
+.md-place::before {
+  content: 'place';
+}
+.md-play_arrow::before {
+  content: 'play_arrow';
+}
+.md-play_circle::before {
+  content: 'play_circle';
+}
+.md-refresh::before {
+  content: 'refresh';
+}
+.md-remove::before {
+  content: 'remove';
+}
+.md-save::before {
+  content: 'save';
+}
+.md-schedule::before {
+  content: 'schedule';
+}
+.md-search::before {
+  content: 'search';
+}
+.md-settings::before {
+  content: 'settings';
+}
+.md-storage::before {
+  content: 'storage';
+}
+.md-timer::before {
+  content: 'timer';
+}
+.md-upload::before {
+  content: 'upload';
+}
+.md-video_file::before {
+  content: 'video_file';
+}
+.md-videocam::before {
+  content: 'videocam';
+}
+.md-visibility::before {
+  content: 'visibility';
+}
+.md-warning::before {
+  content: 'warning';
+}
+.md-work::before {
+  content: 'work';
+}
+.md-spin {
+  display: inline-block;
+  animation: md-spin 1.1s linear infinite;
+}
+
+@keyframes md-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ============================================
@@ -253,10 +490,6 @@ body {
 
 input {
   width: 100%;
-}
-
-.pi {
-  line-height: 0;
 }
 
 .p-password-toggle-mask-icon {
@@ -1362,8 +1595,8 @@ app-generation-events {
 }
 
 .prompt-foot .p-select {
-  height: 34px !important;
-  min-height: 34px !important;
+  height: 32px !important;
+  min-height: 32px !important;
   padding: 0 !important;
   box-sizing: border-box;
   font-size: 12px;
@@ -1388,7 +1621,7 @@ app-generation-events {
 }
 
 .prompt-foot .foot-chip {
-  height: 34px;
+  height: 32px;
   padding: 0 10px;
 }
 
@@ -1622,7 +1855,7 @@ app-admin-console .mx-auto > .p-tabs .p-tab {
     color 0.15s ease;
 }
 
-app-admin-console .mx-auto > .p-tabs .p-tab .pi {
+app-admin-console .mx-auto > .p-tabs .p-tab .md {
   font-size: 15px;
 }
 
@@ -1675,7 +1908,7 @@ p-selectbutton:has(.section-toggle) {
   border-radius: inherit;
 }
 
-.p-togglebutton.section-toggle .pi {
+.p-togglebutton.section-toggle .md {
   color: inherit;
 }
 
@@ -1725,7 +1958,7 @@ p-selectbutton:has(.section-toggle) {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   padding-right: 4px;
 }
 
@@ -1742,7 +1975,7 @@ p-selectbutton:has(.section-toggle) {
   background: var(--st-panel);
   border: 1px solid var(--st-line);
   border-radius: 16px;
-  padding: 12px;
+  padding: 10px;
 }
 
 .studio-shell .panel-head {
@@ -1751,7 +1984,7 @@ p-selectbutton:has(.section-toggle) {
   justify-content: space-between;
   font-size: 12px;
   font-weight: 700;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   color: var(--st-text-2);
 }
 
@@ -1780,7 +2013,7 @@ p-selectbutton:has(.section-toggle) {
   text-overflow: ellipsis;
 }
 
-.studio-shell .project-caption .pi {
+.studio-shell .project-caption .md {
   font-size: 11px;
   color: var(--color-ink-muted);
 }
@@ -1828,7 +2061,7 @@ p-selectbutton:has(.section-toggle) {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 9px 0;
+  padding: 7px 0;
   border-radius: 12px;
   border: 1px solid var(--color-secondary);
   background: var(--color-secondary);
@@ -1885,7 +2118,7 @@ p-selectbutton:has(.section-toggle) {
 }
 
 .studio-shell .prompt-input {
-  min-height: 120px;
+  min-height: 88px;
   border: none;
   outline: none;
   resize: none;
@@ -1977,7 +2210,7 @@ p-selectbutton:has(.section-toggle) {
   color: var(--st-muted);
 }
 
-.studio-shell .mention-menu-title .pi {
+.studio-shell .mention-menu-title .md {
   color: var(--st-muted);
 }
 
@@ -2164,11 +2397,11 @@ p-selectbutton:has(.section-toggle) {
 }
 
 .studio-shell .refs-panel {
-  padding: 12px 12px 10px;
+  padding: 10px 10px 8px;
 }
 
 .studio-shell .refs-panel .panel-head.as-btn {
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .studio-shell .library-picker-btn {
@@ -2197,7 +2430,7 @@ p-selectbutton:has(.section-toggle) {
   color: var(--color-accent);
 }
 
-.studio-shell .library-picker-btn .pi {
+.studio-shell .library-picker-btn .md {
   font-size: 13px;
 }
 
@@ -2461,7 +2694,7 @@ p-selectbutton:has(.section-toggle) {
   align-items: center;
   justify-content: flex-end;
   gap: 6px;
-  margin-top: 8px;
+  margin-top: 6px;
 }
 
 .studio-shell .foot-chip {
@@ -2469,7 +2702,7 @@ p-selectbutton:has(.section-toggle) {
   align-items: center;
   gap: 5px;
   padding: 0 10px;
-  height: 34px;
+  height: 32px;
   border-radius: 12px;
   border: 1px solid var(--color-surface-border-strong);
   background: var(--st-bg);
@@ -2530,7 +2763,7 @@ p-selectbutton:has(.section-toggle) {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 13px;
+  padding: 10px;
   border-radius: 12px;
   border: none;
   background: var(--color-accent);
@@ -3079,6 +3312,13 @@ p-selectbutton:has(.section-toggle) {
 /* Variante navbar (PrimeNG menubar). */
 .p-menubar-root-list.seg-on {
   position: relative;
+}
+
+/* La píldora es absolute + z-index 0: sin esto tapaba el texto de los
+   links, que no tenían posición. */
+.seg-on .p-menubar-item-link {
+  position: relative;
+  z-index: 1;
 }
 
 .seg-pill.nav-pill {

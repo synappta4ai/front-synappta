@@ -41,7 +41,7 @@
         class="flex flex-col items-center gap-4 rounded-3xl border border-surface-border bg-surface py-16"
       >
         <div class="flex h-16 w-16 items-center justify-center rounded-full bg-surface-2">
-          <i class="pi pi-video text-3xl text-ink-muted-on-dark"></i>
+          <i class="md md-videocam text-3xl text-ink-muted-on-dark"></i>
         </div>
         <div class="text-center">
           <p class="font-bold text-ink-on-dark">No hay videos generados</p>
@@ -78,7 +78,7 @@
                 <div
                   class="flex h-12 w-12 items-center justify-center rounded-full bg-ink/90 text-accent"
                 >
-                  <i class="pi pi-play ml-0.5 text-lg"></i>
+                  <i class="md md-play_arrow ml-0.5 text-lg"></i>
                 </div>
               </div>
               @if (v.video_duration > 0) {
@@ -116,22 +116,22 @@
 
               <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-ink-muted-on-dark">
                 <span class="flex items-center gap-1">
-                  <i class="pi pi-user text-xs"></i>
+                  <i class="md md-person text-xs"></i>
                   {{ v.user_display_name || 'u' + (v.user_id ?? '—') }}
                 </span>
                 <span class="flex items-center gap-1">
-                  <i class="pi pi-calendar text-xs"></i>
+                  <i class="md md-calendar_month text-xs"></i>
                   {{ v.created_at | date: 'short' }}
                 </span>
                 @if (v.usage_tokens > 0) {
                   <span class="flex items-center gap-1">
-                    <i class="pi pi-bolt text-xs"></i>
+                    <i class="md md-bolt text-xs"></i>
                     {{ v.usage_tokens | number: '1.0-0' }} tokens
                   </span>
                 }
                 @if (v.video_ratio) {
                   <span class="flex items-center gap-1">
-                    <i class="pi pi-th-large text-xs"></i>
+                    <i class="md md-grid_view text-xs"></i>
                     {{ v.video_ratio }}
                   </span>
                 }
@@ -148,7 +148,7 @@
                   {{ v.task_id }}
                 </code>
                 <p-button
-                  icon="pi pi-play"
+                  icon="md md-play_arrow"
                   label="Ver"
                   size="small"
                   text
@@ -169,7 +169,7 @@
         </span>
         <div class="flex gap-2">
           <p-button
-            icon="pi pi-chevron-left"
+            icon="md md-chevron_left"
             size="small"
             severity="secondary"
             pTooltip="Página anterior"
@@ -178,7 +178,7 @@
             (onClick)="prevPage()"
           />
           <p-button
-            icon="pi pi-chevron-right"
+            icon="md md-chevron_right"
             size="small"
             severity="secondary"
             pTooltip="Página siguiente"
@@ -207,7 +207,7 @@
           <div
             class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2 text-accent"
           >
-            <i class="pi pi-video text-sm"></i>
+            <i class="md md-videocam text-sm"></i>
           </div>
           <div>
             <h3 class="text-lg font-bold text-ink-on-dark">

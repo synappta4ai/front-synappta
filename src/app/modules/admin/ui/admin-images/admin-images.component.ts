@@ -64,8 +64,8 @@ export class AdminImagesComponent {
   /** Sección activa: imágenes generadas o recursos subidos. */
   protected readonly section = signal<Section>('generated');
   protected readonly sectionOptions = [
-    { label: 'Generadas', value: 'generated', icon: 'pi pi-image' },
-    { label: 'Recursos subidos', value: 'uploads', icon: 'pi pi-upload' },
+    { label: 'Generadas', value: 'generated', icon: 'md md-image' },
+    { label: 'Recursos subidos', value: 'uploads', icon: 'md md-upload' },
   ];
 
   // ─── Generated ────────────────────────────────────────────────
@@ -98,10 +98,10 @@ export class AdminImagesComponent {
   // ─── Tabs por tipo de ingrediente + subida múltiple ───────────
   protected readonly ingFilter = signal<IngFilter>('all');
   protected readonly ingFilterOptions: { value: IngFilter; label: string; icon: string }[] = [
-    { value: 'all', label: 'Todos', icon: 'pi pi-th-large' },
-    { value: 'character', label: 'Personaje', icon: 'pi pi-user' },
-    { value: 'location', label: 'Locación', icon: 'pi pi-map-marker' },
-    { value: 'prop', label: 'Prop', icon: 'pi pi-box' },
+    { value: 'all', label: 'Todos', icon: 'md md-grid_view' },
+    { value: 'character', label: 'Personaje', icon: 'md md-person' },
+    { value: 'location', label: 'Locación', icon: 'md md-place' },
+    { value: 'prop', label: 'Prop', icon: 'md md-inventory_2' },
   ];
   protected readonly uploadButtons: {
     type: IngFilter;
@@ -113,28 +113,28 @@ export class AdminImagesComponent {
     {
       type: 'all',
       label: 'Todos',
-      icon: 'pi pi-upload',
+      icon: 'md md-upload',
       hint: 'Subir múltiples archivos (sin tipo)',
       accept: 'image/*,video/*,audio/*',
     },
     {
       type: 'character',
       label: 'Personaje',
-      icon: 'pi pi-user',
+      icon: 'md md-person',
       hint: 'Subir múltiples personajes (imágenes)',
       accept: 'image/*',
     },
     {
       type: 'location',
       label: 'Locación',
-      icon: 'pi pi-map-marker',
+      icon: 'md md-place',
       hint: 'Subir múltiples locaciones (imágenes)',
       accept: 'image/*',
     },
     {
       type: 'prop',
       label: 'Prop',
-      icon: 'pi pi-box',
+      icon: 'md md-inventory_2',
       hint: 'Subir múltiples props (imágenes)',
       accept: 'image/*',
     },

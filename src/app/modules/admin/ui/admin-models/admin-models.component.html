@@ -67,7 +67,7 @@
           <div class="rounded-2xl border border-surface-border bg-surface p-6">
             <div class="mb-4 flex items-center gap-3">
               <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
-                <i class="pi pi-key text-sm text-accent"></i>
+                <i class="md md-key text-sm text-accent"></i>
               </div>
               <div>
                 <h4 class="font-bold text-ink-on-dark">API Keys del tenant</h4>
@@ -89,7 +89,7 @@
               >
                 <p-button
                   label="Exportar"
-                  icon="pi pi-download"
+                  icon="md md-download"
                   size="small"
                   outlined
                   [loading]="exporting()"
@@ -102,7 +102,7 @@
               </span>
               <p-button
                 label="Importar"
-                icon="pi pi-upload"
+                icon="md md-upload"
                 size="small"
                 outlined
                 [loading]="importing()"
@@ -250,7 +250,7 @@
               <p-button
                 type="submit"
                 label="Guardar credencial"
-                icon="pi pi-save"
+                icon="md md-save"
                 [loading]="savingCredential()"
                 [disabled]="savingCredential()"
                 styleClass="w-full active:scale-[0.98]"
@@ -268,7 +268,7 @@
                       class="flex items-center justify-between gap-2 rounded-xl border border-surface-border bg-surface-2 px-3 py-2"
                     >
                       <div class="flex min-w-0 items-center gap-2">
-                        <i class="pi pi-lock text-xs text-success"></i>
+                        <i class="md md-lock text-xs text-success"></i>
                         <span class="truncate text-sm text-ink-on-dark">
                           {{ providerLabel(cred.provider) }}
                         </span>
@@ -277,7 +277,7 @@
                         </code>
                       </div>
                       <p-button
-                        icon="pi pi-trash"
+                        icon="md md-delete"
                         severity="danger"
                         size="small"
                         text
@@ -299,7 +299,7 @@
           <div class="overflow-hidden rounded-3xl border border-surface-border bg-surface">
             <div class="flex items-center gap-3 border-b border-surface-border px-5 py-4">
               <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
-                <i class="pi pi-microchip text-sm text-accent"></i>
+                <i class="md md-memory text-sm text-accent"></i>
               </div>
               <div>
                 <h4 class="font-bold text-ink-on-dark">Modelos disponibles</h4>
@@ -343,9 +343,9 @@
                   </td>
                   <td class="text-center">
                     @if (isModelConfigured(m)) {
-                      <p-tag value="Listo" severity="success" icon="pi pi-check" />
+                      <p-tag value="Listo" severity="success" icon="md md-check" />
                     } @else {
-                      <p-tag value="Sin API key" severity="warn" icon="pi pi-exclamation-circle" />
+                      <p-tag value="Sin API key" severity="warn" icon="md md-error" />
                     }
                   </td>
                 </tr>
@@ -361,7 +361,7 @@
       class="flex flex-col items-center gap-4 rounded-3xl border border-surface-border bg-surface py-20"
     >
       <div class="flex h-16 w-16 items-center justify-center rounded-full bg-surface-2">
-        <i class="pi pi-building text-3xl text-ink-muted-on-dark"></i>
+        <i class="md md-business text-3xl text-ink-muted-on-dark"></i>
       </div>
       <div class="text-center">
         <p class="font-bold text-ink-on-dark">Selecciona un tenant</p>

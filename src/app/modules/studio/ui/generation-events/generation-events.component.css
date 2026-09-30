@@ -2,24 +2,24 @@
 :host {
   display: block;
   min-height: calc(100vh - 64px);
-  padding: 26px clamp(20px, 4vw, 56px);
+  padding: 16px clamp(16px, 3vw, 40px);
   color: var(--color-ink);
 }
 
 .events-header {
   text-align: center;
-  margin-bottom: 28px;
+  margin-bottom: 20px;
 }
 
 .events-header h1 {
   margin: 0;
-  font-size: 30px;
+  font-size: 28px;
   font-weight: 900;
   color: var(--color-ink);
 }
 
 .header-underline {
-  margin: 12px auto 0;
+  margin: 10px auto 0;
   height: 4px;
   width: 280px;
   border-radius: 999px;
@@ -29,9 +29,9 @@
 .events-layout {
   display: grid;
   grid-template-columns: minmax(0, 460px) minmax(0, 1fr);
-  gap: 24px;
+  gap: 16px;
   align-items: start;
-  max-width: 1500px;
+  max-width: 1280px;
   margin: 0 auto;
 }
 
@@ -40,7 +40,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 .filter-chip {
@@ -113,7 +113,7 @@
   display: flex;
   gap: 12px;
   padding: 10px;
-  border-radius: 14px;
+  border-radius: 16px;
   border: 1px solid var(--color-surface-border);
   background: var(--color-surface);
   color: var(--color-ink-on-dark);
@@ -136,7 +136,7 @@
 .card-thumb {
   width: 132px;
   height: 76px;
-  border-radius: 10px;
+  border-radius: 12px;
   object-fit: cover;
   background: var(--color-ink);
   flex-shrink: 0;
@@ -231,7 +231,7 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  min-height: 380px;
+  min-height: 300px;
   border-radius: 16px;
   border: 1px dashed var(--color-secondary);
   color: var(--color-ink-muted);
@@ -288,7 +288,7 @@
   flex-direction: column;
   align-items: center;
   gap: 10px;
-  padding: 40px 0;
+  padding: 28px 0;
   color: var(--color-ink-muted);
 }
 

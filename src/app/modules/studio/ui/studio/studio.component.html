@@ -1,10 +1,15 @@
-<div class="studio-shell h-full" animate.enter="anim-page">
+<div
+  class="studio-shell h-full"
+  animate.enter="anim-page"
+  [style.--col-left]="colLeft() + 'px'"
+  [style.--col-right]="colRight() + 'px'"
+>
   <!-- ══════════ Left rail: prompt + params ══════════ -->
   <aside class="studio-left">
     <!-- Proyecto seleccionado (caption sutil, solo si hay) -->
     @if (selectedProject(); as project) {
       <p class="project-caption" [title]="'Proyecto asignado: ' + project.name">
-        <i class="pi pi-briefcase"></i> {{ project.name }}
+        <i class="md md-work"></i> {{ project.name }}
       </p>
     }
     <div class="studio-mode seg-slide" appSlidePill=".mode-btn">
@@ -14,7 +19,7 @@
         [class.active]="mode() === 'video'"
         (click)="setMode('video')"
       >
-        <i class="pi pi-video"></i> Video
+        <i class="md md-videocam"></i> Video
       </button>
       <button
         type="button"
@@ -22,7 +27,7 @@
         [class.active]="mode() === 'image'"
         (click)="setMode('image')"
       >
-        <i class="pi pi-image"></i> Imagen
+        <i class="md md-image"></i> Imagen
       </button>
       <!-- Proyecto: icono compacto, asignación opcional en modal -->
       <button
@@ -43,9 +48,9 @@
         showDelay="400"
       >
         <i
-          class="pi"
-          [class.pi-check-circle]="selectedProject()"
-          [class.pi-briefcase]="!selectedProject()"
+          class="md"
+          [class.md-check_circle]="selectedProject()"
+          [class.md-work]="!selectedProject()"
         ></i>
       </button>
     </div>
@@ -57,11 +62,11 @@
         class="panel-head as-btn"
         (click)="showAssetGallery.set(!showAssetGallery())"
       >
-        <span><i class="pi pi-images"></i> Referencias</span>
+        <span><i class="md md-photo_library"></i> Referencias</span>
         <i
-          class="pi transition-transform duration-200"
-          [class.pi-chevron-down]="showAssetGallery()"
-          [class.pi-chevron-right]="!showAssetGallery()"
+          class="md transition-transform duration-200"
+          [class.md-expand_more]="showAssetGallery()"
+          [class.md-chevron_right]="!showAssetGallery()"
           [class.rotate-180]="showAssetGallery()"
         ></i>
       </button>
@@ -72,7 +77,7 @@
           animate.enter="anim-item"
           (click)="libraryPickerVisible.set(true)"
         >
-          <i class="pi pi-folder-open"></i>
+          <i class="md md-folder_open"></i>
           Elegir de la biblioteca
         </button>
       }
@@ -84,7 +89,7 @@
                 <!-- label nativo: el click activa el input file oculto -->
                 <label class="slot" [class.filled]="!!refSlots()[slot.key]">
                   @if (uploadingSlot() === slot.key) {
-                    <span class="slot-uploading"><i class="pi pi-spin pi-spinner"></i></span>
+                    <span class="slot-uploading"><i class="md md-autorenew md-spin"></i></span>
                   } @else if (refSlots()[slot.key]; as assetId) {
                     <img
                       class="slot-img"
@@ -93,7 +98,7 @@
                       loading="lazy"
                       decoding="async"
                     />
-                    <span class="slot-replace"><i class="pi pi-refresh"></i></span>
+                    <span class="slot-replace"><i class="md md-refresh"></i></span>
                     <button
                       type="button"
                       class="slot-clear"
@@ -104,10 +109,10 @@
                         $event.preventDefault(); $event.stopPropagation(); clearSlot(slot.key)
                       "
                     >
-                      <i class="pi pi-times"></i>
+                      <i class="md md-close"></i>
                     </button>
                   } @else {
-                    <i class="pi pi-plus slot-plus mb-3"></i>
+                    <i class="md md-add slot-plus mb-3"></i>
                     <span class="slot-label">{{ slot.label }}</span>
                     <span class="slot-hint">{{ slot.hint }}</span>
                   }
@@ -123,13 +128,13 @@
             <div class="refs-meta muted small">
               <span>{{ selectedAssetIds().size }}/{{ maxSelectedRefs }} seleccionadas</span>
               @if (uploading()) {
-                <span class="refs-uploading"><i class="pi pi-spin pi-spinner"></i> Subiendo…</span>
+                <span class="refs-uploading"
+                  ><i class="md md-autorenew md-spin"></i> Subiendo…</span
+                >
               }
             </div>
             @if (refError(); as err) {
-              <p class="ref-error small" role="alert">
-                <i class="pi pi-exclamation-circle"></i> {{ err }}
-              </p>
+              <p class="ref-error small" role="alert"><i class="md md-error"></i> {{ err }}</p>
             }
             @if (assets().length > 0) {
               <div class="asset-grid">
@@ -149,7 +154,7 @@
                       loading="lazy"
                       decoding="async"
                     />
-                    <span class="asset-check"><i class="pi pi-check"></i></span>
+                    <span class="asset-check"><i class="md md-check"></i></span>
                     <button
                       type="button"
                       class="asset-remove"
@@ -158,14 +163,14 @@
                       showDelay="400"
                       (click)="$event.stopPropagation(); removeAsset(asset.id)"
                     >
-                      <i class="pi pi-times"></i>
+                      <i class="md md-close"></i>
                     </button>
                     <span
                       class="asset-eye"
                       title="Ver"
                       (click)="$event.stopPropagation(); openPreview(asset, $event)"
                     >
-                      <i class="pi pi-eye"></i>
+                      <i class="md md-visibility"></i>
                     </span>
                   </div>
                 }
@@ -198,7 +203,7 @@
         @if (mentionMenuOpen() && mentionMenuPos(); as menuPos) {
           <div class="mention-menu" [style.top.px]="menuPos.top" [style.left.px]="menuPos.left">
             <p class="mention-menu-title">
-              <i class="pi pi-at"></i> Biblioteca: recursos e ingredientes
+              <i class="md md-alternate_email"></i> Biblioteca: recursos e ingredientes
             </p>
             @for (row of mentionRows(); track row.label; let i = $index) {
               <button
@@ -222,7 +227,7 @@
                   }
                 } @else if (row.kind === 'ingredient' && row.ingredient; as ing) {
                   <span class="mention-ing-icon" [attr.data-type]="ing.type">
-                    <i class="pi {{ ingredientIcon(ing.type) }}"></i>
+                    <i class="md {{ ingredientIcon(ing.type) }}"></i>
                   </span>
                   <span class="mention-name">{{ ing.name }}</span>
                   <span class="mention-ing badge-type">{{ ingredientTypeLabel(ing.type) }}</span>
@@ -257,14 +262,14 @@
                 title="Quitar mención"
                 (click)="removeMention(asset)"
               >
-                <i class="pi pi-times"></i>
+                <i class="md md-close"></i>
               </button>
             </span>
           }
           @for (ing of mentionedIngredients(); track ing.ingredient.id) {
             <span class="mention-chip ingredient" [title]="'Ingrediente: cita todos sus recursos'">
               <span class="mention-ing-icon" [attr.data-type]="ing.ingredient.type">
-                <i class="pi {{ ingredientIcon(ing.ingredient.type) }}"></i>
+                <i class="md {{ ingredientIcon(ing.ingredient.type) }}"></i>
               </span>
               <span class="mention-chip-name">@{{ ing.ingredient.name }}</span>
               <span class="mention-chip-count"
@@ -277,7 +282,7 @@
                 title="Quitar mención"
                 (click)="removeMention(ing)"
               >
-                <i class="pi pi-times"></i>
+                <i class="md md-close"></i>
               </button>
             </span>
           }
@@ -295,7 +300,7 @@
           class="foot-chip static"
           [title]="selectedAssetIds().size + ' referencias seleccionadas'"
         >
-          <i class="pi pi-paperclip"></i> {{ selectedAssetIds().size }}
+          <i class="md md-attach_file"></i> {{ selectedAssetIds().size }}
         </span>
         <p-select
           [ngModel]="resolution()"
@@ -307,10 +312,14 @@
           [showClear]="false"
         >
           <ng-template pTemplate="selectedItem" let-opt>
-            <span class="ratio-inline"><i class="pi pi-desktop foot-icon"></i> {{ opt }}</span>
+            <span class="ratio-inline"
+              ><i class="md md-desktop_windows foot-icon"></i> {{ opt }}</span
+            >
           </ng-template>
           <ng-template #item let-opt>
-            <span class="ratio-inline"><i class="pi pi-desktop foot-icon"></i> {{ opt }}</span>
+            <span class="ratio-inline"
+              ><i class="md md-desktop_windows foot-icon"></i> {{ opt }}</span
+            >
           </ng-template>
         </p-select>
         <p-select
@@ -344,7 +353,7 @@
             (click)="toggleDurationPopover($event)"
             [title]="'Duración: ' + durationHint()"
           >
-            <i class="pi pi-clock"></i> {{ duration() }}s
+            <i class="md md-schedule"></i> {{ duration() }}s
           </button>
         }
       </div>
@@ -384,7 +393,7 @@
               (click)="closePreview()"
               aria-label="Cerrar"
             >
-              <i class="pi pi-times"></i>
+              <i class="md md-close"></i>
             </button>
           </div>
           <button
@@ -421,7 +430,7 @@
           <div class="asset-fullscreen-meta">
             <span class="truncate" [title]="asset.filename">{{ asset.filename }}</span>
             <p-button
-              icon="pi pi-times"
+              icon="md md-close"
               [rounded]="true"
               [text]="true"
               severity="contrast"
@@ -434,7 +443,7 @@
     </p-dialog>
     <div class="panel">
       <div class="panel-head">
-        <span><i class="pi pi-box"></i> Modelo</span>
+        <span><i class="md md-inventory_2"></i> Modelo</span>
       </div>
       @if (loadingModels()) {
         <p class="muted small">Cargando catálogo…</p>
@@ -479,7 +488,7 @@
     <!-- Seed -->
     <div class="panel">
       <div class="panel-head">
-        <span><i class="pi pi-database"></i> Seed</span>
+        <span><i class="md md-storage"></i> Seed</span>
       </div>
       <input
         type="text"
@@ -500,7 +509,12 @@
         showDelay="400"
         aria-keyshortcuts="Control+Enter"
       >
-        <i class="pi" [class.pi-spin.pi-spinner]="submitting()" [class.pi-bolt]="!submitting()"></i>
+        <i
+          class="md"
+          [class.md-spin]="submitting()"
+          [class.md-autorenew]="submitting()"
+          [class.md-bolt]="!submitting()"
+        ></i>
         {{ submitting() ? 'Enviando…' : 'Generar ' + (mode() === 'video' ? 'Video' : 'Imagen') }}
         <kbd class="ml-1 rounded border border-current px-1 text-[10px] opacity-70">Ctrl+↵</kbd>
       </button>
@@ -508,6 +522,19 @@
   </aside>
 
   <!-- ══════════ Center: viewer ══════════ -->
+  <div
+    class="col-gutter"
+    role="separator"
+    aria-orientation="vertical"
+    aria-label="Redimensionar columnas del Studio"
+    [attr.aria-valuemin]="260"
+    [attr.aria-valuemax]="520"
+    [attr.aria-valuenow]="colLeft()"
+    tabindex="0"
+    (pointerdown)="onGutterDown($event, 'left')"
+    (keydown)="onGutterKey($event, 'left')"
+    (dblclick)="resetCols()"
+  ></div>
   <section class="studio-center">
     @if (error(); as message) {
       <p-message severity="error" [text]="message" [escape]="false" />
@@ -539,7 +566,7 @@
             }
             @case ('failed') {
               <div class="viewer-placeholder error">
-                <i class="pi pi-times-circle text-3xl"></i>
+                <i class="md md-cancel text-3xl"></i>
                 <p>La generación falló</p>
                 @if (take.error) {
                   <p class="small muted">{{ take.error }}</p>
@@ -548,13 +575,13 @@
             }
             @case ('cancelled') {
               <div class="viewer-placeholder">
-                <i class="pi pi-ban text-3xl"></i>
+                <i class="md md-block text-3xl"></i>
                 <p>Generación cancelada</p>
               </div>
             }
             @default {
               <div class="viewer-placeholder">
-                <i class="pi pi-spin pi-spinner text-3xl"></i>
+                <i class="md md-autorenew md-spin text-3xl"></i>
                 <p>{{ take.status === 'queued' ? 'En cola…' : 'Generando…' }}</p>
                 <div class="progress-track">
                   <div class="progress-fill" [style.width.%]="take.progress"></div>
@@ -580,7 +607,7 @@
       <div class="viewer" [style.--canvas-ar]="canvasAr()">
         <div class="viewer-canvas">
           <div class="viewer-placeholder">
-            <i class="pi pi-video text-4xl"></i>
+            <i class="md md-videocam text-4xl"></i>
             <p>Tus tomas aparecen acá</p>
             <p class="muted small">Escribí un prompt y generá tu primer take</p>
           </div>
@@ -591,9 +618,22 @@
   </section>
 
   <!-- ══════════ Right: take reel + queue ══════════ -->
+  <div
+    class="col-gutter"
+    role="separator"
+    aria-orientation="vertical"
+    aria-label="Redimensionar columnas del Studio"
+    [attr.aria-valuemin]="260"
+    [attr.aria-valuemax]="520"
+    [attr.aria-valuenow]="colRight()"
+    tabindex="0"
+    (pointerdown)="onGutterDown($event, 'right')"
+    (keydown)="onGutterKey($event, 'right')"
+    (dblclick)="resetCols()"
+  ></div>
   <aside class="studio-right">
     <div class="reel-head">
-      <span><i class="pi pi-film"></i> Take Reel</span>
+      <span><i class="md md-movie"></i> Take Reel</span>
       <p-tag [value]="takes().length.toString()" severity="secondary" />
     </div>
     @if (takes().length === 0) {
@@ -619,7 +659,11 @@
             ></video>
           } @else {
             <div class="take-thumb placeholder">
-              <i class="pi" [class.pi-spin.pi-spinner]="take.status === 'running'"></i>
+              <i
+                class="md"
+                [class.md-spin]="take.status === 'running'"
+                [class.md-autorenew]="take.status === 'running'"
+              ></i>
             </div>
           }
           <div class="take-info">
@@ -634,7 +678,7 @@
               @if (take.status === 'running' || take.status === 'queued') {
                 <span class="small muted">{{ take.progress }}%</span>
                 <p-button
-                  icon="pi pi-times"
+                  icon="md md-close"
                   [rounded]="true"
                   [text]="true"
                   severity="secondary"
@@ -652,7 +696,7 @@
     </div>
 
     <div class="queue-head">
-      <span><i class="pi pi-list"></i> Cola de generación</span>
+      <span><i class="md md-list"></i> Cola de generación</span>
       <p-tag
         [value]="activeTakes().length.toString()"
         [severity]="activeTakes().length ? 'info' : 'secondary'"
@@ -664,7 +708,7 @@
     <div class="queue-list">
       @for (take of activeTakes(); track take.id) {
         <div class="queue-item" animate.enter="anim-item" [attr.data-status]="take.status">
-          <i class="pi pi-spin pi-spinner"></i>
+          <i class="md md-autorenew md-spin"></i>
           <div class="queue-info">
             <p class="truncate">{{ take.modelDisplayName }}</p>
             <div class="progress-track slim">
@@ -684,7 +728,7 @@
     [modal]="true"
     [style]="{ width: 'min(92vw, 26rem)' }"
     [draggable]="false"
-    [resizable]="false"
+    [resizable]="true"
     [closeOnEscape]="true"
     [dismissableMask]="true"
     header="Asignar proyecto"
@@ -716,7 +760,7 @@
         @if (selectedProject()) {
           <p-button
             label="Quitar proyecto"
-            icon="pi pi-times"
+            icon="md md-close"
             size="small"
             [text]="true"
             severity="secondary"

@@ -5,11 +5,13 @@ import {
   DestroyRef,
   effect,
   inject,
+  PLATFORM_ID,
   signal,
   viewChild,
   ViewChild,
   ElementRef,
 } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { catchError, EMPTY, finalize } from 'rxjs';
 
@@ -81,6 +83,14 @@ export class StudioComponent {
   private readonly agencyService = inject(AgencyService);
   private readonly libraryService = inject(LibraryService);
   private readonly eventsService = inject(EventsService);
+  private readonly platformId = inject(PLATFORM_ID);
+
+  // ─── Workspace layout (solo UI): anchos de columnas redimensionables ──
+  private static readonly COLS_KEY = 'studio:colW';
+  private static readonly COL_MIN = 260;
+  private static readonly COL_MAX = 520;
+  protected readonly colLeft = signal(340);
+  protected readonly colRight = signal(320);
 
   // ─── Catalog ───────────────────────────────────────────────────
   protected readonly models = signal<StudioModel[]>([]);
@@ -671,13 +681,13 @@ export class StudioComponent {
   protected ingredientIcon(type: string): string {
     switch (type) {
       case 'character':
-        return 'pi pi-user';
+        return 'md md-person';
       case 'location':
-        return 'pi pi-map-marker';
+        return 'md md-place';
       case 'prop':
-        return 'pi pi-box';
+        return 'md md-inventory_2';
       default:
-        return 'pi pi-tag';
+        return 'md md-label';
     }
   }
 
@@ -784,6 +794,118 @@ export class StudioComponent {
     this.loadProjects();
     this.loadAssets();
     this.loadIngredients();
+    this.restoreCols();
+  }
+
+  // ─── Columnas redimensionables (gutters entre columnas) ──────────
+  protected onGutterDown(event: PointerEvent, side: 'left' | 'right'): void {
+    if (event.pointerType === 'mouse' && event.button !== 0) {
+      return;
+    }
+    const gutter = event.currentTarget as HTMLElement;
+    const startX = event.clientX;
+    const startW = side === 'left' ? this.colLeft() : this.colRight();
+    try {
+      gutter.setPointerCapture(event.pointerId);
+    } catch {
+      // Sin captura (jsdom/tests): igual se trackea con listeners.
+    }
+    const onMove = (move: PointerEvent): void => {
+      const delta = move.clientX - startX;
+      const next = StudioComponent.clampCol(side === 'left' ? startW + delta : startW - delta);
+      if (side === 'left') {
+        this.colLeft.set(next);
+      } else {
+        this.colRight.set(next);
+      }
+    };
+    const onUp = (): void => {
+      gutter.removeEventListener('pointermove', onMove);
+      gutter.removeEventListener('pointerup', onUp);
+      gutter.removeEventListener('pointercancel', onUp);
+      this.persistCols();
+    };
+    gutter.addEventListener('pointermove', onMove);
+    gutter.addEventListener('pointerup', onUp);
+    gutter.addEventListener('pointercancel', onUp);
+    event.preventDefault();
+  }
+
+  protected onGutterKey(event: KeyboardEvent, side: 'left' | 'right'): void {
+    const step = event.shiftKey ? 48 : 12;
+    const signal = side === 'left' ? this.colLeft : this.colRight;
+    if (event.key === 'ArrowLeft') {
+      signal.set(StudioComponent.clampCol(signal() - step));
+      event.preventDefault();
+    } else if (event.key === 'ArrowRight') {
+      signal.set(StudioComponent.clampCol(signal() + step));
+      event.preventDefault();
+    } else if (event.key === 'Home' && side === 'left') {
+      this.resetCols();
+      event.preventDefault();
+    } else {
+      return;
+    }
+    this.persistCols();
+  }
+
+  protected resetCols(): void {
+    this.colLeft.set(340);
+    this.colRight.set(320);
+    this.persistCols();
+  }
+
+  private static clampCol(width: number): number {
+    return Math.min(StudioComponent.COL_MAX, Math.max(StudioComponent.COL_MIN, Math.round(width)));
+  }
+
+  private restoreCols(): void {
+    const saved = this.readCols();
+    if (saved) {
+      this.colLeft.set(StudioComponent.clampCol(saved.left));
+      this.colRight.set(StudioComponent.clampCol(saved.right));
+    }
+  }
+
+  private persistCols(): void {
+    try {
+      if (!isPlatformBrowser(this.platformId)) {
+        return;
+      }
+      localStorage.setItem(
+        StudioComponent.COLS_KEY,
+        JSON.stringify({ left: this.colLeft(), right: this.colRight() }),
+      );
+    } catch {
+      // Almacenamiento no disponible: los anchos viven solo en la sesión.
+    }
+  }
+
+  private readCols(): { left: number; right: number } | null {
+    try {
+      if (!isPlatformBrowser(this.platformId)) {
+        return null;
+      }
+      const raw = localStorage.getItem(StudioComponent.COLS_KEY);
+      if (!raw) {
+        return null;
+      }
+      const parsed: unknown = JSON.parse(raw);
+      if (
+        typeof parsed === 'object' &&
+        parsed !== null &&
+        typeof (parsed as { left?: unknown }).left === 'number' &&
+        typeof (parsed as { right?: unknown }).right === 'number'
+      ) {
+        const cols = parsed as { left: number; right: number };
+        if (Number.isFinite(cols.left) && Number.isFinite(cols.right)) {
+          return cols;
+        }
+      }
+    } catch {
+      // JSON corrupto o sin acceso: se usan los anchos por defecto.
+    }
+    return null;
   }
 
   // ─── Loaders ───────────────────────────────────────────────────

@@ -24,7 +24,7 @@
       />
       <p-button
         label="Buscar"
-        icon="pi pi-search"
+        icon="md md-search"
         severity="secondary"
         size="small"
         (onClick)="search()"
@@ -103,7 +103,7 @@
               >
                 {{ rowDuration(r) }}
                 @if ((r.poll?.total_duration_ms ?? 0) > 0) {
-                  <i class="pi pi-clock ml-1 text-xs text-ink-muted-on-dark"></i>
+                  <i class="md md-schedule ml-1 text-xs text-ink-muted-on-dark"></i>
                 }
               </span>
             </td>
@@ -113,7 +113,7 @@
                   <div
                     class="flex h-7 w-7 items-center justify-center rounded-full bg-surface-2 text-xs text-ink-muted-on-dark"
                   >
-                    <i class="pi pi-user text-xs"></i>
+                    <i class="md md-person text-xs"></i>
                   </div>
                   <div>
                     <p class="text-sm font-bold text-ink-on-dark">
@@ -138,7 +138,7 @@
               @if (r.generate?.credential_provider || r.poll?.credential_provider) {
                 <div class="flex flex-col gap-0.5">
                   <div class="flex items-center gap-1.5">
-                    <i class="pi pi-key text-xs text-ink-muted-on-dark"></i>
+                    <i class="md md-key text-xs text-ink-muted-on-dark"></i>
                     <span class="text-xs font-bold text-ink-on-dark">
                       {{ r.generate?.credential_provider || r.poll?.credential_provider }}
                     </span>
@@ -170,7 +170,7 @@
             </td>
             <td class="text-center">
               <p-button
-                icon="pi pi-eye"
+                icon="md md-visibility"
                 size="small"
                 text
                 pTooltip="Ver generación y polling"
@@ -186,7 +186,7 @@
             <td colspan="9">
               <div class="flex flex-col items-center gap-4 py-16">
                 <div class="flex h-16 w-16 items-center justify-center rounded-full bg-surface-2">
-                  <i class="pi pi-inbox text-3xl text-ink-muted-on-dark"></i>
+                  <i class="md md-inbox text-3xl text-ink-muted-on-dark"></i>
                 </div>
                 <div class="text-center">
                   <p class="font-bold text-ink-on-dark">No hay comunicaciones registradas</p>
@@ -207,7 +207,7 @@
         </span>
         <div class="flex gap-2">
           <p-button
-            icon="pi pi-chevron-left"
+            icon="md md-chevron_left"
             size="small"
             severity="secondary"
             pTooltip="Página anterior"
@@ -216,7 +216,7 @@
             (onClick)="prevPage()"
           />
           <p-button
-            icon="pi pi-chevron-right"
+            icon="md md-chevron_right"
             size="small"
             severity="secondary"
             pTooltip="Página siguiente"
@@ -245,7 +245,7 @@
           <div
             class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2 text-accent"
           >
-            <i class="pi pi-list text-sm"></i>
+            <i class="md md-list text-sm"></i>
           </div>
           <div>
             <h3 class="text-lg font-bold text-ink-on-dark">
@@ -323,7 +323,7 @@
         <div
           class="mb-4 flex items-center gap-2 rounded-xl border border-surface-border bg-surface-2 px-4 py-2.5 text-sm text-ink-muted-on-dark"
         >
-          <i class="pi pi-clock text-ink-muted-on-dark"></i>
+          <i class="md md-schedule text-ink-muted-on-dark"></i>
           <span>
             Duración total (envío → resultado):
             <strong class="text-ink-on-dark">{{ rowDuration(r) }}</strong>
@@ -367,19 +367,19 @@
                 <div
                   class="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-muted-on-dark"
                 >
-                  <span><i class="pi pi-arrow-up mr-1"></i>{{ c.method }} {{ c.endpoint }}</span>
+                  <span
+                    ><i class="md md-arrow_upward mr-1"></i>{{ c.method }} {{ c.endpoint }}</span
+                  >
                   <span>
-                    <i class="pi pi-calendar mr-1"></i>Enviado:
+                    <i class="md md-calendar_month mr-1"></i>Enviado:
                     {{ c.started_at || c.created_at | date: 'medium' }}
                   </span>
                   @if ((c.duration_ms ?? 0) > 0) {
-                    <span
-                      ><i class="pi pi-stopwatch mr-1"></i>HTTP: {{ formatMs(c.duration_ms) }}</span
-                    >
+                    <span><i class="md md-timer mr-1"></i>HTTP: {{ formatMs(c.duration_ms) }}</span>
                   }
                   @if ((c.total_duration_ms ?? 0) > 0) {
                     <span>
-                      <i class="pi pi-clock mr-1"></i>Total: {{ formatMs(c.total_duration_ms) }}
+                      <i class="md md-schedule mr-1"></i>Total: {{ formatMs(c.total_duration_ms) }}
                     </span>
                   }
                 </div>
@@ -396,7 +396,7 @@
                           {{ isJson(c.request_body) ? 'JSON formateado' : 'Texto plano' }}
                         </span>
                         <p-button
-                          icon="pi pi-copy"
+                          icon="md md-content_copy"
                           size="small"
                           text
                           rounded
@@ -423,7 +423,7 @@
                           {{ isJson(c.response_body) ? 'JSON formateado' : 'Texto plano' }}
                         </span>
                         <p-button
-                          icon="pi pi-copy"
+                          icon="md md-content_copy"
                           size="small"
                           text
                           rounded
@@ -441,7 +441,7 @@
                 </div>
               } @else {
                 <div class="flex flex-col items-center gap-3 py-10 text-center">
-                  <i class="pi pi-hourglass text-3xl text-ink-muted-on-dark"></i>
+                  <i class="md md-hourglass_empty text-3xl text-ink-muted-on-dark"></i>
                   <p class="text-sm text-ink-muted-on-dark">
                     Aún no hay registros de polling para esta tarea.
                   </p>

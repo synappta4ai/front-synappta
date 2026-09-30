@@ -51,13 +51,13 @@ type PickerFilter = 'all' | 'images' | 'videos';
       [modal]="true"
       [style]="{ width: 'min(94vw, 64rem)' }"
       [draggable]="false"
-      [resizable]="false"
+      [resizable]="true"
       [closeOnEscape]="true"
       styleClass="asset-picker-dialog"
     >
       <ng-template #header>
         <div class="flex items-center gap-3">
-          <div class="picker-head-icon"><i class="pi pi-images"></i></div>
+          <div class="picker-head-icon"><i class="md md-photo_library"></i></div>
           <div>
             <h3 class="picker-title">{{ title() }}</h3>
             <p class="picker-subtitle">Recursos de la biblioteca — mismos que Admin → Imágenes</p>
@@ -78,7 +78,7 @@ type PickerFilter = 'all' | 'images' | 'videos';
         />
         <span class="flex-1"></span>
         <p-iconfield iconPosition="left" styleClass="picker-search">
-          <p-inputicon styleClass="pi pi-search" />
+          <p-inputicon styleClass="md md-search" />
           <input
             pInputText
             type="text"
@@ -91,12 +91,12 @@ type PickerFilter = 'all' | 'images' | 'videos';
 
       @if (loading()) {
         <div class="picker-empty">
-          <i class="pi pi-spin pi-spinner text-2xl text-accent"></i>
+          <i class="md md-autorenew md-spin text-2xl text-accent"></i>
           <p class="text-sm text-ink-muted-on-dark">Cargando recursos…</p>
         </div>
       } @else if (paged().length === 0) {
         <div class="picker-empty">
-          <div class="picker-empty-icon"><i class="pi pi-inbox"></i></div>
+          <div class="picker-empty-icon"><i class="md md-inbox"></i></div>
           <h3>No hay recursos</h3>
           <p>Sube recursos desde Admin → Imágenes y aparecerán aquí.</p>
         </div>
@@ -121,13 +121,13 @@ type PickerFilter = 'all' | 'images' | 'videos';
                   <video [src]="asset.url | serverUrl" preload="metadata"></video>
                 } @else {
                   <span class="flex h-full w-full items-center justify-center">
-                    <i class="pi pi-file text-2xl text-ink-muted-on-dark"></i>
+                    <i class="md md-description text-2xl text-ink-muted-on-dark"></i>
                   </span>
                 }
-                <span class="picker-check"><i class="pi pi-check"></i></span>
+                <span class="picker-check"><i class="md md-check"></i></span>
                 @if (asset.ingredients?.length) {
                   <span class="picker-ing">
-                    <i class="pi pi-tag"></i>
+                    <i class="md md-label"></i>
                     {{ asset.ingredients![0].name }}
                   </span>
                 }
@@ -145,13 +145,13 @@ type PickerFilter = 'all' | 'images' | 'videos';
             </span>
             <div class="flex gap-2">
               <p-button
-                icon="pi pi-chevron-left"
+                icon="md md-chevron_left"
                 size="small"
                 [disabled]="page() <= 1"
                 (onClick)="prevPage()"
               />
               <p-button
-                icon="pi pi-chevron-right"
+                icon="md md-chevron_right"
                 size="small"
                 [disabled]="page() * pageSize() >= total()"
                 (onClick)="nextPage()"
@@ -178,7 +178,7 @@ type PickerFilter = 'all' | 'images' | 'videos';
             />
             <p-button
               label="Usar seleccionados"
-              icon="pi pi-check"
+              icon="md md-check"
               size="small"
               [disabled]="selectedIds().size === 0"
               (onClick)="confirm()"
@@ -410,9 +410,9 @@ export class AssetPickerDialogComponent {
   readonly selectedIds = signal<Set<string>>(new Set());
 
   readonly filterOptions = [
-    { label: 'Todos', value: 'all' as const, icon: 'pi pi-th-large' },
-    { label: 'Imágenes', value: 'images' as const, icon: 'pi pi-image' },
-    { label: 'Videos', value: 'videos' as const, icon: 'pi pi-video' },
+    { label: 'Todos', value: 'all' as const, icon: 'md md-grid_view' },
+    { label: 'Imágenes', value: 'images' as const, icon: 'md md-image' },
+    { label: 'Videos', value: 'videos' as const, icon: 'md md-videocam' },
   ];
 
   readonly paged = computed(() => {

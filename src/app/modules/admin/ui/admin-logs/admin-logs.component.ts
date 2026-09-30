@@ -207,14 +207,14 @@ export class AdminLogsComponent {
       {
         value: 'generation',
         label: 'Generación',
-        icon: 'pi pi-upload',
+        icon: 'md md-upload',
         badge: 'ENVÍO',
         comm: r.generate,
       },
       {
         value: 'polling',
         label: 'Último polling',
-        icon: 'pi pi-refresh',
+        icon: 'md md-refresh',
         badge: pollBadge,
         comm: r.poll,
       },
@@ -270,8 +270,8 @@ export class AdminLogsComponent {
       () => {
         const icon = button.querySelector('i');
         if (icon) {
-          icon.className = 'pi pi-check text-success';
-          setTimeout(() => (icon.className = 'pi pi-copy'), 1500);
+          icon.className = 'md md-check text-success';
+          setTimeout(() => (icon.className = 'md md-content_copy'), 1500);
         }
       },
       () => {},

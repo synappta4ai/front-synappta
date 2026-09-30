@@ -6,7 +6,7 @@
   showDelay="400"
   (click)="togglePopover($event)"
 >
-  <i class="pi pi-cog text-xl" aria-hidden="true"></i>
+  <i class="md md-settings text-xl" aria-hidden="true"></i>
 </button>
 
 <p-popover #popover styleClass="theme-popover" [style]="{ width: '280px' }">
@@ -25,17 +25,17 @@
     <!-- Menu Items -->
     <div class="menu-section">
       <button class="menu-item">
-        <i class="pi pi-user menu-icon"></i>
+        <i class="md md-person menu-icon"></i>
         <span>Tu perfil</span>
       </button>
 
       <button class="menu-item">
-        <i class="pi pi-cog menu-icon"></i>
+        <i class="md md-settings menu-icon"></i>
         <span>Configuraci&oacute;n</span>
       </button>
 
       <button class="menu-item logout" (click)="onLogout()">
-        <i class="pi pi-sign-out menu-icon"></i>
+        <i class="md md-logout menu-icon"></i>
         <span>Cerrar sesi&oacute;n</span>
       </button>
     </div>
@@ -70,7 +70,7 @@
           [class.active]="currentMode() === 'light'"
           (click)="onModeChange('light')"
         >
-          <i class="pi pi-sun mode-icon"></i>
+          <i class="md md-light_mode mode-icon"></i>
           <span>Light</span>
         </button>
 
@@ -79,7 +79,7 @@
           [class.active]="currentMode() === 'dark'"
           (click)="onModeChange('dark')"
         >
-          <i class="pi pi-moon mode-icon"></i>
+          <i class="md md-dark_mode mode-icon"></i>
           <span>Dark</span>
         </button>
       </div>
