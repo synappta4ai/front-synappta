@@ -92,7 +92,7 @@ export class AdminModelsComponent {
     { label: 'BytePlus', value: 'byteplus', icon: 'pi pi-video' },
     { label: 'Gemini', value: 'gemini', icon: 'pi pi-image' },
     { label: 'Anthropic', value: 'anthropic', icon: 'pi pi-file' },
-    { label: 'Higgsfield', value: 'higgsfield', icon: 'pi pi-sparkles' },
+    { label: 'Higgsfield', value: 'higgsfield', icon: 'pi pi-box' },
   ];
 
   protected readonly tenantOptions = computed<TenantOption[]>(() =>

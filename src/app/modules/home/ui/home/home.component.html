@@ -1,4 +1,4 @@
-<section class="relative overflow-hidden bg-surface text-ink-on-dark">
+<section class="relative overflow-hidden bg-surface text-ink-on-dark" animate.enter="anim-page">
   <div class="absolute inset-0" aria-hidden="true"></div>
   <div class="absolute -right-32 -top-32 h-96 w-96 rounded-full" aria-hidden="true"></div>
   <div class="absolute -bottom-32 -left-32 h-96 w-96 rounded-full" aria-hidden="true"></div>
@@ -15,12 +15,12 @@
     <div class="mt-10 flex flex-col gap-3 sm:flex-row">
       <a
         routerLink="/agency"
-        class="inline-flex items-center justify-center rounded-lg bg-accent px-6 py-3 text-sm font-bold text-on-accent transition-colors hover:bg-accent-hover"
+        class="inline-flex items-center justify-center rounded-xl bg-accent px-6 py-3 text-sm font-bold text-on-accent transition-colors hover:bg-accent-hover active:scale-[0.98]"
         >Conoce la agencia</a
       >
       <a
         routerLink="/video"
-        class="inline-flex items-center justify-center rounded-lg border border-surface-border-strong px-6 py-3 text-sm font-bold text-ink-on-dark transition-colors hover:bg-surface-hover"
+        class="inline-flex items-center justify-center rounded-xl border border-surface-border-strong px-6 py-3 text-sm font-bold text-ink-on-dark transition-colors hover:bg-surface-hover active:scale-[0.98]"
         >Ver videos</a
       >
     </div>
@@ -31,8 +31,10 @@
   <p class="mb-3 text-sm font-bold text-ink-muted">Servicios</p>
   <h2 class="max-w-xl text-3xl font-bold text-ink sm:text-4xl">Qué hacemos</h2>
   <div class="mt-12 grid gap-6 md:grid-cols-3">
-    @for (service of services; track service.title) {
+    @for (service of services; track service.title; let i = $index) {
       <article
+        animate.enter="anim-item"
+        [style.animation-delay.ms]="i < 8 ? i * 35 : 280"
         class="rounded-2xl border border-surface-border bg-surface p-6 transition-shadow hover:shadow-md"
       >
         <h3 class="text-lg font-bold text-ink-on-dark">
@@ -53,7 +55,7 @@
     <h2 class="max-w-md text-3xl font-bold sm:text-4xl">¿Tienes un proyecto en mente?</h2>
     <a
       href="mailto:hola@synapta.com"
-      class="inline-flex items-center justify-center rounded-lg bg-surface px-6 py-3 text-sm font-bold text-ink-on-dark transition-colors hover:bg-surface-hover"
+      class="inline-flex items-center justify-center rounded-xl bg-surface px-6 py-3 text-sm font-bold text-ink-on-dark transition-colors hover:bg-surface-hover active:scale-[0.98]"
       >Escribenos</a
     >
   </div>

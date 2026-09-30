@@ -91,6 +91,17 @@
   background: var(--color-accent-hover);
 }
 
+/* Secundario/ghost: «Ir al Studio» es navegación, «Nuevo» queda como único primario. */
+.new-btn.ghost {
+  background: transparent;
+  color: var(--color-ink);
+  border: 1px solid var(--color-secondary);
+}
+
+.new-btn.ghost:hover {
+  background: var(--color-secondary);
+}
+
 /* ── Lista de eventos ───────────────────────────────────────── */
 .cards {
   display: flex;

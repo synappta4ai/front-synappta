@@ -1,4 +1,4 @@
-<div class="studio-shell h-full">
+<div class="studio-shell h-full" animate.enter="anim-page">
   <!-- ══════════ Left rail: prompt + params ══════════ -->
   <aside class="studio-left">
     <!-- Proyecto seleccionado (caption sutil, solo si hay) -->
@@ -7,10 +7,10 @@
         <i class="pi pi-briefcase"></i> {{ project.name }}
       </p>
     }
-    <div class="studio-mode">
+    <div class="studio-mode seg-slide" appSlidePill=".mode-btn">
       <button
         type="button"
-        class="mode-btn"
+        class="mode-btn seg-btn"
         [class.active]="mode() === 'video'"
         (click)="setMode('video')"
       >
@@ -18,7 +18,7 @@
       </button>
       <button
         type="button"
-        class="mode-btn"
+        class="mode-btn seg-btn"
         [class.active]="mode() === 'image'"
         (click)="setMode('image')"
       >
@@ -35,6 +35,12 @@
             ? 'Proyecto asignado (opcional) — clic para cambiar o quitar'
             : 'Asignar proyecto (opcional)'
         "
+        [pTooltip]="
+          selectedProject()
+            ? 'Proyecto asignado (opcional) — clic para cambiar o quitar'
+            : 'Asignar proyecto (opcional)'
+        "
+        showDelay="400"
       >
         <i
           class="pi"
@@ -53,97 +59,120 @@
       >
         <span><i class="pi pi-images"></i> Referencias</span>
         <i
-          class="pi"
+          class="pi transition-transform duration-200"
           [class.pi-chevron-down]="showAssetGallery()"
           [class.pi-chevron-right]="!showAssetGallery()"
+          [class.rotate-180]="showAssetGallery()"
         ></i>
       </button>
       @if (showAssetGallery()) {
-        <button type="button" class="library-picker-btn" (click)="libraryPickerVisible.set(true)">
+        <button
+          type="button"
+          class="library-picker-btn"
+          animate.enter="anim-item"
+          (click)="libraryPickerVisible.set(true)"
+        >
           <i class="pi pi-folder-open"></i>
           Elegir de la biblioteca
         </button>
       }
       @if (showAssetGallery()) {
-        <div class="slot-grid">
-          @for (slot of refSlotDefs; track slot.key) {
-            <!-- label nativo: el click activa el input file oculto -->
-            <label class="slot" [class.filled]="!!refSlots()[slot.key]">
-              @if (uploadingSlot() === slot.key) {
-                <span class="slot-uploading"><i class="pi pi-spin pi-spinner"></i></span>
-              } @else if (refSlots()[slot.key]; as assetId) {
-                <img class="slot-img" [src]="assetThumbUrl(assetId)" [alt]="slot.label" />
-                <span class="slot-replace"><i class="pi pi-refresh"></i></span>
-                <button
-                  type="button"
-                  class="slot-clear"
-                  title="Quitar referencia"
-                  (click)="$event.preventDefault(); $event.stopPropagation(); clearSlot(slot.key)"
-                >
-                  <i class="pi pi-times"></i>
-                </button>
-              } @else {
-                <i class="pi pi-plus slot-plus mb-3"></i>
-                <span class="slot-label">{{ slot.label }}</span>
-                <span class="slot-hint">{{ slot.hint }}</span>
+        <div class="acc-wrap" animate.enter="acc-enter" animate.leave="acc-leave">
+          <div class="acc-inner">
+            <div class="slot-grid">
+              @for (slot of refSlotDefs; track slot.key) {
+                <!-- label nativo: el click activa el input file oculto -->
+                <label class="slot" [class.filled]="!!refSlots()[slot.key]">
+                  @if (uploadingSlot() === slot.key) {
+                    <span class="slot-uploading"><i class="pi pi-spin pi-spinner"></i></span>
+                  } @else if (refSlots()[slot.key]; as assetId) {
+                    <img
+                      class="slot-img"
+                      [src]="assetThumbUrl(assetId)"
+                      [alt]="slot.label"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                    <span class="slot-replace"><i class="pi pi-refresh"></i></span>
+                    <button
+                      type="button"
+                      class="slot-clear"
+                      title="Quitar referencia"
+                      pTooltip="Quitar referencia"
+                      showDelay="400"
+                      (click)="
+                        $event.preventDefault(); $event.stopPropagation(); clearSlot(slot.key)
+                      "
+                    >
+                      <i class="pi pi-times"></i>
+                    </button>
+                  } @else {
+                    <i class="pi pi-plus slot-plus mb-3"></i>
+                    <span class="slot-label">{{ slot.label }}</span>
+                    <span class="slot-hint">{{ slot.hint }}</span>
+                  }
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg"
+                    hidden
+                    (change)="onSlotPicked($event, slot.key)"
+                  />
+                </label>
               }
-              <input
-                type="file"
-                accept="image/png,image/jpeg"
-                hidden
-                (change)="onSlotPicked($event, slot.key)"
-              />
-            </label>
-          }
-        </div>
-        <div class="refs-meta muted small">
-          <span>{{ selectedAssetIds().size }}/{{ maxSelectedRefs }} seleccionadas</span>
-          @if (uploading()) {
-            <span class="refs-uploading"><i class="pi pi-spin pi-spinner"></i> Subiendo…</span>
-          }
-        </div>
-        @if (refError(); as err) {
-          <p class="ref-error small" role="alert">
-            <i class="pi pi-exclamation-circle"></i> {{ err }}
-          </p>
-        }
-        @if (assets().length > 0) {
-          <div class="asset-grid">
-            @for (asset of assets().slice(0, 8); track asset.id) {
-              <div
-                class="asset-thumb"
-                [class.selected]="selectedAssetIds().has(asset.id)"
-                role="button"
-                tabindex="0"
-                (click)="toggleAsset(asset.id)"
-                (keydown.enter)="toggleAsset(asset.id)"
-                [title]="asset.filename"
-              >
-                <img
-                  [src]="asset.thumbnail_url || asset.url | serverUrl"
-                  [alt]="asset.filename"
-                  loading="lazy"
-                />
-                <span class="asset-check"><i class="pi pi-check"></i></span>
-                <button
-                  type="button"
-                  class="asset-remove"
-                  title="Quitar de la lista"
-                  (click)="$event.stopPropagation(); removeAsset(asset.id)"
-                >
-                  <i class="pi pi-times"></i>
-                </button>
-                <span
-                  class="asset-eye"
-                  title="Ver"
-                  (click)="$event.stopPropagation(); openPreview(asset, $event)"
-                >
-                  <i class="pi pi-eye"></i>
-                </span>
+            </div>
+            <div class="refs-meta muted small">
+              <span>{{ selectedAssetIds().size }}/{{ maxSelectedRefs }} seleccionadas</span>
+              @if (uploading()) {
+                <span class="refs-uploading"><i class="pi pi-spin pi-spinner"></i> Subiendo…</span>
+              }
+            </div>
+            @if (refError(); as err) {
+              <p class="ref-error small" role="alert">
+                <i class="pi pi-exclamation-circle"></i> {{ err }}
+              </p>
+            }
+            @if (assets().length > 0) {
+              <div class="asset-grid">
+                @for (asset of assets().slice(0, 8); track asset.id) {
+                  <div
+                    class="asset-thumb"
+                    [class.selected]="selectedAssetIds().has(asset.id)"
+                    role="button"
+                    tabindex="0"
+                    (click)="toggleAsset(asset.id)"
+                    (keydown.enter)="toggleAsset(asset.id)"
+                    [title]="asset.filename"
+                  >
+                    <img
+                      [src]="asset.thumbnail_url || asset.url | serverUrl"
+                      [alt]="asset.filename"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                    <span class="asset-check"><i class="pi pi-check"></i></span>
+                    <button
+                      type="button"
+                      class="asset-remove"
+                      title="Quitar de la lista"
+                      pTooltip="Quitar de la lista"
+                      showDelay="400"
+                      (click)="$event.stopPropagation(); removeAsset(asset.id)"
+                    >
+                      <i class="pi pi-times"></i>
+                    </button>
+                    <span
+                      class="asset-eye"
+                      title="Ver"
+                      (click)="$event.stopPropagation(); openPreview(asset, $event)"
+                    >
+                      <i class="pi pi-eye"></i>
+                    </span>
+                  </div>
+                }
               </div>
             }
           </div>
-        }
+        </div>
       }
     </div>
 
@@ -185,6 +214,7 @@
                     [src]="assetThumbUrl(asset.id)"
                     [alt]="asset.filename"
                     loading="lazy"
+                    decoding="async"
                   />
                   <span class="mention-name">{{ asset.filename }}</span>
                   @if (asset.ingredients?.length) {
@@ -217,6 +247,8 @@
                 class="mention-chip-thumb"
                 [src]="assetThumbUrl(asset.id)"
                 [alt]="asset.filename"
+                loading="lazy"
+                decoding="async"
               />
               <span class="mention-chip-name">@{{ asset.filename }}</span>
               <button
@@ -402,7 +434,7 @@
     </p-dialog>
     <div class="panel">
       <div class="panel-head">
-        <span><i class="pi pi-sparkles"></i> Modelo</span>
+        <span><i class="pi pi-box"></i> Modelo</span>
       </div>
       @if (loadingModels()) {
         <p class="muted small">Cargando catálogo…</p>
@@ -458,10 +490,21 @@
       />
     </div>
 
-    <button type="button" class="generate-btn" [disabled]="!canGenerate()" (click)="generate()">
-      <i class="pi" [class.pi-spin.pi-spinner]="submitting()" [class.pi-bolt]="!submitting()"></i>
-      {{ submitting() ? 'Enviando…' : 'Generar ' + (mode() === 'video' ? 'Video' : 'Imagen') }}
-    </button>
+    <span pTooltip="Elegí un modelo y escribí un prompt para generar" showDelay="400" class="grid">
+      <button
+        type="button"
+        class="generate-btn"
+        [disabled]="!canGenerate()"
+        (click)="generate()"
+        pTooltip="Generar (Ctrl+Enter)"
+        showDelay="400"
+        aria-keyshortcuts="Control+Enter"
+      >
+        <i class="pi" [class.pi-spin.pi-spinner]="submitting()" [class.pi-bolt]="!submitting()"></i>
+        {{ submitting() ? 'Enviando…' : 'Generar ' + (mode() === 'video' ? 'Video' : 'Imagen') }}
+        <kbd class="ml-1 rounded border border-current px-1 text-[10px] opacity-70">Ctrl+↵</kbd>
+      </button>
+    </span>
   </aside>
 
   <!-- ══════════ Center: viewer ══════════ -->
@@ -482,10 +525,16 @@
                   autoplay
                   loop
                   class="viewer-media"
+                  animate.enter="anim-item"
                   [src]="take.videoUrl | serverUrl"
                 ></video>
               } @else {
-                <img [src]="take.videoUrl | serverUrl" [alt]="take.prompt" class="viewer-media" />
+                <img
+                  [src]="take.videoUrl | serverUrl"
+                  [alt]="take.prompt"
+                  class="viewer-media"
+                  animate.enter="anim-item"
+                />
               }
             }
             @case ('failed') {
@@ -551,16 +600,19 @@
       <p class="muted small pad">Todavía no hay tomas en esta sesión.</p>
     }
     <div class="reel-list">
-      @for (take of takes(); track take.id) {
+      @for (take of takes(); track take.id; let reelIdx = $index) {
         <button
           type="button"
           class="take-card"
+          animate.enter="anim-item"
+          [style.animation-delay.ms]="reelIdx < 8 ? reelIdx * 35 : 280"
           [class.selected]="take.id === selectedTakeId()"
           (click)="selectTake(take)"
         >
           @if (take.status === 'succeeded' && take.videoUrl) {
             <video
               class="take-thumb"
+              animate.enter="anim-item"
               [src]="take.videoUrl | serverUrl"
               preload="metadata"
               muted
@@ -589,6 +641,7 @@
                   styleClass="w-6 h-6"
                   (onClick)="cancelTake(take)"
                   pTooltip="Cancelar"
+                  showDelay="400"
                 />
               }
               <span class="small muted time">{{ formatTime(take.createdAt) }}</span>
@@ -610,7 +663,7 @@
     }
     <div class="queue-list">
       @for (take of activeTakes(); track take.id) {
-        <div class="queue-item">
+        <div class="queue-item" animate.enter="anim-item" [attr.data-status]="take.status">
           <i class="pi pi-spin pi-spinner"></i>
           <div class="queue-info">
             <p class="truncate">{{ take.modelDisplayName }}</p>

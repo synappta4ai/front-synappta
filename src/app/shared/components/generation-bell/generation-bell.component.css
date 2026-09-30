@@ -55,7 +55,7 @@
   border: 1px solid var(--color-surface-border) !important;
   color: var(--color-ink-on-dark) !important;
   box-shadow: none !important;
-  border-radius: 14px !important;
+  border-radius: 16px !important;
 }
 
 .gen-bell-popover .p-popover-content {
@@ -151,7 +151,7 @@
 .pop-thumb {
   width: 74px;
   height: 42px;
-  border-radius: 8px;
+  border-radius: 12px;
   object-fit: cover;
   background: var(--color-ink);
   flex-shrink: 0;

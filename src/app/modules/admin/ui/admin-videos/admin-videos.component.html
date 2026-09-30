@@ -1,262 +1,294 @@
-@if (error(); as message) {
-  <div class="mb-6">
-    <p-message severity="error" [text]="message" [escape]="false" styleClass="w-full" />
-  </div>
-}
-
-<!-- Header / filters -->
-<div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-  <div class="flex items-center gap-2">
-    <span class="text-sm font-bold text-ink">Videos generados</span>
-    <p-tag [value]="total() + ' videos'" severity="info" />
-  </div>
-  <div class="flex items-center gap-2">
-    <input
-      pInputText
-      type="text"
-      [ngModel]="search()"
-      (ngModelChange)="search.set($event)"
-      placeholder="Filtrar por proyecto, pieza o task..."
-      class="w-64"
-    />
-  </div>
-</div>
-
-@if (loading()) {
-  <div
-    class="flex flex-col items-center gap-4 rounded-xl border border-surface-border bg-surface py-16"
-  >
-    <p-progressSpinner styleClass="w-12 h-12" strokeWidth="3" />
-    <p class="text-sm text-ink-muted-on-dark">Cargando videos...</p>
-  </div>
-} @else {
-  <!-- Cards grid -->
-  @if (filtered().length === 0) {
-    <div
-      class="flex flex-col items-center gap-4 rounded-xl border border-surface-border bg-surface py-16"
-    >
-      <div class="flex h-16 w-16 items-center justify-center rounded-full bg-surface-2">
-        <i class="pi pi-video text-3xl text-ink-muted-on-dark"></i>
-      </div>
-      <div class="text-center">
-        <p class="font-bold text-ink-on-dark">No hay videos generados</p>
-        <p class="mt-1 text-sm text-ink-muted-on-dark">
-          Los videos completados aparecerán aquí con su proyecto e información
-        </p>
-      </div>
-    </div>
-  } @else {
-    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      @for (v of filtered(); track v.id) {
-        <div
-          class="group overflow-hidden rounded-xl border border-surface-border bg-surface transition-shadow hover:border-surface-border-strong"
-        >
-          <!-- Preview -->
-          <div
-            class="relative aspect-video cursor-pointer overflow-hidden bg-ink"
-            (click)="openPlayer(v)"
-          >
-            <video
-              [src]="outputUrl(v) | serverUrl"
-              preload="metadata"
-              class="h-full w-full object-cover opacity-90 transition-opacity group-hover:opacity-100"
-            ></video>
-            <div
-              class="absolute inset-0 flex items-center justify-center bg-ink/30 opacity-0 transition-opacity group-hover:opacity-100"
-            >
-              <div
-                class="flex h-12 w-12 items-center justify-center rounded-full bg-ink/90 text-accent"
-              >
-                <i class="pi pi-play ml-0.5 text-lg"></i>
-              </div>
-            </div>
-            @if (v.video_duration > 0) {
-              <span
-                class="absolute right-2 bottom-2 rounded bg-ink/70 px-1.5 py-0.5 text-xs font-bold text-ink-on-dark"
-              >
-                {{ formatDuration(v.video_duration) }}
-              </span>
-            }
-          </div>
-
-          <!-- Info -->
-          <div class="flex flex-col gap-2 p-4">
-            <div class="flex items-start justify-between gap-2">
-              <div class="min-w-0">
-                <p class="truncate font-bold text-ink-on-dark">
-                  {{ v.event_name || 'Proyecto sin nombre' }}
-                </p>
-                <p class="truncate text-xs text-ink-muted-on-dark">
-                  {{ v.piece_code }}
-                  @if (v.piece_name) {
-                    <span> · {{ v.piece_name }}</span>
-                  }
-                  @if (v.generation_number) {
-                    <span> · G{{ v.generation_number }}</span>
-                  }
-                </p>
-              </div>
-              <p-tag
-                [value]="v.video_resolution || '—'"
-                severity="secondary"
-                styleClass="shrink-0"
-              />
-            </div>
-
-            <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-ink-muted-on-dark">
-              <span class="flex items-center gap-1">
-                <i class="pi pi-user text-xs"></i>
-                {{ v.user_display_name || 'u' + (v.user_id ?? '—') }}
-              </span>
-              <span class="flex items-center gap-1">
-                <i class="pi pi-calendar text-xs"></i>
-                {{ v.created_at | date: 'short' }}
-              </span>
-              @if (v.usage_tokens > 0) {
-                <span class="flex items-center gap-1">
-                  <i class="pi pi-bolt text-xs"></i>
-                  {{ v.usage_tokens | number: '1.0-0' }} tokens
-                </span>
-              }
-              @if (v.video_ratio) {
-                <span class="flex items-center gap-1">
-                  <i class="pi pi-th-large text-xs"></i>
-                  {{ v.video_ratio }}
-                </span>
-              }
-            </div>
-
-            <div class="mt-1 flex items-center justify-between border-t border-surface-border pt-2">
-              <code class="truncate text-xs text-ink-muted-on-dark" [pTooltip]="v.task_id">
-                {{ v.task_id }}
-              </code>
-              <p-button icon="pi pi-play" label="Ver" size="small" text (onClick)="openPlayer(v)" />
-            </div>
-          </div>
-        </div>
-      }
-    </div>
-
-    <!-- Pagination -->
-    <div
-      class="mt-4 flex items-center justify-between rounded-xl border border-surface-border bg-surface px-5 py-3"
-    >
-      <span class="text-sm text-ink-muted-on-dark">
-        Página {{ page() }} — {{ total() }} videos
-      </span>
-      <div class="flex gap-2">
-        <p-button
-          icon="pi pi-chevron-left"
-          size="small"
-          [disabled]="!hasPrev()"
-          (onClick)="prevPage()"
-        />
-        <p-button
-          icon="pi pi-chevron-right"
-          size="small"
-          [disabled]="!hasNext()"
-          (onClick)="nextPage()"
-        />
-      </div>
+<div animate.enter="anim-page">
+  @if (error(); as message) {
+    <div class="mb-6">
+      <p-message severity="error" [text]="message" [escape]="false" styleClass="w-full" />
     </div>
   }
-}
 
-<!-- Player dialog -->
-<p-dialog
-  [visible]="playerVisible()"
-  (visibleChange)="playerVisible.set($event)"
-  [modal]="true"
-  [style]="{ width: 'min(94vw, 64rem)' }"
-  [draggable]="false"
-  [resizable]="false"
-  [closeOnEscape]="true"
->
-  @if (selected(); as v) {
-    <ng-template #header>
-      <div class="flex items-center gap-3">
-        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-2 text-accent">
-          <i class="pi pi-video text-sm"></i>
+  <!-- Header / filters -->
+  <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div class="flex items-center gap-2">
+      <span class="text-sm font-bold text-ink">Videos generados</span>
+      <p-tag [value]="total() + ' videos'" severity="info" />
+    </div>
+    <div class="flex items-center gap-2">
+      <input
+        pInputText
+        type="text"
+        aria-label="Filtrar videos"
+        [ngModel]="search()"
+        (ngModelChange)="search.set($event)"
+        placeholder="Filtrar por proyecto, pieza o task..."
+        class="w-64 rounded-xl"
+      />
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div
+      class="flex flex-col gap-2 rounded-3xl border border-surface-border bg-surface p-6"
+      aria-busy="true"
+    >
+      <span class="sr-only">Cargando videos…</span>
+      <div class="skel skel-title" aria-hidden="true"></div>
+      <div class="skel skel-text" aria-hidden="true"></div>
+      <div class="skel skel-text" aria-hidden="true"></div>
+    </div>
+  } @else {
+    <!-- Cards grid -->
+    @if (filtered().length === 0) {
+      <div
+        class="flex flex-col items-center gap-4 rounded-3xl border border-surface-border bg-surface py-16"
+      >
+        <div class="flex h-16 w-16 items-center justify-center rounded-full bg-surface-2">
+          <i class="pi pi-video text-3xl text-ink-muted-on-dark"></i>
         </div>
-        <div>
-          <h3 class="text-lg font-bold text-ink-on-dark">
-            {{ v.event_name || 'Video generado' }}
-          </h3>
-          <p class="text-xs text-ink-muted-on-dark">
-            {{ v.piece_code }}
-            @if (v.piece_name) {
-              <span> · {{ v.piece_name }}</span>
-            }
-            @if (v.generation_number) {
-              <span> · Generación #{{ v.generation_number }}</span>
-            }
+        <div class="text-center">
+          <p class="font-bold text-ink-on-dark">No hay videos generados</p>
+          <p class="mt-1 text-sm text-ink-muted-on-dark">
+            Los videos completados aparecerán aquí con su proyecto e información
           </p>
         </div>
       </div>
-    </ng-template>
-
-    <video
-      [src]="outputUrl(v) | serverUrl"
-      controls
-      autoplay
-      class="max-h-[70vh] w-full rounded-lg bg-ink"
-    ></video>
-
-    <!-- Metadata -->
-    <div
-      class="mt-4 grid gap-3 rounded-xl border border-surface-border bg-surface-2 p-4 text-sm sm:grid-cols-4"
-    >
-      <div>
-        <p class="text-xs text-ink-muted-on-dark">Modelo</p>
-        <p class="font-bold text-ink-on-dark">{{ v.model_name }}</p>
-      </div>
-      <div>
-        <p class="text-xs text-ink-muted-on-dark">Duración</p>
-        <p class="font-bold text-ink-on-dark">{{ formatDuration(v.video_duration) }}</p>
-      </div>
-      <div>
-        <p class="text-xs text-ink-muted-on-dark">Resolución</p>
-        <p class="font-bold text-ink-on-dark">
-          {{ v.video_resolution || '—' }}
-          @if (v.video_fps) {
-            <span> · {{ v.video_fps }}fps</span>
-          }
-        </p>
-      </div>
-      <div>
-        <p class="text-xs text-ink-muted-on-dark">Ratio / Seed</p>
-        <p class="font-bold text-ink-on-dark">
-          {{ v.video_ratio || '—' }}
-          @if (v.video_seed) {
-            <span> · {{ v.video_seed }}</span>
-          }
-        </p>
-      </div>
-      <div>
-        <p class="text-xs text-ink-muted-on-dark">Tokens</p>
-        <p class="font-bold text-ink-on-dark">
-          {{ v.usage_tokens | number: '1.0-0' }}
-          @if (v.usage_completion_tokens) {
-            <span class="text-xs text-ink-muted-on-dark">
-              ({{ v.usage_completion_tokens | number: '1.0-0' }} completion)</span
+    } @else {
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        @for (v of filtered(); track v.id; let i = $index) {
+          <div
+            animate.enter="anim-item"
+            [style.animation-delay.ms]="i < 8 ? i * 35 : 280"
+            class="group overflow-hidden rounded-2xl border border-surface-border bg-surface transition-shadow hover:border-surface-border-strong"
+          >
+            <!-- Preview -->
+            <div
+              class="relative aspect-video cursor-pointer overflow-hidden bg-ink"
+              (click)="openPlayer(v)"
+              (keydown.enter)="openPlayer(v)"
+              tabindex="0"
+              role="button"
+              [attr.aria-label]="'Ver video de ' + (v.event_name || 'proyecto sin nombre')"
             >
-          }
-        </p>
+              <video
+                [src]="outputUrl(v) | serverUrl"
+                preload="metadata"
+                class="h-full w-full object-cover opacity-90 transition-opacity group-hover:opacity-100"
+              ></video>
+              <div
+                class="absolute inset-0 flex items-center justify-center bg-ink/30 opacity-0 transition-opacity group-hover:opacity-100"
+              >
+                <div
+                  class="flex h-12 w-12 items-center justify-center rounded-full bg-ink/90 text-accent"
+                >
+                  <i class="pi pi-play ml-0.5 text-lg"></i>
+                </div>
+              </div>
+              @if (v.video_duration > 0) {
+                <span
+                  class="absolute right-2 bottom-2 rounded-full bg-ink/70 px-1.5 py-0.5 text-xs font-bold text-ink-on-dark"
+                >
+                  {{ formatDuration(v.video_duration) }}
+                </span>
+              }
+            </div>
+
+            <!-- Info -->
+            <div class="flex flex-col gap-2 p-4">
+              <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                  <p class="truncate font-bold text-ink-on-dark">
+                    {{ v.event_name || 'Proyecto sin nombre' }}
+                  </p>
+                  <p class="truncate text-xs text-ink-muted-on-dark">
+                    {{ v.piece_code }}
+                    @if (v.piece_name) {
+                      <span> · {{ v.piece_name }}</span>
+                    }
+                    @if (v.generation_number) {
+                      <span> · G{{ v.generation_number }}</span>
+                    }
+                  </p>
+                </div>
+                <p-tag
+                  [value]="v.video_resolution || '—'"
+                  severity="secondary"
+                  styleClass="shrink-0"
+                />
+              </div>
+
+              <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-ink-muted-on-dark">
+                <span class="flex items-center gap-1">
+                  <i class="pi pi-user text-xs"></i>
+                  {{ v.user_display_name || 'u' + (v.user_id ?? '—') }}
+                </span>
+                <span class="flex items-center gap-1">
+                  <i class="pi pi-calendar text-xs"></i>
+                  {{ v.created_at | date: 'short' }}
+                </span>
+                @if (v.usage_tokens > 0) {
+                  <span class="flex items-center gap-1">
+                    <i class="pi pi-bolt text-xs"></i>
+                    {{ v.usage_tokens | number: '1.0-0' }} tokens
+                  </span>
+                }
+                @if (v.video_ratio) {
+                  <span class="flex items-center gap-1">
+                    <i class="pi pi-th-large text-xs"></i>
+                    {{ v.video_ratio }}
+                  </span>
+                }
+              </div>
+
+              <div
+                class="mt-1 flex items-center justify-between border-t border-surface-border pt-2"
+              >
+                <code
+                  class="truncate text-xs text-ink-muted-on-dark"
+                  [pTooltip]="v.task_id"
+                  showDelay="400"
+                >
+                  {{ v.task_id }}
+                </code>
+                <p-button
+                  icon="pi pi-play"
+                  label="Ver"
+                  size="small"
+                  text
+                  (onClick)="openPlayer(v)"
+                />
+              </div>
+            </div>
+          </div>
+        }
       </div>
-      <div>
-        <p class="text-xs text-ink-muted-on-dark">Generado por</p>
-        <p class="font-bold text-ink-on-dark">
-          {{ v.user_display_name || 'u' + (v.user_id ?? '—') }}
-        </p>
+
+      <!-- Pagination -->
+      <div
+        class="mt-4 flex items-center justify-between rounded-3xl border border-surface-border bg-surface px-5 py-3"
+      >
+        <span class="text-sm text-ink-muted-on-dark">
+          Página {{ page() }} — {{ total() }} videos
+        </span>
+        <div class="flex gap-2">
+          <p-button
+            icon="pi pi-chevron-left"
+            size="small"
+            severity="secondary"
+            pTooltip="Página anterior"
+            showDelay="400"
+            [disabled]="!hasPrev()"
+            (onClick)="prevPage()"
+          />
+          <p-button
+            icon="pi pi-chevron-right"
+            size="small"
+            severity="secondary"
+            pTooltip="Página siguiente"
+            showDelay="400"
+            [disabled]="!hasNext()"
+            (onClick)="nextPage()"
+          />
+        </div>
       </div>
-      <div>
-        <p class="text-xs text-ink-muted-on-dark">Fecha</p>
-        <p class="font-bold text-ink-on-dark">{{ v.created_at | date: 'medium' }}</p>
-      </div>
-      <div>
-        <p class="text-xs text-ink-muted-on-dark">Task ID</p>
-        <code class="text-xs text-ink-on-dark">{{ v.task_id }}</code>
-      </div>
-    </div>
+    }
   }
-</p-dialog>
+
+  <!-- Player dialog -->
+  <p-dialog
+    [visible]="playerVisible()"
+    (visibleChange)="playerVisible.set($event)"
+    [modal]="true"
+    [style]="{ width: 'min(94vw, 64rem)' }"
+    [draggable]="false"
+    [resizable]="false"
+    [closeOnEscape]="true"
+  >
+    @if (selected(); as v) {
+      <ng-template #header>
+        <div class="flex items-center gap-3">
+          <div
+            class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2 text-accent"
+          >
+            <i class="pi pi-video text-sm"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-ink-on-dark">
+              {{ v.event_name || 'Video generado' }}
+            </h3>
+            <p class="text-xs text-ink-muted-on-dark">
+              {{ v.piece_code }}
+              @if (v.piece_name) {
+                <span> · {{ v.piece_name }}</span>
+              }
+              @if (v.generation_number) {
+                <span> · Generación #{{ v.generation_number }}</span>
+              }
+            </p>
+          </div>
+        </div>
+      </ng-template>
+
+      <video
+        [src]="outputUrl(v) | serverUrl"
+        controls
+        autoplay
+        class="aspect-video max-h-[70vh] w-full rounded-xl bg-ink"
+      ></video>
+
+      <!-- Metadata -->
+      <div
+        class="mt-4 grid gap-3 rounded-2xl border border-surface-border bg-surface-2 p-4 text-sm sm:grid-cols-4"
+      >
+        <div>
+          <p class="text-xs text-ink-muted-on-dark">Modelo</p>
+          <p class="font-bold text-ink-on-dark">{{ v.model_name }}</p>
+        </div>
+        <div>
+          <p class="text-xs text-ink-muted-on-dark">Duración</p>
+          <p class="font-bold text-ink-on-dark">{{ formatDuration(v.video_duration) }}</p>
+        </div>
+        <div>
+          <p class="text-xs text-ink-muted-on-dark">Resolución</p>
+          <p class="font-bold text-ink-on-dark">
+            {{ v.video_resolution || '—' }}
+            @if (v.video_fps) {
+              <span> · {{ v.video_fps }}fps</span>
+            }
+          </p>
+        </div>
+        <div>
+          <p class="text-xs text-ink-muted-on-dark">Ratio / Seed</p>
+          <p class="font-bold text-ink-on-dark">
+            {{ v.video_ratio || '—' }}
+            @if (v.video_seed) {
+              <span> · {{ v.video_seed }}</span>
+            }
+          </p>
+        </div>
+        <div>
+          <p class="text-xs text-ink-muted-on-dark">Tokens</p>
+          <p class="font-bold text-ink-on-dark">
+            {{ v.usage_tokens | number: '1.0-0' }}
+            @if (v.usage_completion_tokens) {
+              <span class="text-xs text-ink-muted-on-dark">
+                ({{ v.usage_completion_tokens | number: '1.0-0' }} completion)</span
+              >
+            }
+          </p>
+        </div>
+        <div>
+          <p class="text-xs text-ink-muted-on-dark">Generado por</p>
+          <p class="font-bold text-ink-on-dark">
+            {{ v.user_display_name || 'u' + (v.user_id ?? '—') }}
+          </p>
+        </div>
+        <div>
+          <p class="text-xs text-ink-muted-on-dark">Fecha</p>
+          <p class="font-bold text-ink-on-dark">{{ v.created_at | date: 'medium' }}</p>
+        </div>
+        <div>
+          <p class="text-xs text-ink-muted-on-dark">Task ID</p>
+          <code class="text-xs text-ink-on-dark">{{ v.task_id }}</code>
+        </div>
+      </div>
+    }
+  </p-dialog>
+</div>

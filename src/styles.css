@@ -106,6 +106,9 @@
   --radius-2xl: 1.5rem;
   --radius-full: 9999px;
 
+  /* Ease global de la app (movimiento §1): usar en cada transition/animation. */
+  --ease-app: cubic-bezier(0.2, 0, 0, 1);
+
   --space-0: 0;
   --space-1: 0.25rem;
   --space-2: 0.5rem;
@@ -301,15 +304,18 @@ input {
   background: var(--color-accent);
   border: 1px solid var(--color-accent);
   color: var(--color-on-accent);
-  border-radius: var(--radius-md);
+  border-radius: 12px;
   padding: var(--space-3) var(--space-4);
   font-family: inherit;
   font-size: 0.75rem;
   font-weight: 700;
   transition:
-    background-color 0.15s ease,
-    border-color 0.15s ease,
-    color 0.15s ease;
+    transform 150ms var(--ease-app),
+    background-color 150ms var(--ease-app),
+    border-color 150ms var(--ease-app),
+    color 150ms var(--ease-app),
+    box-shadow 150ms var(--ease-app),
+    outline-color 150ms var(--ease-app);
 }
 
 .p-button:hover:not(:disabled) {
@@ -321,6 +327,7 @@ input {
 .p-button:active:not(:disabled) {
   background: var(--color-accent-active);
   border-color: var(--color-accent-active);
+  transform: scale(0.98);
 }
 
 .p-button .p-button-label {
@@ -468,6 +475,10 @@ input {
   color: var(--color-ink-on-dark);
   box-shadow: none;
   overflow: hidden;
+  transition:
+    border-color 150ms var(--ease-app),
+    background-color 150ms var(--ease-app),
+    transform 150ms var(--ease-app);
 }
 
 .p-card-body {
@@ -479,7 +490,7 @@ input {
 }
 
 .p-dialog {
-  border-radius: var(--radius-xl);
+  border-radius: 24px;
   border: 1px solid var(--color-surface-border);
   background: var(--color-surface);
   color: var(--color-ink-on-dark);
@@ -515,7 +526,7 @@ input {
 .p-dialog .p-dialog-header-actions .p-dialog-close-button {
   width: 2.25rem;
   height: 2.25rem;
-  border-radius: var(--radius-md);
+  border-radius: 12px;
   color: var(--color-ink-muted-on-dark);
 }
 
@@ -555,7 +566,7 @@ input {
 
 .p-inputtext,
 .p-textarea {
-  border-radius: var(--radius-md);
+  border-radius: 12px;
   border: 1px solid var(--color-surface-border-strong);
   padding: var(--space-3) var(--space-4);
   font-family: inherit;
@@ -598,7 +609,7 @@ input {
    PrimeNG: tablas
    ============================================ */
 .p-datatable {
-  border-radius: var(--radius-lg);
+  border-radius: 16px;
   overflow: hidden;
   border: 1px solid var(--color-surface-border);
   color: var(--color-ink-on-dark);
@@ -763,7 +774,7 @@ input {
    PrimeNG: select
    ============================================ */
 .p-select {
-  border-radius: var(--radius-md);
+  border-radius: 12px;
   min-height: 2.75rem;
   background: var(--color-surface-2);
   color: var(--color-ink-on-dark);
@@ -811,7 +822,7 @@ input {
 .p-select-overlay {
   background: var(--color-surface) !important;
   border: 1px solid var(--color-surface-border) !important;
-  border-radius: 12px !important;
+  border-radius: 16px !important;
   box-shadow: none !important;
   color: var(--color-ink-on-dark) !important;
 }
@@ -825,7 +836,7 @@ input {
   padding: var(--space-2) var(--space-4);
   color: var(--color-ink-on-dark) !important;
   font-size: 0.75rem;
-  border-radius: 8px !important;
+  border-radius: 12px !important;
   margin: 2px 6px !important;
   transition: background-color 0.12s ease;
 }
@@ -880,7 +891,7 @@ input {
   background: var(--color-surface-2) !important;
   border: 1px solid var(--color-surface-border-strong) !important;
   color: var(--color-ink-on-dark) !important;
-  border-radius: 8px !important;
+  border-radius: 12px !important;
   width: calc(100% - var(--space-4));
   font-size: 0.75rem;
 }
@@ -953,12 +964,13 @@ input {
   background: var(--color-surface);
   color: var(--color-ink-on-dark);
   border: 1px solid var(--color-surface-border);
+  border-radius: 16px;
   box-shadow: none;
 }
 
 .theme-popover.p-popover {
   padding: 0;
-  border-radius: var(--radius-lg);
+  border-radius: 16px;
 }
 
 .theme-popover.p-popover .p-popover-content {
@@ -1090,7 +1102,7 @@ input {
 .p-menubar.p-menubar-mobile .p-menubar-root-list {
   background: var(--color-surface);
   border: 1px solid var(--color-surface-border);
-  border-radius: var(--radius-lg);
+  border-radius: 16px;
   box-shadow: none;
   padding: var(--space-2);
   gap: 2px !important;
@@ -1101,7 +1113,7 @@ input {
 
 .p-menubar.p-menubar-mobile .p-menubar-item-content {
   min-height: 44px;
-  border-radius: var(--radius-md);
+  border-radius: 12px;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1116,7 +1128,7 @@ input {
   border: 1px solid var(--color-surface-border) !important;
   color: var(--color-ink-on-dark) !important;
   box-shadow: none !important;
-  border-radius: 14px !important;
+  border-radius: 16px !important;
 }
 
 .gen-bell-popover .p-popover-content {
@@ -1200,7 +1212,7 @@ input {
 .gen-bell-popover .pop-thumb {
   width: 74px;
   height: 42px;
-  border-radius: 8px;
+  border-radius: 12px;
   object-fit: cover;
   background: var(--color-ink);
   flex-shrink: 0;
@@ -1329,7 +1341,7 @@ app-generation-events {
 .studio-shell .p-select {
   background: var(--st-bg) !important;
   border: 1px solid var(--color-surface-border-strong) !important;
-  border-radius: 10px;
+  border-radius: 12px;
 }
 
 .studio-shell .p-select:not(.p-disabled):hover {
@@ -1355,7 +1367,7 @@ app-generation-events {
   padding: 0 !important;
   box-sizing: border-box;
   font-size: 12px;
-  border-radius: 8px;
+  border-radius: 12px;
 }
 
 .prompt-foot .p-select .p-select-label {
@@ -1384,7 +1396,7 @@ app-generation-events {
 .asset-popover.p-popover {
   background: var(--color-surface) !important;
   border: 1px solid var(--color-surface-border) !important;
-  border-radius: 14px !important;
+  border-radius: 16px !important;
   box-shadow: none !important;
   width: 260px !important;
 }
@@ -1438,7 +1450,7 @@ app-generation-events {
 .asset-pop-imgbtn {
   padding: 0;
   border: 1px solid var(--color-surface-border);
-  border-radius: 10px;
+  border-radius: 12px;
   overflow: hidden;
   cursor: zoom-in;
   background: var(--color-surface-2);
@@ -1485,7 +1497,7 @@ app-generation-events {
   max-width: 90vw;
   max-height: 82vh;
   object-fit: contain;
-  border-radius: 10px;
+  border-radius: 12px;
 }
 
 .asset-fullscreen-meta {
@@ -1505,7 +1517,7 @@ app-generation-events {
 .duration-popover.p-popover {
   background: var(--color-surface) !important;
   border: 1px solid var(--color-surface-border) !important;
-  border-radius: 14px !important;
+  border-radius: 16px !important;
   box-shadow: none !important;
   color: var(--color-ink-on-dark) !important;
   width: 240px !important;
@@ -1591,13 +1603,13 @@ app-admin-console .mx-auto > .p-tabs .p-tablist {
 app-admin-console .mx-auto > .p-tabs .p-tablist-tab-list {
   background: var(--color-surface);
   border: 1px solid var(--color-surface-border);
-  border-radius: 14px;
+  border-radius: 16px;
   padding: 5px;
   gap: 6px;
 }
 
 app-admin-console .mx-auto > .p-tabs .p-tab {
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 9px 18px;
   min-height: 40px;
   font-size: 12px;
@@ -1640,7 +1652,7 @@ p-selectbutton:has(.section-toggle) {
   gap: 4px;
   background: var(--color-surface);
   border: 1px solid var(--color-surface-border);
-  border-radius: 12px;
+  border-radius: 16px;
   padding: 4px;
 }
 
@@ -1648,7 +1660,7 @@ p-selectbutton:has(.section-toggle) {
   border: none !important;
   background: transparent !important;
   color: var(--color-ink-muted-on-dark) !important;
-  border-radius: 8px !important;
+  border-radius: 12px !important;
   font-size: 12px;
   font-weight: 700;
   padding: 9px 16px;
@@ -1687,7 +1699,7 @@ p-selectbutton:has(.section-toggle) {
 .asset-picker-dialog {
   background: var(--color-surface);
   border: 1px solid var(--color-surface-border);
-  border-radius: 14px;
+  border-radius: 24px;
   overflow: hidden;
 }
 
@@ -1729,7 +1741,7 @@ p-selectbutton:has(.section-toggle) {
 .studio-shell .panel {
   background: var(--st-panel);
   border: 1px solid var(--st-line);
-  border-radius: 14px;
+  border-radius: 16px;
   padding: 12px;
 }
 
@@ -1779,15 +1791,19 @@ p-selectbutton:has(.section-toggle) {
   align-items: center;
   justify-content: center;
   width: 36px;
-  border-radius: 10px;
+  border-radius: 12px;
   border: 1px solid var(--color-secondary);
   background: var(--color-secondary);
   color: var(--color-ink);
   font-size: 13px;
   cursor: pointer;
   transition:
-    background-color 0.15s ease,
-    border-color 0.15s ease;
+    transform 150ms var(--ease-app),
+    background-color 150ms var(--ease-app),
+    border-color 150ms var(--ease-app),
+    color 150ms var(--ease-app),
+    box-shadow 150ms var(--ease-app),
+    outline-color 150ms var(--ease-app);
 }
 
 .studio-shell .project-icon-btn:hover {
@@ -1813,7 +1829,7 @@ p-selectbutton:has(.section-toggle) {
   justify-content: center;
   gap: 6px;
   padding: 9px 0;
-  border-radius: 10px;
+  border-radius: 12px;
   border: 1px solid var(--color-secondary);
   background: var(--color-secondary);
   color: var(--color-ink);
@@ -1821,8 +1837,12 @@ p-selectbutton:has(.section-toggle) {
   font-weight: 700;
   cursor: pointer;
   transition:
-    background-color 0.15s ease,
-    border-color 0.15s ease;
+    transform 150ms var(--ease-app),
+    background-color 150ms var(--ease-app),
+    border-color 150ms var(--ease-app),
+    color 150ms var(--ease-app),
+    box-shadow 150ms var(--ease-app),
+    outline-color 150ms var(--ease-app);
 }
 
 .studio-shell .mode-btn:hover {
@@ -1849,7 +1869,7 @@ p-selectbutton:has(.section-toggle) {
   width: 100%;
   background: var(--st-bg);
   border: 1px solid var(--color-surface-border-strong);
-  border-radius: 10px;
+  border-radius: 12px;
   color: var(--st-text);
   padding: 10px;
   font-size: 14px;
@@ -1909,7 +1929,7 @@ p-selectbutton:has(.section-toggle) {
   word-wrap: break-word;
   overflow: hidden;
   pointer-events: none;
-  border-radius: 10px;
+  border-radius: 12px;
 }
 
 .studio-shell .prompt-wrap .prompt-input {
@@ -1943,7 +1963,7 @@ p-selectbutton:has(.section-toggle) {
   padding: 6px;
   background: var(--st-panel);
   border: 1px solid var(--color-surface-border-strong);
-  border-radius: 12px;
+  border-radius: 16px;
   box-shadow: none;
 }
 
@@ -1968,7 +1988,7 @@ p-selectbutton:has(.section-toggle) {
   width: 100%;
   padding: 6px;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   background: transparent;
   color: var(--st-text);
   cursor: pointer;
@@ -2158,7 +2178,7 @@ p-selectbutton:has(.section-toggle) {
   width: 100%;
   padding: 9px 12px;
   margin-bottom: 12px;
-  border-radius: 10px;
+  border-radius: 12px;
   border: 1px dashed var(--color-surface-border-strong);
   background: transparent;
   color: var(--st-text);
@@ -2194,7 +2214,7 @@ p-selectbutton:has(.section-toggle) {
   justify-content: center;
   width: 26px;
   height: 26px;
-  border-radius: 8px;
+  border-radius: 12px;
   border: 1px dashed var(--color-surface-border-strong);
   cursor: pointer;
   color: var(--st-text-2);
@@ -2216,7 +2236,7 @@ p-selectbutton:has(.section-toggle) {
   justify-content: center;
   gap: 3px;
   border: 1px solid var(--st-line);
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--st-bg);
   cursor: pointer;
   overflow: hidden;
@@ -2347,7 +2367,7 @@ p-selectbutton:has(.section-toggle) {
 .studio-shell .asset-thumb {
   position: relative;
   aspect-ratio: 1;
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
   border: 2px solid var(--st-line);
   padding: 0;
@@ -2378,7 +2398,7 @@ p-selectbutton:has(.section-toggle) {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
+  border-radius: 12px;
   background: color-mix(in srgb, var(--color-ink) 60%, transparent);
   color: var(--color-ink-on-dark);
   font-size: 12px;
@@ -2450,7 +2470,7 @@ p-selectbutton:has(.section-toggle) {
   gap: 5px;
   padding: 0 10px;
   height: 34px;
-  border-radius: 8px;
+  border-radius: 12px;
   border: 1px solid var(--color-surface-border-strong);
   background: var(--st-bg);
   color: var(--st-text-2);
@@ -2472,7 +2492,7 @@ p-selectbutton:has(.section-toggle) {
 /* El resto del select (fondo, borde, label, dropdown) lo pisa el bloque
    global `.studio-shell .p-select` de más arriba; solo el radio queda acá. */
 .studio-shell .p-select {
-  border-radius: 10px;
+  border-radius: 12px;
 }
 
 .studio-shell .p-message {
@@ -2518,7 +2538,13 @@ p-selectbutton:has(.section-toggle) {
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
-  transition: background-color 0.15s ease;
+  transition:
+    transform 150ms var(--ease-app),
+    background-color 150ms var(--ease-app),
+    border-color 150ms var(--ease-app),
+    color 150ms var(--ease-app),
+    box-shadow 150ms var(--ease-app),
+    outline-color 150ms var(--ease-app);
 }
 
 .studio-shell .generate-btn:hover:not(:disabled) {
@@ -2527,6 +2553,7 @@ p-selectbutton:has(.section-toggle) {
 
 .studio-shell .generate-btn:active:not(:disabled) {
   background: var(--color-accent-active);
+  transform: scale(0.98);
 }
 
 .studio-shell .generate-btn:disabled {
@@ -2546,7 +2573,7 @@ p-selectbutton:has(.section-toggle) {
   min-height: 320px;
   /* El lienzo no debe empujar la página: máx ~viewport menos header/meta. */
   max-height: calc(100vh - 130px);
-  border-radius: 16px;
+  border-radius: 24px;
   border: 1px solid var(--st-line);
   background: var(--color-surface);
   display: flex;
@@ -2670,15 +2697,16 @@ p-selectbutton:has(.section-toggle) {
   display: flex;
   gap: 10px;
   padding: 8px;
-  border-radius: 12px;
+  border-radius: 16px;
   border: 1px solid var(--st-line);
   background: var(--st-panel);
   cursor: pointer;
   text-align: left;
   color: var(--st-text);
   transition:
-    border-color 0.15s ease,
-    background 0.15s ease;
+    border-color 150ms var(--ease-app),
+    background-color 150ms var(--ease-app),
+    transform 150ms var(--ease-app);
 }
 
 .studio-shell .take-card:hover {
@@ -2698,7 +2726,7 @@ p-selectbutton:has(.section-toggle) {
 .studio-shell .take-thumb {
   width: 96px;
   height: 54px;
-  border-radius: 8px;
+  border-radius: 12px;
   object-fit: cover;
   background: var(--st-bg);
   flex-shrink: 0;
@@ -2748,11 +2776,15 @@ p-selectbutton:has(.section-toggle) {
   align-items: center;
   gap: 8px;
   padding: 8px 10px;
-  border-radius: 10px;
+  border-radius: 12px;
   border: 1px solid var(--st-line);
   background: var(--st-panel);
   font-size: 12px;
   color: var(--st-text);
+  transition:
+    border-color 150ms var(--ease-app),
+    background-color 150ms var(--ease-app),
+    transform 150ms var(--ease-app);
 }
 
 .studio-shell .queue-item i {
@@ -2803,7 +2835,7 @@ p-selectbutton:has(.section-toggle) {
 /* ── Modal de proyecto: contraste en tema oscuro ───────────────
    El overlay se monta en body: global, sin encapsular. */
 .studio-project-dialog {
-  border-radius: 14px;
+  border-radius: 24px;
   overflow: hidden;
 }
 
@@ -2834,7 +2866,7 @@ p-selectbutton:has(.section-toggle) {
 .studio-project-dialog .p-select {
   background: var(--st-panel);
   border: 1px solid var(--st-line);
-  border-radius: 8px;
+  border-radius: 12px;
 }
 
 .studio-project-dialog .p-select:not(.p-disabled):hover {
@@ -2857,4 +2889,248 @@ p-selectbutton:has(.section-toggle) {
 .studio-project-dialog .project-pop-hint {
   color: var(--st-text-2);
   margin: 10px 0 0;
+}
+
+/* ============================================
+   Sistema de movimiento (pulido visual)
+   Ease global: var(--ease-app). `both` evita el flash
+   durante el delay (el delay lo pone el template con
+   [style.animation-delay.ms]).
+   ============================================ */
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.anim-page {
+  animation: page-in 220ms var(--ease-app) both;
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.anim-item {
+  animation: rise-in 200ms var(--ease-app) both;
+}
+
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+.anim-leave-fade {
+  animation: fade-out 150ms var(--ease-app) both;
+}
+
+@keyframes shimmer {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes acc-in {
+  from {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+  to {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+}
+
+@keyframes acc-out {
+  from {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+  to {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+}
+
+.acc-wrap {
+  display: grid;
+  grid-template-rows: 1fr;
+}
+
+.acc-enter {
+  animation: acc-in 220ms var(--ease-app) both;
+  display: grid;
+}
+
+.acc-leave {
+  animation: acc-out 180ms var(--ease-app) both;
+  display: grid;
+}
+
+.acc-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Skeletons neutros con shimmer muy sutil (velo neutro, sin color de marca). */
+.skel {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-surface-hover);
+  border-radius: 8px;
+}
+
+.skel-light {
+  position: relative;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--color-ink) 10%, transparent);
+  border-radius: 8px;
+}
+
+.skel::after,
+.skel-light::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+  animation: shimmer 1.6s var(--ease-app) infinite;
+}
+
+.skel-text {
+  height: 12px;
+}
+
+.skel-title {
+  height: 16px;
+  width: 40%;
+}
+
+.skel-thumb {
+  aspect-ratio: 16/9;
+}
+
+.skel-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+}
+
+/* ============================================
+   Contrato sliding pill (la píldora la posiciona por JS
+   una directiva de otro agente; acá solo las clases).
+   .seg-slide = contenedor, .seg-btn = botones,
+   .seg-pill = píldora deslizante.
+   ============================================ */
+.seg-slide {
+  position: relative;
+  isolation: isolate;
+}
+
+.seg-slide .seg-btn {
+  position: relative;
+  z-index: 1;
+}
+
+.seg-pill {
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  background: var(--color-accent);
+  transition:
+    transform 220ms var(--ease-app),
+    width 220ms var(--ease-app);
+}
+
+/* Con pill deslizante activo, el botón activo pierde su fondo propio
+   y su texto pasa a on-accent. Incluye las variantes de "activo" reales
+   del repo (.mode-btn/.filter-chip/.type-tab/.mention-option usan
+   [class.active]; chip-active no existe aún en templates, se deja por
+   contrato para la directiva). */
+.seg-slide.seg-on .seg-btn.active,
+.seg-slide.seg-on .seg-btn.chip-active,
+.seg-slide.seg-on .mode-btn.active,
+.seg-slide.seg-on .filter-chip.active,
+.seg-slide.seg-on .type-tab.active,
+.seg-slide.seg-on .mention-option.active {
+  background-color: transparent !important;
+  border-color: transparent !important;
+  color: var(--color-on-accent) !important;
+}
+
+/* Variante navbar (PrimeNG menubar). */
+.p-menubar-root-list.seg-on {
+  position: relative;
+}
+
+.seg-pill.nav-pill {
+  border-radius: 999px;
+}
+
+.seg-on .p-menubar-item-link.p-menubar-item-link-active,
+.seg-on .p-menubar-item-link.p-menubar-item-link-active:hover {
+  background: transparent;
+  color: var(--color-on-accent);
+}
+
+/* ============================================
+   Micro-interacciones globales (fusión para los selectores
+   sin regla propia; .p-button/.mode-btn/.generate-btn/
+   .project-icon-btn llevan la misma transición en su regla
+   existente; cards fusionadas en su regla: .p-card,
+   .take-card, .queue-item).
+   ============================================ */
+.foot-chip,
+.chip {
+  transition:
+    transform 150ms var(--ease-app),
+    background-color 150ms var(--ease-app),
+    border-color 150ms var(--ease-app),
+    color 150ms var(--ease-app),
+    box-shadow 150ms var(--ease-app),
+    outline-color 150ms var(--ease-app);
+}
+
+.mode-btn:active,
+.foot-chip:active,
+.chip:active,
+.project-icon-btn:active {
+  transform: scale(0.98);
+}
+
+/* (.p-button y .generate-btn ya llevan scale(0.98) en su :active propio.) */
+
+/* ============================================
+   prefers-reduced-motion: neutraliza todo lo animado.
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .seg-pill {
+    transition: none !important;
+  }
 }

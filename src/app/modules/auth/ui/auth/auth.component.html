@@ -1,4 +1,7 @@
-<section class="flex min-h-screen items-center justify-center bg-background">
+<section
+  class="flex min-h-screen items-center justify-center bg-background"
+  animate.enter="anim-page"
+>
   <p-card styleClass="w-full max-w-md shadow-3">
     <ng-template #header>
       <div class="flex flex-col items-center gap-3 pt-8 pb-4">
@@ -68,7 +71,7 @@
         severity="primary"
         [loading]="submitting()"
         [disabled]="submitting()"
-        styleClass="w-full"
+        styleClass="w-full active:scale-[0.98]"
         icon="pi pi-sign-in"
       />
     </form>

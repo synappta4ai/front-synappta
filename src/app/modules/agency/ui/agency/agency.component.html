@@ -1,4 +1,4 @@
-<app-page-container title="Agencia · Flujo de Producción">
+<app-page-container title="Agencia · Flujo de Producción" animate.enter="anim-page">
   @if (error(); as message) {
     <div class="mb-6">
       <p-message severity="error" [text]="message" [escape]="false" styleClass="w-full" />
@@ -15,7 +15,7 @@
     <p-card styleClass="phase-card">
       <ng-template #header>
         <div class="flex items-center gap-3 border-b border-surface-border px-6 py-4">
-          <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-2">
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
             <i class="pi pi-file-edit text-lg text-accent"></i>
           </div>
           <div>
@@ -61,6 +61,17 @@
               formControlName="propertyName"
               placeholder="Ej: Residencias El Parque"
               class="w-full"
+              [attr.aria-invalid]="
+                form.get('propertyName')?.invalid &&
+                (form.get('propertyName')?.touched || submitted() > 0)
+              "
+              aria-describedby="agency-propertyName-errors"
+            />
+            <validator-errors
+              id="agency-propertyName-errors"
+              [control]="form.get('propertyName')"
+              [label]="'Nombre del proyecto'"
+              [submitTick]="submitted()"
             />
           </div>
           <div class="flex flex-col gap-2">
@@ -74,6 +85,16 @@
               formControlName="location"
               placeholder="Ej: CDMX, Polanco"
               class="w-full"
+              [attr.aria-invalid]="
+                form.get('location')?.invalid && (form.get('location')?.touched || submitted() > 0)
+              "
+              aria-describedby="agency-location-errors"
+            />
+            <validator-errors
+              id="agency-location-errors"
+              [control]="form.get('location')"
+              [label]="'Ubicación'"
+              [submitTick]="submitted()"
             />
           </div>
         </div>
@@ -89,7 +110,18 @@
             rows="4"
             placeholder="Describe las características principales del proyecto inmobiliario, target de clientes, precio promedio, amenidades..."
             class="w-full"
+            [attr.aria-invalid]="
+              form.get('description')?.invalid &&
+              (form.get('description')?.touched || submitted() > 0)
+            "
+            aria-describedby="agency-description-errors"
           ></textarea>
+          <validator-errors
+            id="agency-description-errors"
+            [control]="form.get('description')"
+            [label]="'Descripción del proyecto'"
+            [submitTick]="submitted()"
+          />
           <small class="text-ink-muted-on-dark"
             >Opcional: detalles adicionales para el análisis IA</small
           >
@@ -100,15 +132,21 @@
             <i class="pi pi-info-circle mr-1"></i>
             El sistema analizará tu proyecto y generará ángulos de venta
           </p>
-          <p-button
-            type="button"
-            label="Analizar y generar ángulos"
-            icon="pi pi-sparkles"
-            [loading]="loading()"
-            [disabled]="!canProceedToAngles || loading()"
-            (onClick)="generateAngles()"
-            styleClass="px-6"
-          />
+          <span
+            pTooltip="Completá los campos requeridos para analizar"
+            showDelay="400"
+            class="inline-flex"
+          >
+            <p-button
+              type="button"
+              label="Analizar y generar ángulos"
+              icon="pi pi-bolt"
+              [loading]="loading()"
+              [disabled]="!canProceedToAngles || loading()"
+              (onClick)="generateAngles()"
+              styleClass="px-6 active:scale-[0.98]"
+            />
+          </span>
         </div>
       </form>
     </p-card>
@@ -119,7 +157,7 @@
     <p-card styleClass="phase-card">
       <ng-template #header>
         <div class="flex items-center gap-3 border-b border-surface-border px-6 py-4">
-          <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-2">
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
             <i class="pi pi-compass text-lg text-accent"></i>
           </div>
           <div>
@@ -140,15 +178,21 @@
         }
 
         <div class="flex flex-col gap-3">
-          @for (angle of angles(); track angle.id) {
+          @for (angle of angles(); track angle.id; let i = $index) {
             <div
-              class="flex cursor-pointer items-start gap-4 rounded-xl border-2 p-5 transition-all duration-200 hover:shadow-md"
+              animate.enter="anim-item"
+              [style.animation-delay.ms]="i < 8 ? i * 35 : 280"
+              class="flex cursor-pointer items-start gap-4 rounded-2xl border-2 p-5 transition-all duration-200 hover:shadow-md"
               [class]="
                 angle.selected
                   ? 'border-accent bg-surface-2 shadow-md'
                   : 'border-surface-border bg-surface hover:border-surface-border-strong'
               "
               (click)="toggleAngle(angle.id)"
+              (keydown.enter)="toggleAngle(angle.id)"
+              tabindex="0"
+              role="checkbox"
+              [attr.aria-checked]="angle.selected"
             >
               <div class="pt-0.5">
                 <p-checkbox
@@ -177,15 +221,21 @@
 
         <div class="flex items-center justify-between border-t border-surface-border pt-4 mt-2">
           <p-button label="← Volver" severity="secondary" text (onClick)="prevPhase()" />
-          <p-button
-            label="Generar Storyboard"
-            icon="pi pi-arrow-right"
-            iconPos="right"
-            [loading]="loading()"
-            [disabled]="!canProceedToStoryboard"
-            (onClick)="generateStoryboard()"
-            styleClass="px-6"
-          />
+          <span
+            pTooltip="Seleccioná al menos un ángulo para continuar"
+            showDelay="400"
+            class="inline-flex"
+          >
+            <p-button
+              label="Generar Storyboard"
+              icon="pi pi-arrow-right"
+              iconPos="right"
+              [loading]="loading()"
+              [disabled]="!canProceedToStoryboard"
+              (onClick)="generateStoryboard()"
+              styleClass="px-6 active:scale-[0.98]"
+            />
+          </span>
         </div>
       </div>
     </p-card>
@@ -196,7 +246,7 @@
     <p-card styleClass="phase-card">
       <ng-template #header>
         <div class="flex items-center gap-3 border-b border-surface-border px-6 py-4">
-          <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-2">
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
             <i class="pi pi-images text-lg text-accent"></i>
           </div>
           <div class="flex-1">
@@ -209,11 +259,15 @@
 
       <div class="flex flex-col gap-6">
         @for (scene of storyboard(); track scene.id; let i = $index) {
-          <div class="rounded-xl border border-surface-border bg-surface-2 p-5">
+          <div
+            animate.enter="anim-item"
+            [style.animation-delay.ms]="i < 8 ? i * 35 : 280"
+            class="rounded-2xl border border-surface-border bg-surface-2 p-5"
+          >
             <div class="mb-4 flex items-center justify-between">
               <div class="flex items-center gap-3">
                 <div
-                  class="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-on-accent text-sm font-bold"
+                  class="flex h-8 w-8 items-center justify-center rounded-xl bg-accent text-on-accent text-sm font-bold"
                 >
                   {{ i + 1 }}
                 </div>
@@ -225,6 +279,7 @@
               <p-button
                 label="Generar imágenes"
                 icon="pi pi-image"
+                severity="secondary"
                 size="small"
                 [loading]="scene.shots.some((s) => s.generating)"
                 [disabled]="scene.shots.some((s) => s.generating)"
@@ -233,14 +288,18 @@
             </div>
 
             <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              @for (shot of scene.shots; track shot.id) {
+              @for (shot of scene.shots; track shot.id; let k = $index) {
                 <div
-                  class="overflow-hidden rounded-lg border border-surface-border bg-surface shadow-sm"
+                  animate.enter="anim-item"
+                  [style.animation-delay.ms]="k < 8 ? k * 35 : 280"
+                  class="overflow-hidden rounded-2xl border border-surface-border bg-surface shadow-sm"
                 >
                   @if (shot.imageUrl) {
                     <img
                       [src]="shot.imageUrl"
                       [alt]="shot.description"
+                      loading="lazy"
+                      decoding="async"
                       class="aspect-video w-full object-cover"
                     />
                   } @else if (shot.generating) {
@@ -277,7 +336,7 @@
           icon="pi pi-arrow-right"
           iconPos="right"
           (onClick)="nextPhase()"
-          styleClass="px-6"
+          styleClass="px-6 active:scale-[0.98]"
         />
       </div>
     </p-card>
@@ -288,7 +347,7 @@
     <p-card styleClass="phase-card">
       <ng-template #header>
         <div class="flex items-center gap-3 border-b border-surface-border px-6 py-4">
-          <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-2">
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
             <i class="pi pi-clapperboard text-lg text-accent"></i>
           </div>
           <div>
@@ -300,8 +359,12 @@
 
       @if (storyboard().length > 0) {
         <div class="flex flex-col gap-6">
-          @for (scene of storyboard(); track scene.id) {
-            <div class="rounded-xl border border-surface-border bg-surface-2 p-5">
+          @for (scene of storyboard(); track scene.id; let i = $index) {
+            <div
+              animate.enter="anim-item"
+              [style.animation-delay.ms]="i < 8 ? i * 35 : 280"
+              class="rounded-2xl border border-surface-border bg-surface-2 p-5"
+            >
               <h3 class="mb-4 flex items-center gap-2 font-bold text-ink-on-dark">
                 <i class="pi pi-play-circle"></i>
                 {{ scene.title }}
@@ -310,12 +373,14 @@
               <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 @for (shot of scene.shots; track shot.id; let j = $index) {
                   <div
-                    class="overflow-hidden rounded-lg border border-surface-border bg-surface shadow-sm"
+                    class="overflow-hidden rounded-2xl border border-surface-border bg-surface shadow-sm"
                   >
                     @if (shot.imageUrl) {
                       <img
                         [src]="shot.imageUrl"
                         [alt]="shot.description"
+                        loading="lazy"
+                        decoding="async"
                         class="aspect-video w-full object-cover"
                       />
                     } @else {
@@ -326,7 +391,7 @@
                     <div class="p-3">
                       <div class="mb-1 flex items-center gap-2">
                         <span
-                          class="inline-flex h-5 w-5 items-center justify-center rounded bg-surface-2 text-xs font-bold text-ink-on-dark"
+                          class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-surface-2 text-xs font-bold text-ink-on-dark"
                         >
                           {{ j + 1 }}
                         </span>
@@ -344,7 +409,7 @@
         </div>
       } @else {
         <div
-          class="flex flex-col items-center gap-4 rounded-xl border-2 border-dashed border-surface-border-strong py-16 text-center"
+          class="flex flex-col items-center gap-4 rounded-3xl border-2 border-dashed border-surface-border-strong py-16 text-center"
         >
           <div class="flex h-16 w-16 items-center justify-center rounded-full bg-surface-2">
             <i class="pi pi-inbox text-3xl text-ink-muted-on-dark"></i>
@@ -369,7 +434,7 @@
           label="Nuevo Proyecto"
           icon="pi pi-plus"
           (onClick)="resetWorkflow()"
-          styleClass="px-6"
+          styleClass="px-6 active:scale-[0.98]"
         />
       </div>
     </p-card>

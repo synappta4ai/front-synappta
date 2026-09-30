@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, viewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { Popover } from 'primeng/popover';
+import { Tooltip } from 'primeng/tooltip';
 
 import { UserSessionStore } from '@core/store/user.session';
 import { AuthService } from '@modules/auth/services/auth.service';
@@ -10,7 +11,7 @@ import { AUTH } from '@constants/routes';
 
 @Component({
   selector: 'app-theme-panel',
-  imports: [Popover],
+  imports: [Popover, Tooltip],
   templateUrl: './theme-panel.component.html',
   styleUrls: ['./theme-panel.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

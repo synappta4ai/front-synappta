@@ -1,4 +1,4 @@
-<div class="events-page">
+<div class="events-page" animate.enter="anim-page">
   <header class="events-header">
     <h1>Eventos de generación</h1>
     <div class="header-underline"></div>
@@ -6,10 +6,10 @@
   <div class="events-layout">
     <!-- Lista de eventos -->
     <div class="events-list-col">
-      <div class="filter-row">
+      <div class="filter-row seg-slide" appSlidePill=".filter-chip">
         <button
           type="button"
-          class="filter-chip"
+          class="filter-chip seg-btn"
           [class.active]="filter() === 'all'"
           (click)="setFilter('all')"
         >
@@ -17,7 +17,7 @@
         </button>
         <button
           type="button"
-          class="filter-chip"
+          class="filter-chip seg-btn"
           [class.active]="filter() === 'active'"
           (click)="setFilter('active')"
         >
@@ -25,7 +25,7 @@
         </button>
         <button
           type="button"
-          class="filter-chip"
+          class="filter-chip seg-btn"
           [class.active]="filter() === 'done'"
           (click)="setFilter('done')"
         >
@@ -41,7 +41,9 @@
             No hay eventos
             {{ filter() === 'done' ? 'listos' : filter() === 'active' ? 'en curso' : 'todavía' }}.
           </p>
-          <a routerLink="/studio" class="new-btn"> <i class="pi pi-sparkles"></i> Ir al Studio </a>
+          <a routerLink="/studio" class="new-btn ghost">
+            <i class="pi pi-arrow-right"></i> Ir al Studio
+          </a>
         </div>
       }
 

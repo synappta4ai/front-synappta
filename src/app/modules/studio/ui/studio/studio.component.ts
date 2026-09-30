@@ -34,6 +34,7 @@ import { environment } from '@env/environment';
 import { StudioService } from '../../services/studio.service';
 import { StudioModel, StudioTake } from '../../interfaces';
 import { AssetPickerDialogComponent } from '@shared/components/index';
+import { SlidePillDirective } from '@shared/components/slide-pill/slide-pill.directive';
 
 interface RatioOption {
   label: string;
@@ -68,10 +69,12 @@ const REF_SLOT_DEFS: RefSlotDef[] = [
     Message,
     ServerUrlPipe,
     AssetPickerDialogComponent,
+    SlidePillDirective,
   ],
   templateUrl: './studio.component.html',
   styleUrl: './studio.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { '(document:keydown)': 'onShortcut($event)' },
 })
 export class StudioComponent {
   private readonly studioService = inject(StudioService);
@@ -1241,5 +1244,61 @@ export class StudioComponent {
 
   protected formatTime(ts: number): string {
     return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  /**
+   * Atajos de teclado UI-only: solo invocan métodos/sets existentes.
+   * - Ctrl/Cmd+Enter: generar si se puede.
+   * - `/` fuera de campos editables: foco al prompt.
+   * - Escape: cierra lo abierto por prioridad (menciones, popovers, fullscreen, diálogos).
+   */
+  protected onShortcut(event: KeyboardEvent): void {
+    if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+      event.preventDefault();
+      if (this.canGenerate()) {
+        this.generate();
+      }
+      return;
+    }
+    if (event.key === '/' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      const target = event.target as HTMLElement | null;
+      if (
+        target &&
+        typeof target.closest === 'function' &&
+        target.closest('input, textarea, select, [contenteditable]')
+      ) {
+        return;
+      }
+      event.preventDefault();
+      this.promptTextarea?.focus();
+      return;
+    }
+    if (event.key === 'Escape') {
+      if (this.mentionMenuOpen()) {
+        this.closeMentionMenu();
+        return;
+      }
+      const duration = this.durationPopover();
+      if (duration?.overlayVisible) {
+        duration.hide();
+        return;
+      }
+      const asset = this.assetPopover();
+      if (asset?.overlayVisible) {
+        asset.hide();
+        return;
+      }
+      if (this.fullscreenAsset()) {
+        this.closeFullscreen();
+        return;
+      }
+      if (this.projectDialogVisible()) {
+        this.projectDialogVisible.set(false);
+        return;
+      }
+      if (this.libraryPickerVisible()) {
+        this.libraryPickerVisible.set(false);
+      }
+    }
   }
 }

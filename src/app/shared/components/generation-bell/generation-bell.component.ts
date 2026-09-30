@@ -11,6 +11,7 @@ import { RouterLink } from '@angular/router';
 import { Button } from 'primeng/button';
 import { Popover } from 'primeng/popover';
 import { Tag } from 'primeng/tag';
+import { Tooltip } from 'primeng/tooltip';
 
 import { GenerationEventsStore } from '@core/store/generation.events';
 import { ServerUrlPipe } from '@pipes/server-url.pipe';
@@ -23,7 +24,7 @@ import { StudioTake } from '@modules/studio/interfaces';
  */
 @Component({
   selector: 'app-generation-bell',
-  imports: [RouterLink, Button, Popover, Tag, ServerUrlPipe],
+  imports: [RouterLink, Button, Popover, Tag, Tooltip, ServerUrlPipe],
   templateUrl: './generation-bell.component.html',
   styleUrl: './generation-bell.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

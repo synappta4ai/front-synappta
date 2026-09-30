@@ -64,7 +64,7 @@ export class AdminImagesComponent {
   /** Sección activa: imágenes generadas o recursos subidos. */
   protected readonly section = signal<Section>('generated');
   protected readonly sectionOptions = [
-    { label: 'Generadas', value: 'generated', icon: 'pi pi-sparkles' },
+    { label: 'Generadas', value: 'generated', icon: 'pi pi-image' },
     { label: 'Recursos subidos', value: 'uploads', icon: 'pi pi-upload' },
   ];
 

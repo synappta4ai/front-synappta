@@ -1,523 +1,578 @@
-@if (error(); as message) {
-  <div class="error-banner">
-    <i class="pi pi-exclamation-triangle"></i>
-    <span>{{ message }}</span>
-    <p-button
-      icon="pi pi-times"
-      size="small"
-      [text]="true"
-      [rounded]="true"
-      severity="secondary"
-      (onClick)="error.set(null)"
-    />
-  </div>
-}
-
-<!-- Toolbar: secciones + búsqueda | tenant | filtro proyecto | total -->
-<div class="images-toolbar mb-4">
-  <div class="images-toolbar__group">
-    <p-selectButton
-      styleClass="section-toggle"
-      [ngModel]="section()"
-      (ngModelChange)="onSectionChange($event)"
-      [options]="sectionOptions"
-      optionLabel="label"
-      optionValue="value"
-      [allowEmpty]="false"
-    >
-      <ng-template let-option>
-        <span class="flex items-center gap-2">
-          <i class="{{ option.icon }}"></i>
-          <span>{{ option.label }}</span>
-        </span>
-      </ng-template>
-    </p-selectButton>
-
-    <p-iconfield iconPosition="left" styleClass="images-search">
-      <p-inputicon styleClass="pi pi-search" />
-      <input
-        pInputText
-        type="text"
-        [ngModel]="search()"
-        (ngModelChange)="search.set($event)"
-        [placeholder]="section() === 'generated' ? 'Proyecto, pieza o task…' : 'Buscar por nombre…'"
-      />
-    </p-iconfield>
-  </div>
-
-  <div class="images-toolbar__group">
-    @if (isSuperadmin() && tenantSlug()) {
-      <span class="tenant-chip" [title]="'Recursos del tenant «' + tenantSlug() + '»'">
-        <i class="pi pi-building"></i>
-        {{ tenantSlug() }}
-      </span>
-    }
-
-    <p-select
-      [ngModel]="filterProjectId()"
-      (ngModelChange)="onFilterProjectChange($event)"
-      [options]="projectOptions()"
-      optionLabel="label"
-      optionValue="value"
-      placeholder="Todos los proyectos"
-      [showClear]="true"
-      [filter]="true"
-      filterPlaceholder="Buscar proyecto..."
-      appendTo="body"
-      styleClass="toolbar-select"
-    />
-
-    <span class="total-chip">
-      <strong>{{ totalLabel() }}</strong>
-      <small>{{ section() === 'generated' ? 'imágenes' : 'recursos' }}</small>
-    </span>
-  </div>
-</div>
-
-@if (loading()) {
-  <div class="empty-state">
-    <p-progressSpinner styleClass="w-12 h-12" strokeWidth="3" />
-    <p class="text-sm text-ink-muted-on-dark">
-      {{ section() === 'generated' ? 'Cargando imágenes…' : 'Cargando recursos…' }}
-    </p>
-  </div>
-} @else if (section() === 'generated') {
-  <!-- ══════════ Generated images grid ══════════ -->
-  @if (filtered().length === 0) {
-    <div class="empty-state">
-      <div class="empty-icon"><i class="pi pi-image"></i></div>
-      <h3>No hay imágenes generadas</h3>
-      <p>Las imágenes completadas aparecerán aquí con su proyecto e información</p>
-    </div>
-  } @else {
-    <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-      @for (img of filtered(); track img.id) {
-        <div
-          class="group cursor-pointer overflow-hidden rounded-xl border border-surface-border bg-surface transition-shadow hover:border-surface-border-strong"
-          (click)="openViewer(img)"
-        >
-          <div class="relative aspect-square overflow-hidden bg-surface-2">
-            <img
-              [src]="outputUrl(img) | serverUrl"
-              [alt]="img.event_name || img.task_id"
-              loading="lazy"
-              class="h-full w-full object-cover transition-transform group-hover:scale-[1.03]"
-            />
-            <div
-              class="absolute inset-0 flex items-center justify-center bg-ink/30 opacity-0 transition-opacity group-hover:opacity-100"
-            >
-              <div
-                class="flex h-10 w-10 items-center justify-center rounded-full bg-ink/90 text-accent"
-              >
-                <i class="pi pi-eye"></i>
-              </div>
-            </div>
-          </div>
-          <div class="flex flex-col gap-1 p-3">
-            <p class="truncate text-sm font-bold text-ink-on-dark">
-              {{ img.event_name || 'Sin proyecto' }}
-            </p>
-            <div class="flex items-center justify-between text-xs text-ink-muted-on-dark">
-              <span class="truncate">{{ img.piece_code }}</span>
-              <span>{{ img.created_at | date: 'short' }}</span>
-            </div>
-          </div>
-        </div>
-      }
-    </div>
-  }
-} @else {
-  <!-- ══════════ Uploaded assets: subida múltiple por tipo ════ -->
-  <div class="mb-3 flex flex-wrap items-center gap-2">
-    @for (btn of uploadButtons; track btn.type) {
-      <label
-        class="upload-btn"
-        [class.solid]="btn.type === 'all'"
-        [class.tinted]="btn.type !== 'all'"
-        [class.opacity-60]="uploadingType() !== null"
-        [title]="btn.hint"
-      >
-        <i
-          class="pi"
-          [class.pi-spin.pi-spinner]="uploadingType() === btn.type"
-          [class]="uploadingType() === btn.type ? '' : btn.icon"
-        ></i>
-        {{
-          uploadingType() === btn.type && uploadProgress()
-            ? 'Subiendo ' + uploadProgress()!.done + '/' + uploadProgress()!.total
-            : btn.label
-        }}
-        <input
-          type="file"
-          class="hidden"
-          [multiple]="true"
-          [accept]="btn.accept"
-          [disabled]="uploadingType() !== null"
-          (change)="onTypedUpload($event, btn.type)"
-        />
-      </label>
-    }
-  </div>
-
-  <!-- Tabs por tipo de ingrediente -->
-  <div class="type-tabs mb-4">
-    @for (opt of ingFilterOptions; track opt.value) {
-      <button
-        type="button"
-        class="type-tab"
-        [class.active]="ingFilter() === opt.value"
-        (click)="ingFilter.set(opt.value)"
-      >
-        <i class="pi {{ opt.icon }}"></i>
-        {{ opt.label }}
-        <span class="count" [class.badge]="ingFilter() === opt.value">{{
-          ingCounts()[opt.value] ?? 0
-        }}</span>
-      </button>
-    }
-  </div>
-
-  @if (selectedAssetIds().size > 0) {
-    <div
-      class="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-surface-border bg-surface-2 px-4 py-2"
-    >
-      <span class="text-sm font-bold text-ink-on-dark">
-        {{ selectedAssetIds().size }} seleccionado(s)
-      </span>
+<div animate.enter="anim-page">
+  @if (error(); as message) {
+    <div class="error-banner">
+      <i class="pi pi-exclamation-triangle"></i>
+      <span>{{ message }}</span>
       <p-button
-        label="Asignar a proyecto"
-        icon="pi pi-briefcase"
-        size="small"
-        (onClick)="openAssign()"
-      />
-      @if (filterProjectId(); as filteredProject) {
-        <p-button
-          label="Quitar de «{{ filterProjectName() }}»"
-          icon="pi pi-minus"
-          severity="warn"
-          size="small"
-          [text]="true"
-          (onClick)="unassignFromProject()"
-        />
-      }
-      <p-button
-        label="Cancelar"
         icon="pi pi-times"
-        severity="secondary"
         size="small"
         [text]="true"
-        (onClick)="clearSelection()"
+        [rounded]="true"
+        severity="secondary"
+        pTooltip="Cerrar"
+        showDelay="400"
+        (onClick)="error.set(null)"
       />
     </div>
   }
-  @if (filteredAssets().length === 0) {
-    <div class="empty-state">
-      <div class="empty-icon"><i class="pi pi-upload"></i></div>
-      <h3>No hay recursos subidos</h3>
-      <p>Los archivos que subas (referencias del Studio, etc.) aparecerán aquí</p>
-    </div>
-  } @else {
-    <div class="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-6">
-      @for (asset of filteredAssets(); track asset.id) {
-        <div class="resource-card group cursor-pointer" (click)="openViewer(asset)">
-          <div class="relative aspect-square overflow-hidden bg-surface-2">
-            @if (asset.mime_type?.startsWith('image/')) {
-              <img
-                [src]="assetThumb(asset) | serverUrl"
-                [alt]="asset.filename"
-                loading="lazy"
-                class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.05]"
-              />
-            } @else if (asset.mime_type?.startsWith('video/')) {
-              <video
-                [src]="asset.url | serverUrl"
-                preload="metadata"
-                class="h-full w-full object-cover"
-              ></video>
-            } @else {
-              <div class="flex h-full w-full items-center justify-center">
-                <i class="pi pi-file text-2xl text-ink-muted-on-dark"></i>
-              </div>
-            }
-            @if (asset.trashed) {
-              <span class="overlay-badge" style="top: 8px; left: 8px">PAPELERA</span>
-            }
-            <button
-              type="button"
-              class="select-chip"
-              [class.checked]="selectedAssetIds().has(asset.id)"
-              [attr.title]="
-                selectedAssetIds().has(asset.id)
-                  ? 'Quitar de la selección'
-                  : 'Seleccionar para asignar'
-              "
-              (click)="$event.stopPropagation(); toggleAssetSel(asset.id)"
-            >
-              <i class="pi text-xs" [class.pi-check]="selectedAssetIds().has(asset.id)"></i>
-            </button>
-            @if (!filterProjectId() && (asset.project_ids?.length ?? 0) > 0) {
-              <span class="overlay-badge" style="bottom: 8px; left: 8px">
-                <i class="pi pi-briefcase" style="font-size: 12px"></i>
-                {{ asset.project_ids!.length }}
-              </span>
-            }
-          </div>
-          <div class="card-body">
-            <p class="filename" [title]="asset.filename">{{ asset.filename }}</p>
-            @if (asset.ingredients?.length) {
-              @for (ing of asset.ingredients; track ing.id) {
-                <span class="ing-chip" [title]="ingTypeLabel(ing.type) + ': ' + ing.name">
-                  {{ ingTypeLabel(ing.type) }}: {{ ing.name }}
-                </span>
-              }
-            }
-            <div class="meta-row">
-              <span>{{ asset.size ? (asset.size / 1024 | number: '1.0-0') + ' KB' : '—' }}</span>
-              <span>{{ asset.created_at | date: 'shortDate' }}</span>
-            </div>
-          </div>
-        </div>
-      }
-    </div>
-  }
-}
 
-<!-- Pagination (both sections) -->
-@if (!loading() && totalLabel() > 0) {
-  <div class="pagination-bar mt-4 flex items-center justify-between px-5 py-3">
-    <span class="text-sm text-ink-muted-on-dark">
-      Página
-      {{ section() === 'generated' ? page() : assetsPage() }}
-      — {{ totalLabel() }} {{ section() === 'generated' ? 'imágenes' : 'recursos' }}
-    </span>
-    <div class="flex gap-2">
-      <p-button
-        icon="pi pi-chevron-left"
-        size="small"
-        [disabled]="!hasPrev()"
-        (onClick)="prevPage()"
+  <!-- Toolbar: secciones + búsqueda | tenant | filtro proyecto | total -->
+  <div class="images-toolbar mb-4">
+    <div class="images-toolbar__group">
+      <p-selectButton
+        styleClass="section-toggle"
+        [ngModel]="section()"
+        (ngModelChange)="onSectionChange($event)"
+        [options]="sectionOptions"
+        optionLabel="label"
+        optionValue="value"
+        [allowEmpty]="false"
+      >
+        <ng-template let-option>
+          <span class="flex items-center gap-2">
+            <i class="{{ option.icon }}"></i>
+            <span>{{ option.label }}</span>
+          </span>
+        </ng-template>
+      </p-selectButton>
+
+      <p-iconfield iconPosition="left" styleClass="images-search">
+        <p-inputicon styleClass="pi pi-search" />
+        <input
+          pInputText
+          type="text"
+          aria-label="Buscar imágenes y recursos"
+          [ngModel]="search()"
+          (ngModelChange)="search.set($event)"
+          [placeholder]="
+            section() === 'generated' ? 'Proyecto, pieza o task…' : 'Buscar por nombre…'
+          "
+        />
+      </p-iconfield>
+    </div>
+
+    <div class="images-toolbar__group">
+      @if (isSuperadmin() && tenantSlug()) {
+        <span class="tenant-chip" [title]="'Recursos del tenant «' + tenantSlug() + '»'">
+          <i class="pi pi-building"></i>
+          {{ tenantSlug() }}
+        </span>
+      }
+
+      <p-select
+        [ngModel]="filterProjectId()"
+        (ngModelChange)="onFilterProjectChange($event)"
+        [options]="projectOptions()"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Todos los proyectos"
+        [showClear]="true"
+        [filter]="true"
+        filterPlaceholder="Buscar proyecto..."
+        appendTo="body"
+        styleClass="toolbar-select"
       />
-      <p-button
-        icon="pi pi-chevron-right"
-        size="small"
-        [disabled]="!hasNext()"
-        (onClick)="nextPage()"
-      />
+
+      <span class="total-chip">
+        <strong>{{ totalLabel() }}</strong>
+        <small>{{ section() === 'generated' ? 'imágenes' : 'recursos' }}</small>
+      </span>
     </div>
   </div>
-}
 
-<!-- Viewer dialog (both sections) -->
-<p-dialog
-  [visible]="viewerVisible()"
-  (visibleChange)="viewerVisible.set($event)"
-  [modal]="true"
-  [style]="{ width: 'min(94vw, 60rem)' }"
-  [draggable]="false"
-  [resizable]="false"
-  [closeOnEscape]="true"
->
-  @if (selected(); as item) {
-    <ng-template #header>
-      <div class="flex items-center gap-3">
-        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-2 text-accent">
-          <i class="pi pi-image text-sm"></i>
-        </div>
-        <div class="min-w-0">
-          <h3 class="truncate text-lg font-bold text-ink-on-dark">
-            {{ selectedName() }}
-          </h3>
-          <p class="text-xs text-ink-muted-on-dark">
-            {{ section() === 'generated' ? 'Imagen generada' : 'Recurso subido' }}
-          </p>
-        </div>
-      </div>
-    </ng-template>
-
-    @if (isGenerated(item)) {
-      <img
-        [src]="outputUrl(item) | serverUrl"
-        [alt]="selectedName()"
-        class="max-h-[70vh] w-full rounded-lg object-contain"
-      />
-      <div
-        class="mt-4 grid gap-3 rounded-xl border border-surface-border bg-surface-2 p-4 text-sm sm:grid-cols-3"
-      >
-        <div>
-          <p class="text-xs text-ink-muted-on-dark">Modelo</p>
-          <p class="font-bold text-ink-on-dark">{{ item.model_name }}</p>
-        </div>
-        <div>
-          <p class="text-xs text-ink-muted-on-dark">Proyecto</p>
-          <p class="font-bold text-ink-on-dark">{{ item.event_name || '—' }}</p>
-        </div>
-        <div>
-          <p class="text-xs text-ink-muted-on-dark">Pieza</p>
-          <p class="font-bold text-ink-on-dark">{{ item.piece_code }} {{ item.piece_name }}</p>
-        </div>
-        <div>
-          <p class="text-xs text-ink-muted-on-dark">Generado por</p>
-          <p class="font-bold text-ink-on-dark">
-            {{ item.user_display_name || 'u' + (item.user_id ?? '—') }}
-          </p>
-        </div>
-        <div>
-          <p class="text-xs text-ink-muted-on-dark">Fecha</p>
-          <p class="font-bold text-ink-on-dark">{{ item.created_at | date: 'medium' }}</p>
-        </div>
-        <div>
-          <p class="text-xs text-ink-muted-on-dark">Task ID</p>
-          <code class="text-xs text-ink-on-dark">{{ item.task_id }}</code>
-        </div>
+  @if (loading()) {
+    <div class="empty-state" aria-busy="true">
+      <span class="sr-only">{{
+        section() === 'generated' ? 'Cargando imágenes…' : 'Cargando recursos…'
+      }}</span>
+      <div class="skel skel-title" aria-hidden="true"></div>
+      <div class="skel skel-text" aria-hidden="true"></div>
+      <div class="skel skel-text" aria-hidden="true"></div>
+    </div>
+  } @else if (section() === 'generated') {
+    <!-- ══════════ Generated images grid ══════════ -->
+    @if (filtered().length === 0) {
+      <div class="empty-state">
+        <div class="empty-icon"><i class="pi pi-image"></i></div>
+        <h3>No hay imágenes generadas</h3>
+        <p>Las imágenes completadas aparecerán aquí con su proyecto e información</p>
       </div>
     } @else {
-      @if (item.mime_type?.startsWith('image/')) {
-        <img
-          [src]="item.url | serverUrl"
-          [alt]="item.filename"
-          class="max-h-[70vh] w-full rounded-lg object-contain"
-        />
-      } @else if (item.mime_type?.startsWith('video/')) {
-        <video
-          [src]="item.url | serverUrl"
-          controls
-          class="max-h-[70vh] w-full rounded-lg bg-ink"
-        ></video>
-      }
-      <div
-        class="mt-4 grid gap-3 rounded-xl border border-surface-border bg-surface-2 p-4 text-sm sm:grid-cols-4"
-      >
-        <div>
-          <p class="text-xs text-ink-muted-on-dark">Archivo</p>
-          <p class="truncate font-bold text-ink-on-dark" [title]="item.filename">
-            {{ item.filename }}
-          </p>
-        </div>
-        <div>
-          <p class="text-xs text-ink-muted-on-dark">Tamaño</p>
-          <p class="font-bold text-ink-on-dark">
-            {{ item.size ? (item.size / 1024 | number: '1.0-0') + ' KB' : '—' }}
-          </p>
-        </div>
-        <div>
-          <p class="text-xs text-ink-muted-on-dark">Tipo</p>
-          <p class="font-bold text-ink-on-dark">{{ item.mime_type || '—' }}</p>
-        </div>
-        <div>
-          <p class="text-xs text-ink-muted-on-dark">Subido</p>
-          <p class="font-bold text-ink-on-dark">{{ item.created_at | date: 'medium' }}</p>
-        </div>
-        @if (item.ingredients?.length) {
-          <div class="sm:col-span-4">
-            <p class="mb-1 text-xs text-ink-muted-on-dark">Ingredientes</p>
-            <div class="flex flex-wrap gap-1">
-              @for (ing of item.ingredients; track ing.id) {
-                <button
-                  type="button"
-                  class="rounded border border-surface-border-strong px-2 py-0.5 text-xs font-bold"
-                  [style.background]="'var(--color-surface)'"
-                  [style.color]="'var(--color-ink-on-dark)'"
-                  [title]="'Clic para editar'"
-                  (click)="startIngEdit(ing)"
+      <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+        @for (img of filtered(); track img.id; let i = $index) {
+          <div
+            animate.enter="anim-item"
+            [style.animation-delay.ms]="i < 8 ? i * 35 : 280"
+            class="group cursor-pointer overflow-hidden rounded-2xl border border-surface-border bg-surface transition-shadow hover:border-surface-border-strong"
+            (click)="openViewer(img)"
+            (keydown.enter)="openViewer(img)"
+            tabindex="0"
+            role="button"
+            [attr.aria-label]="img.event_name || img.task_id"
+          >
+            <div class="relative aspect-square overflow-hidden bg-surface-2">
+              <img
+                [src]="outputUrl(img) | serverUrl"
+                [alt]="img.event_name || img.task_id"
+                loading="lazy"
+                decoding="async"
+                class="h-full w-full object-cover transition-transform group-hover:scale-[1.03]"
+              />
+              <div
+                class="absolute inset-0 flex items-center justify-center bg-ink/30 opacity-0 transition-opacity group-hover:opacity-100"
+              >
+                <div
+                  class="flex h-10 w-10 items-center justify-center rounded-full bg-ink/90 text-accent"
                 >
-                  {{ ingTypeLabel(ing.type) }}: {{ ing.name }}
-                </button>
-              }
+                  <i class="pi pi-eye"></i>
+                </div>
+              </div>
+            </div>
+            <div class="flex flex-col gap-1 p-3">
+              <p class="truncate text-sm font-bold text-ink-on-dark">
+                {{ img.event_name || 'Sin proyecto' }}
+              </p>
+              <div class="flex items-center justify-between text-xs text-ink-muted-on-dark">
+                <span class="truncate">{{ img.piece_code }}</span>
+                <span>{{ img.created_at | date: 'short' }}</span>
+              </div>
             </div>
           </div>
         }
-        <!-- Crear/editar ingrediente (nombre por defecto: filename con _ → espacio) -->
-        <div class="ing-editor sm:col-span-4">
-          <p class="editor-title">
-            {{ editIngId() ? 'Editar ingrediente' : 'Asignar ingrediente' }}
-          </p>
-          <div class="flex flex-wrap items-center gap-2">
-            <p-select
-              [ngModel]="editIngType()"
-              (ngModelChange)="editIngType.set($event)"
-              [ngModelOptions]="{ standalone: true }"
-              [options]="ingTypeOptions"
-              optionLabel="label"
-              optionValue="value"
-              [showClear]="false"
-              styleClass="w-36"
-              appendTo="body"
-            />
-            <input
-              pInputText
-              type="text"
-              [ngModel]="editIngName()"
-              (ngModelChange)="editIngName.set($event)"
-              [ngModelOptions]="{ standalone: true }"
-              placeholder="Nombre del ingrediente"
-              class="min-w-48 flex-1"
-            />
-            <p-button
-              [label]="editIngId() ? 'Guardar' : 'Asignar'"
-              icon="pi pi-check"
-              size="small"
-              [loading]="savingIng()"
-              (onClick)="saveIngredient()"
-            />
-          </div>
-        </div>
-        @if (isSuperadmin() && tenantSlug()) {
-          <div class="sm:col-span-4">
-            <p class="text-xs text-ink-muted-on-dark">Tenant</p>
-            <p class="font-bold text-ink-on-dark">{{ tenantSlug() }}</p>
-          </div>
-        }
       </div>
-      <div class="mt-4 flex justify-end">
+    }
+  } @else {
+    <!-- ══════════ Uploaded assets: subida múltiple por tipo ════ -->
+    <div class="mb-3 flex flex-wrap items-center gap-2">
+      @for (btn of uploadButtons; track btn.type) {
+        <label
+          class="upload-btn"
+          [class.solid]="btn.type === 'all'"
+          [class.tinted]="btn.type !== 'all'"
+          [class.opacity-60]="uploadingType() !== null"
+          [title]="btn.hint"
+          tabindex="0"
+          role="button"
+          (keydown.enter)="typedInput.click()"
+        >
+          <i
+            class="pi"
+            [class.pi-spin.pi-spinner]="uploadingType() === btn.type"
+            [class]="uploadingType() === btn.type ? '' : btn.icon"
+          ></i>
+          {{
+            uploadingType() === btn.type && uploadProgress()
+              ? 'Subiendo ' + uploadProgress()!.done + '/' + uploadProgress()!.total
+              : btn.label
+          }}
+          <input
+            #typedInput
+            type="file"
+            class="hidden"
+            [multiple]="true"
+            [accept]="btn.accept"
+            [disabled]="uploadingType() !== null"
+            (change)="onTypedUpload($event, btn.type)"
+          />
+        </label>
+      }
+    </div>
+
+    <!-- Tabs por tipo de ingrediente -->
+    <div class="type-tabs seg-slide mb-4">
+      @for (opt of ingFilterOptions; track opt.value) {
+        <button
+          type="button"
+          class="type-tab seg-btn"
+          [class.active]="ingFilter() === opt.value"
+          (click)="ingFilter.set(opt.value)"
+        >
+          <i class="pi {{ opt.icon }}"></i>
+          {{ opt.label }}
+          <span class="count" [class.badge]="ingFilter() === opt.value">{{
+            ingCounts()[opt.value] ?? 0
+          }}</span>
+        </button>
+      }
+    </div>
+
+    @if (selectedAssetIds().size > 0) {
+      <div
+        class="mb-4 flex flex-wrap items-center gap-2 rounded-2xl border border-surface-border bg-surface-2 px-4 py-2"
+      >
+        <span class="text-sm font-bold text-ink-on-dark">
+          {{ selectedAssetIds().size }} seleccionado(s)
+        </span>
         <p-button
-          icon="pi pi-trash"
-          label="Eliminar recurso"
-          severity="danger"
+          label="Asignar a proyecto"
+          icon="pi pi-briefcase"
+          size="small"
+          (onClick)="openAssign()"
+          styleClass="active:scale-[0.98]"
+        />
+        @if (filterProjectId(); as filteredProject) {
+          <p-button
+            label="Quitar de «{{ filterProjectName() }}»"
+            icon="pi pi-minus"
+            severity="warn"
+            size="small"
+            [text]="true"
+            (onClick)="unassignFromProject()"
+          />
+        }
+        <p-button
+          label="Cancelar"
+          icon="pi pi-times"
+          severity="secondary"
           size="small"
           [text]="true"
-          (onClick)="deleteAsset(item)"
+          (onClick)="clearSelection()"
         />
       </div>
     }
+    @if (filteredAssets().length === 0) {
+      <div class="empty-state">
+        <div class="empty-icon"><i class="pi pi-upload"></i></div>
+        <h3>No hay recursos subidos</h3>
+        <p>Los archivos que subas (referencias del Studio, etc.) aparecerán aquí</p>
+      </div>
+    } @else {
+      <div class="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-6">
+        @for (asset of filteredAssets(); track asset.id; let i = $index) {
+          <div
+            animate.enter="anim-item"
+            [style.animation-delay.ms]="i < 8 ? i * 35 : 280"
+            class="resource-card group cursor-pointer"
+            (click)="openViewer(asset)"
+            (keydown.enter)="openViewer(asset)"
+            tabindex="0"
+            role="button"
+            [attr.aria-label]="asset.filename"
+          >
+            <div class="relative aspect-square overflow-hidden bg-surface-2">
+              @if (asset.mime_type?.startsWith('image/')) {
+                <img
+                  [src]="assetThumb(asset) | serverUrl"
+                  [alt]="asset.filename"
+                  loading="lazy"
+                  decoding="async"
+                  class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.05]"
+                />
+              } @else if (asset.mime_type?.startsWith('video/')) {
+                <video
+                  [src]="asset.url | serverUrl"
+                  preload="metadata"
+                  class="h-full w-full object-cover"
+                ></video>
+              } @else {
+                <div class="flex h-full w-full items-center justify-center">
+                  <i class="pi pi-file text-2xl text-ink-muted-on-dark"></i>
+                </div>
+              }
+              @if (asset.trashed) {
+                <span class="overlay-badge" style="top: 8px; left: 8px">PAPELERA</span>
+              }
+              <button
+                type="button"
+                class="select-chip"
+                [class.checked]="selectedAssetIds().has(asset.id)"
+                [attr.title]="
+                  selectedAssetIds().has(asset.id)
+                    ? 'Quitar de la selección'
+                    : 'Seleccionar para asignar'
+                "
+                [attr.aria-label]="
+                  selectedAssetIds().has(asset.id)
+                    ? 'Quitar de la selección'
+                    : 'Seleccionar para asignar'
+                "
+                (click)="$event.stopPropagation(); toggleAssetSel(asset.id)"
+                (keydown.enter)="$event.stopPropagation()"
+              >
+                <i class="pi text-xs" [class.pi-check]="selectedAssetIds().has(asset.id)"></i>
+              </button>
+              @if (!filterProjectId() && (asset.project_ids?.length ?? 0) > 0) {
+                <span class="overlay-badge" style="bottom: 8px; left: 8px">
+                  <i class="pi pi-briefcase" style="font-size: 12px"></i>
+                  {{ asset.project_ids!.length }}
+                </span>
+              }
+            </div>
+            <div class="card-body">
+              <p class="filename" [title]="asset.filename">{{ asset.filename }}</p>
+              @if (asset.ingredients?.length) {
+                @for (ing of asset.ingredients; track ing.id) {
+                  <span class="ing-chip" [title]="ingTypeLabel(ing.type) + ': ' + ing.name">
+                    {{ ingTypeLabel(ing.type) }}: {{ ing.name }}
+                  </span>
+                }
+              }
+              <div class="meta-row">
+                <span>{{ asset.size ? (asset.size / 1024 | number: '1.0-0') + ' KB' : '—' }}</span>
+                <span>{{ asset.created_at | date: 'shortDate' }}</span>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
   }
-</p-dialog>
 
-<!-- Assign-to-project dialog -->
-<p-dialog
-  [visible]="assignVisible()"
-  (visibleChange)="assignVisible.set($event)"
-  [modal]="true"
-  [style]="{ width: 'min(92vw, 28rem)' }"
-  [draggable]="false"
-  [resizable]="false"
-  header="Asignar a proyecto"
->
-  <div class="flex flex-col gap-3">
-    <p class="text-sm text-ink-muted-on-dark">
-      {{ selectedAssetIds().size }} recurso(s) se asignarán al proyecto elegido.
-    </p>
-    <p-select
-      [ngModel]="assignProjectId()"
-      (ngModelChange)="assignProjectId.set($event)"
-      [options]="projectOptions()"
-      optionLabel="label"
-      optionValue="value"
-      placeholder="Elegí un proyecto"
-      [filter]="true"
-      [showClear]="false"
-      class="w-full"
-      appendTo="body"
-    />
-    <div class="flex justify-end gap-2">
-      <p-button label="Cancelar" size="small" [text]="true" (onClick)="assignVisible.set(false)" />
-      <p-button
-        label="Asignar"
-        icon="pi pi-check"
-        size="small"
-        [disabled]="!assignProjectId()"
-        [loading]="assigning()"
-        (onClick)="confirmAssign()"
-      />
+  <!-- Pagination (both sections) -->
+  @if (!loading() && totalLabel() > 0) {
+    <div class="pagination-bar mt-4 flex items-center justify-between px-5 py-3">
+      <span class="text-sm text-ink-muted-on-dark">
+        Página
+        {{ section() === 'generated' ? page() : assetsPage() }}
+        — {{ totalLabel() }} {{ section() === 'generated' ? 'imágenes' : 'recursos' }}
+      </span>
+      <div class="flex gap-2">
+        <p-button
+          icon="pi pi-chevron-left"
+          size="small"
+          severity="secondary"
+          pTooltip="Página anterior"
+          showDelay="400"
+          [disabled]="!hasPrev()"
+          (onClick)="prevPage()"
+        />
+        <p-button
+          icon="pi pi-chevron-right"
+          size="small"
+          severity="secondary"
+          pTooltip="Página siguiente"
+          showDelay="400"
+          [disabled]="!hasNext()"
+          (onClick)="nextPage()"
+        />
+      </div>
     </div>
-  </div>
-</p-dialog>
+  }
+
+  <!-- Viewer dialog (both sections) -->
+  <p-dialog
+    [visible]="viewerVisible()"
+    (visibleChange)="viewerVisible.set($event)"
+    [modal]="true"
+    [style]="{ width: 'min(94vw, 60rem)' }"
+    [draggable]="false"
+    [resizable]="false"
+    [closeOnEscape]="true"
+  >
+    @if (selected(); as item) {
+      <ng-template #header>
+        <div class="flex items-center gap-3">
+          <div
+            class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2 text-accent"
+          >
+            <i class="pi pi-image text-sm"></i>
+          </div>
+          <div class="min-w-0">
+            <h3 class="truncate text-lg font-bold text-ink-on-dark">
+              {{ selectedName() }}
+            </h3>
+            <p class="text-xs text-ink-muted-on-dark">
+              {{ section() === 'generated' ? 'Imagen generada' : 'Recurso subido' }}
+            </p>
+          </div>
+        </div>
+      </ng-template>
+
+      @if (isGenerated(item)) {
+        <img
+          [src]="outputUrl(item) | serverUrl"
+          [alt]="selectedName()"
+          decoding="async"
+          class="max-h-[70vh] w-full rounded-xl object-contain"
+        />
+        <div
+          class="mt-4 grid gap-3 rounded-2xl border border-surface-border bg-surface-2 p-4 text-sm sm:grid-cols-3"
+        >
+          <div>
+            <p class="text-xs text-ink-muted-on-dark">Modelo</p>
+            <p class="font-bold text-ink-on-dark">{{ item.model_name }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-ink-muted-on-dark">Proyecto</p>
+            <p class="font-bold text-ink-on-dark">{{ item.event_name || '—' }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-ink-muted-on-dark">Pieza</p>
+            <p class="font-bold text-ink-on-dark">{{ item.piece_code }} {{ item.piece_name }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-ink-muted-on-dark">Generado por</p>
+            <p class="font-bold text-ink-on-dark">
+              {{ item.user_display_name || 'u' + (item.user_id ?? '—') }}
+            </p>
+          </div>
+          <div>
+            <p class="text-xs text-ink-muted-on-dark">Fecha</p>
+            <p class="font-bold text-ink-on-dark">{{ item.created_at | date: 'medium' }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-ink-muted-on-dark">Task ID</p>
+            <code class="text-xs text-ink-on-dark">{{ item.task_id }}</code>
+          </div>
+        </div>
+      } @else {
+        @if (item.mime_type?.startsWith('image/')) {
+          <img
+            [src]="item.url | serverUrl"
+            [alt]="item.filename"
+            decoding="async"
+            class="max-h-[70vh] w-full rounded-xl object-contain"
+          />
+        } @else if (item.mime_type?.startsWith('video/')) {
+          <video
+            [src]="item.url | serverUrl"
+            controls
+            class="max-h-[70vh] w-full rounded-xl bg-ink"
+          ></video>
+        }
+        <div
+          class="mt-4 grid gap-3 rounded-2xl border border-surface-border bg-surface-2 p-4 text-sm sm:grid-cols-4"
+        >
+          <div>
+            <p class="text-xs text-ink-muted-on-dark">Archivo</p>
+            <p class="truncate font-bold text-ink-on-dark" [title]="item.filename">
+              {{ item.filename }}
+            </p>
+          </div>
+          <div>
+            <p class="text-xs text-ink-muted-on-dark">Tamaño</p>
+            <p class="font-bold text-ink-on-dark">
+              {{ item.size ? (item.size / 1024 | number: '1.0-0') + ' KB' : '—' }}
+            </p>
+          </div>
+          <div>
+            <p class="text-xs text-ink-muted-on-dark">Tipo</p>
+            <p class="font-bold text-ink-on-dark">{{ item.mime_type || '—' }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-ink-muted-on-dark">Subido</p>
+            <p class="font-bold text-ink-on-dark">{{ item.created_at | date: 'medium' }}</p>
+          </div>
+          @if (item.ingredients?.length) {
+            <div class="sm:col-span-4">
+              <p class="mb-1 text-xs text-ink-muted-on-dark">Ingredientes</p>
+              <div class="flex flex-wrap gap-1">
+                @for (ing of item.ingredients; track ing.id) {
+                  <button
+                    type="button"
+                    class="rounded-full border border-surface-border-strong px-2 py-0.5 text-xs font-bold"
+                    [style.background]="'var(--color-surface)'"
+                    [style.color]="'var(--color-ink-on-dark)'"
+                    [title]="'Clic para editar'"
+                    (click)="startIngEdit(ing)"
+                  >
+                    {{ ingTypeLabel(ing.type) }}: {{ ing.name }}
+                  </button>
+                }
+              </div>
+            </div>
+          }
+          <!-- Crear/editar ingrediente (nombre por defecto: filename con _ → espacio) -->
+          <div class="ing-editor sm:col-span-4">
+            <p class="editor-title">
+              {{ editIngId() ? 'Editar ingrediente' : 'Asignar ingrediente' }}
+            </p>
+            <div class="flex flex-wrap items-center gap-2">
+              <p-select
+                [ngModel]="editIngType()"
+                (ngModelChange)="editIngType.set($event)"
+                [ngModelOptions]="{ standalone: true }"
+                [options]="ingTypeOptions"
+                optionLabel="label"
+                optionValue="value"
+                [showClear]="false"
+                styleClass="w-36"
+                appendTo="body"
+              />
+              <input
+                pInputText
+                type="text"
+                [ngModel]="editIngName()"
+                (ngModelChange)="editIngName.set($event)"
+                [ngModelOptions]="{ standalone: true }"
+                placeholder="Nombre del ingrediente"
+                class="min-w-48 flex-1"
+              />
+              <p-button
+                [label]="editIngId() ? 'Guardar' : 'Asignar'"
+                icon="pi pi-check"
+                size="small"
+                [loading]="savingIng()"
+                (onClick)="saveIngredient()"
+              />
+            </div>
+          </div>
+          @if (isSuperadmin() && tenantSlug()) {
+            <div class="sm:col-span-4">
+              <p class="text-xs text-ink-muted-on-dark">Tenant</p>
+              <p class="font-bold text-ink-on-dark">{{ tenantSlug() }}</p>
+            </div>
+          }
+        </div>
+        <div class="mt-4 flex justify-end">
+          <p-button
+            icon="pi pi-trash"
+            label="Eliminar recurso"
+            severity="danger"
+            size="small"
+            [text]="true"
+            (onClick)="deleteAsset(item)"
+          />
+        </div>
+      }
+    }
+  </p-dialog>
+
+  <!-- Assign-to-project dialog -->
+  <p-dialog
+    [visible]="assignVisible()"
+    (visibleChange)="assignVisible.set($event)"
+    [modal]="true"
+    [style]="{ width: 'min(92vw, 28rem)' }"
+    [draggable]="false"
+    [resizable]="false"
+    header="Asignar a proyecto"
+  >
+    <div class="flex flex-col gap-3">
+      <p class="text-sm text-ink-muted-on-dark">
+        {{ selectedAssetIds().size }} recurso(s) se asignarán al proyecto elegido.
+      </p>
+      <p-select
+        [ngModel]="assignProjectId()"
+        (ngModelChange)="assignProjectId.set($event)"
+        [options]="projectOptions()"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Elegí un proyecto"
+        [filter]="true"
+        [showClear]="false"
+        class="w-full"
+        appendTo="body"
+      />
+      <div class="flex justify-end gap-2">
+        <p-button
+          label="Cancelar"
+          size="small"
+          [text]="true"
+          (onClick)="assignVisible.set(false)"
+        />
+        <span pTooltip="Elegí un proyecto para asignar" showDelay="400" class="inline-flex">
+          <p-button
+            label="Asignar"
+            icon="pi pi-check"
+            size="small"
+            [disabled]="!assignProjectId()"
+            [loading]="assigning()"
+            (onClick)="confirmAssign()"
+            styleClass="active:scale-[0.98]"
+          />
+        </span>
+      </div>
+    </div>
+  </p-dialog>
+</div>

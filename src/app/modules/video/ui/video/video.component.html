@@ -1,4 +1,4 @@
-<app-page-container title="Generación de Video">
+<app-page-container title="Generación de Video" animate.enter="anim-page">
   @if (error(); as message) {
     <div class="mb-6">
       <p-message severity="error" [text]="message" [escape]="false" styleClass="w-full" />
@@ -10,7 +10,7 @@
     <p-card styleClass="mb-6">
       <ng-template #header>
         <div class="flex items-center gap-3 border-b border-surface-border bg-surface-2 px-6 py-4">
-          <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-surface">
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface">
             <i class="pi pi-check-circle text-lg text-success"></i>
           </div>
           <div>
@@ -21,12 +21,12 @@
       </ng-template>
 
       <div class="flex flex-col gap-4">
-        <video controls class="w-full rounded-lg shadow-sm">
+        <video controls class="aspect-video w-full rounded-xl shadow-sm">
           <source [src]="url | serverUrl" type="video/mp4" />
           Tu navegador no soporta video HTML5.
         </video>
 
-        <div class="flex items-center justify-between rounded-lg bg-surface-2 p-4">
+        <div class="flex items-center justify-between rounded-xl bg-surface-2 p-4">
           <div class="flex items-center gap-3">
             <i class="pi pi-file-video text-xl text-accent"></i>
             <div>
@@ -38,7 +38,7 @@
             [href]="url | serverUrl"
             target="_blank"
             rel="noopener noreferrer"
-            class="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-xs font-bold text-on-accent transition-colors hover:bg-accent-hover"
+            class="inline-flex items-center gap-2 rounded-xl bg-accent px-4 py-2 text-xs font-bold text-on-accent transition-colors hover:bg-accent-hover active:scale-[0.98]"
           >
             <i class="pi pi-external-link"></i>
             Abrir en nueva pestaña
@@ -52,7 +52,7 @@
   <p-card>
     <ng-template #header>
       <div class="flex items-center gap-3 border-b border-surface-border px-6 py-4">
-        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-2">
+        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
           <i class="pi pi-video text-lg text-accent"></i>
         </div>
         <div>
@@ -71,10 +71,11 @@
 
         @if (loadingModels()) {
           <div
-            class="flex items-center gap-2 rounded-lg border border-surface-border bg-surface-2 p-3"
+            class="flex items-center gap-2 rounded-xl border border-surface-border bg-surface-2 p-3"
+            aria-busy="true"
           >
-            <i class="pi pi-spin pi-spinner text-accent"></i>
-            <span class="text-sm text-ink-muted-on-dark">Cargando modelos...</span>
+            <span class="sr-only">Cargando modelos…</span>
+            <div class="skel skel-text w-full" aria-hidden="true"></div>
           </div>
         } @else {
           <p-select
@@ -103,7 +104,7 @@
             <ng-template #item let-model>
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                  <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-surface-2">
+                  <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-surface-2">
                     <i class="pi pi-video text-sm text-accent"></i>
                   </div>
                   <div>
@@ -123,7 +124,7 @@
 
         <!-- Model Info Card -->
         @if (selectedModel(); as model) {
-          <div class="mt-2 rounded-lg border border-surface-border bg-surface-2 p-4">
+          <div class="mt-2 rounded-2xl border border-surface-border bg-surface-2 p-4">
             <div class="mb-3 flex items-center gap-2">
               <i class="pi pi-info-circle text-accent"></i>
               <span class="text-xs font-bold text-ink-on-dark">Información del Modelo</span>
@@ -144,9 +145,10 @@
                   <p class="text-xs font-bold text-ink-muted-on-dark">Ratios</p>
                   <div class="mt-1 flex flex-wrap gap-1">
                     @for (ratio of model.defaults.ratios; track ratio) {
-                      <span class="rounded bg-surface px-1.5 py-0.5 text-xs text-ink-on-dark">{{
-                        ratio
-                      }}</span>
+                      <span
+                        class="rounded-full bg-surface px-1.5 py-0.5 text-xs text-ink-on-dark"
+                        >{{ ratio }}</span
+                      >
                     }
                   </div>
                 </div>
@@ -156,9 +158,10 @@
                   <p class="text-xs font-bold text-ink-muted-on-dark">Resoluciones</p>
                   <div class="mt-1 flex flex-wrap gap-1">
                     @for (res of model.defaults.resolutions; track res) {
-                      <span class="rounded bg-surface px-1.5 py-0.5 text-xs text-ink-on-dark">{{
-                        res
-                      }}</span>
+                      <span
+                        class="rounded-full bg-surface px-1.5 py-0.5 text-xs text-ink-on-dark"
+                        >{{ res }}</span
+                      >
                     }
                   </div>
                 </div>
@@ -184,7 +187,7 @@
         <small class="text-ink-muted-on-dark">Sé específico para obtener mejores resultados</small>
       </div>
       <!-- Project / Piece selection -->
-      <div class="rounded-xl border border-surface-border bg-surface-2 p-5">
+      <div class="rounded-2xl border border-surface-border bg-surface-2 p-5">
         <h3 class="mb-4 flex items-center gap-2 text-xs font-bold text-ink-on-dark">
           <i class="pi pi-folder text-ink-muted-on-dark"></i>
           Proyecto y pieza
@@ -198,10 +201,11 @@
             </div>
             @if (loadingProjects()) {
               <div
-                class="flex items-center gap-2 rounded-lg border border-surface-border bg-surface p-3"
+                class="flex items-center gap-2 rounded-xl border border-surface-border bg-surface p-3"
+                aria-busy="true"
               >
-                <i class="pi pi-spin pi-spinner text-accent"></i>
-                <span class="text-sm text-ink-muted-on-dark">Cargando proyectos...</span>
+                <span class="sr-only">Cargando proyectos…</span>
+                <div class="skel skel-text w-full" aria-hidden="true"></div>
               </div>
             } @else {
               <p-select
@@ -254,20 +258,21 @@
             </div>
             @if (!selectedProject()) {
               <div
-                class="rounded-lg border border-dashed border-surface-border bg-surface p-3 text-center text-sm text-ink-muted-on-dark"
+                class="rounded-xl border border-dashed border-surface-border bg-surface p-3 text-center text-sm text-ink-muted-on-dark"
               >
                 Selecciona primero un proyecto
               </div>
             } @else if (loadingPieces()) {
               <div
-                class="flex items-center gap-2 rounded-lg border border-surface-border bg-surface p-3"
+                class="flex items-center gap-2 rounded-xl border border-surface-border bg-surface p-3"
+                aria-busy="true"
               >
-                <i class="pi pi-spin pi-spinner text-accent"></i>
-                <span class="text-sm text-ink-muted-on-dark">Cargando piezas...</span>
+                <span class="sr-only">Cargando piezas…</span>
+                <div class="skel skel-text w-full" aria-hidden="true"></div>
               </div>
             } @else if (pieces().length === 0) {
               <div
-                class="rounded-lg border border-dashed border-surface-border bg-surface p-3 text-center"
+                class="rounded-xl border border-dashed border-surface-border bg-surface p-3 text-center"
               >
                 <p class="text-sm text-ink-muted-on-dark">Este proyecto no tiene piezas.</p>
                 <p-button
@@ -306,7 +311,7 @@
                     <span>{{ piece.name || piece.piece_code || 'Pieza' }}</span>
                     @if (piece.piece_code) {
                       <code
-                        class="ml-auto rounded bg-surface-2 px-1.5 py-0.5 text-xs text-ink-muted-on-dark"
+                        class="ml-auto rounded-full bg-surface-2 px-1.5 py-0.5 text-xs text-ink-muted-on-dark"
                         >{{ piece.piece_code }}</code
                       >
                     }
@@ -348,6 +353,10 @@
                 <label
                   class="p-button p-button-text p-button-sm"
                   [class.p-disabled]="uploadingRef()"
+                  tabindex="0"
+                  role="button"
+                  [attr.aria-disabled]="uploadingRef()"
+                  (keydown.enter)="refInput.click()"
                 >
                   <i
                     class="pi"
@@ -356,6 +365,7 @@
                   ></i>
                   <span class="ml-1">Subir</span>
                   <input
+                    #refInput
                     type="file"
                     accept="image/png,image/jpeg"
                     class="hidden"
@@ -368,30 +378,33 @@
           </div>
           @if (!selectedProject()) {
             <div
-              class="rounded-lg border border-dashed border-surface-border bg-surface p-3 text-center text-sm text-ink-muted-on-dark"
+              class="rounded-xl border border-dashed border-surface-border bg-surface p-3 text-center text-sm text-ink-muted-on-dark"
             >
               Selecciona un proyecto para ver y subir sus imágenes de referencia
             </div>
           } @else if (loadingRefs()) {
             <div
-              class="flex items-center gap-2 rounded-lg border border-surface-border bg-surface p-3"
+              class="flex items-center gap-2 rounded-xl border border-surface-border bg-surface p-3"
+              aria-busy="true"
             >
-              <i class="pi pi-spin pi-spinner text-accent"></i>
-              <span class="text-sm text-ink-muted-on-dark">Cargando referencias...</span>
+              <span class="sr-only">Cargando referencias…</span>
+              <div class="skel skel-text w-full" aria-hidden="true"></div>
             </div>
           } @else if (refImages().length === 0) {
             <div
-              class="rounded-lg border border-dashed border-surface-border bg-surface p-3 text-center text-sm text-ink-muted-on-dark"
+              class="rounded-xl border border-dashed border-surface-border bg-surface p-3 text-center text-sm text-ink-muted-on-dark"
             >
               Este proyecto todavía no tiene imágenes asignadas. Sube una o asígnalas desde Admin →
               Imágenes.
             </div>
           } @else {
             <div class="flex flex-wrap gap-2">
-              @for (ref of refImages(); track ref.id) {
+              @for (ref of refImages(); track ref.id; let i = $index) {
                 <button
                   type="button"
-                  class="relative overflow-hidden rounded-lg border-2 transition-colors"
+                  animate.enter="anim-item"
+                  [style.animation-delay.ms]="i < 8 ? i * 35 : 280"
+                  class="relative overflow-hidden rounded-xl border-2 transition-colors"
                   [style.borderColor]="
                     selectedRefIds().has(ref.id) ? 'var(--color-accent)' : 'transparent'
                   "
@@ -402,7 +415,9 @@
                     <img
                       [src]="ref.thumbnail_url || ref.url | serverUrl"
                       [alt]="ref.filename"
-                      class="h-16 w-16 object-cover"
+                      loading="lazy"
+                      decoding="async"
+                      class="aspect-square h-16 w-16 object-cover"
                     />
                   } @else {
                     <span class="flex h-16 w-16 items-center justify-center"
@@ -445,7 +460,7 @@
               <label for="duration" class="text-xs font-bold text-ink-on-dark"
                 >Duración (seg)</label
               >
-              <span class="rounded bg-surface px-2 py-0.5 text-xs font-bold text-accent">
+              <span class="rounded-full bg-surface px-2 py-0.5 text-xs font-bold text-accent">
                 {{ form.controls.duration.value }}s
               </span>
             </div>
@@ -485,7 +500,7 @@
           <p class="mt-3 flex items-center gap-2 text-xs text-ink-muted-on-dark">
             <i class="pi pi-check-circle text-success"></i>
             Se generará como
-            <code class="rounded bg-surface px-1.5 py-0.5">{{
+            <code class="rounded-full bg-surface px-1.5 py-0.5">{{
               selectedPiece()?.piece_code || 'SIN-CODIGO'
             }}</code>
             · generación #{{ form.controls.generationNumber.value }}
@@ -498,25 +513,27 @@
           <i class="pi pi-info-circle mr-1"></i>
           La generación puede tomar varios minutos
         </p>
-        <p-button
-          type="submit"
-          label="Generar video"
-          icon="pi pi-play"
-          [loading]="submitting() || polling()"
-          [disabled]="submitting() || polling() || !form.controls.model.value"
-          styleClass="px-6"
-        >
-          @if (polling()) {
-            <span>Generando…</span>
-          }
-        </p-button>
+        <span pTooltip="Elegí un modelo para generar" showDelay="400" class="inline-flex">
+          <p-button
+            type="submit"
+            label="Generar video"
+            icon="pi pi-play"
+            [loading]="submitting() || polling()"
+            [disabled]="submitting() || polling() || !form.controls.model.value"
+            styleClass="px-6 active:scale-[0.98]"
+          >
+            @if (polling()) {
+              <span>Generando…</span>
+            }
+          </p-button>
+        </span>
       </div>
     </form>
   </p-card>
 
   <!-- Polling Status -->
   @if (polling()) {
-    <div class="mt-6 rounded-xl border border-surface-border bg-surface p-8">
+    <div class="mt-6 rounded-3xl border border-surface-border bg-surface p-8">
       <div class="flex flex-col items-center gap-4 text-center">
         <div class="relative">
           <p-progressSpinner styleClass="w-16 h-16" strokeWidth="2" />
@@ -637,13 +654,16 @@
         text
         (onClick)="pieceDialogVisible.set(false)"
       />
-      <p-button
-        label="Crear y seleccionar"
-        icon="pi pi-check"
-        [loading]="savingPiece()"
-        [disabled]="!newPiece().name.trim()"
-        (onClick)="savePiece()"
-      />
+      <span pTooltip="Escribí un nombre para crear la pieza" showDelay="400" class="inline-flex">
+        <p-button
+          label="Crear y seleccionar"
+          icon="pi pi-check"
+          [loading]="savingPiece()"
+          [disabled]="!newPiece().name.trim()"
+          (onClick)="savePiece()"
+          styleClass="active:scale-[0.98]"
+        />
+      </span>
     </ng-template>
   </p-dialog>
 

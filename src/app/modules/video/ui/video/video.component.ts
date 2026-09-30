@@ -19,6 +19,7 @@ import { ProgressSpinner } from 'primeng/progressspinner';
 import { ProgressBar } from 'primeng/progressbar';
 import { Tag } from 'primeng/tag';
 import { Dialog } from 'primeng/dialog';
+import { Tooltip } from 'primeng/tooltip';
 
 import { VideoService } from '../../services/video.service';
 import { AiModel, StatusResponse } from '@modules/agency/interfaces';
@@ -46,6 +47,7 @@ import { ServerUrlPipe } from '@pipes/server-url.pipe';
     ProgressBar,
     Tag,
     Dialog,
+    Tooltip,
     ServerUrlPipe,
     AssetPickerDialogComponent,
   ],

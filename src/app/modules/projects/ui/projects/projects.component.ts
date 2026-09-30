@@ -16,6 +16,7 @@ import { Message } from 'primeng/message';
 import { ProgressSpinner } from 'primeng/progressspinner';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { ConfirmationService } from 'primeng/api';
+import { Tooltip } from 'primeng/tooltip';
 
 import { EventsService } from '@modules/events/services/events.service';
 import { Event, Piece, Program, ProgramWithPieces } from '@modules/events/interfaces';
@@ -43,6 +44,7 @@ interface PieceTypeOption {
     Message,
     ProgressSpinner,
     ConfirmDialog,
+    Tooltip,
   ],
   providers: [ConfirmationService],
   templateUrl: './projects.component.html',

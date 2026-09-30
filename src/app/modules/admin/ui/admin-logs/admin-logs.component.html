@@ -1,433 +1,461 @@
-@if (error(); as message) {
-  <div class="mb-6">
-    <p-message severity="error" [text]="message" [escape]="false" styleClass="w-full" />
-  </div>
-}
+<div animate.enter="anim-page">
+  @if (error(); as message) {
+    <div class="mb-6">
+      <p-message severity="error" [text]="message" [escape]="false" styleClass="w-full" />
+    </div>
+  }
 
-<!-- Filter bar -->
-<div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-  <div class="flex items-center gap-2">
-    <span class="text-sm font-bold text-ink">Comunicaciones con APIs externas</span>
-    <p-tag [value]="rows().length + ' tareas'" severity="info" />
+  <!-- Filter bar -->
+  <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div class="flex items-center gap-2">
+      <span class="text-sm font-bold text-ink">Comunicaciones con APIs externas</span>
+      <p-tag [value]="rows().length + ' tareas'" severity="info" />
+    </div>
+    <div class="flex items-center gap-2">
+      <input
+        pInputText
+        type="text"
+        aria-label="Filtrar por task_id"
+        [ngModel]="taskIdFilter()"
+        (ngModelChange)="taskIdFilter.set($event)"
+        (keyup.enter)="search()"
+        placeholder="Filtrar por task_id..."
+        class="w-56 rounded-xl"
+      />
+      <p-button
+        label="Buscar"
+        icon="pi pi-search"
+        severity="secondary"
+        size="small"
+        (onClick)="search()"
+      />
+    </div>
   </div>
-  <div class="flex items-center gap-2">
-    <input
-      pInputText
-      type="text"
-      [ngModel]="taskIdFilter()"
-      (ngModelChange)="taskIdFilter.set($event)"
-      (keyup.enter)="search()"
-      placeholder="Filtrar por task_id..."
-      class="w-56"
-    />
-    <p-button label="Buscar" icon="pi pi-search" size="small" (onClick)="search()" />
-  </div>
-</div>
 
-@if (loading()) {
-  <div
-    class="flex flex-col items-center gap-4 rounded-xl border border-surface-border bg-surface py-16"
-  >
-    <p-progressSpinner styleClass="w-12 h-12" strokeWidth="3" />
-    <p class="text-sm text-ink-muted-on-dark">Cargando logs...</p>
-  </div>
-} @else {
-  <div class="overflow-hidden rounded-xl border border-surface-border bg-surface">
-    <p-table
-      [value]="$any(rows())"
-      [tableStyle]="{ 'min-width': '56rem' }"
-      [rowHover]="true"
-      [scrollable]="true"
-      scrollHeight="calc(75vh - 18rem)"
-      styleClass="p-datatable-sm"
+  @if (loading()) {
+    <div
+      class="flex flex-col gap-2 rounded-3xl border border-surface-border bg-surface p-6"
+      aria-busy="true"
     >
+      <span class="sr-only">Cargando logs…</span>
+      <div class="skel skel-title" aria-hidden="true"></div>
+      <div class="skel skel-text" aria-hidden="true"></div>
+      <div class="skel skel-text" aria-hidden="true"></div>
+    </div>
+  } @else {
+    <div class="overflow-hidden rounded-3xl border border-surface-border bg-surface">
+      <p-table
+        [value]="$any(rows())"
+        [tableStyle]="{ 'min-width': '56rem' }"
+        [rowHover]="true"
+        [scrollable]="true"
+        scrollHeight="calc(75vh - 18rem)"
+        styleClass="p-datatable-sm"
+      >
+        <ng-template #header>
+          <tr>
+            <th style="width: 16%">Task ID</th>
+            <th style="width: 11%" class="text-center">Estado</th>
+            <th style="width: 13%">Modelo</th>
+            <th style="width: 8%" class="text-center">Status</th>
+            <th style="width: 9%" class="text-center">Duración total</th>
+            <th style="width: 12%">Usuario</th>
+            <th style="width: 17%">Credencial usada</th>
+            <th style="width: 7%" class="text-center">Fecha</th>
+            <th style="width: 7%" class="text-center">Detalle</th>
+          </tr>
+        </ng-template>
+        <ng-template #body let-r let-i="rowIndex">
+          <tr animate.enter="anim-item" [style.animation-delay.ms]="i < 8 ? i * 35 : 280">
+            <td>
+              @if (r.task_id) {
+                <code class="text-xs font-bold text-ink-on-dark">{{ r.task_id }}</code>
+              } @else {
+                <span class="text-xs text-ink-muted-on-dark">—</span>
+              }
+            </td>
+            <td class="text-center">
+              @if (rowEvent(r); as ev) {
+                <p-tag [value]="ev.label" [severity]="ev.severity" />
+              }
+            </td>
+            <td>
+              <p class="font-bold text-ink-on-dark">
+                {{ r.generate?.model_name || r.poll?.model_name }}
+              </p>
+            </td>
+            <td class="text-center">
+              @if (rowStatusCode(r) === 0) {
+                <p-tag value="ERROR" severity="danger" />
+              } @else {
+                <p-tag
+                  [value]="statusLabel(rowStatusCode(r))"
+                  [severity]="statusSeverity(rowStatusCode(r))"
+                />
+              }
+            </td>
+            <td class="text-center">
+              <span
+                class="text-sm text-ink-muted-on-dark"
+                [pTooltip]="rowDurationTitle(r)"
+                showDelay="400"
+                tooltipPosition="top"
+              >
+                {{ rowDuration(r) }}
+                @if ((r.poll?.total_duration_ms ?? 0) > 0) {
+                  <i class="pi pi-clock ml-1 text-xs text-ink-muted-on-dark"></i>
+                }
+              </span>
+            </td>
+            <td>
+              @if (r.generate || r.poll) {
+                <div class="flex items-center gap-2">
+                  <div
+                    class="flex h-7 w-7 items-center justify-center rounded-full bg-surface-2 text-xs text-ink-muted-on-dark"
+                  >
+                    <i class="pi pi-user text-xs"></i>
+                  </div>
+                  <div>
+                    <p class="text-sm font-bold text-ink-on-dark">
+                      {{
+                        r.generate?.username ||
+                          r.poll?.username ||
+                          'u' + (r.generate?.user_id || r.poll?.user_id)
+                      }}
+                    </p>
+                    @if (isSuperadmin()) {
+                      <p class="text-xs text-ink-muted-on-dark">
+                        {{ r.generate?.tenant_slug || r.poll?.tenant_slug }}
+                      </p>
+                    }
+                  </div>
+                </div>
+              } @else {
+                <span class="text-xs text-ink-muted-on-dark">—</span>
+              }
+            </td>
+            <td>
+              @if (r.generate?.credential_provider || r.poll?.credential_provider) {
+                <div class="flex flex-col gap-0.5">
+                  <div class="flex items-center gap-1.5">
+                    <i class="pi pi-key text-xs text-ink-muted-on-dark"></i>
+                    <span class="text-xs font-bold text-ink-on-dark">
+                      {{ r.generate?.credential_provider || r.poll?.credential_provider }}
+                    </span>
+                    <p-tag
+                      [value]="authTypeLabel(r.generate?.auth_type || r.poll?.auth_type || '')"
+                      severity="secondary"
+                      styleClass="text-xs"
+                    />
+                  </div>
+                  @if (r.generate?.api_key_mask || r.poll?.api_key_mask) {
+                    <code class="text-xs text-ink-muted-on-dark">
+                      {{ r.generate?.api_key_mask || r.poll?.api_key_mask }}
+                    </code>
+                  }
+                  @if (r.generate?.access_key_mask || r.poll?.access_key_mask) {
+                    <code class="text-xs text-ink-muted-on-dark">
+                      AK: {{ r.generate?.access_key_mask || r.poll?.access_key_mask }}
+                    </code>
+                  }
+                </div>
+              } @else {
+                <span class="text-xs text-ink-muted-on-dark">—</span>
+              }
+            </td>
+            <td class="text-center">
+              <span class="text-sm text-ink-muted-on-dark">
+                {{ r.poll?.created_at || r.generate?.created_at | date: 'short' }}
+              </span>
+            </td>
+            <td class="text-center">
+              <p-button
+                icon="pi pi-eye"
+                size="small"
+                text
+                pTooltip="Ver generación y polling"
+                showDelay="400"
+                tooltipPosition="left"
+                (onClick)="openDetail(r)"
+              />
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template #emptymessage>
+          <tr>
+            <td colspan="9">
+              <div class="flex flex-col items-center gap-4 py-16">
+                <div class="flex h-16 w-16 items-center justify-center rounded-full bg-surface-2">
+                  <i class="pi pi-inbox text-3xl text-ink-muted-on-dark"></i>
+                </div>
+                <div class="text-center">
+                  <p class="font-bold text-ink-on-dark">No hay comunicaciones registradas</p>
+                  <p class="mt-1 text-sm text-ink-muted-on-dark">
+                    Las peticiones a los modelos aparecerán aquí con su auditoría completa
+                  </p>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+
+      <!-- Pagination -->
+      <div class="flex items-center justify-between border-t border-surface-border px-5 py-3">
+        <span class="text-sm text-ink-muted-on-dark">
+          Página {{ $any(page()) }} — {{ total() }} registros
+        </span>
+        <div class="flex gap-2">
+          <p-button
+            icon="pi pi-chevron-left"
+            size="small"
+            severity="secondary"
+            pTooltip="Página anterior"
+            showDelay="400"
+            [disabled]="!hasPrev()"
+            (onClick)="prevPage()"
+          />
+          <p-button
+            icon="pi pi-chevron-right"
+            size="small"
+            severity="secondary"
+            pTooltip="Página siguiente"
+            showDelay="400"
+            [disabled]="!hasNext()"
+            (onClick)="nextPage()"
+          />
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Detail dialog: one record, generation and polling in tabs -->
+  <p-dialog
+    [visible]="detailVisible()"
+    (visibleChange)="detailVisible.set($event)"
+    [modal]="true"
+    [style]="{ width: 'min(92vw, 60rem)' }"
+    [draggable]="false"
+    [resizable]="false"
+    [closeOnEscape]="true"
+  >
+    @if (detail(); as r) {
       <ng-template #header>
-        <tr>
-          <th style="width: 16%">Task ID</th>
-          <th style="width: 11%" class="text-center">Estado</th>
-          <th style="width: 13%">Modelo</th>
-          <th style="width: 8%" class="text-center">Status</th>
-          <th style="width: 9%" class="text-center">Duración total</th>
-          <th style="width: 12%">Usuario</th>
-          <th style="width: 17%">Credencial usada</th>
-          <th style="width: 7%" class="text-center">Fecha</th>
-          <th style="width: 7%" class="text-center">Detalle</th>
-        </tr>
-      </ng-template>
-      <ng-template #body let-r>
-        <tr>
-          <td>
-            @if (r.task_id) {
-              <code class="text-xs font-bold text-ink-on-dark">{{ r.task_id }}</code>
-            } @else {
-              <span class="text-xs text-ink-muted-on-dark">—</span>
-            }
-          </td>
-          <td class="text-center">
-            @if (rowEvent(r); as ev) {
-              <p-tag [value]="ev.label" [severity]="ev.severity" />
-            }
-          </td>
-          <td>
-            <p class="font-bold text-ink-on-dark">
+        <div class="flex items-center gap-3">
+          <div
+            class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2 text-accent"
+          >
+            <i class="pi pi-list text-sm"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-ink-on-dark">
               {{ r.generate?.model_name || r.poll?.model_name }}
+            </h3>
+            <p class="text-xs text-ink-muted-on-dark">
+              {{ r.generate?.method || 'GET' }} {{ r.generate?.endpoint || r.poll?.endpoint }} ·
+              {{ r.generate?.started_at || r.generate?.created_at | date: 'medium' }}
             </p>
-          </td>
-          <td class="text-center">
-            @if (rowStatusCode(r) === 0) {
-              <p-tag value="ERROR" severity="danger" />
-            } @else {
+          </div>
+        </div>
+      </ng-template>
+
+      <!-- Audit block -->
+      <div
+        class="mb-4 grid gap-3 rounded-2xl border border-surface-border bg-surface-2 p-4 sm:grid-cols-3"
+      >
+        <div>
+          <p class="text-xs font-bold text-ink-muted-on-dark">Usuario</p>
+          <p class="text-sm font-bold text-ink-on-dark">
+            {{
+              r.generate?.username ||
+                r.poll?.username ||
+                'u' + (r.generate?.user_id || r.poll?.user_id)
+            }}
+            (ID {{ r.generate?.user_id || r.poll?.user_id }})
+          </p>
+        </div>
+        <div>
+          <p class="text-xs font-bold text-ink-muted-on-dark">Tenant</p>
+          <p class="text-sm font-bold text-ink-on-dark">
+            {{ r.generate?.tenant_slug || r.poll?.tenant_slug || '—' }}
+          </p>
+        </div>
+        <div>
+          <p class="text-xs font-bold text-ink-muted-on-dark">Credencial</p>
+          <p class="text-sm font-bold text-ink-on-dark">
+            {{ r.generate?.credential_provider || r.poll?.credential_provider || '—' }}
+            @if (r.generate?.auth_type || r.poll?.auth_type) {
               <p-tag
-                [value]="statusLabel(rowStatusCode(r))"
-                [severity]="statusSeverity(rowStatusCode(r))"
+                [value]="authTypeLabel(r.generate?.auth_type || r.poll?.auth_type || '')"
+                severity="secondary"
               />
             }
-          </td>
-          <td class="text-center">
-            <span
-              class="text-sm text-ink-muted-on-dark"
-              [pTooltip]="rowDurationTitle(r)"
-              tooltipPosition="top"
-            >
-              {{ rowDuration(r) }}
-              @if ((r.poll?.total_duration_ms ?? 0) > 0) {
-                <i class="pi pi-clock ml-1 text-xs text-ink-muted-on-dark"></i>
-              }
+          </p>
+          @if (r.generate?.api_key_mask || r.poll?.api_key_mask) {
+            <code class="text-xs text-ink-muted-on-dark">
+              API: {{ r.generate?.api_key_mask || r.poll?.api_key_mask }}
+            </code>
+          }
+          @if (r.generate?.access_key_mask || r.poll?.access_key_mask) {
+            <code class="block text-xs text-ink-muted-on-dark">
+              AK: {{ r.generate?.access_key_mask || r.poll?.access_key_mask }}
+            </code>
+          }
+          @if (r.generate?.secret_key_mask || r.poll?.secret_key_mask) {
+            <code class="block text-xs text-ink-muted-on-dark">
+              SK: {{ r.generate?.secret_key_mask || r.poll?.secret_key_mask }}
+            </code>
+          }
+        </div>
+      </div>
+
+      @if (r.generate?.error_message && !r.poll) {
+        <p-message
+          severity="error"
+          [text]="r.generate!.error_message!"
+          [escape]="false"
+          styleClass="w-full mb-4"
+        />
+      }
+
+      <!-- Timing summary -->
+      @if (rowDuration(r) !== '—') {
+        <div
+          class="mb-4 flex items-center gap-2 rounded-xl border border-surface-border bg-surface-2 px-4 py-2.5 text-sm text-ink-muted-on-dark"
+        >
+          <i class="pi pi-clock text-ink-muted-on-dark"></i>
+          <span>
+            Duración total (envío → resultado):
+            <strong class="text-ink-on-dark">{{ rowDuration(r) }}</strong>
+          </span>
+          @if (r.poll && (r.poll.total_duration_ms ?? 0) > 0) {
+            <span class="text-xs text-ink-muted-on-dark">
+              · {{ r.poll.poll_count }} poll(s) hasta el resultado
             </span>
-          </td>
-          <td>
-            @if (r.generate || r.poll) {
-              <div class="flex items-center gap-2">
+          }
+        </div>
+      }
+
+      <p-tabs [value]="'generation'">
+        <p-tablist>
+          @for (p of phases(r); track p.value) {
+            <p-tab [value]="p.value">
+              <span class="flex items-center gap-2">
+                <i class="{{ p.icon }} text-xs"></i>
+                <span>{{ p.label }}</span>
+                <p-tag
+                  [value]="p.badge"
+                  [severity]="p.comm ? 'info' : 'secondary'"
+                  styleClass="text-xs"
+                />
+              </span>
+            </p-tab>
+          }
+        </p-tablist>
+        <p-tabpanels>
+          @for (p of phases(r); track p.value) {
+            <p-tabpanel [value]="p.value">
+              @if (p.comm; as c) {
+                @if (c.error_message) {
+                  <p-message
+                    severity="error"
+                    [text]="c.error_message"
+                    [escape]="false"
+                    styleClass="w-full mb-3"
+                  />
+                }
                 <div
-                  class="flex h-7 w-7 items-center justify-center rounded-full bg-surface-2 text-xs text-ink-muted-on-dark"
+                  class="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-muted-on-dark"
                 >
-                  <i class="pi pi-user text-xs"></i>
+                  <span><i class="pi pi-arrow-up mr-1"></i>{{ c.method }} {{ c.endpoint }}</span>
+                  <span>
+                    <i class="pi pi-calendar mr-1"></i>Enviado:
+                    {{ c.started_at || c.created_at | date: 'medium' }}
+                  </span>
+                  @if ((c.duration_ms ?? 0) > 0) {
+                    <span
+                      ><i class="pi pi-stopwatch mr-1"></i>HTTP: {{ formatMs(c.duration_ms) }}</span
+                    >
+                  }
+                  @if ((c.total_duration_ms ?? 0) > 0) {
+                    <span>
+                      <i class="pi pi-clock mr-1"></i>Total: {{ formatMs(c.total_duration_ms) }}
+                    </span>
+                  }
                 </div>
-                <div>
-                  <p class="text-sm font-bold text-ink-on-dark">
-                    {{
-                      r.generate?.username ||
-                        r.poll?.username ||
-                        'u' + (r.generate?.user_id || r.poll?.user_id)
-                    }}
+                <div class="flex flex-col gap-4">
+                  <div>
+                    <h5 class="mb-2 text-sm font-bold text-ink-on-dark">Payload</h5>
+                    <div
+                      class="overflow-hidden rounded-xl border border-surface-border bg-surface-2"
+                    >
+                      <div
+                        class="flex items-center justify-between border-b border-surface-border px-3 py-1.5"
+                      >
+                        <span class="text-xs font-bold text-ink-muted-on-dark">
+                          {{ isJson(c.request_body) ? 'JSON formateado' : 'Texto plano' }}
+                        </span>
+                        <p-button
+                          icon="pi pi-copy"
+                          size="small"
+                          text
+                          rounded
+                          pTooltip="Copiar"
+                          showDelay="400"
+                          tooltipPosition="left"
+                          (onClick)="copyBody(c.request_body, $event)"
+                        />
+                      </div>
+                      <pre
+                        class="max-h-72 overflow-auto p-3 text-xs leading-relaxed text-ink-on-dark"
+                        >{{ prettyBody(c.request_body) || '—' }}</pre>
+                    </div>
+                  </div>
+                  <div>
+                    <h5 class="mb-2 text-sm font-bold text-ink-on-dark">Respuesta</h5>
+                    <div
+                      class="overflow-hidden rounded-xl border border-surface-border bg-surface-2"
+                    >
+                      <div
+                        class="flex items-center justify-between border-b border-surface-border px-3 py-1.5"
+                      >
+                        <span class="text-xs font-bold text-ink-muted-on-dark">
+                          {{ isJson(c.response_body) ? 'JSON formateado' : 'Texto plano' }}
+                        </span>
+                        <p-button
+                          icon="pi pi-copy"
+                          size="small"
+                          text
+                          rounded
+                          pTooltip="Copiar"
+                          showDelay="400"
+                          tooltipPosition="left"
+                          (onClick)="copyBody(c.response_body, $event)"
+                        />
+                      </div>
+                      <pre
+                        class="max-h-72 overflow-auto p-3 text-xs leading-relaxed text-ink-on-dark"
+                        >{{ prettyBody(c.response_body) || '—' }}</pre>
+                    </div>
+                  </div>
+                </div>
+              } @else {
+                <div class="flex flex-col items-center gap-3 py-10 text-center">
+                  <i class="pi pi-hourglass text-3xl text-ink-muted-on-dark"></i>
+                  <p class="text-sm text-ink-muted-on-dark">
+                    Aún no hay registros de polling para esta tarea.
                   </p>
-                  @if (isSuperadmin()) {
+                  @if (r.generate?.started_at || r.generate?.created_at) {
                     <p class="text-xs text-ink-muted-on-dark">
-                      {{ r.generate?.tenant_slug || r.poll?.tenant_slug }}
+                      Enviado hace {{ elapsedSinceStart(r) }} — esperando el resultado del modelo.
                     </p>
                   }
                 </div>
-              </div>
-            } @else {
-              <span class="text-xs text-ink-muted-on-dark">—</span>
-            }
-          </td>
-          <td>
-            @if (r.generate?.credential_provider || r.poll?.credential_provider) {
-              <div class="flex flex-col gap-0.5">
-                <div class="flex items-center gap-1.5">
-                  <i class="pi pi-key text-xs text-ink-muted-on-dark"></i>
-                  <span class="text-xs font-bold text-ink-on-dark">
-                    {{ r.generate?.credential_provider || r.poll?.credential_provider }}
-                  </span>
-                  <p-tag
-                    [value]="authTypeLabel(r.generate?.auth_type || r.poll?.auth_type || '')"
-                    severity="secondary"
-                    styleClass="text-xs"
-                  />
-                </div>
-                @if (r.generate?.api_key_mask || r.poll?.api_key_mask) {
-                  <code class="text-xs text-ink-muted-on-dark">
-                    {{ r.generate?.api_key_mask || r.poll?.api_key_mask }}
-                  </code>
-                }
-                @if (r.generate?.access_key_mask || r.poll?.access_key_mask) {
-                  <code class="text-xs text-ink-muted-on-dark">
-                    AK: {{ r.generate?.access_key_mask || r.poll?.access_key_mask }}
-                  </code>
-                }
-              </div>
-            } @else {
-              <span class="text-xs text-ink-muted-on-dark">—</span>
-            }
-          </td>
-          <td class="text-center">
-            <span class="text-sm text-ink-muted-on-dark">
-              {{ r.poll?.created_at || r.generate?.created_at | date: 'short' }}
-            </span>
-          </td>
-          <td class="text-center">
-            <p-button
-              icon="pi pi-eye"
-              size="small"
-              text
-              pTooltip="Ver generación y polling"
-              tooltipPosition="left"
-              (onClick)="openDetail(r)"
-            />
-          </td>
-        </tr>
-      </ng-template>
-      <ng-template #emptymessage>
-        <tr>
-          <td colspan="9">
-            <div class="flex flex-col items-center gap-4 py-16">
-              <div class="flex h-16 w-16 items-center justify-center rounded-full bg-surface-2">
-                <i class="pi pi-inbox text-3xl text-ink-muted-on-dark"></i>
-              </div>
-              <div class="text-center">
-                <p class="font-bold text-ink-on-dark">No hay comunicaciones registradas</p>
-                <p class="mt-1 text-sm text-ink-muted-on-dark">
-                  Las peticiones a los modelos aparecerán aquí con su auditoría completa
-                </p>
-              </div>
-            </div>
-          </td>
-        </tr>
-      </ng-template>
-    </p-table>
-
-    <!-- Pagination -->
-    <div class="flex items-center justify-between border-t border-surface-border px-5 py-3">
-      <span class="text-sm text-ink-muted-on-dark">
-        Página {{ $any(page()) }} — {{ total() }} registros
-      </span>
-      <div class="flex gap-2">
-        <p-button
-          icon="pi pi-chevron-left"
-          size="small"
-          [disabled]="!hasPrev()"
-          (onClick)="prevPage()"
-        />
-        <p-button
-          icon="pi pi-chevron-right"
-          size="small"
-          [disabled]="!hasNext()"
-          (onClick)="nextPage()"
-        />
-      </div>
-    </div>
-  </div>
-}
-
-<!-- Detail dialog: one record, generation and polling in tabs -->
-<p-dialog
-  [visible]="detailVisible()"
-  (visibleChange)="detailVisible.set($event)"
-  [modal]="true"
-  [style]="{ width: 'min(92vw, 60rem)' }"
-  [draggable]="false"
-  [resizable]="false"
-  [closeOnEscape]="true"
->
-  @if (detail(); as r) {
-    <ng-template #header>
-      <div class="flex items-center gap-3">
-        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-2 text-accent">
-          <i class="pi pi-list text-sm"></i>
-        </div>
-        <div>
-          <h3 class="text-lg font-bold text-ink-on-dark">
-            {{ r.generate?.model_name || r.poll?.model_name }}
-          </h3>
-          <p class="text-xs text-ink-muted-on-dark">
-            {{ r.generate?.method || 'GET' }} {{ r.generate?.endpoint || r.poll?.endpoint }} ·
-            {{ r.generate?.started_at || r.generate?.created_at | date: 'medium' }}
-          </p>
-        </div>
-      </div>
-    </ng-template>
-
-    <!-- Audit block -->
-    <div
-      class="mb-4 grid gap-3 rounded-xl border border-surface-border bg-surface-2 p-4 sm:grid-cols-3"
-    >
-      <div>
-        <p class="text-xs font-bold text-ink-muted-on-dark">Usuario</p>
-        <p class="text-sm font-bold text-ink-on-dark">
-          {{
-            r.generate?.username ||
-              r.poll?.username ||
-              'u' + (r.generate?.user_id || r.poll?.user_id)
-          }}
-          (ID {{ r.generate?.user_id || r.poll?.user_id }})
-        </p>
-      </div>
-      <div>
-        <p class="text-xs font-bold text-ink-muted-on-dark">Tenant</p>
-        <p class="text-sm font-bold text-ink-on-dark">
-          {{ r.generate?.tenant_slug || r.poll?.tenant_slug || '—' }}
-        </p>
-      </div>
-      <div>
-        <p class="text-xs font-bold text-ink-muted-on-dark">Credencial</p>
-        <p class="text-sm font-bold text-ink-on-dark">
-          {{ r.generate?.credential_provider || r.poll?.credential_provider || '—' }}
-          @if (r.generate?.auth_type || r.poll?.auth_type) {
-            <p-tag
-              [value]="authTypeLabel(r.generate?.auth_type || r.poll?.auth_type || '')"
-              severity="secondary"
-            />
-          }
-        </p>
-        @if (r.generate?.api_key_mask || r.poll?.api_key_mask) {
-          <code class="text-xs text-ink-muted-on-dark">
-            API: {{ r.generate?.api_key_mask || r.poll?.api_key_mask }}
-          </code>
-        }
-        @if (r.generate?.access_key_mask || r.poll?.access_key_mask) {
-          <code class="block text-xs text-ink-muted-on-dark">
-            AK: {{ r.generate?.access_key_mask || r.poll?.access_key_mask }}
-          </code>
-        }
-        @if (r.generate?.secret_key_mask || r.poll?.secret_key_mask) {
-          <code class="block text-xs text-ink-muted-on-dark">
-            SK: {{ r.generate?.secret_key_mask || r.poll?.secret_key_mask }}
-          </code>
-        }
-      </div>
-    </div>
-
-    @if (r.generate?.error_message && !r.poll) {
-      <p-message
-        severity="error"
-        [text]="r.generate!.error_message!"
-        [escape]="false"
-        styleClass="w-full mb-4"
-      />
-    }
-
-    <!-- Timing summary -->
-    @if (rowDuration(r) !== '—') {
-      <div
-        class="mb-4 flex items-center gap-2 rounded-lg border border-surface-border bg-surface-2 px-4 py-2.5 text-sm text-ink-muted-on-dark"
-      >
-        <i class="pi pi-clock text-ink-muted-on-dark"></i>
-        <span>
-          Duración total (envío → resultado):
-          <strong class="text-ink-on-dark">{{ rowDuration(r) }}</strong>
-        </span>
-        @if (r.poll && (r.poll.total_duration_ms ?? 0) > 0) {
-          <span class="text-xs text-ink-muted-on-dark">
-            · {{ r.poll.poll_count }} poll(s) hasta el resultado
-          </span>
-        }
-      </div>
-    }
-
-    <p-tabs [value]="'generation'">
-      <p-tablist>
-        @for (p of phases(r); track p.value) {
-          <p-tab [value]="p.value">
-            <span class="flex items-center gap-2">
-              <i class="{{ p.icon }} text-xs"></i>
-              <span>{{ p.label }}</span>
-              <p-tag
-                [value]="p.badge"
-                [severity]="p.comm ? 'info' : 'secondary'"
-                styleClass="text-xs"
-              />
-            </span>
-          </p-tab>
-        }
-      </p-tablist>
-      <p-tabpanels>
-        @for (p of phases(r); track p.value) {
-          <p-tabpanel [value]="p.value">
-            @if (p.comm; as c) {
-              @if (c.error_message) {
-                <p-message
-                  severity="error"
-                  [text]="c.error_message"
-                  [escape]="false"
-                  styleClass="w-full mb-3"
-                />
               }
-              <div
-                class="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-muted-on-dark"
-              >
-                <span><i class="pi pi-arrow-up mr-1"></i>{{ c.method }} {{ c.endpoint }}</span>
-                <span>
-                  <i class="pi pi-calendar mr-1"></i>Enviado:
-                  {{ c.started_at || c.created_at | date: 'medium' }}
-                </span>
-                @if ((c.duration_ms ?? 0) > 0) {
-                  <span
-                    ><i class="pi pi-stopwatch mr-1"></i>HTTP: {{ formatMs(c.duration_ms) }}</span
-                  >
-                }
-                @if ((c.total_duration_ms ?? 0) > 0) {
-                  <span>
-                    <i class="pi pi-clock mr-1"></i>Total: {{ formatMs(c.total_duration_ms) }}
-                  </span>
-                }
-              </div>
-              <div class="flex flex-col gap-4">
-                <div>
-                  <h5 class="mb-2 text-sm font-bold text-ink-on-dark">Payload</h5>
-                  <div class="overflow-hidden rounded-lg border border-surface-border bg-surface-2">
-                    <div
-                      class="flex items-center justify-between border-b border-surface-border px-3 py-1.5"
-                    >
-                      <span class="text-xs font-bold text-ink-muted-on-dark">
-                        {{ isJson(c.request_body) ? 'JSON formateado' : 'Texto plano' }}
-                      </span>
-                      <p-button
-                        icon="pi pi-copy"
-                        size="small"
-                        text
-                        rounded
-                        pTooltip="Copiar"
-                        tooltipPosition="left"
-                        (onClick)="copyBody(c.request_body, $event)"
-                      />
-                    </div>
-                    <pre
-                      class="max-h-72 overflow-auto p-3 text-xs leading-relaxed text-ink-on-dark"
-                      >{{ prettyBody(c.request_body) || '—' }}</pre>
-                  </div>
-                </div>
-                <div>
-                  <h5 class="mb-2 text-sm font-bold text-ink-on-dark">Respuesta</h5>
-                  <div class="overflow-hidden rounded-lg border border-surface-border bg-surface-2">
-                    <div
-                      class="flex items-center justify-between border-b border-surface-border px-3 py-1.5"
-                    >
-                      <span class="text-xs font-bold text-ink-muted-on-dark">
-                        {{ isJson(c.response_body) ? 'JSON formateado' : 'Texto plano' }}
-                      </span>
-                      <p-button
-                        icon="pi pi-copy"
-                        size="small"
-                        text
-                        rounded
-                        pTooltip="Copiar"
-                        tooltipPosition="left"
-                        (onClick)="copyBody(c.response_body, $event)"
-                      />
-                    </div>
-                    <pre
-                      class="max-h-72 overflow-auto p-3 text-xs leading-relaxed text-ink-on-dark"
-                      >{{ prettyBody(c.response_body) || '—' }}</pre>
-                  </div>
-                </div>
-              </div>
-            } @else {
-              <div class="flex flex-col items-center gap-3 py-10 text-center">
-                <i class="pi pi-hourglass text-3xl text-ink-muted-on-dark"></i>
-                <p class="text-sm text-ink-muted-on-dark">
-                  Aún no hay registros de polling para esta tarea.
-                </p>
-                @if (r.generate?.started_at || r.generate?.created_at) {
-                  <p class="text-xs text-ink-muted-on-dark">
-                    Enviado hace {{ elapsedSinceStart(r) }} — esperando el resultado del modelo.
-                  </p>
-                }
-              </div>
-            }
-          </p-tabpanel>
-        }
-      </p-tabpanels>
-    </p-tabs>
-  }
-</p-dialog>
+            </p-tabpanel>
+          }
+        </p-tabpanels>
+      </p-tabs>
+    }
+  </p-dialog>
+</div>
