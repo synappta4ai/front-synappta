@@ -386,9 +386,8 @@
       @if (previewAsset(); as asset) {
         <div class="asset-pop-body">
           <div class="asset-pop-head">
-            <span class="asset-pop-name" [title]="asset.filename">{{
-              shortName(asset.filename)
-            }}</span>
+            @let name = asset?.ingredients?.[0]?.name ?? asset.filename;
+            <span class="asset-pop-name" [title]="name">{{ shortName(name) }}</span>
             <button
               type="button"
               class="asset-pop-close"
@@ -398,6 +397,7 @@
               <i class="md md-close"></i>
             </button>
           </div>
+          <!-- <p>{{ asset | json }}</p> -->
           <button
             type="button"
             class="asset-pop-imgbtn"
@@ -424,13 +424,10 @@
     >
       @if (fullscreenAsset(); as asset) {
         <div class="asset-fullscreen" (click)="closeFullscreen()">
-          <img
-            [src]="asset.url | serverUrl"
-            [alt]="asset.filename"
-            (click)="$event.stopPropagation()"
-          />
+          @let name = asset?.ingredients?.[0]?.name ?? asset.filename;
+          <img [src]="asset.url | serverUrl" [alt]="name" (click)="$event.stopPropagation()" />
           <div class="asset-fullscreen-meta">
-            <span class="truncate" [title]="asset.filename">{{ asset.filename }}</span>
+            <span class="truncate ml-12" [title]="name">{{ name }}</span>
             <p-button
               icon="md md-close"
               [rounded]="true"
