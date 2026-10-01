@@ -15,6 +15,7 @@ import { Tooltip } from 'primeng/tooltip';
 
 import { GenerationEventsStore } from '@core/store/generation.events';
 import { ServerUrlPipe } from '@pipes/server-url.pipe';
+import { CountUpDirective } from '@shared/components/count-up/count-up.directive';
 import { StudioTake } from '@modules/studio/interfaces';
 
 /**
@@ -24,7 +25,7 @@ import { StudioTake } from '@modules/studio/interfaces';
  */
 @Component({
   selector: 'app-generation-bell',
-  imports: [RouterLink, Button, Popover, Tag, Tooltip, ServerUrlPipe],
+  imports: [RouterLink, Button, Popover, Tag, Tooltip, ServerUrlPipe, CountUpDirective],
   templateUrl: './generation-bell.component.html',
   styleUrl: './generation-bell.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

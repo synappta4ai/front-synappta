@@ -1,4 +1,5 @@
-import { Directive, ElementRef, Renderer2, inject, input } from '@angular/core';
+import { Directive, ElementRef, OnDestroy, Renderer2, inject, input } from '@angular/core';
+import { animate, type AnimationPlaybackControls } from 'motion';
 
 /**
  * Tilt 3D sutil hacia el puntero con brillo (adaptación nativa del
@@ -14,7 +15,7 @@ import { Directive, ElementRef, Renderer2, inject, input } from '@angular/core';
     '(pointerleave)': 'onLeave()',
   },
 })
-export class TiltDirective {
+export class TiltDirective implements OnDestroy {
   /** Grados máximos de inclinación (0–12). `appTilt` solo = 6. */
   readonly appTilt = input<number, unknown>(6, {
     transform: (value: unknown): number => {
@@ -29,6 +30,7 @@ export class TiltDirective {
   private readonly host = inject(ElementRef<HTMLElement>);
   private readonly renderer = inject(Renderer2);
   private active = false;
+  private controls: AnimationPlaybackControls | null = null;
 
   protected onEnter(): void {
     if (!this.interactive()) {
@@ -57,10 +59,9 @@ export class TiltDirective {
     const px = (event.clientX - rect.left) / rect.width - 0.5;
     const py = (event.clientY - rect.top) / rect.height - 0.5;
     const max = this.appTilt();
-    this.renderer.setStyle(
-      el,
-      'transform',
+    this.tiltTo(
       `perspective(900px) rotateX(${(-py * max).toFixed(2)}deg) rotateY(${(px * max).toFixed(2)}deg) scale(1.015)`,
+      { type: 'spring', stiffness: 380, damping: 28 },
     );
     this.renderer.setStyle(el, '--tilt-x', `${((px + 0.5) * 100).toFixed(1)}%`);
     this.renderer.setStyle(el, '--tilt-y', `${((py + 0.5) * 100).toFixed(1)}%`);
@@ -70,10 +71,27 @@ export class TiltDirective {
   protected onLeave(): void {
     this.active = false;
     const el = this.host.nativeElement;
-    this.renderer.removeStyle(el, 'transform');
+    this.tiltTo('perspective(900px) rotateX(0deg) rotateY(0deg) scale(1)', {
+      type: 'spring',
+      stiffness: 220,
+      damping: 24,
+    });
     this.renderer.removeStyle(el, '--tilt-x');
     this.renderer.removeStyle(el, '--tilt-y');
     this.renderer.removeClass(el, 'tilt-on');
+  }
+
+  private tiltTo(
+    transform: string,
+    spring: { type: 'spring'; stiffness: number; damping: number },
+  ): void {
+    this.controls?.stop();
+    this.controls = animate(this.host.nativeElement, { transform }, spring);
+  }
+
+  ngOnDestroy(): void {
+    this.controls?.stop();
+    this.controls = null;
   }
 
   private interactive(): boolean {

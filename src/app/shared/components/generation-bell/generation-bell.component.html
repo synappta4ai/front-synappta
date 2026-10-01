@@ -11,7 +11,12 @@
   showDelay="400"
 />
 @if (unreadCount() > 0) {
-  <span class="bell-count" animate.enter="pop">{{ unreadCount() > 9 ? '9+' : unreadCount() }}</span>
+  <span
+    class="bell-count"
+    animate.enter="pop"
+    [appCountUp]="unreadCount() > 9 ? 9 : unreadCount()"
+    [appCountUpSuffix]="unreadCount() > 9 ? '+' : ''"
+  ></span>
 } @else if (hasActive()) {
   <span class="bell-badge" animate.enter="pop"></span>
 }

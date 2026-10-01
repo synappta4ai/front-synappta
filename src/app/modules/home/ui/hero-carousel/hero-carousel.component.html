@@ -2,12 +2,20 @@
   role="region"
   aria-roledescription="carrusel"
   aria-label="Destacados del estudio"
+  tabindex="0"
+  (keydown)="onArrow($event)"
   (mouseenter)="pause()"
   (mouseleave)="resume()"
-  (touchstart)="onTouchStart($event)"
-  (touchend)="onTouchEnd($event)"
 >
-  <div class="hero-slides">
+  <div
+    #strip
+    class="hero-strip"
+    [class.hero-strip-dragging]="dragging()"
+    (pointerdown)="onDown($event)"
+    (pointermove)="onMove($event)"
+    (pointerup)="onUp($event)"
+    (pointercancel)="onUp($event)"
+  >
     @for (slide of slides(); track slide.src; let i = $index) {
       <figure
         class="hero-slide"

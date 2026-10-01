@@ -16,6 +16,7 @@ import { ProgressSpinner } from 'primeng/progressspinner';
 import { AdminService } from '../../services/admin.service';
 import { Tenant } from '../../interfaces';
 import { PageContainerComponent } from '@shared/components/index';
+import { CountUpDirective } from '@shared/components/count-up/count-up.directive';
 
 @Component({
   selector: 'app-admin-tenants',
@@ -31,6 +32,7 @@ import { PageContainerComponent } from '@shared/components/index';
     Message,
     ConfirmDialog,
     ProgressSpinner,
+    CountUpDirective,
   ],
   providers: [ConfirmationService],
   templateUrl: './tenants.component.html',

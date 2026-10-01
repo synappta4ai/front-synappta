@@ -8,17 +8,22 @@ import {
   inject,
   input,
   signal,
+  viewChild,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { animate, type AnimationPlaybackControls } from 'motion';
 
 import type { HeroSlide } from './hero-slides';
 
 const DEFAULT_DURATION = 6500;
 const VIDEO_FALLBACK_DURATION = 15000;
+const DRAG_THRESHOLD = 80;
+const FLICK_VELOCITY = 0.4;
 
 /**
- * Carrusel multimedia del hero: autoplay discreto, consciente de video
- * (espera al fin o respeta `duration`), dots amarillos, swipe en mobile.
+ * Carrusel multimedia del hero: pista deslizante con springs, arrastre
+ * con puntero (touch + mouse), autoplay discreto consciente de video
+ * (espera al fin o respeta `duration`) y dots amarillos.
  * Se pausa con hover, pestaña oculta o prefers-reduced-motion.
  */
 @Component({
@@ -32,11 +37,17 @@ export class HeroCarouselComponent implements OnDestroy {
   readonly intervalMs = input(DEFAULT_DURATION);
 
   protected readonly index = signal(0);
+  protected readonly dragging = signal(false);
 
   private readonly host = inject(ElementRef<HTMLElement>);
   private readonly browser = isPlatformBrowser(inject(PLATFORM_ID));
+  private readonly strip = viewChild<ElementRef<HTMLElement>>('strip');
   private timer: ReturnType<typeof setTimeout> | null = null;
-  private touchX: number | null = null;
+  private slideAnimation: AnimationPlaybackControls | null = null;
+  private dragStartX = 0;
+  private dragBaseX = 0;
+  private dragLastX = 0;
+  private dragLastT = 0;
 
   constructor() {
     afterNextRender(() => {
@@ -50,6 +61,7 @@ export class HeroCarouselComponent implements OnDestroy {
 
   ngOnDestroy(): void {
     this.clearTimer();
+    this.slideAnimation?.stop();
     if (this.browser) {
       document.removeEventListener('visibilitychange', this.onVisibility);
     }
@@ -60,20 +72,66 @@ export class HeroCarouselComponent implements OnDestroy {
     this.activate(((i % count) + count) % count);
   }
 
-  protected onTouchStart(event: TouchEvent): void {
-    this.touchX = event.touches[0]?.clientX ?? null;
+  protected stepSlide(direction: 1 | -1): void {
+    this.goTo(this.index() + direction);
   }
 
-  protected onTouchEnd(event: TouchEvent): void {
-    if (this.touchX === null) {
+  protected onArrow(event: KeyboardEvent): void {
+    if (event.key === 'ArrowLeft') {
+      this.stepSlide(-1);
+      event.preventDefault();
+    } else if (event.key === 'ArrowRight') {
+      this.stepSlide(1);
+      event.preventDefault();
+    }
+  }
+
+  protected onDown(event: PointerEvent): void {
+    if (!this.browser || (event.pointerType === 'mouse' && event.button !== 0)) {
       return;
     }
-    const delta = (event.changedTouches[0]?.clientX ?? this.touchX) - this.touchX;
-    this.touchX = null;
-    if (Math.abs(delta) < 40) {
+    this.clearTimer();
+    this.dragging.set(true);
+    this.dragStartX = event.clientX;
+    this.dragLastX = event.clientX;
+    this.dragLastT = event.timeStamp;
+    this.dragBaseX = -this.index() * this.unit();
+    this.slideAnimation?.stop();
+    try {
+      (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+    } catch {
+      // jsdom/tests: el arrastre se trackea igual con los listeners.
+    }
+  }
+
+  protected onMove(event: PointerEvent): void {
+    if (!this.dragging()) {
       return;
     }
-    this.goTo(this.index() + (delta < 0 ? 1 : -1));
+    const dx = event.clientX - this.dragStartX;
+    this.setX(this.dragBaseX + dx);
+    const now = event.timeStamp;
+    if (now !== this.dragLastT) {
+      this.dragLastX = event.clientX;
+      this.dragLastT = now;
+    }
+  }
+
+  protected onUp(event: PointerEvent): void {
+    if (!this.dragging()) {
+      return;
+    }
+    this.dragging.set(false);
+    const dx = event.clientX - this.dragStartX;
+    const dt = Math.max(1, event.timeStamp - this.dragLastT);
+    const velocity = (event.clientX - this.dragLastX) / dt;
+    if (Math.abs(velocity) > FLICK_VELOCITY) {
+      this.goTo(this.index() + (velocity < 0 ? 1 : -1));
+    } else if (Math.abs(dx) > DRAG_THRESHOLD) {
+      this.goTo(this.index() + (dx < 0 ? 1 : -1));
+    } else {
+      this.goTo(this.index());
+    }
   }
 
   protected pause(): void {
@@ -91,6 +149,7 @@ export class HeroCarouselComponent implements OnDestroy {
   private activate(i: number): void {
     this.index.set(i);
     this.clearTimer();
+    this.renderPosition(true);
     if (!this.browser || this.reducedMotion()) {
       this.pauseVideos(i);
       return;
@@ -109,6 +168,32 @@ export class HeroCarouselComponent implements OnDestroy {
     } else {
       this.later(slide?.duration ?? this.intervalMs());
     }
+  }
+
+  private renderPosition(animated: boolean): void {
+    const strip = this.strip()?.nativeElement;
+    if (!strip) {
+      return;
+    }
+    const x = -this.index() * this.unit();
+    this.slideAnimation?.stop();
+    if (!animated || this.reducedMotion() || typeof strip.animate !== 'function') {
+      strip.style.transform = `translateX(${x}px)`;
+      return;
+    }
+    this.slideAnimation = animate(strip, { x }, { type: 'spring', stiffness: 260, damping: 32 });
+  }
+
+  private setX(x: number): void {
+    const strip = this.strip()?.nativeElement;
+    if (strip) {
+      strip.style.transform = `translateX(${x}px)`;
+    }
+  }
+
+  private unit(): number {
+    const strip = this.strip()?.nativeElement;
+    return strip?.clientWidth || 0;
   }
 
   private later(ms: number): void {
