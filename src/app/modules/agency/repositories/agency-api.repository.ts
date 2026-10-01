@@ -28,7 +28,7 @@ import {
 @Injectable({ providedIn: 'root' })
 export class AgencyApiRepository {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = environment.apiUrl;
+  private readonly apiUrl = environment.API_URL;
 
   listModels(): Observable<ApiResponse<AiModel[]>> {
     return this.http.get<ApiResponse<AiModel[]>>(`${this.apiUrl}/models`);

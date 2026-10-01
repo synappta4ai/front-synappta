@@ -26,7 +26,7 @@ import {
 @Injectable({ providedIn: 'root' })
 export class LibraryApiRepository {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = environment.apiUrl;
+  private readonly apiUrl = environment.API_URL;
 
   uploadFile(file: File, category?: string, eventId?: string): Observable<ApiResponse<FileAsset>> {
     const form = new FormData();

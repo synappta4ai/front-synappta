@@ -12,7 +12,7 @@ describe('GenerationEventsStore hydration', () => {
   let agency: AgencyService;
   let httpMock: HttpTestingController;
 
-  const base = environment.apiUrl;
+  const base = environment.API_URL;
 
   const log = (over: Partial<GenerationLog>): GenerationLog => ({
     id: 'log-1',

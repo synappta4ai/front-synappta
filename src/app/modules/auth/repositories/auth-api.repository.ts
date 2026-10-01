@@ -10,7 +10,7 @@ import { LoginRequest, RegisterRequest, TokenResponse, User } from '../interface
 @Injectable({ providedIn: 'root' })
 export class AuthApiRepository {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = environment.apiUrl;
+  private readonly apiUrl = environment.API_URL;
 
   login(payload: LoginRequest): Observable<ApiResponse<TokenResponse>> {
     return this.http.post<ApiResponse<TokenResponse>>(`${this.apiUrl}/auth/login`, payload);

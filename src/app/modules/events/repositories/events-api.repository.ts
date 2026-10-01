@@ -24,7 +24,7 @@ import {
 @Injectable({ providedIn: 'root' })
 export class EventsApiRepository {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = environment.apiUrl;
+  private readonly apiUrl = environment.API_URL;
 
   listEvents(all = false): Observable<ApiResponse<Event[]>> {
     const params = new HttpParams().set('all', String(all));

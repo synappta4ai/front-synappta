@@ -1007,7 +1007,7 @@ export class StudioComponent {
       return '';
     }
     const url = asset.url;
-    const origin = environment.apiUrl.replace(/\/api\/v1\/?$/, '');
+    const origin = environment.API_URL.replace(/\/api\/v1\/?$/, '');
     const path = url.startsWith('/') ? url : `/${url}`;
     return /^https?:\/\//i.test(url) ? url : `${origin}${path}`;
   }

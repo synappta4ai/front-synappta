@@ -20,7 +20,7 @@ import {
 @Injectable({ providedIn: 'root' })
 export class AdminApiRepository {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = environment.apiUrl;
+  private readonly apiUrl = environment.API_URL;
 
   listTenants(): Observable<ApiResponse<Tenant[]>> {
     return this.http.get<ApiResponse<Tenant[]>>(`${this.apiUrl}/tenants`);

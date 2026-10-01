@@ -1,4 +1,14 @@
 export const environment = {
-  production: false,
-  apiUrl: 'http://localhost:8099/api/v1',
+  PRODUCTION: false,
+  API_URL: 'http://localhost:8099/api/v1',
+  SOCKET_URL: 'ws://localhost:3000',
+  ATMOSPHERE: 'development',
+  DEFAULT_LANGUAGE: 'es',
+  DEFAULT_THEME: 'dark',
+  DEFAULT_CURRENCY: 'COP',
+  DEFAULT_TIMEZONE: 'America/Bogota',
+  DEFAULT_DATE_FORMAT: 'dd/MM/yyyy',
+  DEFAULT_TIME_FORMAT: 'HH:mm:ss',
+  DEFAULT_DATE_TIME_FORMAT: 'dd/MM/yyyy HH:mm:ss',
+  DEFAULT_DECIMAL_PLACES: '2',
 };

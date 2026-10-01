@@ -28,7 +28,7 @@ export interface PushSubscriptionRequest {
 @Injectable({ providedIn: 'root' })
 export class AssignmentsApiRepository {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = environment.apiUrl;
+  private readonly apiUrl = environment.API_URL;
 
   listByTarget(
     targetType: AssignableType,
@@ -79,7 +79,7 @@ export class AssignmentsApiRepository {
 @Injectable({ providedIn: 'root' })
 export class PushApiRepository {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = environment.apiUrl;
+  private readonly apiUrl = environment.API_URL;
 
   subscribe(payload: PushSubscriptionRequest): Observable<ApiResponse<null>> {
     return this.http.post<ApiResponse<null>>(`${this.apiUrl}/push/subscriptions`, payload);

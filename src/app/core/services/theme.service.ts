@@ -27,7 +27,7 @@ export class ThemeService {
 
   // API endpoint dinámico
   private get API_URL(): string {
-    return `${environment.apiUrl}/user/preferences/theme`;
+    return `${environment.API_URL}/user/preferences/theme`;
   }
 
   constructor() {

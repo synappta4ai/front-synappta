@@ -8,7 +8,7 @@ import { Home } from '../interfaces';
 @Injectable({ providedIn: 'root' })
 export class HomeApiRepository {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = environment.apiUrl;
+  private readonly apiUrl = environment.API_URL;
 
   listHomes(): Observable<Home[]> {
     return this.http.get<Home[]>(`${this.apiUrl}/homes`);
