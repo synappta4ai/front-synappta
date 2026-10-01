@@ -16,6 +16,7 @@ import { UserSessionStore } from '@core/store/user.session';
 import { AdminService } from '../../services/admin.service';
 import { GeneratedVideo } from '../../interfaces';
 import { ServerUrlPipe } from '@pipes/server-url.pipe';
+import { TiltDirective } from '@shared/components/tilt/tilt.directive';
 
 @Component({
   selector: 'app-admin-videos',
@@ -32,6 +33,7 @@ import { ServerUrlPipe } from '@pipes/server-url.pipe';
     Dialog,
     Tooltip,
     ServerUrlPipe,
+    TiltDirective,
   ],
   templateUrl: './admin-videos.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

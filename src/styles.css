@@ -3417,3 +3417,179 @@ p-selectbutton:has(.section-toggle) {
     transition: none !important;
   }
 }
+
+/* ============================================
+   Micro-interacciones (adaptaciones Spectrum UI a Angular;
+   0 dependencias, 0 cambios de funcionamiento).
+   - Tilt 3D: directiva appTilt (rotate + glare por --tilt-x/--tilt-y).
+   - Shine en CTAs primarios, pop en badges, pulse de estado,
+     fundido de imágenes (directiva appImgFade), zoom en thumbs,
+     kbd estilo tecla, press en checkbox.
+   Todo respeta prefers-reduced-motion (bloque global + guards JS).
+   ============================================ */
+
+/* ── Tilt: base + glare que sigue al puntero ─────────────────── */
+.tilt {
+  position: relative;
+  transform-style: preserve-3d;
+}
+
+.tilt::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s var(--ease-app);
+  background: radial-gradient(
+    circle at var(--tilt-x, 50%) var(--tilt-y, 50%),
+    color-mix(in srgb, #ffffff 7%, transparent),
+    transparent 60%
+  );
+}
+
+.tilt-on::after {
+  opacity: 1;
+}
+
+/* ── Fundido de imágenes al cargar (appImgFade) ─────────────── */
+.img-fade {
+  opacity: 0;
+  transform: scale(1.05);
+  transition:
+    opacity 0.5s var(--ease-app),
+    transform 0.7s var(--ease-app);
+}
+
+.img-fade-on {
+  opacity: 1;
+  transform: none;
+}
+
+/* ── Zoom elegante en miniaturas ─────────────────────────────── */
+.zoomable {
+  overflow: hidden;
+}
+
+.zoomable img {
+  transition:
+    transform 0.35s var(--ease-app),
+    opacity 0.5s var(--ease-app);
+}
+
+.zoomable:hover img {
+  transform: scale(1.06);
+}
+
+/* ── Shine en CTAs primarios ─────────────────────────────────── */
+.p-button:not(.p-button-text):not(.p-button-outlined):not(.p-button-secondary):not(
+    .p-button-contrast
+  ):not(:disabled),
+.generate-btn:not(:disabled) {
+  position: relative;
+  overflow: hidden;
+}
+
+.p-button:not(.p-button-text):not(.p-button-outlined):not(.p-button-secondary):not(
+    .p-button-contrast
+  ):not(:disabled)::after,
+.generate-btn:not(:disabled)::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 40%;
+  left: -60%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+  transform: skewX(-15deg);
+  transition: left 0.5s var(--ease-app);
+  pointer-events: none;
+}
+
+.p-button:not(.p-button-text):not(.p-button-outlined):not(.p-button-secondary):not(
+    .p-button-contrast
+  ):not(:disabled):hover::after,
+.generate-btn:not(:disabled):hover::after {
+  left: 130%;
+}
+
+/* ── Pop de badges/notificaciones ────────────────────────────── */
+@keyframes pop-in {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.pop {
+  animation: pop-in 0.25s var(--ease-app) both;
+}
+
+/* ── Punto de estado pulsante (jobs en curso, en vivo) ───────── */
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--color-accent);
+  position: relative;
+  flex-shrink: 0;
+}
+
+.pulse-dot::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  border: 2px solid var(--color-accent);
+  opacity: 0;
+  animation: pulse-ring 1.6s var(--ease-app) infinite;
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.5);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.1);
+    opacity: 0;
+  }
+}
+
+/* ── Tecla kbd estilo keycap ─────────────────────────────────── */
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-surface-border-strong);
+  border-bottom-width: 2px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.6;
+  white-space: nowrap;
+  color: var(--color-ink-muted-on-dark);
+  font-family: inherit;
+}
+
+/* ── Press en checkbox ───────────────────────────────────────── */
+.p-checkbox:active .p-checkbox-box {
+  transform: scale(0.88);
+}
+
+.p-checkbox .p-checkbox-box {
+  transition:
+    transform 0.15s var(--ease-app),
+    border-color 0.15s var(--ease-app),
+    background-color 0.15s var(--ease-app);
+}

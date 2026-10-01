@@ -11,9 +11,9 @@
   showDelay="400"
 />
 @if (unreadCount() > 0) {
-  <span class="bell-count">{{ unreadCount() > 9 ? '9+' : unreadCount() }}</span>
+  <span class="bell-count" animate.enter="pop">{{ unreadCount() > 9 ? '9+' : unreadCount() }}</span>
 } @else if (hasActive()) {
-  <span class="bell-badge"></span>
+  <span class="bell-badge" animate.enter="pop"></span>
 }
 
 <p-popover #popoverRef styleClass="gen-bell-popover">

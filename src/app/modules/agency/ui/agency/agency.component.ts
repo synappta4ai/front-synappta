@@ -26,6 +26,7 @@ import { AiModel, Modality, GeneratedAsset, StatusResponse } from '../../interfa
 import { EventsService } from '@modules/events/services';
 import { Event as Project, Piece } from '@modules/events/interfaces';
 import { PageContainerComponent, ValidatorErrors } from '@shared/components/index';
+import { TiltDirective } from '@shared/components/tilt/tilt.directive';
 
 type WorkflowPhase = 'input' | 'angles' | 'storyboard' | 'scenes';
 
@@ -57,6 +58,7 @@ interface StoryboardShot {
     ReactiveFormsModule,
     PageContainerComponent,
     ValidatorErrors,
+    TiltDirective,
     Tooltip,
     Button,
     Card,

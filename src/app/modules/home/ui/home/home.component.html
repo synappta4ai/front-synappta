@@ -1,291 +1,90 @@
-<!-- Header fijo minimalista del landing -->
-<header
-  class="fixed inset-x-0 top-0 z-30 border-b border-secondary/70 bg-background/85 backdrop-blur-md"
->
-  <div class="mx-auto flex h-15 max-w-[1400px] items-center justify-between px-5 sm:px-8">
+<!-- Header minimal integrado al hero -->
+<header class="absolute inset-x-0 top-0 z-30 bg-surface">
+  <div class="mx-auto flex h-14 max-w-[1400px] items-center justify-between px-5 sm:px-8">
     <a routerLink="/" class="inline-flex items-center" aria-label="Synappta — inicio">
       <img
-        [src]="media.logoTitle"
+        src="Media/Synappta letras blancas.png"
         alt="Synappta"
-        width="594"
-        height="141"
-        class="landing-logo h-6 w-auto"
+        width="574"
+        height="138"
+        class="h-5 w-auto"
       />
     </a>
-    <div class="hidden md:block">
-      <a href="#contacto" class="text-xs font-bold tracking-[0.2em] text-ink hover:text-accent"
-        >CONTACTO</a
-      >
-    </div>
-    <button
-      type="button"
-      class="inline-flex h-10 w-10 items-center justify-center text-ink md:hidden"
-      (click)="menuOpen.set(!menuOpen())"
-      [attr.aria-expanded]="menuOpen()"
-      aria-label="Menú"
+    <a
+      [href]="'mailto:' + contactEmail"
+      class="text-xs font-bold tracking-[0.15em] text-ink-on-dark/80 transition-colors hover:text-accent"
+      >Contáctanos</a
     >
-      <i class="md text-2xl" [class.md-menu]="!menuOpen()" [class.md-close]="menuOpen()"></i>
-    </button>
   </div>
-  @if (menuOpen()) {
-    <nav
-      class="flex flex-col gap-1 border-t border-secondary/70 bg-background px-5 py-4 md:hidden"
-      aria-label="Móvil"
-    >
-      @for (link of mobileLinks; track link.label) {
-        @if (link.route) {
-          <a
-            [routerLink]="link.route"
-            (click)="menuOpen.set(false)"
-            class="py-2 text-sm font-bold tracking-[0.2em] text-ink"
-            >{{ link.label }}</a
-          >
-        } @else {
-          <a
-            [href]="link.href"
-            (click)="menuOpen.set(false)"
-            class="py-2 text-sm font-bold tracking-[0.2em] text-ink"
-            >{{ link.label }}</a
-          >
-        }
-      }
-    </nav>
-  }
 </header>
 
-<!-- 01 · HERO -->
+<!-- Hero -->
 <section id="inicio" class="scroll-mt-20 overflow-hidden bg-surface text-ink-on-dark">
-  <div class="mx-auto max-w-[1400px] px-5 pt-24 sm:px-8 sm:pt-28">
-    <div class="flex items-baseline gap-4" animate.enter="anim-item">
-      <p class="text-xs font-bold tracking-[0.2em] text-ink-muted-on-dark">01 / ESTUDIO CREATIVO</p>
-    </div>
-
-    <h1
-      class="mt-6 text-left font-black uppercase leading-[0.85] tracking-tight"
-      style="font-size: clamp(2.1rem, 7.7vw, 7rem)"
-      animate.enter="anim-item"
-    >
-      <span class="block">Hacemos que</span>
-      <span class="block">las ideas</span>
-      <span class="block text-accent">conecten</span>
-    </h1>
-
-    <div class="mt-8 grid gap-8 pb-10 lg:grid-cols-12" animate.enter="anim-item">
-      <div class="lg:col-span-7">
-        <p class="text-xs font-bold tracking-[0.2em] text-ink-muted-on-dark">Estudio creativo</p>
-        <p class="mt-4 max-w-xl text-base font-normal leading-relaxed text-ink-muted-on-dark">
-          Synapta es un estudio de producción de video y estrategia de contenido. Del concepto a la
-          distribución, ayudamos a las marcas a contar historias que importan.
-        </p>
-      </div>
-      <div class="flex flex-wrap items-start gap-x-8 gap-y-4 lg:col-span-5 lg:justify-end">
-        <a
-          routerLink="/agency"
-          class="inline-flex items-center gap-3 border border-surface-border-strong px-7 py-3.5 text-xs font-bold tracking-[0.2em] text-ink-on-dark transition-colors hover:border-accent hover:text-accent"
-        >
-          CONOCE LA AGENCIA
-        </a>
-        <a
-          routerLink="/video"
-          class="group inline-flex items-center gap-2 py-3.5 text-xs font-bold tracking-[0.2em] text-ink-on-dark"
-        >
-          <i
-            class="md md-play_circle text-2xl transition-transform duration-200 group-hover:scale-110"
-            aria-hidden="true"
-          ></i>
-          <span
-            class="underline decoration-surface-border-strong decoration-2 underline-offset-8 group-hover:decoration-accent"
-            >VER VIDEOS</span
-          >
-        </a>
-      </div>
-    </div>
-  </div>
-
-  <!-- Logo-máscara a sangre: el showreel vive dentro del wordmark -->
-  <div class="overflow-hidden pb-8" animate.enter="anim-item">
-    <div class="mx-auto w-[104%] max-w-none px-0 sm:-ml-[2%]">
-      <app-logo-media
-        [src]="media.heroVideoPoster"
-        alt="Showreel de Synappta (video de muestra)"
-        [videoSrc]="null"
-        [masked]="true"
-        [parallax]="true"
-        [eager]="true"
-      />
-    </div>
-    <div class="mx-auto flex max-w-[1400px] items-center justify-between px-5 pt-6 sm:px-8">
-      <p class="text-xs font-bold tracking-[0.2em] text-ink-muted-on-dark">SHOWREEL — 2026</p>
-      <p class="scroll-hint text-xs font-bold tracking-[0.2em] text-ink-muted-on-dark">
-        SCROLL TO EXPLORE
-      </p>
-    </div>
-  </div>
-</section>
-
-<!-- 02 · SERVICIOS -->
-<section id="servicios" class="mx-auto max-w-[1400px] scroll-mt-20 px-5 py-12 sm:px-8 sm:py-16">
-  <div class="flex items-baseline justify-between gap-4" appReveal>
-    <p class="text-xs font-bold tracking-[0.2em] text-ink-muted">02 / SERVICIOS</p>
-  </div>
-  <h2
-    class="mt-4 font-black uppercase tracking-tight text-ink"
-    style="font-size: clamp(2.25rem, 6vw, 5rem)"
-    appReveal
-  >
-    Qué hacemos
-  </h2>
-
-  <ol class="mt-8 border-t border-secondary sm:mt-10">
-    @for (service of services; track service.title; let i = $index) {
-      <li
-        appReveal
-        [appRevealDelay]="i * 60"
-        class="group grid gap-2 border-b border-secondary py-6 transition-colors duration-200 hover:bg-accent sm:py-7 lg:grid-cols-12 lg:items-baseline lg:gap-6 lg:px-4"
-      >
-        <span
-          class="font-black text-accent group-hover:text-on-accent lg:col-span-1"
-          style="font-size: clamp(1.25rem, 2vw, 2rem)"
-          aria-hidden="true"
-          >0{{ i + 1 }}</span
-        >
-        <div class="lg:col-span-7">
-          <h3
-            class="font-black uppercase tracking-tight text-ink group-hover:text-on-accent"
-            style="font-size: clamp(1.5rem, 3vw, 2.75rem)"
-          >
-            {{ service.title }}
-          </h3>
-          <p
-            class="mt-2 max-w-xl text-sm leading-relaxed text-ink-muted group-hover:text-on-accent"
-          >
-            {{ service.description }}
-          </p>
-        </div>
-        <p class="lg:col-span-4 lg:text-right">
-          <span
-            class="inline-block border border-secondary px-3 py-1 text-xs font-bold tracking-[0.2em] text-ink-muted group-hover:border-on-accent group-hover:text-on-accent"
-            >{{ service.tag }}</span
-          >
-        </p>
-      </li>
-    }
-  </ol>
-</section>
-
-<!-- 03 · TRABAJO (carrusel) -->
-<section id="trabajo" class="scroll-mt-20 pb-12 sm:pb-16">
-  <div class="mx-auto flex max-w-[1400px] items-end justify-between gap-4 px-5 sm:px-8" appReveal>
-    <div>
-      <p class="text-xs font-bold tracking-[0.2em] text-ink-muted">03 / TRABAJO</p>
-      <p class="mt-3 font-black tabular-nums text-ink" aria-hidden="true">
-        {{ (slideIndex() + 1).toString().padStart(2, '0') }}
-        <span class="text-ink-muted">/ {{ slides.length.toString().padStart(2, '0') }}</span>
-      </p>
-    </div>
-    <div class="flex items-center gap-2">
-      <button
-        type="button"
-        (click)="stepSlide(-1)"
-        aria-label="Pieza anterior"
-        class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-secondary text-ink transition-colors hover:border-accent hover:text-accent"
-      >
-        <i class="md md-arrow_back text-xl" aria-hidden="true"></i>
-      </button>
-      <button
-        type="button"
-        (click)="stepSlide(1)"
-        aria-label="Pieza siguiente"
-        class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-secondary text-ink transition-colors hover:border-accent hover:text-accent"
-      >
-        <i class="md md-arrow_forward text-xl" aria-hidden="true"></i>
-      </button>
-    </div>
-  </div>
-
   <div
-    #carouselTrack
-    class="carousel-track mt-6"
-    role="region"
-    aria-roledescription="carrusel"
-    aria-label="Trabajo seleccionado"
-    tabindex="0"
-    (scroll)="onTrackScroll($event)"
-    appReveal
+    class="mx-auto grid max-w-[1400px] items-center gap-10 px-5 pt-24 pb-12 sm:px-8 lg:grid-cols-2 lg:gap-12 lg:pt-28"
   >
-    @for (slide of slides; track slide.src; let i = $index) {
-      <figure
-        class="carousel-slide"
-        role="group"
-        aria-roledescription="diapositiva"
-        [attr.aria-label]="i + 1 + ' de ' + slides.length + ': ' + slide.title"
+    <div animate.enter="anim-page">
+      <h1
+        class="font-black uppercase leading-[0.9] tracking-tight"
+        style="font-size: clamp(2.5rem, 5.2vw, 5rem)"
       >
-        <img
-          [src]="slide.src"
-          [alt]="'Muestra de ' + slide.title"
-          [width]="slide.width"
-          [height]="slide.height"
-          loading="lazy"
-          decoding="async"
-          class="aspect-video w-full rounded-2xl border border-surface-border object-cover"
-          draggable="false"
-        />
-        <figcaption
-          class="mx-auto mt-3 flex max-w-[880px] items-baseline justify-between gap-2 px-1"
+        <span class="block">Hacemos que</span>
+        <span class="block">las ideas</span>
+        <span class="block text-accent">conecten</span>
+      </h1>
+      <p class="mt-6 text-xs font-bold tracking-[0.2em] text-ink-muted-on-dark">Estudio creativo</p>
+      <p class="mt-4 max-w-md text-sm font-normal leading-relaxed text-ink-muted-on-dark">
+        Synapta es un estudio de producción de video y estrategia de contenido generado con IA.
+        Tenemos a disposición los modelos más potentes y formatos de contenido. Aquí podrás crear
+        piezas audiovisuales, desde el concepto a la distribución, para las marcas o comercio que
+        deseen de una manera más fácil.
+      </p>
+      <div class="mt-8">
+        <a
+          [routerLink]="registerUrl"
+          class="inline-flex items-center justify-center rounded-full bg-accent px-7 py-3.5 text-sm font-bold text-on-accent transition-colors hover:bg-accent-hover active:scale-[0.98]"
+          >Prueba nuestro estudio de creación con IA</a
         >
-          <p class="text-xl font-bold text-ink">{{ slide.title }}</p>
-          <p class="text-xs font-bold tracking-[0.2em] text-ink-muted">{{ slide.caption }}</p>
-        </figcaption>
-      </figure>
-    }
-  </div>
-
-  <div class="mt-5 flex items-center justify-center gap-2" role="group" aria-label="Elegir pieza">
-    @for (slide of slides; track slide.src; let i = $index) {
-      <button
-        type="button"
-        (click)="goToSlide(i)"
-        [attr.aria-current]="slideIndex() === i"
-        [attr.aria-label]="'Ir a la pieza ' + (i + 1)"
-        class="h-2 rounded-full transition-all duration-200"
-        [class.w-6]="slideIndex() === i"
-        [class.w-2]="slideIndex() !== i"
-        [class.bg-ink]="slideIndex() === i"
-        [class.bg-secondary]="slideIndex() !== i"
-      ></button>
-    }
+      </div>
+    </div>
+    <div animate.enter="anim-item">
+      <app-hero-carousel [slides]="slides" />
+    </div>
   </div>
 </section>
 
-<!-- 04 · CONTACTO -->
-<section id="contacto" class="relative scroll-mt-20 overflow-hidden bg-accent text-on-accent">
-  <img
-    [src]="media.logoTitle"
-    alt=""
-    aria-hidden="true"
-    width="594"
-    height="141"
-    loading="lazy"
-    decoding="async"
-    class="pointer-events-none absolute top-1/2 -right-24 w-[560px] max-w-none -translate-y-1/2 select-none sm:-right-16 sm:w-[720px]"
-  />
-  <div class="relative mx-auto max-w-[1400px] px-5 py-14 sm:px-8 sm:py-20">
-    <p class="text-xs font-bold tracking-[0.2em]" appReveal>04 / CONTACTO</p>
-    <h2
-      class="mt-6 max-w-4xl font-black uppercase leading-[0.95] tracking-tight"
-      style="font-size: clamp(2.5rem, 7vw, 6.5rem)"
-      appReveal
-    >
-      ¿Tienes un proyecto en mente?
-    </h2>
-    <div class="mt-10" appReveal>
-      <a
-        [href]="'mailto:' + contactEmail"
-        class="inline-flex items-center gap-3 rounded-full bg-scrim px-10 py-5 text-base font-bold text-ink-on-dark transition-transform duration-200 hover:scale-[1.03] active:scale-[0.98]"
+<!-- CTA -->
+<section class="relative overflow-hidden border-t border-scrim/20 bg-accent text-on-accent">
+  <div class="mx-auto grid max-w-[1400px] gap-8 px-5 py-14 sm:px-8 sm:py-20 lg:grid-cols-12">
+    <div class="lg:col-span-8" appReveal>
+      <h2
+        class="font-black uppercase leading-[0.95] tracking-tight"
+        style="font-size: clamp(2.5rem, 7vw, 6.5rem)"
       >
-        Escríbenos
-        <i class="md md-arrow_forward text-2xl" aria-hidden="true"></i>
-      </a>
+        <span class="block">¿Tienes un</span>
+        <span class="block">proyecto en</span>
+        <span class="block">mente?</span>
+      </h2>
+      <div class="mt-10">
+        <a
+          [routerLink]="registerUrl"
+          class="inline-flex items-center gap-3 rounded-full bg-scrim px-8 py-4 text-base font-bold text-ink-on-dark transition-transform duration-200 hover:scale-[1.03] active:scale-[0.98]"
+        >
+          Escríbenos
+          <i class="md md-arrow_forward text-2xl" aria-hidden="true"></i>
+        </a>
+      </div>
+    </div>
+    <div class="flex items-end justify-start lg:col-span-4 lg:justify-end" appReveal>
+      <img
+        src="Media/Synappta letras.png"
+        alt="Synappta"
+        width="573"
+        height="138"
+        loading="lazy"
+        decoding="async"
+        class="h-12 w-auto sm:h-16"
+      />
     </div>
   </div>
 </section>

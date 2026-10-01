@@ -26,10 +26,13 @@ describe('App', () => {
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
+    const text = (compiled.textContent ?? '').replace(/\s+/g, ' ');
     const headline = compiled.querySelector('h1')?.textContent ?? '';
     expect(headline).toContain('Hacemos que');
     expect(headline).toContain('las ideas');
     expect(headline).toContain('conecten');
     expect(compiled.querySelector('header img')?.getAttribute('alt')).toContain('Synappta');
+    expect(text).toContain('Prueba nuestro estudio de creación con IA');
+    expect(text).toContain('Escríbenos');
   });
 });

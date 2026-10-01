@@ -51,6 +51,7 @@
         @for (take of filtered(); track take.id) {
           <div
             class="event-card"
+            appTilt
             [class.selected]="selected() !== null && take.id === selected()!.id"
             [attr.data-id]="take.id"
             (click)="select(take)"
