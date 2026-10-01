@@ -139,7 +139,7 @@
             }
             @if (assets().length > 0) {
               <div class="asset-grid">
-                @for (asset of assets().slice(0, 8); track asset.id) {
+                @for (asset of assets().slice(0, 4); track asset.id) {
                   <div
                     class="asset-thumb zoomable"
                     [class.selected]="selectedAssetIds().has(asset.id)"
@@ -176,6 +176,16 @@
                       <i class="md md-visibility"></i>
                     </span>
                   </div>
+                }
+                @if (assets().length > 4) {
+                  <button
+                    type="button"
+                    class="asset-thumb more"
+                    (click)="libraryPickerVisible.set(true)"
+                    [title]="'Ver los ' + assets().length + ' recursos en la biblioteca'"
+                  >
+                    +{{ assets().length - 4 }}
+                  </button>
                 }
               </div>
             }

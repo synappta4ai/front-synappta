@@ -24,12 +24,12 @@
 
     <!-- Menu Items -->
     <div class="menu-section">
-      <button class="menu-item">
+      <button class="menu-item" (click)="openProfile()">
         <i class="md md-person menu-icon"></i>
         <span>Tu perfil</span>
       </button>
 
-      <button class="menu-item">
+      <button class="menu-item" (click)="openSettings()">
         <i class="md md-settings menu-icon"></i>
         <span>Configuraci&oacute;n</span>
       </button>
@@ -86,3 +86,121 @@
     </div>
   </div>
 </p-popover>
+
+<!-- Perfil: vista de solo lectura de la sesión actual -->
+<p-dialog
+  [(visible)]="profileVisible"
+  [modal]="true"
+  [style]="{ width: 'min(92vw, 24rem)' }"
+  [draggable]="false"
+  [resizable]="false"
+  header="Tu perfil"
+>
+  @if (currentUser(); as user) {
+    <div class="profile-head">
+      <div class="user-avatar">
+        <img [src]="userAvatarUrl" [alt]="user.name ?? 'User'" loading="lazy" />
+      </div>
+      <div class="user-info">
+        <h4 class="user-name">{{ user.name }} {{ user.surname }}</h4>
+        <span class="user-role">{{ user.role_name }}</span>
+      </div>
+    </div>
+    <dl class="pref-list">
+      <div class="pref-row">
+        <dt>Usuario</dt>
+        <dd>{{ user.user_name }}</dd>
+      </div>
+      <div class="pref-row">
+        <dt>Email</dt>
+        <dd>{{ user.email }}</dd>
+      </div>
+      <div class="pref-row">
+        <dt>Estado</dt>
+        <dd>{{ user.active ? 'Activo' : 'Inactivo' }}</dd>
+      </div>
+    </dl>
+  }
+  <ng-template #footer>
+    <p-button label="Cerrar" size="small" [text]="true" (onClick)="profileVisible.set(false)" />
+  </ng-template>
+</p-dialog>
+
+<!-- Configuración: idioma, apariencia, acento y atajos -->
+<p-dialog
+  [(visible)]="settingsVisible"
+  [modal]="true"
+  [style]="{ width: 'min(92vw, 26rem)' }"
+  [draggable]="false"
+  [resizable]="false"
+  header="Configuración"
+>
+  <div class="section">
+    <h5 class="section-title">Idioma</h5>
+    <div class="mode-toggle">
+      <button class="mode-btn" [class.active]="currentLang() !== 'en'" (click)="setLang('es')">
+        <span>Español</span>
+      </button>
+      <button class="mode-btn" [class.active]="currentLang() === 'en'" (click)="setLang('en')">
+        <span>English</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="section">
+    <h5 class="section-title">Apariencia</h5>
+    <div class="mode-toggle">
+      <button
+        class="mode-btn"
+        [class.active]="currentMode() === 'light'"
+        (click)="onModeChange('light')"
+      >
+        <i class="md md-light_mode mode-icon"></i>
+        <span>Claro</span>
+      </button>
+      <button
+        class="mode-btn"
+        [class.active]="currentMode() === 'dark'"
+        (click)="onModeChange('dark')"
+      >
+        <i class="md md-dark_mode mode-icon"></i>
+        <span>Oscuro</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="section">
+    <h5 class="section-title">Acento</h5>
+    <div class="color-grid">
+      @for (accent of accents; track accent.id) {
+        <button
+          class="color-btn"
+          [class.active]="currentAccent() === accent.id"
+          (click)="onAccentChange(accent.id)"
+          [attr.aria-pressed]="currentAccent() === accent.id"
+        >
+          <span class="color-dot" [style.background-color]="accent.color"></span>
+          <span class="color-name">{{ accent.name }}</span>
+        </button>
+      }
+    </div>
+  </div>
+
+  <div class="section">
+    <h5 class="section-title">Atajos de teclado</h5>
+    <ul class="shortcut-list">
+      <li>
+        <span><kbd class="kbd">Ctrl</kbd> + <kbd class="kbd">Enter</kbd></span> Generar
+      </li>
+      <li>
+        <span><kbd class="kbd">/</kbd></span> Enfocar el prompt
+      </li>
+      <li>
+        <span><kbd class="kbd">Esc</kbd></span> Cerrar paneles
+      </li>
+    </ul>
+  </div>
+  <ng-template #footer>
+    <p-button label="Cerrar" size="small" [text]="true" (onClick)="settingsVisible.set(false)" />
+  </ng-template>
+</p-dialog>

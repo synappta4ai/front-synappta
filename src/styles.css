@@ -2631,10 +2631,10 @@ p-selectbutton:has(.section-toggle) {
   color: var(--st-err);
 }
 
-/* ── Galería de assets ───────────────────────────────────────── */
+/* ── Galería de assets: una sola fila (4 + tile "+N") ─────────── */
 .studio-shell .asset-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(3.5rem, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 6px;
 }
 
@@ -2703,6 +2703,19 @@ p-selectbutton:has(.section-toggle) {
 
 .studio-shell .asset-thumb.selected .asset-check {
   opacity: 1;
+}
+
+/* Tile "+N": abre el picker con la biblioteca completa. */
+.studio-shell .asset-thumb.more {
+  border-style: dashed;
+  background: transparent;
+  color: var(--st-accent);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.studio-shell .asset-thumb.more:hover {
+  border-color: var(--st-accent);
 }
 
 /* Botón quitar (esquina opuesta al check) */
@@ -2823,6 +2836,19 @@ p-selectbutton:has(.section-toggle) {
 
 .studio-shell .generate-btn:hover:not(:disabled) {
   background: var(--color-accent-hover);
+}
+
+.studio-shell .generate-btn:active:not(:disabled) {
+  background: var(--color-accent-active);
+}
+
+/* CTA siempre visible: absorbe el espacio libre y queda fijo al fondo
+   de la columna aunque el contenido superior desborde. */
+.studio-shell .studio-left .generate-btn {
+  margin-top: auto;
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
 }
 
 .studio-shell .generate-btn:active:not(:disabled) {
