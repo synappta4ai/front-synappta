@@ -11,7 +11,6 @@ import { Tag } from 'primeng/tag';
 import { Message } from 'primeng/message';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { ConfirmationService } from 'primeng/api';
-import { ProgressSpinner } from 'primeng/progressspinner';
 
 import { AdminService } from '../../services/admin.service';
 import { Tenant } from '../../interfaces';
@@ -30,7 +29,6 @@ import { PageContainerComponent } from '@shared/components/index';
     Tag,
     Message,
     ConfirmDialog,
-    ProgressSpinner,
   ],
   providers: [ConfirmationService],
   templateUrl: './tenants.component.html',

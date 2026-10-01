@@ -13,7 +13,6 @@ import { InputNumber } from 'primeng/inputnumber';
 import { Select } from 'primeng/select';
 import { Tag } from 'primeng/tag';
 import { Message } from 'primeng/message';
-import { ProgressSpinner } from 'primeng/progressspinner';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { ConfirmationService } from 'primeng/api';
 import { Tooltip } from 'primeng/tooltip';
@@ -42,7 +41,6 @@ interface PieceTypeOption {
     Select,
     Tag,
     Message,
-    ProgressSpinner,
     ConfirmDialog,
     Tooltip,
   ],

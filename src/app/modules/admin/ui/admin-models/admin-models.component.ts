@@ -1,4 +1,3 @@
-import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import {
   FormsModule,
@@ -16,7 +15,6 @@ import { Tag } from 'primeng/tag';
 import { Message } from 'primeng/message';
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialog } from 'primeng/confirmdialog';
-import { ProgressSpinner } from 'primeng/progressspinner';
 import { Select } from 'primeng/select';
 import { Password } from 'primeng/password';
 import { Tooltip } from 'primeng/tooltip';
@@ -47,14 +45,12 @@ interface TenantOption {
   imports: [
     ReactiveFormsModule,
     FormsModule,
-    DatePipe,
     Button,
     InputText,
     TableModule,
     Tag,
     Message,
     ConfirmDialog,
-    ProgressSpinner,
     Select,
     Password,
     Tooltip,

@@ -8,7 +8,6 @@ import { InputText } from 'primeng/inputtext';
 import { TableModule } from 'primeng/table';
 import { Tag } from 'primeng/tag';
 import { Message } from 'primeng/message';
-import { ProgressSpinner } from 'primeng/progressspinner';
 import { Dialog } from 'primeng/dialog';
 import { Tooltip } from 'primeng/tooltip';
 
@@ -28,7 +27,6 @@ import { ServerUrlPipe } from '@pipes/server-url.pipe';
     TableModule,
     Tag,
     Message,
-    ProgressSpinner,
     Dialog,
     Tooltip,
     ServerUrlPipe,

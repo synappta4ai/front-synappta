@@ -12,7 +12,6 @@ import { Tag } from 'primeng/tag';
 import { Message } from 'primeng/message';
 import { IconField } from 'primeng/iconfield';
 import { InputIcon } from 'primeng/inputicon';
-import { ProgressSpinner } from 'primeng/progressspinner';
 import { Tooltip } from 'primeng/tooltip';
 
 import { EventsService } from '../../services/events.service';
@@ -34,7 +33,6 @@ import { PageContainerComponent } from '@shared/components/index';
     Message,
     IconField,
     InputIcon,
-    ProgressSpinner,
     Tooltip,
   ],
   templateUrl: './events.component.html',

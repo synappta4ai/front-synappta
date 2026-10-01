@@ -8,7 +8,6 @@ import { InputText } from 'primeng/inputtext';
 import { TableModule } from 'primeng/table';
 import { Tag } from 'primeng/tag';
 import { Message } from 'primeng/message';
-import { ProgressSpinner } from 'primeng/progressspinner';
 import { Dialog } from 'primeng/dialog';
 import { Tabs, Tab, TabList, TabPanel, TabPanels } from 'primeng/tabs';
 import { Tooltip } from 'primeng/tooltip';
@@ -43,7 +42,6 @@ interface PhaseTab {
     TableModule,
     Tag,
     Message,
-    ProgressSpinner,
     Dialog,
     Tabs,
     Tab,

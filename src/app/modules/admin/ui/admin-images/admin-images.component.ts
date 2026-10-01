@@ -8,9 +8,6 @@ import { Button } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
 import { InputIcon } from 'primeng/inputicon';
 import { IconField } from 'primeng/iconfield';
-import { Tag } from 'primeng/tag';
-import { Message } from 'primeng/message';
-import { ProgressSpinner } from 'primeng/progressspinner';
 import { Dialog } from 'primeng/dialog';
 import { Tooltip } from 'primeng/tooltip';
 import { SelectButton } from 'primeng/selectbutton';
@@ -38,9 +35,6 @@ type IngFilter = 'all' | 'character' | 'location' | 'prop';
     InputText,
     InputIcon,
     IconField,
-    Tag,
-    Message,
-    ProgressSpinner,
     Dialog,
     Tooltip,
     SelectButton,

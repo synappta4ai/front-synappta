@@ -328,7 +328,7 @@
             Duración total (envío → resultado):
             <strong class="text-ink-on-dark">{{ rowDuration(r) }}</strong>
           </span>
-          @if (r.poll && (r.poll.total_duration_ms ?? 0) > 0) {
+          @if (r.poll && r.poll.total_duration_ms > 0) {
             <span class="text-xs text-ink-muted-on-dark">
               · {{ r.poll.poll_count }} poll(s) hasta el resultado
             </span>
@@ -374,10 +374,10 @@
                     <i class="md md-calendar_month mr-1"></i>Enviado:
                     {{ c.started_at || c.created_at | date: 'medium' }}
                   </span>
-                  @if ((c.duration_ms ?? 0) > 0) {
+                  @if (c.duration_ms > 0) {
                     <span><i class="md md-timer mr-1"></i>HTTP: {{ formatMs(c.duration_ms) }}</span>
                   }
-                  @if ((c.total_duration_ms ?? 0) > 0) {
+                  @if (c.total_duration_ms > 0) {
                     <span>
                       <i class="md md-schedule mr-1"></i>Total: {{ formatMs(c.total_duration_ms) }}
                     </span>

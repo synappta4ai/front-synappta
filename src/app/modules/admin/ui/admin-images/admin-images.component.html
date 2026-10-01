@@ -191,7 +191,7 @@
           <i class="md {{ opt.icon }}"></i>
           {{ opt.label }}
           <span class="count" [class.badge]="ingFilter() === opt.value">{{
-            ingCounts()[opt.value] ?? 0
+            ingCounts()[opt.value]
           }}</span>
         </button>
       }
