@@ -1,0 +1,23 @@
+/* Home editorial: cintillo con ritmo de marca. El movimiento se desactiva
+   con prefers-reduced-motion (regla global). */
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 32s linear infinite;
+}
+
+.marquee-chunk {
+  white-space: nowrap;
+  padding-right: 3rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--color-ink-muted);
+}
+
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}

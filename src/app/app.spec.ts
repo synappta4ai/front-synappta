@@ -26,6 +26,7 @@ describe('App', () => {
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hacemos que las ideas');
+    expect(compiled.querySelector('h1')?.textContent).toContain('Synappta');
+    expect(compiled.textContent).toContain('Hacemos que las ideas conecten');
   });
 });

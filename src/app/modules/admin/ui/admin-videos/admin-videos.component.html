@@ -60,7 +60,7 @@
           >
             <!-- Preview -->
             <div
-              class="relative aspect-video cursor-pointer overflow-hidden bg-ink"
+              class="relative aspect-video cursor-pointer overflow-hidden bg-scrim"
               (click)="openPlayer(v)"
               (keydown.enter)="openPlayer(v)"
               tabindex="0"
@@ -73,17 +73,17 @@
                 class="h-full w-full object-cover opacity-90 transition-opacity group-hover:opacity-100"
               ></video>
               <div
-                class="absolute inset-0 flex items-center justify-center bg-ink/30 opacity-0 transition-opacity group-hover:opacity-100"
+                class="absolute inset-0 flex items-center justify-center bg-scrim/30 opacity-0 transition-opacity group-hover:opacity-100"
               >
                 <div
-                  class="flex h-12 w-12 items-center justify-center rounded-full bg-ink/90 text-accent"
+                  class="flex h-12 w-12 items-center justify-center rounded-full bg-scrim/90 text-accent"
                 >
                   <i class="md md-play_arrow ml-0.5 text-lg"></i>
                 </div>
               </div>
               @if (v.video_duration > 0) {
                 <span
-                  class="absolute right-2 bottom-2 rounded-full bg-ink/70 px-1.5 py-0.5 text-xs font-bold text-ink-on-dark"
+                  class="absolute right-2 bottom-2 rounded-full bg-scrim/70 px-1.5 py-0.5 text-xs font-bold text-ink-on-dark"
                 >
                   {{ formatDuration(v.video_duration) }}
                 </span>
@@ -230,7 +230,7 @@
         [src]="outputUrl(v) | serverUrl"
         controls
         autoplay
-        class="aspect-video max-h-[70vh] w-full rounded-xl bg-ink"
+        class="aspect-video max-h-[70vh] w-full rounded-xl bg-scrim"
       ></video>
 
       <!-- Metadata -->

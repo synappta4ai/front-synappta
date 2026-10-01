@@ -43,27 +43,9 @@
     <!-- Divider -->
     <div class="divider"></div>
 
-    <!-- Color Section -->
-    <div class="section">
-      <h5 class="section-title">Color</h5>
-      <div class="color-grid">
-        @for (palette of palettes; track palette.id) {
-          <button
-            class="color-btn"
-            [class.active]="currentPalette() === palette.id"
-            [style.--color]="palette.color"
-            (click)="onPaletteChange(palette.id)"
-          >
-            <span class="color-dot" [style.background-color]="palette.color"></span>
-            <span class="color-name">{{ palette.name }}</span>
-          </button>
-        }
-      </div>
-    </div>
-
     <!-- Mode Section -->
     <div class="section">
-      <h5 class="section-title">Mode</h5>
+      <h5 class="section-title">Apariencia</h5>
       <div class="mode-toggle seg-slide">
         <button
           class="mode-btn seg-btn"
@@ -71,7 +53,7 @@
           (click)="onModeChange('light')"
         >
           <i class="md md-light_mode mode-icon"></i>
-          <span>Light</span>
+          <span>Claro</span>
         </button>
 
         <button
@@ -80,8 +62,26 @@
           (click)="onModeChange('dark')"
         >
           <i class="md md-dark_mode mode-icon"></i>
-          <span>Dark</span>
+          <span>Oscuro</span>
         </button>
+      </div>
+    </div>
+
+    <!-- Accent Section -->
+    <div class="section">
+      <h5 class="section-title">Acento</h5>
+      <div class="color-grid">
+        @for (accent of accents; track accent.id) {
+          <button
+            class="color-btn"
+            [class.active]="currentAccent() === accent.id"
+            (click)="onAccentChange(accent.id)"
+            [attr.aria-pressed]="currentAccent() === accent.id"
+          >
+            <span class="color-dot" [style.background-color]="accent.color"></span>
+            <span class="color-name">{{ accent.name }}</span>
+          </button>
+        }
       </div>
     </div>
   </div>

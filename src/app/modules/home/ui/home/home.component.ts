@@ -10,9 +10,15 @@ interface Service {
   selector: 'app-home',
   imports: [RouterLink],
   templateUrl: './home.component.html',
+  styleUrl: './home.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomeComponent {
+  protected readonly marqueeCopies: readonly string[] = [
+    'Producción de video — Estrategia de contenido — Campañas de marca — Inteligencia artificial — ',
+    'Producción de video — Estrategia de contenido — Campañas de marca — Inteligencia artificial — ',
+  ];
+
   protected readonly services: readonly Service[] = [
     {
       title: 'Producción de video',

@@ -138,7 +138,7 @@
   height: 76px;
   border-radius: 12px;
   object-fit: cover;
-  background: var(--color-ink);
+  background: var(--color-scrim);
   flex-shrink: 0;
 }
 
@@ -222,7 +222,7 @@
   width: 100%;
   border-radius: 16px;
   border: 1px solid var(--color-surface-border);
-  background: var(--color-ink);
+  background: var(--color-scrim);
 }
 
 .viewer-empty {

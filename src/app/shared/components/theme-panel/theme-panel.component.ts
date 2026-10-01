@@ -6,7 +6,7 @@ import { Tooltip } from 'primeng/tooltip';
 import { UserSessionStore } from '@core/store/user.session';
 import { AuthService } from '@modules/auth/services/auth.service';
 import { ThemeService } from '@services/theme.service';
-import { ColorPalette, ThemeMode, COLOR_PALETTES } from '@interfaces/theme.interface';
+import { ThemeMode, AccentId, ACCENTS } from '@interfaces/theme.interface';
 import { AUTH } from '@constants/routes';
 
 @Component({
@@ -25,9 +25,9 @@ export class ThemePanelComponent {
   protected readonly popover = viewChild.required<Popover>('popover');
 
   readonly currentUser = this.sessionStore.currentUser;
-  readonly currentPalette = this.themeService.currentPalette;
   readonly currentMode = this.themeService.currentMode;
-  readonly palettes = COLOR_PALETTES;
+  readonly currentAccent = this.themeService.currentAccent;
+  readonly accents = ACCENTS;
 
   readonly userAvatarUrl = this.buildAvatarUrl();
 
@@ -35,8 +35,8 @@ export class ThemePanelComponent {
     this.popover().toggle(event);
   }
 
-  onPaletteChange(palette: ColorPalette): void {
-    this.themeService.setPalette(palette);
+  onAccentChange(accent: AccentId): void {
+    this.themeService.setAccent(accent);
   }
 
   onModeChange(mode: ThemeMode): void {

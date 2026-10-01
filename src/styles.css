@@ -322,6 +322,8 @@
   --color-ink-muted-on-dark: #a8a8a8;
   --color-on-accent: #0f0f0f;
 
+  --color-scrim: #0f0f0f;
+
   --color-success: #7fbf8e;
   --color-warning: #d9b45a;
   --color-danger: #e07a7a;
@@ -365,6 +367,28 @@
 }
 
 /* ============================================
+   Tema oscuro: se activa con la clase .dark en <html>
+   (ThemeService.setMode). Solo se remapean los tokens que
+   dependen del canvas; surface/scrim/accent son constantes.
+   Contraste verificado:
+     ink #F2F2F2 / background #121212 ....... 16.7:1
+     ink-muted #A8A8A8 / background ......... 7.9:1
+     ink #F2F2F2 / secondary #2E2E2E ........ 12.1:1
+     danger-strong #E07A7A / background ..... 6.5:1
+   ============================================ */
+.dark {
+  color-scheme: dark;
+  --color-background: #121212;
+  --color-ink: #f2f2f2;
+  --color-ink-muted: #a8a8a8;
+  --color-secondary: #2e2e2e;
+  --color-secondary-hover: #3a3a3a;
+  --color-secondary-active: #242424;
+  --color-choice: #9a9a9a;
+  --color-danger-strong: #e07a7a;
+}
+
+/* ============================================
    PrimeNG: tokens semánticos (Aura) → tema Synappta.
    Los componentes PrimeNG viven dentro de paneles oscuros
    (surface); lo que se apoya sobre el canvas se ajusta
@@ -394,7 +418,7 @@
   --p-highlight-focus-background: var(--color-accent-hover);
   --p-highlight-focus-color: var(--color-on-accent);
 
-  --p-mask-background: color-mix(in srgb, var(--color-ink) 65%, transparent);
+  --p-mask-background: color-mix(in srgb, var(--color-scrim) 65%, transparent);
   --p-mask-color: var(--color-ink-on-dark);
 
   --p-form-field-background: var(--color-surface-2);
@@ -598,8 +622,8 @@ input {
 }
 
 .p-button.p-button-danger:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--color-danger) 85%, var(--color-ink));
-  border-color: color-mix(in srgb, var(--color-danger) 85%, var(--color-ink));
+  background: color-mix(in srgb, var(--color-danger) 85%, var(--color-scrim));
+  border-color: color-mix(in srgb, var(--color-danger) 85%, var(--color-scrim));
 }
 
 .p-button.p-button-success:not(:disabled) {
@@ -609,8 +633,8 @@ input {
 }
 
 .p-button.p-button-success:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--color-success) 85%, var(--color-ink));
-  border-color: color-mix(in srgb, var(--color-success) 85%, var(--color-ink));
+  background: color-mix(in srgb, var(--color-success) 85%, var(--color-scrim));
+  border-color: color-mix(in srgb, var(--color-success) 85%, var(--color-scrim));
 }
 
 .p-button.p-button-info:not(:disabled) {
@@ -1447,7 +1471,7 @@ input {
   height: 42px;
   border-radius: 12px;
   object-fit: cover;
-  background: var(--color-ink);
+  background: var(--color-scrim);
   flex-shrink: 0;
 }
 
@@ -2514,7 +2538,7 @@ p-selectbutton:has(.section-toggle) {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: color-mix(in srgb, var(--color-ink) 55%, transparent);
+  background: color-mix(in srgb, var(--color-scrim) 55%, transparent);
   color: var(--color-ink-on-dark);
   opacity: 0;
   transition: opacity 0.15s ease;
@@ -2537,7 +2561,7 @@ p-selectbutton:has(.section-toggle) {
   justify-content: center;
   border: none;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--color-ink) 80%, transparent);
+  background: color-mix(in srgb, var(--color-scrim) 80%, transparent);
   color: var(--color-ink-on-dark);
   font-size: 9px;
   cursor: pointer;
@@ -2632,7 +2656,7 @@ p-selectbutton:has(.section-toggle) {
   align-items: center;
   justify-content: center;
   border-radius: 12px;
-  background: color-mix(in srgb, var(--color-ink) 60%, transparent);
+  background: color-mix(in srgb, var(--color-scrim) 60%, transparent);
   color: var(--color-ink-on-dark);
   font-size: 12px;
   opacity: 0;
@@ -2675,7 +2699,7 @@ p-selectbutton:has(.section-toggle) {
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--color-ink) 80%, transparent);
+  background: color-mix(in srgb, var(--color-scrim) 80%, transparent);
   color: var(--color-ink-on-dark);
   font-size: 7px;
   cursor: pointer;
@@ -2823,7 +2847,7 @@ p-selectbutton:has(.section-toggle) {
   max-width: 100%;
   max-height: 100%;
   border-radius: 12px;
-  background: var(--color-ink);
+  background: var(--color-scrim);
   box-shadow: 0 0 0 1px var(--st-line);
   display: flex;
   align-items: center;

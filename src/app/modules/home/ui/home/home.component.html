@@ -1,62 +1,214 @@
-<section class="relative overflow-hidden bg-surface text-ink-on-dark" animate.enter="anim-page">
-  <div class="absolute inset-0" aria-hidden="true"></div>
-  <div class="absolute -right-32 -top-32 h-96 w-96 rounded-full" aria-hidden="true"></div>
-  <div class="absolute -bottom-32 -left-32 h-96 w-96 rounded-full" aria-hidden="true"></div>
+<!-- Hero editorial: la marca como elemento visual + statement + collage -->
+<section class="overflow-hidden" animate.enter="anim-page">
+  <div class="mx-auto max-w-[1400px] px-5 pt-12 sm:px-8 sm:pt-16 lg:pt-20">
+    <div class="flex items-baseline justify-between gap-4">
+      <p class="text-xs font-bold tracking-normal text-ink-muted">Estudio creativo</p>
+      <p class="text-xs font-bold text-ink-muted" aria-hidden="true">01 / 04</p>
+    </div>
 
-  <div class="relative mx-auto max-w-6xl px-4 py-24 sm:px-6 sm:py-32 lg:py-40">
-    <p class="mb-4 text-sm font-bold text-ink-muted-on-dark">Estudio creativo</p>
-    <h1 class="max-w-3xl text-4xl font-black sm:text-6xl lg:text-7xl">
-      Hacemos que las ideas <span class="text-accent">conecten</span>
+    <h1
+      class="mt-4 font-black leading-[0.9] tracking-tight text-ink"
+      style="font-size: clamp(4rem, 13vw, 12rem)"
+    >
+      Synappta<span class="text-accent" aria-hidden="true">.</span>
     </h1>
-    <p class="mt-6 max-w-xl text-lg font-normal text-ink-muted-on-dark">
-      Synapta es un estudio de producción de video y estrategia de contenido. Del concepto a la
-      distribución, ayudamos a las marcas a contar historias que importan.
-    </p>
-    <div class="mt-10 flex flex-col gap-3 sm:flex-row">
-      <a
-        routerLink="/agency"
-        class="inline-flex items-center justify-center rounded-xl bg-accent px-6 py-3 text-sm font-bold text-on-accent transition-colors hover:bg-accent-hover active:scale-[0.98]"
-        >Conoce la agencia</a
-      >
-      <a
-        routerLink="/video"
-        class="inline-flex items-center justify-center rounded-xl border border-surface-border-strong px-6 py-3 text-sm font-bold text-ink-on-dark transition-colors hover:bg-surface-hover active:scale-[0.98]"
-        >Ver videos</a
-      >
+
+    <div class="mt-10 grid gap-10 lg:mt-14 lg:grid-cols-12 lg:gap-8">
+      <div class="lg:col-span-7">
+        <h2
+          class="max-w-xl font-bold leading-[1.05] tracking-tight text-ink"
+          style="font-size: clamp(1.75rem, 3.5vw, 3rem)"
+        >
+          Hacemos que las ideas conecten
+        </h2>
+        <p class="mt-5 max-w-md text-base font-normal leading-relaxed text-ink-muted">
+          Synapta es un estudio de producción de video y estrategia de contenido. Del concepto a la
+          distribución, ayudamos a las marcas a contar historias que importan.
+        </p>
+        <div class="mt-8 flex flex-wrap items-center gap-x-8 gap-y-4">
+          <a
+            routerLink="/agency"
+            class="inline-flex items-center gap-2 rounded-full bg-accent px-8 py-4 text-base font-bold text-on-accent transition-colors hover:bg-accent-hover active:scale-[0.98]"
+          >
+            Conoce la agencia
+            <i class="md md-arrow_forward text-xl" aria-hidden="true"></i>
+          </a>
+          <a
+            routerLink="/video"
+            class="group inline-flex items-center gap-2 text-base font-bold text-ink"
+          >
+            <i
+              class="md md-play_circle text-2xl text-ink transition-transform duration-200 group-hover:scale-110"
+              aria-hidden="true"
+            ></i>
+            <span class="underline decoration-secondary decoration-2 underline-offset-8"
+              >Ver videos</span
+            >
+          </a>
+        </div>
+      </div>
+
+      <div class="lg:col-span-5">
+        <div class="grid grid-cols-12 items-end gap-4">
+          <figure class="col-span-7" animate.enter="anim-item">
+            <img
+              src="https://picsum.photos/seed/synappta-reel/640/800"
+              alt="Fotograma vertical de muestra del showreel"
+              width="640"
+              height="800"
+              loading="eager"
+              decoding="async"
+              class="aspect-[4/5] w-full rounded-3xl border border-surface-border object-cover"
+            />
+            <figcaption class="mt-2 flex items-center justify-between gap-2">
+              <span class="text-xs font-bold text-ink-muted">Showreel — 01</span>
+              <span class="inline-block h-2 w-2 rounded-full bg-ink" aria-hidden="true"></span>
+            </figcaption>
+          </figure>
+          <figure class="col-span-5 pb-10" animate.enter="anim-item" style="animation-delay: 90ms">
+            <img
+              src="https://picsum.photos/seed/synappta-set/480/360"
+              alt="Fotograma horizontal de muestra de una producción"
+              width="480"
+              height="360"
+              loading="eager"
+              decoding="async"
+              class="aspect-[4/3] w-full rounded-2xl border border-surface-border object-cover"
+            />
+            <figcaption class="mt-2 text-xs font-bold text-ink-muted">Set — 02</figcaption>
+          </figure>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
-<section class="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
-  <p class="mb-3 text-sm font-bold text-ink-muted">Servicios</p>
-  <h2 class="max-w-xl text-3xl font-bold text-ink sm:text-4xl">Qué hacemos</h2>
-  <div class="mt-12 grid gap-6 md:grid-cols-3">
+<!-- Cintillo: ritmo de marca, solo movimiento -->
+<div class="mt-14 overflow-hidden border-y border-secondary py-3 lg:mt-20" aria-hidden="true">
+  <div class="marquee-track">
+    @for (copy of marqueeCopies; track $index) {
+      <span class="marquee-chunk">{{ copy }}</span>
+    }
+  </div>
+</div>
+
+<!-- Servicios: índice editorial, sin cards -->
+<section class="mx-auto max-w-[1400px] px-5 py-16 sm:px-8 sm:py-24">
+  <div class="flex items-baseline justify-between gap-4">
+    <p class="text-xs font-bold text-ink-muted">Servicios</p>
+    <p class="text-xs font-bold text-ink-muted" aria-hidden="true">02 / 04</p>
+  </div>
+  <h2
+    class="mt-4 font-black tracking-tight text-ink"
+    style="font-size: clamp(2.25rem, 5vw, 4.5rem)"
+  >
+    Qué hacemos
+  </h2>
+
+  <ol class="mt-10 border-t border-secondary sm:mt-14">
     @for (service of services; track service.title; let i = $index) {
-      <article
+      <li
         animate.enter="anim-item"
         [style.animation-delay.ms]="i < 8 ? i * 35 : 280"
-        class="rounded-2xl border border-surface-border bg-surface p-6 transition-shadow hover:shadow-md"
+        class="group grid gap-2 border-b border-secondary py-7 transition-colors duration-200 sm:py-9 lg:grid-cols-12 lg:items-baseline lg:gap-6"
       >
-        <h3 class="text-lg font-bold text-ink-on-dark">
+        <span
+          class="font-black text-accent lg:col-span-1"
+          style="font-size: clamp(1rem, 1.5vw, 1.25rem)"
+          aria-hidden="true"
+          >0{{ i + 1 }}</span
+        >
+        <h3
+          class="font-black tracking-tight text-ink transition-transform duration-200 group-hover:translate-x-2 lg:col-span-6"
+          style="font-size: clamp(1.5rem, 3vw, 2.75rem)"
+        >
           {{ service.title }}
         </h3>
-        <p class="mt-2 text-sm leading-relaxed text-ink-muted-on-dark">
+        <p class="max-w-md text-sm leading-relaxed text-ink-muted lg:col-span-5">
           {{ service.description }}
         </p>
-      </article>
+      </li>
     }
+  </ol>
+</section>
+
+<!-- Trabajo: grilla asimétrica protagonista -->
+<section class="mx-auto max-w-[1400px] px-5 pb-16 sm:px-8 sm:pb-24">
+  <div class="flex items-baseline justify-between gap-4">
+    <p class="text-xs font-bold text-ink-muted">Trabajo seleccionado</p>
+    <p class="text-xs font-bold text-ink-muted" aria-hidden="true">03 / 04</p>
+  </div>
+
+  <div class="mt-8 grid gap-6 sm:mt-10 lg:grid-cols-12">
+    <figure class="lg:col-span-5" animate.enter="anim-item">
+      <img
+        src="https://picsum.photos/seed/synappta-pieza-1/760/950"
+        alt="Muestra de pieza de video en formato vertical"
+        width="760"
+        height="950"
+        loading="lazy"
+        decoding="async"
+        class="aspect-[4/5] w-full rounded-3xl border border-surface-border object-cover"
+      />
+      <figcaption class="mt-3">
+        <p class="text-xs font-bold tracking-normal text-ink-muted">Video — 16:9 / 9:16</p>
+        <p class="mt-1 text-xl font-bold text-ink">Pieza 01</p>
+      </figcaption>
+    </figure>
+    <figure class="lg:col-span-4 lg:pt-20" animate.enter="anim-item" style="animation-delay: 70ms">
+      <img
+        src="https://picsum.photos/seed/synappta-pieza-2/640/480"
+        alt="Muestra de pieza editorial en formato horizontal"
+        width="640"
+        height="480"
+        loading="lazy"
+        decoding="async"
+        class="aspect-[4/3] w-full rounded-3xl border border-surface-border object-cover"
+      />
+      <figcaption class="mt-3">
+        <p class="text-xs font-bold tracking-normal text-ink-muted">Editorial</p>
+        <p class="mt-1 text-xl font-bold text-ink">Pieza 02</p>
+      </figcaption>
+    </figure>
+    <figure class="lg:col-span-3 lg:pt-40" animate.enter="anim-item" style="animation-delay: 140ms">
+      <img
+        src="https://picsum.photos/seed/synappta-pieza-3/480/600"
+        alt="Muestra de pieza de campaña en formato retrato"
+        width="480"
+        height="600"
+        loading="lazy"
+        decoding="async"
+        class="aspect-[4/5] w-full rounded-3xl border border-surface-border object-cover"
+      />
+      <figcaption class="mt-3">
+        <p class="text-xs font-bold tracking-normal text-ink-muted">Campaña</p>
+        <p class="mt-1 text-xl font-bold text-ink">Pieza 03</p>
+      </figcaption>
+    </figure>
   </div>
 </section>
 
-<section class="bg-accent text-on-accent">
-  <div
-    class="mx-auto flex max-w-6xl flex-col items-start gap-6 px-4 py-16 sm:px-6 md:flex-row md:items-center md:justify-between lg:py-20"
-  >
-    <h2 class="max-w-md text-3xl font-bold sm:text-4xl">¿Tienes un proyecto en mente?</h2>
-    <a
-      href="mailto:hola@synapta.com"
-      class="inline-flex items-center justify-center rounded-xl bg-surface px-6 py-3 text-sm font-bold text-ink-on-dark transition-colors hover:bg-surface-hover active:scale-[0.98]"
-      >Escribenos</a
-    >
+<!-- Cierre: statement gigante + acción -->
+<section class="border-t border-secondary">
+  <div class="mx-auto max-w-[1400px] px-5 py-16 sm:px-8 sm:py-24">
+    <div class="flex items-baseline justify-between gap-4">
+      <p class="text-xs font-bold text-ink-muted">Contacto</p>
+      <p class="text-xs font-bold text-ink-muted" aria-hidden="true">04 / 04</p>
+    </div>
+    <div class="mt-6 flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+      <h2
+        class="max-w-3xl font-black leading-[1.02] tracking-tight text-ink"
+        style="font-size: clamp(2.5rem, 6vw, 5.5rem)"
+      >
+        ¿Tienes un proyecto en mente?
+      </h2>
+      <a
+        href="mailto:hola@synapta.com"
+        class="inline-flex shrink-0 items-center gap-2 rounded-full bg-accent px-10 py-5 text-lg font-bold text-on-accent transition-colors hover:bg-accent-hover active:scale-[0.98]"
+      >
+        Escríbenos
+        <i class="md md-arrow_forward text-2xl" aria-hidden="true"></i>
+      </a>
+    </div>
   </div>
 </section>
