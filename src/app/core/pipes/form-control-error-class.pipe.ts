@@ -1,5 +1,5 @@
-import { Pipe, PipeTransform } from '@angular/core'
-import { AbstractControl } from '@angular/forms'
+import { Pipe, PipeTransform } from '@angular/core';
+import { AbstractControl } from '@angular/forms';
 
 @Pipe({
   name: 'formControlErrorClass',
@@ -9,12 +9,12 @@ import { AbstractControl } from '@angular/forms'
 export class FormControlErrorClassPipe implements PipeTransform {
   transform(
     control: AbstractControl<unknown, unknown> | null,
-    classError: string = 'ng-invalid ng-dirty'
+    classError: string = 'ng-invalid ng-dirty',
   ): string {
-    const existErrorAndTouched = control?.touched && control?.invalid
+    const existErrorAndTouched = control?.touched && control?.invalid;
     if (existErrorAndTouched) {
-      return classError
+      return classError;
     }
-    return ''
+    return '';
   }
 }

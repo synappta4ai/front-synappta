@@ -100,7 +100,7 @@ export class TenantsComponent {
     this.confirmationService.confirm({
       message: `¿Estás seguro de que quieres desactivar el tenant "${tenant.name}"? Sus usuarios perderán acceso inmediatamente.`,
       header: 'Confirmar desactivación',
-      icon: 'pi pi-exclamation-triangle',
+      icon: 'md md-warning',
       acceptLabel: 'Desactivar',
       rejectLabel: 'Cancelar',
       acceptButtonStyleClass: 'p-button-danger',

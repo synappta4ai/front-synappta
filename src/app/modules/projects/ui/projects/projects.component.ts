@@ -16,14 +16,11 @@ import { Message } from 'primeng/message';
 import { ProgressSpinner } from 'primeng/progressspinner';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { ConfirmationService } from 'primeng/api';
+import { Tooltip } from 'primeng/tooltip';
 
 import { EventsService } from '@modules/events/services/events.service';
-import {
-  Event,
-  Piece,
-  Program,
-  ProgramWithPieces,
-} from '@modules/events/interfaces';import { PageContainerComponent } from '@shared/components/index';
+import { Event, Piece, Program, ProgramWithPieces } from '@modules/events/interfaces';
+import { PageContainerComponent } from '@shared/components/index';
 
 interface PieceTypeOption {
   label: string;
@@ -47,6 +44,7 @@ interface PieceTypeOption {
     Message,
     ProgressSpinner,
     ConfirmDialog,
+    Tooltip,
   ],
   providers: [ConfirmationService],
   templateUrl: './projects.component.html',
@@ -170,7 +168,7 @@ export class ProjectsComponent {
     this.confirmationService.confirm({
       message: `¿Eliminar el proyecto "${project.name}"? Se eliminarán también sus programas y piezas.`,
       header: 'Eliminar proyecto',
-      icon: 'pi pi-exclamation-triangle',
+      icon: 'md md-warning',
       acceptButtonProps: { label: 'Eliminar', severity: 'danger' },
       rejectButtonProps: { label: 'Cancelar', severity: 'secondary' },
       accept: () => {
@@ -262,7 +260,7 @@ export class ProjectsComponent {
     this.confirmationService.confirm({
       message: `¿Eliminar el programa #${program.number}${program.name ? ` "${program.name}"` : ''}?`,
       header: 'Eliminar programa',
-      icon: 'pi pi-exclamation-triangle',
+      icon: 'md md-warning',
       acceptButtonProps: { label: 'Eliminar', severity: 'danger' },
       rejectButtonProps: { label: 'Cancelar', severity: 'secondary' },
       accept: () => {
@@ -331,7 +329,7 @@ export class ProjectsComponent {
     this.confirmationService.confirm({
       message: `¿Eliminar la pieza #${piece.number}${piece.name ? ` "${piece.name}"` : ''}?`,
       header: 'Eliminar pieza',
-      icon: 'pi pi-exclamation-triangle',
+      icon: 'md md-warning',
       acceptButtonProps: { label: 'Eliminar', severity: 'danger' },
       rejectButtonProps: { label: 'Cancelar', severity: 'secondary' },
       accept: () => {

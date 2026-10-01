@@ -131,7 +131,7 @@ describe('ValidatorErrors', () => {
     it('should not render error when control is null', () => {
       setInput('control', null);
       const compiled = fixture.nativeElement as HTMLElement;
-      expect(compiled.querySelector('.text-red-500')).toBeNull();
+      expect(compiled.querySelector('.text-danger')).toBeNull();
     });
 
     it('should not render error when control has no errors', () => {
@@ -139,14 +139,14 @@ describe('ValidatorErrors', () => {
       control.markAsTouched();
       setInput('control', control);
       const compiled = fixture.nativeElement as HTMLElement;
-      expect(compiled.querySelector('.text-red-500')).toBeNull();
+      expect(compiled.querySelector('.text-danger')).toBeNull();
     });
 
     it('should not render error when control is untouched', () => {
       const control = new FormControl('', { validators: Validators.required });
       setInput('control', control);
       const compiled = fixture.nativeElement as HTMLElement;
-      expect(compiled.querySelector('.text-red-500')).toBeNull();
+      expect(compiled.querySelector('.text-danger')).toBeNull();
     });
 
     it('should render required error when control has required error and is touched', () => {
@@ -155,7 +155,7 @@ describe('ValidatorErrors', () => {
       control.markAsTouched();
       setInput('control', control);
       const compiled = fixture.nativeElement as HTMLElement;
-      expect(compiled.querySelector('.text-red-500')).toBeTruthy();
+      expect(compiled.querySelector('.text-danger')).toBeTruthy();
     });
 
     it('should render maxlength error when control has maxlength error', () => {
@@ -164,7 +164,7 @@ describe('ValidatorErrors', () => {
       control.markAsTouched();
       setInput('control', control);
       const compiled = fixture.nativeElement as HTMLElement;
-      expect(compiled.querySelector('.text-red-500')).toBeTruthy();
+      expect(compiled.querySelector('.text-danger')).toBeTruthy();
     });
 
     it('should render minlength error when control has minlength error', () => {
@@ -173,7 +173,7 @@ describe('ValidatorErrors', () => {
       control.markAsTouched();
       setInput('control', control);
       const compiled = fixture.nativeElement as HTMLElement;
-      expect(compiled.querySelector('.text-red-500')).toBeTruthy();
+      expect(compiled.querySelector('.text-danger')).toBeTruthy();
     });
 
     it('should render pattern error when control has pattern error', () => {
@@ -182,7 +182,7 @@ describe('ValidatorErrors', () => {
       control.markAsTouched();
       setInput('control', control);
       const compiled = fixture.nativeElement as HTMLElement;
-      expect(compiled.querySelector('.text-red-500')).toBeTruthy();
+      expect(compiled.querySelector('.text-danger')).toBeTruthy();
     });
 
     it('should render email error when control has email error', () => {
@@ -191,7 +191,7 @@ describe('ValidatorErrors', () => {
       control.markAsTouched();
       setInput('control', control);
       const compiled = fixture.nativeElement as HTMLElement;
-      expect(compiled.querySelector('.text-red-500')).toBeTruthy();
+      expect(compiled.querySelector('.text-danger')).toBeTruthy();
     });
 
     it('should render min error when control has min error', () => {
@@ -200,7 +200,7 @@ describe('ValidatorErrors', () => {
       control.markAsTouched();
       setInput('control', control);
       const compiled = fixture.nativeElement as HTMLElement;
-      expect(compiled.querySelector('.text-red-500')).toBeTruthy();
+      expect(compiled.querySelector('.text-danger')).toBeTruthy();
     });
 
     it('should render max error when control has max error', () => {
@@ -209,7 +209,7 @@ describe('ValidatorErrors', () => {
       control.markAsTouched();
       setInput('control', control);
       const compiled = fixture.nativeElement as HTMLElement;
-      expect(compiled.querySelector('.text-red-500')).toBeTruthy();
+      expect(compiled.querySelector('.text-danger')).toBeTruthy();
     });
 
     it('should render unique error when control has unique error', () => {
@@ -218,7 +218,7 @@ describe('ValidatorErrors', () => {
       control.markAsTouched();
       setInput('control', control);
       const compiled = fixture.nativeElement as HTMLElement;
-      expect(compiled.querySelector('.text-red-500')).toBeTruthy();
+      expect(compiled.querySelector('.text-danger')).toBeTruthy();
     });
   });
 
@@ -320,7 +320,7 @@ describe('ValidatorErrors', () => {
       setInput('control', control);
       setInput('omitErrors', ['required']);
       const compiled = fixture.nativeElement as HTMLElement;
-      expect(compiled.querySelector('.text-red-500')).toBeNull();
+      expect(compiled.querySelector('.text-danger')).toBeNull();
     });
 
     it('should not render maxlength error when it is in omitErrors list', () => {
@@ -330,7 +330,7 @@ describe('ValidatorErrors', () => {
       setInput('control', control);
       setInput('omitErrors', ['maxlength']);
       const compiled = fixture.nativeElement as HTMLElement;
-      expect(compiled.querySelector('.text-red-500')).toBeNull();
+      expect(compiled.querySelector('.text-danger')).toBeNull();
     });
   });
 

@@ -1,4 +1,17 @@
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, signal, viewChild, ViewChild, ElementRef } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  inject,
+  PLATFORM_ID,
+  signal,
+  viewChild,
+  ViewChild,
+  ElementRef,
+} from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { catchError, EMPTY, finalize } from 'rxjs';
 
@@ -23,6 +36,7 @@ import { environment } from '@env/environment';
 import { StudioService } from '../../services/studio.service';
 import { StudioModel, StudioTake } from '../../interfaces';
 import { AssetPickerDialogComponent } from '@shared/components/index';
+import { SlidePillDirective } from '@shared/components/slide-pill/slide-pill.directive';
 
 interface RatioOption {
   label: string;
@@ -45,24 +59,50 @@ const REF_SLOT_DEFS: RefSlotDef[] = [
 
 @Component({
   selector: 'app-studio',
-  imports: [FormsModule, Button, Dialog, Popover, Select, PrimeTemplate, Tag, Tooltip, Message, ServerUrlPipe, AssetPickerDialogComponent],
+  imports: [
+    FormsModule,
+    Button,
+    Dialog,
+    Popover,
+    Select,
+    PrimeTemplate,
+    Tag,
+    Tooltip,
+    Message,
+    ServerUrlPipe,
+    AssetPickerDialogComponent,
+    SlidePillDirective,
+  ],
   templateUrl: './studio.component.html',
   styleUrl: './studio.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { '(document:keydown)': 'onShortcut($event)' },
 })
 export class StudioComponent {
   private readonly studioService = inject(StudioService);
   private readonly agencyService = inject(AgencyService);
   private readonly libraryService = inject(LibraryService);
   private readonly eventsService = inject(EventsService);
+  private readonly platformId = inject(PLATFORM_ID);
+
+  // ─── Workspace layout (solo UI): anchos de columnas redimensionables ──
+  private static readonly COLS_KEY = 'studio:colW';
+  private static readonly COL_MIN = 260;
+  private static readonly COL_MAX = 520;
+  protected readonly colLeft = signal(340);
+  protected readonly colRight = signal(320);
 
   // ─── Catalog ───────────────────────────────────────────────────
   protected readonly models = signal<StudioModel[]>([]);
   protected readonly loadingModels = signal(false);
   protected readonly selectedModel = signal<StudioModel | null>(null);
 
-  protected readonly videoModels = computed(() => this.models().filter((m) => m.modality === 'video'));
-  protected readonly imageModels = computed(() => this.models().filter((m) => m.modality === 'image'));
+  protected readonly videoModels = computed(() =>
+    this.models().filter((m) => m.modality === 'video'),
+  );
+  protected readonly imageModels = computed(() =>
+    this.models().filter((m) => m.modality === 'image'),
+  );
 
   protected readonly mode = signal<'video' | 'image'>('video');
   protected readonly modeModels = computed(() =>
@@ -85,7 +125,10 @@ export class StudioComponent {
     { label: '3:4', value: '3:4', w: 3, h: 4 },
     { label: '21:9', value: '21:9', w: 21, h: 9 },
   ];
-  protected readonly ratioSelectOptions = this.ratioOptions.map((r) => ({ label: r.label, value: r.value }));
+  protected readonly ratioSelectOptions = this.ratioOptions.map((r) => ({
+    label: r.label,
+    value: r.value,
+  }));
 
   /**
    * Ratio dibujado en el canvas del visor: el del take seleccionado cuando
@@ -193,22 +236,43 @@ export class StudioComponent {
 
   /** Filas del menú @: recursos (imágenes) + ingredientes, filtradas por query. */
   protected readonly mentionRows = computed<
-    { kind: 'asset' | 'ingredient'; asset?: FileAsset; ingredient?: Ingredient; wrapper?: IngredientWithFiles; label: string }[]
+    {
+      kind: 'asset' | 'ingredient';
+      asset?: FileAsset;
+      ingredient?: Ingredient;
+      wrapper?: IngredientWithFiles;
+      label: string;
+    }[]
   >(() => {
     const query = this.mentionQuery().trim().toLowerCase();
     const mentionedAssets = new Set(this.mentionedAssets().map((a) => a.id));
     const mentionedIngs = new Set(this.mentionedIngredients().map((i) => i.ingredient.name));
     const matches = (label: string) => !query || label.toLowerCase().includes(query);
 
-    const rows: { kind: 'asset' | 'ingredient'; asset?: FileAsset; ingredient?: Ingredient; wrapper?: IngredientWithFiles; label: string }[] = [];
+    const rows: {
+      kind: 'asset' | 'ingredient';
+      asset?: FileAsset;
+      ingredient?: Ingredient;
+      wrapper?: IngredientWithFiles;
+      label: string;
+    }[] = [];
     for (const a of this.assets()) {
-      if ((a.mime_type ?? '').startsWith('image/') && !mentionedAssets.has(a.id) && matches(a.filename)) {
+      if (
+        (a.mime_type ?? '').startsWith('image/') &&
+        !mentionedAssets.has(a.id) &&
+        matches(a.filename)
+      ) {
         rows.push({ kind: 'asset', asset: a, label: a.filename });
       }
     }
     for (const ing of this.ingredients()) {
       if (!mentionedIngs.has(ing.ingredient.name) && matches(ing.ingredient.name)) {
-        rows.push({ kind: 'ingredient', ingredient: ing.ingredient, wrapper: ing, label: ing.ingredient.name });
+        rows.push({
+          kind: 'ingredient',
+          ingredient: ing.ingredient,
+          wrapper: ing,
+          label: ing.ingredient.name,
+        });
       }
     }
     return rows.slice(0, 8);
@@ -261,7 +325,10 @@ export class StudioComponent {
    */
   private scanMentionTokens(
     text: string,
-    byName: Map<string, { kind: 'asset' | 'ingredient'; asset?: FileAsset; ing?: IngredientWithFiles }>,
+    byName: Map<
+      string,
+      { kind: 'asset' | 'ingredient'; asset?: FileAsset; ing?: IngredientWithFiles }
+    >,
   ): { start: number; end: number; name: string }[] {
     if (!byName.size) {
       return [];
@@ -333,7 +400,11 @@ export class StudioComponent {
       if (entry.kind === 'asset' && entry.asset && !seenAssets.has(entry.asset.id)) {
         seenAssets.add(entry.asset.id);
         foundAssets.push(entry.asset);
-      } else if (entry.kind === 'ingredient' && entry.ing && !seenIngs.has(entry.ing.ingredient.id)) {
+      } else if (
+        entry.kind === 'ingredient' &&
+        entry.ing &&
+        !seenIngs.has(entry.ing.ingredient.id)
+      ) {
         seenIngs.add(entry.ing.ingredient.id);
         foundIngs.push(entry.ing);
       }
@@ -365,7 +436,9 @@ export class StudioComponent {
         format: file.format,
         storage: null,
         trashed: false,
-        ingredients: [{ id: ing.ingredient.id, type: ing.ingredient.type, name: ing.ingredient.name }],
+        ingredients: [
+          { id: ing.ingredient.id, type: ing.ingredient.type, name: ing.ingredient.name },
+        ],
         created_at: '',
         updated_at: '',
       });
@@ -462,9 +535,19 @@ export class StudioComponent {
     const mirror = document.createElement('div');
     const style = getComputedStyle(textarea);
     const props = [
-      'fontFamily', 'fontSize', 'fontWeight', 'letterSpacing', 'lineHeight',
-      'paddingTop', 'paddingLeft', 'paddingRight', 'borderWidth', 'boxSizing',
-      'width', 'whiteSpace', 'wordWrap',
+      'fontFamily',
+      'fontSize',
+      'fontWeight',
+      'letterSpacing',
+      'lineHeight',
+      'paddingTop',
+      'paddingLeft',
+      'paddingRight',
+      'borderWidth',
+      'boxSizing',
+      'width',
+      'whiteSpace',
+      'wordWrap',
     ] as const;
     for (const prop of props) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -487,14 +570,18 @@ export class StudioComponent {
     const styleFloat = parseFloat(style.paddingTop) || 0;
     const left = Math.max(
       0,
-      Math.min(markerRect.left - mirrorRect.left + (parseFloat(style.paddingLeft) || 0), wrapperRect.width - 280),
+      Math.min(
+        markerRect.left - mirrorRect.left + (parseFloat(style.paddingLeft) || 0),
+        wrapperRect.width - 280,
+      ),
     );
     // Línea del caret (top relativo al textarea) + padding + borde del host.
     const caretLineTop = markerRect.top - mirrorRect.top + styleFloat;
     const hostOffsetTop = hostRect.top - wrapperRect.top + (parseFloat(style.borderTopWidth) || 0);
     const below = hostOffsetTop + caretLineTop + 8;
     // Si el menú (240px) no entra por abajo, abrir hacia arriba.
-    const top = below + 240 > wrapperRect.height ? Math.max(0, hostOffsetTop + caretLineTop - 248) : below;
+    const top =
+      below + 240 > wrapperRect.height ? Math.max(0, hostOffsetTop + caretLineTop - 248) : below;
     return { top, left };
   }
 
@@ -594,13 +681,13 @@ export class StudioComponent {
   protected ingredientIcon(type: string): string {
     switch (type) {
       case 'character':
-        return 'pi pi-user';
+        return 'md md-person';
       case 'location':
-        return 'pi pi-map-marker';
+        return 'md md-place';
       case 'prop':
-        return 'pi pi-box';
+        return 'md md-inventory_2';
       default:
-        return 'pi pi-tag';
+        return 'md md-label';
     }
   }
 
@@ -622,9 +709,7 @@ export class StudioComponent {
   private loadIngredients(): void {
     this.libraryService
       .listIngredients()
-      .pipe(
-        catchError(() => EMPTY),
-      )
+      .pipe(catchError(() => EMPTY))
       .subscribe((ings) => this.ingredients.set(ings));
   }
 
@@ -709,6 +794,118 @@ export class StudioComponent {
     this.loadProjects();
     this.loadAssets();
     this.loadIngredients();
+    this.restoreCols();
+  }
+
+  // ─── Columnas redimensionables (gutters entre columnas) ──────────
+  protected onGutterDown(event: PointerEvent, side: 'left' | 'right'): void {
+    if (event.pointerType === 'mouse' && event.button !== 0) {
+      return;
+    }
+    const gutter = event.currentTarget as HTMLElement;
+    const startX = event.clientX;
+    const startW = side === 'left' ? this.colLeft() : this.colRight();
+    try {
+      gutter.setPointerCapture(event.pointerId);
+    } catch {
+      // Sin captura (jsdom/tests): igual se trackea con listeners.
+    }
+    const onMove = (move: PointerEvent): void => {
+      const delta = move.clientX - startX;
+      const next = StudioComponent.clampCol(side === 'left' ? startW + delta : startW - delta);
+      if (side === 'left') {
+        this.colLeft.set(next);
+      } else {
+        this.colRight.set(next);
+      }
+    };
+    const onUp = (): void => {
+      gutter.removeEventListener('pointermove', onMove);
+      gutter.removeEventListener('pointerup', onUp);
+      gutter.removeEventListener('pointercancel', onUp);
+      this.persistCols();
+    };
+    gutter.addEventListener('pointermove', onMove);
+    gutter.addEventListener('pointerup', onUp);
+    gutter.addEventListener('pointercancel', onUp);
+    event.preventDefault();
+  }
+
+  protected onGutterKey(event: KeyboardEvent, side: 'left' | 'right'): void {
+    const step = event.shiftKey ? 48 : 12;
+    const signal = side === 'left' ? this.colLeft : this.colRight;
+    if (event.key === 'ArrowLeft') {
+      signal.set(StudioComponent.clampCol(signal() - step));
+      event.preventDefault();
+    } else if (event.key === 'ArrowRight') {
+      signal.set(StudioComponent.clampCol(signal() + step));
+      event.preventDefault();
+    } else if (event.key === 'Home' && side === 'left') {
+      this.resetCols();
+      event.preventDefault();
+    } else {
+      return;
+    }
+    this.persistCols();
+  }
+
+  protected resetCols(): void {
+    this.colLeft.set(340);
+    this.colRight.set(320);
+    this.persistCols();
+  }
+
+  private static clampCol(width: number): number {
+    return Math.min(StudioComponent.COL_MAX, Math.max(StudioComponent.COL_MIN, Math.round(width)));
+  }
+
+  private restoreCols(): void {
+    const saved = this.readCols();
+    if (saved) {
+      this.colLeft.set(StudioComponent.clampCol(saved.left));
+      this.colRight.set(StudioComponent.clampCol(saved.right));
+    }
+  }
+
+  private persistCols(): void {
+    try {
+      if (!isPlatformBrowser(this.platformId)) {
+        return;
+      }
+      localStorage.setItem(
+        StudioComponent.COLS_KEY,
+        JSON.stringify({ left: this.colLeft(), right: this.colRight() }),
+      );
+    } catch {
+      // Almacenamiento no disponible: los anchos viven solo en la sesión.
+    }
+  }
+
+  private readCols(): { left: number; right: number } | null {
+    try {
+      if (!isPlatformBrowser(this.platformId)) {
+        return null;
+      }
+      const raw = localStorage.getItem(StudioComponent.COLS_KEY);
+      if (!raw) {
+        return null;
+      }
+      const parsed: unknown = JSON.parse(raw);
+      if (
+        typeof parsed === 'object' &&
+        parsed !== null &&
+        typeof (parsed as { left?: unknown }).left === 'number' &&
+        typeof (parsed as { right?: unknown }).right === 'number'
+      ) {
+        const cols = parsed as { left: number; right: number };
+        if (Number.isFinite(cols.left) && Number.isFinite(cols.right)) {
+          return cols;
+        }
+      }
+    } catch {
+      // JSON corrupto o sin acceso: se usan los anchos por defecto.
+    }
+    return null;
   }
 
   // ─── Loaders ───────────────────────────────────────────────────
@@ -727,7 +924,11 @@ export class StudioComponent {
         this.models.set(models);
         // Preselect the lightest downloaded video model for instant play.
         const preferred = models.find(
-          (m) => m.modality === 'video' && m.type === 'downloaded' && m.available && m.name.includes('1.3B'),
+          (m) =>
+            m.modality === 'video' &&
+            m.type === 'downloaded' &&
+            m.available &&
+            m.name.includes('1.3B'),
         );
         if (preferred) {
           this.selectedModel.set(preferred);
@@ -799,9 +1000,7 @@ export class StudioComponent {
       }
     });
     this.refSlots.set(slots);
-    this.selectedAssetIds.set(
-      new Set(images.slice(0, this.maxSelectedRefs).map((f) => f.id)),
-    );
+    this.selectedAssetIds.set(new Set(images.slice(0, this.maxSelectedRefs).map((f) => f.id)));
   }
 
   // ─── Mode & model ──────────────────────────────────────────────
@@ -896,7 +1095,9 @@ export class StudioComponent {
       next.delete(id);
     } else {
       if (next.size >= this.maxSelectedRefs) {
-        this.flashRefError(`Podés seleccionar hasta ${this.maxSelectedRefs} referencias por generación.`);
+        this.flashRefError(
+          `Podés seleccionar hasta ${this.maxSelectedRefs} referencias por generación.`,
+        );
         return;
       }
       next.add(id);
@@ -1003,22 +1204,24 @@ export class StudioComponent {
   /** Library URL for a slot thumbnail; falls back to a placeholder frame. */
   protected assetThumbUrl(assetId: string): string {
     const asset = this.assets().find((a) => a.id === assetId);
-    if (!asset?.url) {
+    const url = asset?.thumbnail_url || asset?.url;
+    if (!url) {
       return '';
     }
-    const url = asset.url;
     const origin = environment.API_URL.replace(/\/api\/v1\/?$/, '');
     const path = url.startsWith('/') ? url : `/${url}`;
     return /^https?:\/\//i.test(url) ? url : `${origin}${path}`;
   }
 
+  /** Oculta miniaturas rotas (el thumb conserva fondo + tooltip del nombre). */
+  protected onThumbError(event: Event): void {
+    const img = event.target as HTMLImageElement | null;
+    img?.style.setProperty('display', 'none');
+  }
+
   // ─── Generate ──────────────────────────────────────────────────
   protected canGenerate(): boolean {
-    return (
-      !!this.selectedModel() &&
-      this.prompt().trim().length > 0 &&
-      !this.submitting()
-    );
+    return !!this.selectedModel() && this.prompt().trim().length > 0 && !this.submitting();
   }
 
   protected generate(): void {
@@ -1043,7 +1246,9 @@ export class StudioComponent {
       }
     }
     const text = mentions.length
-      ? this.stripMentions(rawText).replace(/\s{2,}/g, ' ').trim()
+      ? this.stripMentions(rawText)
+          .replace(/\s{2,}/g, ' ')
+          .trim()
       : rawText;
 
     const ratio = this.ratio();
@@ -1069,7 +1274,11 @@ export class StudioComponent {
 
     // Centralización: la generación se liga al proyecto elegido (o al auto "Studio").
     this.studioService
-      .ensureTakeSlot(`Studio ${new Date().toLocaleDateString()}`, this.takeCode(), this.selectedProjectId() ?? undefined)
+      .ensureTakeSlot(
+        `Studio ${new Date().toLocaleDateString()}`,
+        this.takeCode(),
+        this.selectedProjectId() ?? undefined,
+      )
       .pipe(
         catchError(() => {
           this.error.set('No se pudo preparar el proyecto Studio.');
@@ -1133,7 +1342,9 @@ export class StudioComponent {
     return `STU-${stamp.getFullYear()}${pad(stamp.getMonth() + 1)}${pad(stamp.getDate())}-${pad(stamp.getHours())}${pad(stamp.getMinutes())}`;
   }
 
-  protected takeStatusSeverity(status: StudioTake['status']): 'success' | 'danger' | 'info' | 'warn' | 'secondary' {
+  protected takeStatusSeverity(
+    status: StudioTake['status'],
+  ): 'success' | 'danger' | 'info' | 'warn' | 'secondary' {
     switch (status) {
       case 'succeeded':
         return 'success';
@@ -1161,5 +1372,61 @@ export class StudioComponent {
 
   protected formatTime(ts: number): string {
     return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  /**
+   * Atajos de teclado UI-only: solo invocan métodos/sets existentes.
+   * - Ctrl/Cmd+Enter: generar si se puede.
+   * - `/` fuera de campos editables: foco al prompt.
+   * - Escape: cierra lo abierto por prioridad (menciones, popovers, fullscreen, diálogos).
+   */
+  protected onShortcut(event: KeyboardEvent): void {
+    if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+      event.preventDefault();
+      if (this.canGenerate()) {
+        this.generate();
+      }
+      return;
+    }
+    if (event.key === '/' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      const target = event.target as HTMLElement | null;
+      if (
+        target &&
+        typeof target.closest === 'function' &&
+        target.closest('input, textarea, select, [contenteditable]')
+      ) {
+        return;
+      }
+      event.preventDefault();
+      this.promptTextarea?.focus();
+      return;
+    }
+    if (event.key === 'Escape') {
+      if (this.mentionMenuOpen()) {
+        this.closeMentionMenu();
+        return;
+      }
+      const duration = this.durationPopover();
+      if (duration?.overlayVisible) {
+        duration.hide();
+        return;
+      }
+      const asset = this.assetPopover();
+      if (asset?.overlayVisible) {
+        asset.hide();
+        return;
+      }
+      if (this.fullscreenAsset()) {
+        this.closeFullscreen();
+        return;
+      }
+      if (this.projectDialogVisible()) {
+        this.projectDialogVisible.set(false);
+        return;
+      }
+      if (this.libraryPickerVisible()) {
+        this.libraryPickerVisible.set(false);
+      }
+    }
   }
 }

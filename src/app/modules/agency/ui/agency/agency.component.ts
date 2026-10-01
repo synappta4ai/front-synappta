@@ -18,13 +18,14 @@ import { Tag } from 'primeng/tag';
 import { Message } from 'primeng/message';
 import { ProgressSpinner } from 'primeng/progressspinner';
 import { Select } from 'primeng/select';
+import { Tooltip } from 'primeng/tooltip';
 import { MenuItem } from 'primeng/api';
 
 import { AgencyService } from '../../services/agency.service';
 import { AiModel, Modality, GeneratedAsset, StatusResponse } from '../../interfaces';
 import { EventsService } from '@modules/events/services';
 import { Event as Project, Piece } from '@modules/events/interfaces';
-import { PageContainerComponent } from '@shared/components/index';
+import { PageContainerComponent, ValidatorErrors } from '@shared/components/index';
 
 type WorkflowPhase = 'input' | 'angles' | 'storyboard' | 'scenes';
 
@@ -55,6 +56,8 @@ interface StoryboardShot {
     FormsModule,
     ReactiveFormsModule,
     PageContainerComponent,
+    ValidatorErrors,
+    Tooltip,
     Button,
     Card,
     InputText,
@@ -77,6 +80,7 @@ export class AgencyComponent {
   protected readonly currentPhase = signal<WorkflowPhase>('input');
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
+  protected readonly submitted = signal(0);
 
   protected readonly phases = [
     { key: 'input' as WorkflowPhase, name: 'Documentación' },
@@ -191,6 +195,9 @@ export class AgencyComponent {
   }
 
   protected generateAngles(): void {
+    this.form.markAllAsTouched();
+    this.submitted.update((v) => v + 1);
+
     const { propertyName, location, description } = this.form.getRawValue();
     this.projectDescription.set(`${propertyName} en ${location}. ${description || ''}`.trim());
 
@@ -346,7 +353,9 @@ export class AgencyComponent {
    * en el formulario, o crea/reautiliza uno llamado como el proyecto cargado
    * ("Agencia <nombre>") para que los recursos queden centralizados.
    */
-  private ensureSceneAnchor(scene: StoryboardScene): Observable<{ project: Project; piece: Piece }> {
+  private ensureSceneAnchor(
+    scene: StoryboardScene,
+  ): Observable<{ project: Project; piece: Piece }> {
     const chosenId = this.selectedProjectId();
     const anchorName = chosenId
       ? (this.projects().find((p) => p.id === chosenId)?.name ?? 'Agencia')

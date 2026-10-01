@@ -1,4 +1,4 @@
-<app-page-container title="Consola de Administración">
+<app-page-container title="Consola de Administración" animate.enter="anim-page">
   <p-tabs [value]="activeValue()" [scrollable]="true" styleClass="admin-console-tabs">
     <p-tablist>
       @for (item of tabItems(); track item.value) {

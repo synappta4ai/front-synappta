@@ -2,10 +2,13 @@ import { Injectable, signal, effect, inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import {
+  AccentId,
   ColorPalette,
   ThemeMode,
   ThemeConfig,
   COLOR_PALETTES,
+  accentDef,
+  isAccentId,
 } from '../interfaces/theme.interface';
 import { ApiResponse } from '../interfaces/api.interface';
 import { environment } from '@env/environment';
@@ -22,7 +25,8 @@ export class ThemeService {
 
   // Signals para el estado del tema
   readonly currentPalette = signal<ColorPalette>('violet');
-  readonly currentMode = signal<ThemeMode>('dark');
+  readonly currentMode = signal<ThemeMode>('light');
+  readonly currentAccent = signal<AccentId>('lime');
   readonly isLoading = signal<boolean>(false);
 
   // API endpoint dinámico
@@ -38,6 +42,9 @@ export class ThemeService {
 
     // Cargar tema al inicializar
     this.loadTheme();
+    // Modo y acento locales (no viajan al backend): se aplican siempre,
+    // haya sesión o no, para que la pública también los respete.
+    this.restoreLocal();
   }
 
   /**
@@ -87,7 +94,18 @@ export class ThemeService {
    */
   setMode(mode: ThemeMode): void {
     this.currentMode.set(mode);
+    this.persistLocal();
     this.saveTheme();
+  }
+
+  /**
+   * Cambia el color de acento (override en runtime sobre las variables
+   * --color-accent/hover/active; local-only, no viaja al backend).
+   */
+  setAccent(accent: AccentId): void {
+    this.currentAccent.set(accent);
+    this.applyAccent(accent);
+    this.persistLocal();
   }
 
   /**
@@ -186,6 +204,45 @@ export class ThemeService {
       }
     }
     return null;
+  }
+
+  /**
+   * Restaura modo y acento guardados localmente (invitados incluidos).
+   */
+  private restoreLocal(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    try {
+      const mode = localStorage.getItem('app-mode');
+      if (mode === 'light' || mode === 'dark') {
+        this.currentMode.set(mode);
+      }
+      const accent = localStorage.getItem('app-accent');
+      if (isAccentId(accent)) {
+        this.currentAccent.set(accent);
+      }
+      this.applyAccent(this.currentAccent());
+    } catch {
+      // Sin almacenamiento: se usan los valores por defecto.
+    }
+  }
+
+  private persistLocal(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    try {
+      localStorage.setItem('app-mode', this.currentMode());
+      localStorage.setItem('app-accent', this.currentAccent());
+    } catch {
+      // Sin almacenamiento: la preferencia vive solo en la sesión.
+    }
+  }
+
+  private applyAccent(accent: AccentId): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    const def = accentDef(accent);
+    const root = document.documentElement;
+    root.style.setProperty('--color-accent', def.accent);
+    root.style.setProperty('--color-accent-hover', def.hover);
+    root.style.setProperty('--color-accent-active', def.active);
   }
 
   /**

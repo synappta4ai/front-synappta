@@ -1,4 +1,4 @@
-<app-page-container title="Eventos">
+<app-page-container title="Eventos" animate.enter="anim-page">
   @if (error(); as message) {
     <div class="mb-6">
       <p-message severity="error" [text]="message" [escape]="false" styleClass="w-full" />
@@ -8,21 +8,21 @@
   <!-- Create Event Form -->
   <p-card styleClass="mb-6">
     <ng-template #header>
-      <div class="flex items-center gap-3 border-b border-[var(--surface-200)] px-6 py-4">
-        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--primary-100)]">
-          <i class="pi pi-plus-circle text-lg text-[var(--primary-600)]"></i>
+      <div class="flex items-center gap-3 border-b border-surface-border px-6 py-4">
+        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
+          <i class="md md-add_circle text-lg text-accent"></i>
         </div>
-        <h2 class="text-lg font-semibold text-(--text-primary)">Crear Nuevo Evento</h2>
+        <h2 class="text-lg font-bold text-ink-on-dark">Crear Nuevo Evento</h2>
       </div>
     </ng-template>
 
     <div class="flex flex-col gap-4 sm:flex-row sm:items-end">
       <div class="flex flex-1 flex-col gap-2">
-        <label for="new-event" class="text-sm font-medium text-(--text-primary)">
-          Nombre del Evento <span class="text-red-500">*</span>
+        <label for="new-event" class="text-xs font-bold text-ink-on-dark">
+          Nombre del Evento <span class="text-danger">*</span>
         </label>
         <p-iconfield iconPosition="left">
-          <p-inputicon styleClass="pi pi-calendar-plus" />
+          <p-inputicon styleClass="md md-event_available" />
           <input
             pInputText
             id="new-event"
@@ -40,16 +40,22 @@
             [binary]="true"
             [ngModel]="showInactive()"
             (ngModelChange)="toggleShowInactive()"
+            inputId="show-inactive-events"
           />
-          <label class="text-sm text-(--text-secondary)">Mostrar inactivos</label>
+          <label for="show-inactive-events" class="text-xs text-ink-muted-on-dark"
+            >Mostrar inactivos</label
+          >
         </div>
-        <p-button
-          label="Crear Evento"
-          icon="pi pi-plus"
-          [loading]="loading()"
-          [disabled]="loading() || !newName().trim()"
-          (onClick)="createEvent()"
-        />
+        <span pTooltip="Escribí un nombre para crear el evento" showDelay="400" class="inline-flex">
+          <p-button
+            label="Crear Evento"
+            icon="md md-add"
+            [loading]="loading()"
+            [disabled]="loading() || !newName().trim()"
+            (onClick)="createEvent()"
+            styleClass="active:scale-[0.98]"
+          />
+        </span>
       </div>
     </div>
   </p-card>
@@ -57,26 +63,25 @@
   <!-- Events Table -->
   @if (loading()) {
     <div
-      class="flex flex-col items-center gap-4 rounded-xl border border-[var(--surface-200)] bg-[var(--surface-0)] py-16"
+      class="flex flex-col gap-2 rounded-3xl border border-surface-border bg-surface p-6"
+      aria-busy="true"
     >
-      <p-progressSpinner styleClass="w-12 h-12" strokeWidth="3" />
-      <p class="text-sm text-(--text-secondary)">Cargando eventos...</p>
+      <span class="sr-only">Cargando eventos…</span>
+      <div class="skel skel-title" aria-hidden="true"></div>
+      <div class="skel skel-text" aria-hidden="true"></div>
+      <div class="skel skel-text" aria-hidden="true"></div>
     </div>
   } @else {
     <p-card>
       <ng-template #header>
-        <div
-          class="flex items-center justify-between border-b border-[var(--surface-200)] px-6 py-4"
-        >
+        <div class="flex items-center justify-between border-b border-surface-border px-6 py-4">
           <div class="flex items-center gap-3">
-            <div
-              class="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--primary-100)]"
-            >
-              <i class="pi pi-list text-lg text-[var(--primary-600)]"></i>
+            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
+              <i class="md md-list text-lg text-accent"></i>
             </div>
             <div>
-              <h2 class="text-lg font-semibold text-(--text-primary)">Lista de Eventos</h2>
-              <p class="text-sm text-(--text-secondary)">
+              <h2 class="text-lg font-bold text-ink-on-dark">Lista de Eventos</h2>
+              <p class="text-sm text-ink-muted-on-dark">
                 {{ events().length }} eventos registrados
               </p>
             </div>
@@ -100,20 +105,18 @@
             <th style="width: 5%"></th>
           </tr>
         </ng-template>
-        <ng-template #body let-event>
-          <tr>
+        <ng-template #body let-event let-i="rowIndex">
+          <tr animate.enter="anim-item" [style.animation-delay.ms]="i < 8 ? i * 35 : 280">
             <td>
               <div class="flex items-center gap-3">
-                <div
-                  class="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--primary-100)]"
-                >
-                  <i class="pi pi-calendar text-sm text-[var(--primary-600)]"></i>
+                <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-surface-2">
+                  <i class="md md-calendar_month text-sm text-ink-muted-on-dark"></i>
                 </div>
-                <span class="font-medium text-(--text-primary)">{{ event.name }}</span>
+                <span class="font-bold text-ink-on-dark">{{ event.name }}</span>
               </div>
             </td>
             <td>
-              <span class="text-sm text-(--text-secondary)">
+              <span class="text-sm text-ink-muted-on-dark">
                 {{ event.description || '—' }}
               </span>
             </td>
@@ -121,11 +124,11 @@
               <p-tag [value]="(event.program_count ?? 0).toString()" severity="info" />
             </td>
             <td>
-              <span class="text-sm text-(--text-secondary)">
+              <span class="text-sm text-ink-muted-on-dark">
                 @if (event.starts_at) {
                   {{ event.starts_at | date: 'medium' }}
                 } @else {
-                  <span class="text-[var(--text-muted)]">—</span>
+                  <span class="text-ink-muted-on-dark">—</span>
                 }
               </span>
             </td>
@@ -137,7 +140,15 @@
               }
             </td>
             <td>
-              <p-button icon="pi pi-chevron-right" severity="secondary" text rounded size="small" />
+              <p-button
+                icon="md md-chevron_right"
+                severity="secondary"
+                text
+                rounded
+                size="small"
+                pTooltip="Abrir"
+                showDelay="400"
+              />
             </td>
           </tr>
         </ng-template>
@@ -145,14 +156,12 @@
           <tr>
             <td colspan="6">
               <div class="flex flex-col items-center gap-4 py-16">
-                <div
-                  class="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--surface-100)]"
-                >
-                  <i class="pi pi-calendar text-3xl text-[var(--surface-400)]"></i>
+                <div class="flex h-16 w-16 items-center justify-center rounded-full bg-surface-2">
+                  <i class="md md-calendar_month text-3xl text-ink-muted-on-dark"></i>
                 </div>
                 <div class="text-center">
-                  <p class="font-medium text-(--text-primary)">No hay eventos todavía</p>
-                  <p class="mt-1 text-sm text-(--text-secondary)">
+                  <p class="font-bold text-ink-on-dark">No hay eventos todavía</p>
+                  <p class="mt-1 text-sm text-ink-muted-on-dark">
                     Crea tu primer evento para comenzar
                   </p>
                 </div>

@@ -13,6 +13,7 @@ import { Message } from 'primeng/message';
 import { IconField } from 'primeng/iconfield';
 import { InputIcon } from 'primeng/inputicon';
 import { ProgressSpinner } from 'primeng/progressspinner';
+import { Tooltip } from 'primeng/tooltip';
 
 import { EventsService } from '../../services/events.service';
 import { Event } from '../../interfaces';
@@ -34,6 +35,7 @@ import { PageContainerComponent } from '@shared/components/index';
     IconField,
     InputIcon,
     ProgressSpinner,
+    Tooltip,
   ],
   templateUrl: './events.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

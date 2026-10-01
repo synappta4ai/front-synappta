@@ -25,8 +25,9 @@ test.describe('studio', () => {
     // El click normal de Playwright abre el overlay del p-select
     // (reintenta hasta que los handlers jsaction están registrados).
     await openPrimeSelect(modelSelect);
-    const options = page
-      .locator('.p-select-overlay:not(.p-select-overlay-hidden) .p-select-option');
+    const options = page.locator(
+      '.p-select-overlay:not(.p-select-overlay-hidden) .p-select-option',
+    );
     await expect(options.first()).toBeVisible();
     await expect(options.filter({ hasText: 'Kling 3.0 Turbo' })).toHaveCount(1);
     await expect(options.filter({ hasText: 'Seedance 2.5' }).first()).toBeVisible();
@@ -45,7 +46,12 @@ test.describe('events', () => {
   test('renders the generation events page', async ({ authedPage: page }) => {
     await page.goto('/events');
     await expectPageTitle(page, 'Eventos de generación');
-    await expect(page.getByText('No hay eventos todavía.').or(page.getByRole('link', { name: 'Nuevo' })).first()).toBeVisible();
+    await expect(
+      page
+        .getByText('No hay eventos todavía.')
+        .or(page.getByRole('link', { name: 'Nuevo' }))
+        .first(),
+    ).toBeVisible();
   });
 
   test('renders the manage events page', async ({ authedPage: page }) => {
@@ -58,7 +64,9 @@ test.describe('projects', () => {
   test('renders the projects page', async ({ authedPage: page }) => {
     await page.goto('/projects');
     // El h1 de página y un h2 de sección comparten texto: usar level=1.
-    await expect(page.getByRole('heading', { name: 'Proyectos', exact: true, level: 1 })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Proyectos', exact: true, level: 1 }),
+    ).toBeVisible();
   });
 });
 

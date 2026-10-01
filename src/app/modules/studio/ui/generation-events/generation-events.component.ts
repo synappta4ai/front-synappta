@@ -6,6 +6,7 @@ import { Tag } from 'primeng/tag';
 
 import { ServerUrlPipe } from '@pipes/server-url.pipe';
 import { GenerationEventsStore } from '@core/store/generation.events';
+import { SlidePillDirective } from '@shared/components/slide-pill/slide-pill.directive';
 
 import { StudioTake } from '../../interfaces';
 
@@ -13,7 +14,7 @@ type Filter = 'all' | 'active' | 'done';
 
 @Component({
   selector: 'app-generation-events',
-  imports: [RouterLink, Button, Tag, ServerUrlPipe],
+  imports: [RouterLink, Button, Tag, ServerUrlPipe, SlidePillDirective],
   templateUrl: './generation-events.component.html',
   styleUrl: './generation-events.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -56,7 +57,9 @@ export class GenerationEventsComponent {
     this.store.remove(take.id);
   }
 
-  protected severity(status: StudioTake['status']): 'success' | 'danger' | 'info' | 'warn' | 'secondary' {
+  protected severity(
+    status: StudioTake['status'],
+  ): 'success' | 'danger' | 'info' | 'warn' | 'secondary' {
     switch (status) {
       case 'succeeded':
         return 'success';

@@ -1,17 +1,17 @@
-<section class="flex min-h-screen items-center justify-center bg-(--surface-ground)">
+<section
+  class="flex min-h-screen items-center justify-center bg-background"
+  animate.enter="anim-page"
+>
   <p-card styleClass="w-full max-w-md shadow-3">
     <ng-template #header>
       <div class="flex flex-col items-center gap-3 pt-8 pb-4">
-        <span
-          class="grid h-12 w-12 grid-cols-2 gap-1 rounded-xl bg-(--primary-500) p-2"
-          aria-hidden="true"
-        >
-          <span class="rounded-[3px] bg-white/30"></span>
-          <span class="rounded-[3px] bg-white/30"></span>
-          <span class="rounded-[3px] bg-white/30"></span>
-          <span class="rounded-[3px] bg-white"></span>
+        <span class="grid h-12 w-12 grid-cols-2 gap-1 rounded-xl bg-accent p-2" aria-hidden="true">
+          <span class="rounded-[3px] bg-on-accent/30"></span>
+          <span class="rounded-[3px] bg-on-accent/30"></span>
+          <span class="rounded-[3px] bg-on-accent/30"></span>
+          <span class="rounded-[3px] bg-on-accent"></span>
         </span>
-        <h1 class="text-2xl font-semibold text-(--primary-600)">
+        <h1 class="text-2xl font-bold text-ink-on-dark">
           {{ 'AUTH.LOGIN_TITLE' | translate }}
         </h1>
       </div>
@@ -23,7 +23,7 @@
 
     <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-5" novalidate>
       <div class="flex flex-col gap-2">
-        <label for="username" class="font-medium text-(--text-color)">{{
+        <label for="username" class="text-xs font-bold text-ink-on-dark">{{
           'AUTH.USERNAME_LABEL' | translate
         }}</label>
         <p-iconfield>
@@ -36,7 +36,7 @@
             [invalid]="form.get('username') | formControlErrorClass"
             class="w-full"
           />
-          <p-inputicon class="pi pi-user" />
+          <p-inputicon class="md md-person" />
         </p-iconfield>
         <validator-errors
           [control]="form.get('username')"
@@ -46,7 +46,7 @@
       </div>
 
       <div class="flex flex-col gap-2">
-        <label for="password" class="font-medium text-(--text-color)">{{
+        <label for="password" class="text-xs font-bold text-ink-on-dark">{{
           'AUTH.PASSWORD_LABEL' | translate
         }}</label>
         <p-password
@@ -71,8 +71,8 @@
         severity="primary"
         [loading]="submitting()"
         [disabled]="submitting()"
-        styleClass="w-full"
-        icon="pi pi-sign-in"
+        styleClass="w-full active:scale-[0.98]"
+        icon="md md-login"
       />
     </form>
   </p-card>

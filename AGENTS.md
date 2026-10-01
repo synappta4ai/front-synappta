@@ -61,8 +61,12 @@ Componente en `src/app/shared/components/validation-errors/` para mostrar errore
 
 ```html
 <label for="username">Usuario</label>
-<input pInputText id="username" formControlName="username"
-       [invalid]="form.get('username') | formControlErrorClass" />
+<input
+  pInputText
+  id="username"
+  formControlName="username"
+  [invalid]="form.get('username') | formControlErrorClass"
+/>
 <validator-errors
   [control]="form.get('username')"
   [label]="'AUTH.USERNAME_LABEL' | translate"
@@ -89,15 +93,15 @@ Componente en `src/app/shared/components/validation-errors/` para mostrar errore
 
 ### Inputs disponibles
 
-| Input                 | Tipo     | Descripción                                              |
-| --------------------- | -------- | -------------------------------------------------------- |
-| `control`             | `AbstractControl \| null` | Control a validar (`form.get('campo')`)        |
-| `label`               | `string` | Etiqueta del campo traducida (se inyecta en el mensaje)   |
-| `submitTick`          | `number` | Señal de submit del padre (ver reglas arriba)             |
-| `required`/`minlength`/`maxlength`/`pattern`/`email`/`min`/`max`/`unique` | `string` | Key i18n o texto custom para sobrescribir el mensaje por validación |
-| `omitErrors`          | `string[]` | Errores que no se renderizan (`[omitErrors]="['required']"`) |
-| `customErrors`        | `{ type, message }[]` | Errores custom por tipo                            |
-| `customErrorType`/`customErrorMessage` | `string` | Key y mensaje de un error custom único    |
+| Input                                                                     | Tipo                      | Descripción                                                         |
+| ------------------------------------------------------------------------- | ------------------------- | ------------------------------------------------------------------- |
+| `control`                                                                 | `AbstractControl \| null` | Control a validar (`form.get('campo')`)                             |
+| `label`                                                                   | `string`                  | Etiqueta del campo traducida (se inyecta en el mensaje)             |
+| `submitTick`                                                              | `number`                  | Señal de submit del padre (ver reglas arriba)                       |
+| `required`/`minlength`/`maxlength`/`pattern`/`email`/`min`/`max`/`unique` | `string`                  | Key i18n o texto custom para sobrescribir el mensaje por validación |
+| `omitErrors`                                                              | `string[]`                | Errores que no se renderizan (`[omitErrors]="['required']"`)        |
+| `customErrors`                                                            | `{ type, message }[]`     | Errores custom por tipo                                             |
+| `customErrorType`/`customErrorMessage`                                    | `string`                  | Key y mensaje de un error custom único                              |
 
 ### Errores por defecto (i18n)
 

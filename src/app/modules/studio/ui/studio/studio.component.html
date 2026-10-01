@@ -1,28 +1,33 @@
-<div class="studio-shell h-full">
+<div
+  class="studio-shell h-full"
+  animate.enter="anim-page"
+  [style.--col-left]="colLeft() + 'px'"
+  [style.--col-right]="colRight() + 'px'"
+>
   <!-- ══════════ Left rail: prompt + params ══════════ -->
   <aside class="studio-left">
     <!-- Proyecto seleccionado (caption sutil, solo si hay) -->
     @if (selectedProject(); as project) {
       <p class="project-caption" [title]="'Proyecto asignado: ' + project.name">
-        <i class="pi pi-briefcase"></i> {{ project.name }}
+        <i class="md md-work"></i> {{ project.name }}
       </p>
     }
-    <div class="studio-mode">
+    <div class="studio-mode seg-slide" appSlidePill=".mode-btn">
       <button
         type="button"
-        class="mode-btn"
+        class="mode-btn seg-btn"
         [class.active]="mode() === 'video'"
         (click)="setMode('video')"
       >
-        <i class="pi pi-video"></i> Video
+        <i class="md md-videocam"></i> Video
       </button>
       <button
         type="button"
-        class="mode-btn"
+        class="mode-btn seg-btn"
         [class.active]="mode() === 'image'"
         (click)="setMode('image')"
       >
-        <i class="pi pi-image"></i> Imagen
+        <i class="md md-image"></i> Imagen
       </button>
       <!-- Proyecto: icono compacto, asignación opcional en modal -->
       <button
@@ -35,11 +40,17 @@
             ? 'Proyecto asignado (opcional) — clic para cambiar o quitar'
             : 'Asignar proyecto (opcional)'
         "
+        [pTooltip]="
+          selectedProject()
+            ? 'Proyecto asignado (opcional) — clic para cambiar o quitar'
+            : 'Asignar proyecto (opcional)'
+        "
+        showDelay="400"
       >
         <i
-          class="pi"
-          [class.pi-check-circle]="selectedProject()"
-          [class.pi-briefcase]="!selectedProject()"
+          class="md"
+          [class.md-check_circle]="selectedProject()"
+          [class.md-work]="!selectedProject()"
         ></i>
       </button>
     </div>
@@ -51,103 +62,124 @@
         class="panel-head as-btn"
         (click)="showAssetGallery.set(!showAssetGallery())"
       >
-        <span><i class="pi pi-images"></i> Referencias</span>
+        <span><i class="md md-photo_library"></i> Referencias</span>
         <i
-          class="pi"
-          [class.pi-chevron-down]="showAssetGallery()"
-          [class.pi-chevron-right]="!showAssetGallery()"
+          class="md transition-transform duration-200"
+          [class.md-expand_more]="showAssetGallery()"
+          [class.md-chevron_right]="!showAssetGallery()"
+          [class.rotate-180]="showAssetGallery()"
         ></i>
       </button>
       @if (showAssetGallery()) {
         <button
           type="button"
           class="library-picker-btn"
+          animate.enter="anim-item"
           (click)="libraryPickerVisible.set(true)"
         >
-          <i class="pi pi-folder-open"></i>
+          <i class="md md-folder_open"></i>
           Elegir de la biblioteca
         </button>
       }
       @if (showAssetGallery()) {
-        <div class="slot-grid">
-          @for (slot of refSlotDefs; track slot.key) {
-            <!-- label nativo: el click activa el input file oculto -->
-            <label class="slot" [class.filled]="!!refSlots()[slot.key]">
-              @if (uploadingSlot() === slot.key) {
-                <span class="slot-uploading"><i class="pi pi-spin pi-spinner"></i></span>
-              } @else if (refSlots()[slot.key]; as assetId) {
-                <img class="slot-img" [src]="assetThumbUrl(assetId)" [alt]="slot.label" />
-                <span class="slot-replace"><i class="pi pi-refresh"></i></span>
-                <button
-                  type="button"
-                  class="slot-clear"
-                  title="Quitar referencia"
-                  (click)="$event.preventDefault(); $event.stopPropagation(); clearSlot(slot.key)"
-                >
-                  <i class="pi pi-times"></i>
-                </button>
-              } @else {
-                <i class="pi pi-plus slot-plus mb-3"></i>
-                <span class="slot-label">{{ slot.label }}</span>
-                <span class="slot-hint">{{ slot.hint }}</span>
+        <div class="acc-wrap" animate.enter="acc-enter" animate.leave="acc-leave">
+          <div class="acc-inner">
+            <div class="slot-grid">
+              @for (slot of refSlotDefs; track slot.key) {
+                <!-- label nativo: el click activa el input file oculto -->
+                <label class="slot" [class.filled]="!!refSlots()[slot.key]">
+                  @if (uploadingSlot() === slot.key) {
+                    <span class="slot-uploading"><i class="md md-autorenew md-spin"></i></span>
+                  } @else if (refSlots()[slot.key]; as assetId) {
+                    <img
+                      class="slot-img"
+                      [src]="assetThumbUrl(assetId)"
+                      [alt]="slot.label"
+                      loading="lazy"
+                      decoding="async"
+                      (error)="onThumbError($event)"
+                    />
+                    <span class="slot-replace"><i class="md md-refresh"></i></span>
+                    <button
+                      type="button"
+                      class="slot-clear"
+                      title="Quitar referencia"
+                      pTooltip="Quitar referencia"
+                      showDelay="400"
+                      (click)="
+                        $event.preventDefault(); $event.stopPropagation(); clearSlot(slot.key)
+                      "
+                    >
+                      <i class="md md-close"></i>
+                    </button>
+                  } @else {
+                    <i class="md md-add slot-plus mb-3"></i>
+                    <span class="slot-label">{{ slot.label }}</span>
+                    <span class="slot-hint">{{ slot.hint }}</span>
+                  }
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg"
+                    hidden
+                    (change)="onSlotPicked($event, slot.key)"
+                  />
+                </label>
               }
-              <input
-                type="file"
-                accept="image/png,image/jpeg"
-                hidden
-                (change)="onSlotPicked($event, slot.key)"
-              />
-            </label>
-          }
-        </div>
-        <div class="refs-meta muted small">
-          <span>{{ selectedAssetIds().size }}/{{ maxSelectedRefs }} seleccionadas</span>
-          @if (uploading()) {
-            <span class="refs-uploading"><i class="pi pi-spin pi-spinner"></i> Subiendo…</span>
-          }
-        </div>
-        @if (refError(); as err) {
-          <p class="ref-error small" role="alert">
-            <i class="pi pi-exclamation-circle"></i> {{ err }}
-          </p>
-        }
-        @if (assets().length > 0) {
-          <div class="asset-grid">
-            @for (asset of assets().slice(0, 8); track asset.id) {
-              <div
-                class="asset-thumb"
-                [class.selected]="selectedAssetIds().has(asset.id)"
-                role="button"
-                tabindex="0"
-                (click)="toggleAsset(asset.id)"
-                (keydown.enter)="toggleAsset(asset.id)"
-                [title]="asset.filename"
-              >
-                <img
-                  [src]="asset.thumbnail_url || asset.url | serverUrl"
-                  [alt]="asset.filename"
-                  loading="lazy"
-                />
-                <span class="asset-check"><i class="pi pi-check"></i></span>
-                <button
-                  type="button"
-                  class="asset-remove"
-                  title="Quitar de la lista"
-                  (click)="$event.stopPropagation(); removeAsset(asset.id)"
+            </div>
+            <div class="refs-meta muted small">
+              <span>{{ selectedAssetIds().size }}/{{ maxSelectedRefs }} seleccionadas</span>
+              @if (uploading()) {
+                <span class="refs-uploading"
+                  ><i class="md md-autorenew md-spin"></i> Subiendo…</span
                 >
-                  <i class="pi pi-times"></i>
-                </button>
-                <span
-                  class="asset-eye"
-                  title="Ver"
-                  (click)="$event.stopPropagation(); openPreview(asset, $event)"
-                >
-                  <i class="pi pi-eye"></i>
-                </span>
+              }
+            </div>
+            @if (refError(); as err) {
+              <p class="ref-error small" role="alert"><i class="md md-error"></i> {{ err }}</p>
+            }
+            @if (assets().length > 0) {
+              <div class="asset-grid">
+                @for (asset of assets().slice(0, 8); track asset.id) {
+                  <div
+                    class="asset-thumb"
+                    [class.selected]="selectedAssetIds().has(asset.id)"
+                    role="button"
+                    tabindex="0"
+                    (click)="toggleAsset(asset.id)"
+                    (keydown.enter)="toggleAsset(asset.id)"
+                    [title]="asset.filename"
+                  >
+                    <img
+                      [src]="asset.thumbnail_url || asset.url | serverUrl"
+                      [alt]="asset.filename"
+                      loading="lazy"
+                      decoding="async"
+                      (error)="onThumbError($event)"
+                    />
+                    <span class="asset-check"><i class="md md-check"></i></span>
+                    <button
+                      type="button"
+                      class="asset-remove"
+                      title="Quitar de la lista"
+                      pTooltip="Quitar de la lista"
+                      showDelay="400"
+                      (click)="$event.stopPropagation(); removeAsset(asset.id)"
+                    >
+                      <i class="md md-close"></i>
+                    </button>
+                    <span
+                      class="asset-eye"
+                      title="Ver"
+                      (click)="$event.stopPropagation(); openPreview(asset, $event)"
+                    >
+                      <i class="md md-visibility"></i>
+                    </span>
+                  </div>
+                }
               </div>
             }
           </div>
-        }
+        </div>
       }
     </div>
 
@@ -171,13 +203,9 @@
 
         <!-- Menú de candidatos @: recursos + ingredientes de la biblioteca -->
         @if (mentionMenuOpen() && mentionMenuPos(); as menuPos) {
-          <div
-            class="mention-menu"
-            [style.top.px]="menuPos.top"
-            [style.left.px]="menuPos.left"
-          >
+          <div class="mention-menu" [style.top.px]="menuPos.top" [style.left.px]="menuPos.left">
             <p class="mention-menu-title">
-              <i class="pi pi-at"></i> Biblioteca: recursos e ingredientes
+              <i class="md md-alternate_email"></i> Biblioteca: recursos e ingredientes
             </p>
             @for (row of mentionRows(); track row.label; let i = $index) {
               <button
@@ -193,6 +221,7 @@
                     [src]="assetThumbUrl(asset.id)"
                     [alt]="asset.filename"
                     loading="lazy"
+                    decoding="async"
                   />
                   <span class="mention-name">{{ asset.filename }}</span>
                   @if (asset.ingredients?.length) {
@@ -200,7 +229,7 @@
                   }
                 } @else if (row.kind === 'ingredient' && row.ingredient; as ing) {
                   <span class="mention-ing-icon" [attr.data-type]="ing.type">
-                    <i class="pi {{ ingredientIcon(ing.type) }}"></i>
+                    <i class="md {{ ingredientIcon(ing.type) }}"></i>
                   </span>
                   <span class="mention-name">{{ ing.name }}</span>
                   <span class="mention-ing badge-type">{{ ingredientTypeLabel(ing.type) }}</span>
@@ -221,7 +250,13 @@
         <div class="mention-chips">
           @for (asset of mentionedAssets(); track asset.id) {
             <span class="mention-chip" [title]="asset.filename">
-              <img class="mention-chip-thumb" [src]="assetThumbUrl(asset.id)" [alt]="asset.filename" />
+              <img
+                class="mention-chip-thumb"
+                [src]="assetThumbUrl(asset.id)"
+                [alt]="asset.filename"
+                loading="lazy"
+                decoding="async"
+              />
               <span class="mention-chip-name">@{{ asset.filename }}</span>
               <button
                 type="button"
@@ -229,24 +264,27 @@
                 title="Quitar mención"
                 (click)="removeMention(asset)"
               >
-                <i class="pi pi-times"></i>
+                <i class="md md-close"></i>
               </button>
             </span>
           }
           @for (ing of mentionedIngredients(); track ing.ingredient.id) {
             <span class="mention-chip ingredient" [title]="'Ingrediente: cita todos sus recursos'">
               <span class="mention-ing-icon" [attr.data-type]="ing.ingredient.type">
-                <i class="pi {{ ingredientIcon(ing.ingredient.type) }}"></i>
+                <i class="md {{ ingredientIcon(ing.ingredient.type) }}"></i>
               </span>
               <span class="mention-chip-name">@{{ ing.ingredient.name }}</span>
-              <span class="mention-chip-count">{{ assetsOfIngredientCount(ing) }} {{ assetsOfIngredientCount(ing) === 1 ? 'recurso' : 'recursos' }}</span>
+              <span class="mention-chip-count"
+                >{{ assetsOfIngredientCount(ing) }}
+                {{ assetsOfIngredientCount(ing) === 1 ? 'recurso' : 'recursos' }}</span
+              >
               <button
                 type="button"
                 class="mention-chip-x"
                 title="Quitar mención"
                 (click)="removeMention(ing)"
               >
-                <i class="pi pi-times"></i>
+                <i class="md md-close"></i>
               </button>
             </span>
           }
@@ -264,7 +302,7 @@
           class="foot-chip static"
           [title]="selectedAssetIds().size + ' referencias seleccionadas'"
         >
-          <i class="pi pi-paperclip"></i> {{ selectedAssetIds().size }}
+          <i class="md md-attach_file"></i> {{ selectedAssetIds().size }}
         </span>
         <p-select
           [ngModel]="resolution()"
@@ -276,10 +314,14 @@
           [showClear]="false"
         >
           <ng-template pTemplate="selectedItem" let-opt>
-            <span class="ratio-inline"><i class="pi pi-desktop foot-icon"></i> {{ opt }}</span>
+            <span class="ratio-inline"
+              ><i class="md md-desktop_windows foot-icon"></i> {{ opt }}</span
+            >
           </ng-template>
           <ng-template #item let-opt>
-            <span class="ratio-inline"><i class="pi pi-desktop foot-icon"></i> {{ opt }}</span>
+            <span class="ratio-inline"
+              ><i class="md md-desktop_windows foot-icon"></i> {{ opt }}</span
+            >
           </ng-template>
         </p-select>
         <p-select
@@ -313,7 +355,7 @@
             (click)="toggleDurationPopover($event)"
             [title]="'Duración: ' + durationHint()"
           >
-            <i class="pi pi-clock"></i> {{ duration() }}s
+            <i class="md md-schedule"></i> {{ duration() }}s
           </button>
         }
       </div>
@@ -353,7 +395,7 @@
               (click)="closePreview()"
               aria-label="Cerrar"
             >
-              <i class="pi pi-times"></i>
+              <i class="md md-close"></i>
             </button>
           </div>
           <button
@@ -390,7 +432,7 @@
           <div class="asset-fullscreen-meta">
             <span class="truncate" [title]="asset.filename">{{ asset.filename }}</span>
             <p-button
-              icon="pi pi-times"
+              icon="md md-close"
               [rounded]="true"
               [text]="true"
               severity="contrast"
@@ -403,7 +445,7 @@
     </p-dialog>
     <div class="panel">
       <div class="panel-head">
-        <span><i class="pi pi-sparkles"></i> Modelo</span>
+        <span><i class="md md-inventory_2"></i> Modelo</span>
       </div>
       @if (loadingModels()) {
         <p class="muted small">Cargando catálogo…</p>
@@ -423,24 +465,20 @@
           <ng-template #item let-m>
             <div class="flex items-center justify-between gap-2 w-full">
               <div class="min-w-0">
-                <p class="font-medium truncate">{{ m.displayName }}</p>
+                <p class="font-bold truncate">{{ m.displayName }}</p>
                 <p class="text-xs opacity-60 truncate">{{ m.name }}</p>
               </div>
               <div class="flex items-center gap-1 shrink-0">
                 @if (m.type === 'downloaded') {
-                  <p-tag value="worker" severity="success" styleClass="text-[10px]" />
+                  <p-tag value="worker" severity="success" styleClass="text-xs" />
                   @if (m.vramGb) {
-                    <p-tag
-                      [value]="m.vramGb + ' GB'"
-                      severity="secondary"
-                      styleClass="text-[10px]"
-                    />
+                    <p-tag [value]="m.vramGb + ' GB'" severity="secondary" styleClass="text-xs" />
                   }
                 } @else {
-                  <p-tag [value]="m.badge" severity="info" styleClass="text-[10px]" />
+                  <p-tag [value]="m.badge" severity="info" styleClass="text-xs" />
                 }
                 @if (!m.available) {
-                  <p-tag value="no disp." severity="danger" styleClass="text-[10px]" />
+                  <p-tag value="no disp." severity="danger" styleClass="text-xs" />
                 }
               </div>
             </div>
@@ -452,7 +490,7 @@
     <!-- Seed -->
     <div class="panel">
       <div class="panel-head">
-        <span><i class="pi pi-database"></i> Seed</span>
+        <span><i class="md md-storage"></i> Seed</span>
       </div>
       <input
         type="text"
@@ -463,13 +501,42 @@
       />
     </div>
 
-    <button type="button" class="generate-btn" [disabled]="!canGenerate()" (click)="generate()">
-      <i class="pi" [class.pi-spin.pi-spinner]="submitting()" [class.pi-bolt]="!submitting()"></i>
-      {{ submitting() ? 'Enviando…' : 'Generar ' + (mode() === 'video' ? 'Video' : 'Imagen') }}
-    </button>
+    <span pTooltip="Elegí un modelo y escribí un prompt para generar" showDelay="400" class="grid">
+      <button
+        type="button"
+        class="generate-btn"
+        [disabled]="!canGenerate()"
+        (click)="generate()"
+        pTooltip="Generar (Ctrl+Enter)"
+        showDelay="400"
+        aria-keyshortcuts="Control+Enter"
+      >
+        <i
+          class="md"
+          [class.md-spin]="submitting()"
+          [class.md-autorenew]="submitting()"
+          [class.md-bolt]="!submitting()"
+        ></i>
+        {{ submitting() ? 'Enviando…' : 'Generar ' + (mode() === 'video' ? 'Video' : 'Imagen') }}
+        <kbd class="ml-1 rounded border border-current px-1 text-[10px] opacity-70">Ctrl+↵</kbd>
+      </button>
+    </span>
   </aside>
 
   <!-- ══════════ Center: viewer ══════════ -->
+  <div
+    class="col-gutter"
+    role="separator"
+    aria-orientation="vertical"
+    aria-label="Redimensionar columnas del Studio"
+    [attr.aria-valuemin]="260"
+    [attr.aria-valuemax]="520"
+    [attr.aria-valuenow]="colLeft()"
+    tabindex="0"
+    (pointerdown)="onGutterDown($event, 'left')"
+    (keydown)="onGutterKey($event, 'left')"
+    (dblclick)="resetCols()"
+  ></div>
   <section class="studio-center">
     @if (error(); as message) {
       <p-message severity="error" [text]="message" [escape]="false" />
@@ -477,42 +544,54 @@
     @if (selectedTake(); as take) {
       <div class="viewer" [style.--canvas-ar]="canvasAr()">
         <div class="viewer-canvas">
-        @switch (take.status) {
-          @case ('succeeded') {
-            @if (mode() === 'video') {
-              <!-- src directo en <video>: mutar un <source> hijo no
+          @switch (take.status) {
+            @case ('succeeded') {
+              @if (mode() === 'video') {
+                <!-- src directo en <video>: mutar un <source> hijo no
                    dispara la recarga al cambiar de take. -->
-              <video controls autoplay loop class="viewer-media" [src]="take.videoUrl | serverUrl"></video>
-            } @else {
-              <img [src]="take.videoUrl | serverUrl" [alt]="take.prompt" class="viewer-media" />
+                <video
+                  controls
+                  autoplay
+                  loop
+                  class="viewer-media"
+                  animate.enter="anim-item"
+                  [src]="take.videoUrl | serverUrl"
+                ></video>
+              } @else {
+                <img
+                  [src]="take.videoUrl | serverUrl"
+                  [alt]="take.prompt"
+                  class="viewer-media"
+                  animate.enter="anim-item"
+                />
+              }
+            }
+            @case ('failed') {
+              <div class="viewer-placeholder error">
+                <i class="md md-cancel text-3xl"></i>
+                <p>La generación falló</p>
+                @if (take.error) {
+                  <p class="small muted">{{ take.error }}</p>
+                }
+              </div>
+            }
+            @case ('cancelled') {
+              <div class="viewer-placeholder">
+                <i class="md md-block text-3xl"></i>
+                <p>Generación cancelada</p>
+              </div>
+            }
+            @default {
+              <div class="viewer-placeholder">
+                <i class="md md-autorenew md-spin text-3xl"></i>
+                <p>{{ take.status === 'queued' ? 'En cola…' : 'Generando…' }}</p>
+                <div class="progress-track">
+                  <div class="progress-fill" [style.width.%]="take.progress"></div>
+                </div>
+                <p class="muted small">{{ take.progress }}%</p>
+              </div>
             }
           }
-          @case ('failed') {
-            <div class="viewer-placeholder error">
-              <i class="pi pi-times-circle text-3xl"></i>
-              <p>La generación falló</p>
-              @if (take.error) {
-                <p class="small muted">{{ take.error }}</p>
-              }
-            </div>
-          }
-          @case ('cancelled') {
-            <div class="viewer-placeholder">
-              <i class="pi pi-ban text-3xl"></i>
-              <p>Generación cancelada</p>
-            </div>
-          }
-          @default {
-            <div class="viewer-placeholder">
-              <i class="pi pi-spin pi-spinner text-3xl"></i>
-              <p>{{ take.status === 'queued' ? 'En cola…' : 'Generando…' }}</p>
-              <div class="progress-track">
-                <div class="progress-fill" [style.width.%]="take.progress"></div>
-              </div>
-              <p class="muted small">{{ take.progress }}%</p>
-            </div>
-          }
-        }
         </div>
       </div>
       <div class="viewer-meta">
@@ -530,7 +609,7 @@
       <div class="viewer" [style.--canvas-ar]="canvasAr()">
         <div class="viewer-canvas">
           <div class="viewer-placeholder">
-            <i class="pi pi-video text-4xl"></i>
+            <i class="md md-videocam text-4xl"></i>
             <p>Tus tomas aparecen acá</p>
             <p class="muted small">Escribí un prompt y generá tu primer take</p>
           </div>
@@ -541,32 +620,52 @@
   </section>
 
   <!-- ══════════ Right: take reel + queue ══════════ -->
+  <div
+    class="col-gutter"
+    role="separator"
+    aria-orientation="vertical"
+    aria-label="Redimensionar columnas del Studio"
+    [attr.aria-valuemin]="260"
+    [attr.aria-valuemax]="520"
+    [attr.aria-valuenow]="colRight()"
+    tabindex="0"
+    (pointerdown)="onGutterDown($event, 'right')"
+    (keydown)="onGutterKey($event, 'right')"
+    (dblclick)="resetCols()"
+  ></div>
   <aside class="studio-right">
     <div class="reel-head">
-      <span><i class="pi pi-film"></i> Take Reel</span>
+      <span><i class="md md-movie"></i> Take Reel</span>
       <p-tag [value]="takes().length.toString()" severity="secondary" />
     </div>
     @if (takes().length === 0) {
       <p class="muted small pad">Todavía no hay tomas en esta sesión.</p>
     }
     <div class="reel-list">
-      @for (take of takes(); track take.id) {
+      @for (take of takes(); track take.id; let reelIdx = $index) {
         <button
           type="button"
           class="take-card"
+          animate.enter="anim-item"
+          [style.animation-delay.ms]="reelIdx < 8 ? reelIdx * 35 : 280"
           [class.selected]="take.id === selectedTakeId()"
           (click)="selectTake(take)"
         >
           @if (take.status === 'succeeded' && take.videoUrl) {
             <video
               class="take-thumb"
+              animate.enter="anim-item"
               [src]="take.videoUrl | serverUrl"
               preload="metadata"
               muted
             ></video>
           } @else {
             <div class="take-thumb placeholder">
-              <i class="pi" [class.pi-spin.pi-spinner]="take.status === 'running'"></i>
+              <i
+                class="md"
+                [class.md-spin]="take.status === 'running'"
+                [class.md-autorenew]="take.status === 'running'"
+              ></i>
             </div>
           }
           <div class="take-info">
@@ -576,18 +675,19 @@
               <p-tag
                 [value]="takeStatusLabel(take.status)"
                 [severity]="takeStatusSeverity(take.status)"
-                styleClass="text-[10px]"
+                styleClass="text-xs"
               />
               @if (take.status === 'running' || take.status === 'queued') {
                 <span class="small muted">{{ take.progress }}%</span>
                 <p-button
-                  icon="pi pi-times"
+                  icon="md md-close"
                   [rounded]="true"
                   [text]="true"
                   severity="secondary"
                   styleClass="w-6 h-6"
                   (onClick)="cancelTake(take)"
                   pTooltip="Cancelar"
+                  showDelay="400"
                 />
               }
               <span class="small muted time">{{ formatTime(take.createdAt) }}</span>
@@ -598,7 +698,7 @@
     </div>
 
     <div class="queue-head">
-      <span><i class="pi pi-list"></i> Cola de generación</span>
+      <span><i class="md md-list"></i> Cola de generación</span>
       <p-tag
         [value]="activeTakes().length.toString()"
         [severity]="activeTakes().length ? 'info' : 'secondary'"
@@ -609,8 +709,8 @@
     }
     <div class="queue-list">
       @for (take of activeTakes(); track take.id) {
-        <div class="queue-item">
-          <i class="pi pi-spin pi-spinner"></i>
+        <div class="queue-item" animate.enter="anim-item" [attr.data-status]="take.status">
+          <i class="md md-autorenew md-spin"></i>
           <div class="queue-info">
             <p class="truncate">{{ take.modelDisplayName }}</p>
             <div class="progress-track slim">
@@ -630,7 +730,7 @@
     [modal]="true"
     [style]="{ width: 'min(92vw, 26rem)' }"
     [draggable]="false"
-    [resizable]="false"
+    [resizable]="true"
     [closeOnEscape]="true"
     [dismissableMask]="true"
     header="Asignar proyecto"
@@ -662,7 +762,7 @@
         @if (selectedProject()) {
           <p-button
             label="Quitar proyecto"
-            icon="pi pi-times"
+            icon="md md-close"
             size="small"
             [text]="true"
             severity="secondary"
@@ -672,7 +772,12 @@
       }
     </div>
     <ng-template #footer>
-      <p-button label="Cerrar" size="small" [text]="true" (onClick)="projectDialogVisible.set(false)" />
+      <p-button
+        label="Cerrar"
+        size="small"
+        [text]="true"
+        (onClick)="projectDialogVisible.set(false)"
+      />
     </ng-template>
   </p-dialog>
 

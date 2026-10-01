@@ -64,8 +64,8 @@ export class AdminImagesComponent {
   /** Sección activa: imágenes generadas o recursos subidos. */
   protected readonly section = signal<Section>('generated');
   protected readonly sectionOptions = [
-    { label: 'Generadas', value: 'generated', icon: 'pi pi-sparkles' },
-    { label: 'Recursos subidos', value: 'uploads', icon: 'pi pi-upload' },
+    { label: 'Generadas', value: 'generated', icon: 'md md-image' },
+    { label: 'Recursos subidos', value: 'uploads', icon: 'md md-upload' },
   ];
 
   // ─── Generated ────────────────────────────────────────────────
@@ -98,24 +98,60 @@ export class AdminImagesComponent {
   // ─── Tabs por tipo de ingrediente + subida múltiple ───────────
   protected readonly ingFilter = signal<IngFilter>('all');
   protected readonly ingFilterOptions: { value: IngFilter; label: string; icon: string }[] = [
-    { value: 'all', label: 'Todos', icon: 'pi pi-th-large' },
-    { value: 'character', label: 'Personaje', icon: 'pi pi-user' },
-    { value: 'location', label: 'Locación', icon: 'pi pi-map-marker' },
-    { value: 'prop', label: 'Prop', icon: 'pi pi-box' },
+    { value: 'all', label: 'Todos', icon: 'md md-grid_view' },
+    { value: 'character', label: 'Personaje', icon: 'md md-person' },
+    { value: 'location', label: 'Locación', icon: 'md md-place' },
+    { value: 'prop', label: 'Prop', icon: 'md md-inventory_2' },
   ];
-  protected readonly uploadButtons: { type: IngFilter; label: string; icon: string; hint: string; accept: string }[] = [
-    { type: 'all', label: 'Todos', icon: 'pi pi-upload', hint: 'Subir múltiples archivos (sin tipo)', accept: 'image/*,video/*,audio/*' },
-    { type: 'character', label: 'Personaje', icon: 'pi pi-user', hint: 'Subir múltiples personajes (imágenes)', accept: 'image/*' },
-    { type: 'location', label: 'Locación', icon: 'pi pi-map-marker', hint: 'Subir múltiples locaciones (imágenes)', accept: 'image/*' },
-    { type: 'prop', label: 'Prop', icon: 'pi pi-box', hint: 'Subir múltiples props (imágenes)', accept: 'image/*' },
+  protected readonly uploadButtons: {
+    type: IngFilter;
+    label: string;
+    icon: string;
+    hint: string;
+    accept: string;
+  }[] = [
+    {
+      type: 'all',
+      label: 'Todos',
+      icon: 'md md-upload',
+      hint: 'Subir múltiples archivos (sin tipo)',
+      accept: 'image/*,video/*,audio/*',
+    },
+    {
+      type: 'character',
+      label: 'Personaje',
+      icon: 'md md-person',
+      hint: 'Subir múltiples personajes (imágenes)',
+      accept: 'image/*',
+    },
+    {
+      type: 'location',
+      label: 'Locación',
+      icon: 'md md-place',
+      hint: 'Subir múltiples locaciones (imágenes)',
+      accept: 'image/*',
+    },
+    {
+      type: 'prop',
+      label: 'Prop',
+      icon: 'md md-inventory_2',
+      hint: 'Subir múltiples props (imágenes)',
+      accept: 'image/*',
+    },
   ];
   protected readonly uploadingType = signal<string | null>(null);
   protected readonly uploadProgress = signal<{ done: number; total: number } | null>(null);
 
   protected readonly ingCounts = computed(() => {
     const assets = this.assets();
-    const count = (t: string) => assets.filter((a) => (a.ingredients ?? []).some((i) => i.type === t)).length;
-    return { all: assets.length, character: count('character'), location: count('location'), prop: count('prop') } as Record<IngFilter, number>;
+    const count = (t: string) =>
+      assets.filter((a) => (a.ingredients ?? []).some((i) => i.type === t)).length;
+    return {
+      all: assets.length,
+      character: count('character'),
+      location: count('location'),
+      prop: count('prop'),
+    } as Record<IngFilter, number>;
   });
 
   // ─── Editor de ingrediente (viewer) ────────────────────────────
@@ -206,7 +242,11 @@ export class AdminImagesComponent {
       return;
     }
     this.assigning.set(true);
-    forkJoin(ids.map((id) => this.libraryService.linkFileEvent(id, projectId).pipe(catchError(() => of(null)))))
+    forkJoin(
+      ids.map((id) =>
+        this.libraryService.linkFileEvent(id, projectId).pipe(catchError(() => of(null))),
+      ),
+    )
       .pipe(finalize(() => this.assigning.set(false)))
       .subscribe(() => {
         this.assignVisible.set(false);
@@ -223,7 +263,11 @@ export class AdminImagesComponent {
       return;
     }
     this.assigning.set(true);
-    forkJoin(ids.map((id) => this.libraryService.unlinkFileEvent(id, projectId).pipe(catchError(() => of(null)))))
+    forkJoin(
+      ids.map((id) =>
+        this.libraryService.unlinkFileEvent(id, projectId).pipe(catchError(() => of(null))),
+      ),
+    )
       .pipe(finalize(() => this.assigning.set(false)))
       .subscribe(() => {
         this.clearSelection();
@@ -315,7 +359,10 @@ export class AdminImagesComponent {
     if (this.section() === 'generated' && this.page() * this.limit < this.total()) {
       this.page.set(this.page() + 1);
       this.loadGenerated();
-    } else if (this.section() === 'uploads' && this.assetsPage() * this.assetsLimit < this.assetsTotal()) {
+    } else if (
+      this.section() === 'uploads' &&
+      this.assetsPage() * this.assetsLimit < this.assetsTotal()
+    ) {
       this.assetsPage.set(this.assetsPage() + 1);
       this.loadUploads();
     }
@@ -388,7 +435,9 @@ export class AdminImagesComponent {
       )
       .subscribe(() => {
         const ingredients = this.editIngId()
-          ? (file.ingredients ?? []).map((i) => (i.id === this.editIngId() ? { ...i, type, name } : i))
+          ? (file.ingredients ?? []).map((i) =>
+              i.id === this.editIngId() ? { ...i, type, name } : i,
+            )
           : [...(file.ingredients ?? []), { id: created?.id ?? '', type, name }];
         this.selected.set({ ...file, ingredients });
         this.editIngId.set(null);
@@ -408,7 +457,11 @@ export class AdminImagesComponent {
     void this.uploadSequentially(files, type, input);
   }
 
-  private async uploadSequentially(files: File[], type: IngFilter, input: HTMLInputElement): Promise<void> {
+  private async uploadSequentially(
+    files: File[],
+    type: IngFilter,
+    input: HTMLInputElement,
+  ): Promise<void> {
     let done = 0;
     for (const file of files) {
       const category = file.type.startsWith('video/')
@@ -434,7 +487,11 @@ export class AdminImagesComponent {
           const idx = list.findIndex((a) => a.id === asset.id);
           if (idx >= 0) {
             const next = [...list];
-            next[idx] = { ...next[idx], ...asset, ingredients: ingredients ?? next[idx].ingredients };
+            next[idx] = {
+              ...next[idx],
+              ...asset,
+              ingredients: ingredients ?? next[idx].ingredients,
+            };
             return next;
           }
           return [{ ...asset, ingredients }, ...list];

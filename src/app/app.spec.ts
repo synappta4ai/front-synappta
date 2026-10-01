@@ -26,6 +26,10 @@ describe('App', () => {
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hacemos que las ideas');
+    const headline = compiled.querySelector('h1')?.textContent ?? '';
+    expect(headline).toContain('Hacemos que');
+    expect(headline).toContain('las ideas');
+    expect(headline).toContain('conecten');
+    expect(compiled.querySelector('header img')?.getAttribute('alt')).toContain('Synappta');
   });
 });

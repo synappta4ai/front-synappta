@@ -1,4 +1,4 @@
-<app-page-container title="Proyectos">
+<app-page-container title="Proyectos" animate.enter="anim-page">
   @if (error(); as message) {
     <div class="mb-6">
       <p-message severity="error" [text]="message" [escape]="false" styleClass="w-full" />
@@ -15,35 +15,48 @@
     <div [class.lg:col-span-1]="selectedProject()" [class.lg:col-span-3]="!selectedProject()">
       <p-card>
         <ng-template #header>
-          <div class="flex items-center justify-between border-b border-[var(--surface-200)] px-6 py-4">
+          <div class="flex items-center justify-between border-b border-surface-border px-6 py-4">
             <div class="flex items-center gap-3">
-              <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--primary-100)]">
-                <i class="pi pi-briefcase text-lg text-[var(--primary-600)]"></i>
+              <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
+                <i class="md md-work text-lg text-accent"></i>
               </div>
               <div>
-                <h2 class="text-lg font-semibold text-(--text-primary)">Proyectos</h2>
-                <p class="text-sm text-(--text-secondary)">{{ projects().length }} proyectos</p>
+                <h2 class="text-lg font-bold text-ink-on-dark">Proyectos</h2>
+                <p class="text-sm text-ink-muted-on-dark">{{ projects().length }} proyectos</p>
               </div>
             </div>
-            <p-button label="Nuevo" icon="pi pi-plus" size="small" (onClick)="openProjectDialog()" />
+            <p-button
+              label="Nuevo"
+              icon="md md-add"
+              size="small"
+              (onClick)="openProjectDialog()"
+              styleClass="active:scale-[0.98]"
+            />
           </div>
         </ng-template>
 
         @if (loading()) {
-          <div class="flex items-center justify-center gap-3 py-12">
-            <p-progressSpinner styleClass="w-10 h-10" strokeWidth="3" />
-            <span class="text-sm text-(--text-secondary)">Cargando proyectos...</span>
+          <div class="flex flex-col gap-2 py-6" aria-busy="true">
+            <span class="sr-only">Cargando proyectos…</span>
+            <div class="skel skel-title" aria-hidden="true"></div>
+            <div class="skel skel-text" aria-hidden="true"></div>
+            <div class="skel skel-text" aria-hidden="true"></div>
           </div>
         } @else if (projects().length === 0) {
           <div class="flex flex-col items-center gap-3 py-12 text-center">
-            <div class="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--surface-100)]">
-              <i class="pi pi-briefcase text-2xl text-[var(--surface-400)]"></i>
+            <div class="flex h-14 w-14 items-center justify-center rounded-full bg-surface-2">
+              <i class="md md-work text-2xl text-ink-muted-on-dark"></i>
             </div>
-            <p class="font-medium text-(--text-primary)">Aún no hay proyectos</p>
-            <p class="text-sm text-(--text-secondary)">
+            <p class="font-bold text-ink-on-dark">Aún no hay proyectos</p>
+            <p class="text-sm text-ink-muted-on-dark">
               Crea tu primer proyecto para organizar programas y piezas
             </p>
-            <p-button label="Crear proyecto" icon="pi pi-plus" (onClick)="openProjectDialog()" />
+            <p-button
+              label="Crear proyecto"
+              icon="md md-add"
+              (onClick)="openProjectDialog()"
+              styleClass="active:scale-[0.98]"
+            />
           </div>
         } @else {
           <div class="flex flex-col gap-2">
@@ -56,17 +69,25 @@
                 label="Mostrar inactivos"
               />
             </div>
-            @for (project of projects(); track project.id) {
+            @for (project of projects(); track project.id; let i = $index) {
               <div
-                class="flex cursor-pointer items-center justify-between gap-3 rounded-lg border px-4 py-3 transition-colors"
-                [class]="selectedProject()?.id === project.id
-                  ? 'border-[var(--primary-300)] bg-[var(--primary-50)]'
-                  : 'border-[var(--surface-200)] bg-[var(--surface-0)] hover:bg-[var(--surface-50)]'"
+                animate.enter="anim-item"
+                [style.animation-delay.ms]="i < 8 ? i * 35 : 280"
+                class="flex cursor-pointer items-center justify-between gap-3 rounded-2xl border px-4 py-3 transition-colors"
+                [class]="
+                  selectedProject()?.id === project.id
+                    ? 'border-accent bg-surface-2'
+                    : 'border-surface-border bg-surface hover:bg-surface-2'
+                "
                 (click)="selectProject(project)"
+                (keydown.enter)="selectProject(project)"
+                tabindex="0"
+                role="button"
+                [attr.aria-label]="'Abrir proyecto ' + project.name"
               >
                 <div class="min-w-0">
-                  <p class="truncate font-medium text-(--text-primary)">{{ project.name }}</p>
-                  <p class="truncate text-xs text-(--text-secondary)">
+                  <p class="truncate font-bold text-ink-on-dark">{{ project.name }}</p>
+                  <p class="truncate text-xs text-ink-muted-on-dark">
                     {{ project.program_count ?? 0 }} programas
                     @if (project.venue) {
                       · {{ project.venue }}
@@ -78,21 +99,24 @@
                     <p-tag value="Inactivo" severity="warn" />
                   }
                   <p-button
-                    icon="pi pi-chevron-right"
+                    icon="md md-chevron_right"
                     severity="secondary"
                     text
                     size="small"
                     pTooltip="Abrir"
+                    showDelay="400"
                     tooltipPosition="left"
                   />
                   <p-button
-                    icon="pi pi-trash"
+                    icon="md md-delete"
                     severity="danger"
                     text
                     size="small"
                     pTooltip="Eliminar"
+                    showDelay="400"
                     tooltipPosition="left"
                     (onClick)="confirmDeleteProject(project); $event.stopPropagation()"
+                    (keydown.enter)="$event.stopPropagation()"
                   />
                 </div>
               </div>
@@ -107,123 +131,166 @@
       <div class="lg:col-span-2">
         <p-card>
           <ng-template #header>
-            <div class="flex items-center justify-between border-b border-[var(--surface-200)] px-6 py-4">
+            <div class="flex items-center justify-between border-b border-surface-border px-6 py-4">
               <div class="flex items-center gap-3">
                 <p-button
-                  icon="pi pi-arrow-left"
+                  icon="md md-arrow_back"
                   severity="secondary"
                   text
                   (onClick)="closeDetail()"
                   pTooltip="Volver"
+                  showDelay="400"
                   tooltipPosition="bottom"
                 />
-                <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--primary-100)]">
-                  <i class="pi pi-folder-open text-lg text-[var(--primary-600)]"></i>
+                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
+                  <i class="md md-folder_open text-lg text-accent"></i>
                 </div>
                 <div>
-                  <h2 class="text-lg font-semibold text-(--text-primary)">{{ project.name }}</h2>
-                  <p class="text-sm text-(--text-secondary)">
+                  <h2 class="text-lg font-bold text-ink-on-dark">{{ project.name }}</h2>
+                  <p class="text-sm text-ink-muted-on-dark">
                     {{ programs().length }} programas ·
                     {{ programs().flatMap((p) => p.pieces).length }} piezas
                   </p>
                 </div>
               </div>
               <div class="flex items-center gap-2">
-                <p-button label="Programa" icon="pi pi-plus" severity="secondary" size="small" (onClick)="openProgramDialog()" />
-                <p-button label="Pieza" icon="pi pi-plus" size="small" (onClick)="openPieceDialog()" />
+                <p-button
+                  label="Programa"
+                  icon="md md-add"
+                  severity="secondary"
+                  size="small"
+                  (onClick)="openProgramDialog()"
+                />
+                <p-button
+                  label="Pieza"
+                  icon="md md-add"
+                  severity="secondary"
+                  size="small"
+                  (onClick)="openPieceDialog()"
+                />
               </div>
             </div>
           </ng-template>
 
           @if (loadingDetail()) {
-            <div class="flex items-center justify-center gap-3 py-12">
-              <p-progressSpinner styleClass="w-10 h-10" strokeWidth="3" />
-              <span class="text-sm text-(--text-secondary)">Cargando detalle...</span>
+            <div class="flex flex-col gap-2 py-6" aria-busy="true">
+              <span class="sr-only">Cargando detalle…</span>
+              <div class="skel skel-title" aria-hidden="true"></div>
+              <div class="skel skel-text" aria-hidden="true"></div>
+              <div class="skel skel-text" aria-hidden="true"></div>
             </div>
           } @else if (programs().length === 0) {
             <div class="flex flex-col items-center gap-3 py-12 text-center">
-              <div class="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--surface-100)]">
-                <i class="pi pi-list text-2xl text-[var(--surface-400)]"></i>
+              <div class="flex h-14 w-14 items-center justify-center rounded-full bg-surface-2">
+                <i class="md md-list text-2xl text-ink-muted-on-dark"></i>
               </div>
-              <p class="font-medium text-(--text-primary)">Sin programas todavía</p>
-              <p class="text-sm text-(--text-secondary)">
+              <p class="font-bold text-ink-on-dark">Sin programas todavía</p>
+              <p class="text-sm text-ink-muted-on-dark">
                 Los programas agrupan piezas (un video de apertura, un flyer...)
               </p>
-              <p-button label="Crear programa" icon="pi pi-plus" (onClick)="openProgramDialog()" />
+              <p-button
+                label="Crear programa"
+                icon="md md-add"
+                (onClick)="openProgramDialog()"
+                styleClass="active:scale-[0.98]"
+              />
             </div>
           } @else {
             <div class="flex flex-col gap-6">
-              @for (pw of programs(); track pw.program.id) {
-                <div class="rounded-xl border border-[var(--surface-200)]">
-                  <div class="flex items-center justify-between gap-3 border-b border-[var(--surface-200)] px-5 py-3">
+              @for (pw of programs(); track pw.program.id; let i = $index) {
+                <div
+                  animate.enter="anim-item"
+                  [style.animation-delay.ms]="i < 8 ? i * 35 : 280"
+                  class="rounded-2xl border border-surface-border"
+                >
+                  <div
+                    class="flex items-center justify-between gap-3 border-b border-surface-border px-5 py-3"
+                  >
                     <div class="flex items-center gap-3">
                       <p-tag [value]="'#' + pw.program.number" />
-                      <h4 class="font-semibold text-(--text-primary)">
+                      <h4 class="font-bold text-ink-on-dark">
                         {{ pw.program.name || 'Programa ' + pw.program.number }}
                       </h4>
-                      <span class="text-xs text-(--text-muted)">
+                      <span class="text-xs text-ink-muted-on-dark">
                         {{ pw.pieces.length }} piezas
                       </span>
                     </div>
                     <div class="flex items-center gap-1">
                       <p-button
                         label="Pieza"
-                        icon="pi pi-plus"
+                        icon="md md-add"
                         text
                         size="small"
                         (onClick)="openPieceDialog(pw.program.id)"
                       />
                       <p-button
-                        icon="pi pi-trash"
+                        icon="md md-delete"
                         severity="danger"
                         text
                         size="small"
+                        pTooltip="Eliminar programa"
+                        showDelay="400"
                         (onClick)="confirmDeleteProgram(pw.program)"
+                        (keydown.enter)="$event.stopPropagation()"
                       />
                     </div>
                   </div>
 
                   @if (pw.pieces.length === 0) {
-                    <p class="px-5 py-4 text-sm text-(--text-muted)">Sin piezas en este programa.</p>
+                    <p class="px-5 py-4 text-sm text-ink-muted-on-dark">
+                      Sin piezas en este programa.
+                    </p>
                   } @else {
-                    <div class="flex flex-col divide-y divide-[var(--surface-100)]">
+                    <div class="flex flex-col divide-y divide-surface-border">
                       @for (piece of pw.pieces; track piece.id) {
                         <div class="flex items-center justify-between gap-3 px-5 py-3">
                           <div class="min-w-0">
-                            <p class="truncate text-sm font-medium text-(--text-primary)">
-                              <span class="text-(--text-muted)">#{{ piece.number }}</span>
+                            <p class="truncate text-sm font-bold text-ink-on-dark">
+                              <span class="text-ink-muted-on-dark">#{{ piece.number }}</span>
                               {{ piece.name || piece.piece_code || 'Pieza' }}
                             </p>
                             <div class="mt-1 flex flex-wrap items-center gap-2">
                               @if (piece.piece_code) {
-                                <code class="rounded bg-[var(--surface-100)] px-1.5 py-0.5 text-xs text-(--text-secondary)">{{ piece.piece_code }}</code>
+                                <code
+                                  class="rounded-full bg-surface-2 px-1.5 py-0.5 text-xs text-ink-muted-on-dark"
+                                  >{{ piece.piece_code }}</code
+                                >
                               }
                               @if (piece.type) {
                                 <p-tag [value]="piece.type" severity="info" />
                               }
                               @if (piece.duration) {
-                                <span class="text-xs text-(--text-muted)">{{ piece.duration }}s</span>
+                                <span class="text-xs text-ink-muted-on-dark"
+                                  >{{ piece.duration }}s</span
+                                >
                               }
                               @if (piece.aspect_ratio) {
-                                <span class="text-xs text-(--text-muted)">{{ piece.aspect_ratio }}</span>
+                                <span class="text-xs text-ink-muted-on-dark">{{
+                                  piece.aspect_ratio
+                                }}</span>
                               }
                             </div>
                           </div>
                           <div class="flex shrink-0 items-center gap-1">
                             <p-button
                               label="Generar"
-                              icon="pi pi-play"
+                              icon="md md-play_arrow"
                               text
                               size="small"
                               pTooltip="Generar en /video con esta pieza"
+                              showDelay="400"
                               (onClick)="generateForPiece(piece)"
+                              (keydown.enter)="$event.stopPropagation()"
                             />
                             <p-button
-                              icon="pi pi-trash"
+                              icon="md md-delete"
                               severity="danger"
                               text
                               size="small"
+                              pTooltip="Eliminar pieza"
+                              showDelay="400"
                               (onClick)="confirmDeletePiece(piece)"
+                              (keydown.enter)="$event.stopPropagation()"
                             />
                           </div>
                         </div>
@@ -242,7 +309,8 @@
   <!-- ─── New project dialog ────────────────────────────────── -->
   <p-dialog
     header="Nuevo proyecto"
-    [visible]="projectDialogVisible()" (visibleChange)="projectDialogVisible.set($event)"
+    [visible]="projectDialogVisible()"
+    (visibleChange)="projectDialogVisible.set($event)"
     [modal]="true"
     [style]="{ width: 'min(92vw, 30rem)' }"
     [draggable]="false"
@@ -250,8 +318,8 @@
   >
     <div class="flex flex-col gap-4 pt-2">
       <div class="flex flex-col gap-2">
-        <label for="project-name" class="text-sm font-medium text-(--text-primary)">
-          Nombre <span class="text-red-500">*</span>
+        <label for="project-name" class="text-xs font-bold text-ink-on-dark">
+          Nombre <span class="text-danger">*</span>
         </label>
         <input
           pInputText
@@ -264,7 +332,7 @@
         />
       </div>
       <div class="flex flex-col gap-2">
-        <label for="project-venue" class="text-sm font-medium text-(--text-primary)">Lugar</label>
+        <label for="project-venue" class="text-xs font-bold text-ink-on-dark">Lugar</label>
         <input
           pInputText
           id="project-venue"
@@ -275,7 +343,7 @@
         />
       </div>
       <div class="flex flex-col gap-2">
-        <label for="project-desc" class="text-sm font-medium text-(--text-primary)">Descripción</label>
+        <label for="project-desc" class="text-xs font-bold text-ink-on-dark">Descripción</label>
         <textarea
           pTextarea
           id="project-desc"
@@ -288,21 +356,30 @@
       </div>
     </div>
     <ng-template #footer>
-      <p-button label="Cancelar" severity="secondary" text (onClick)="projectDialogVisible.set(false)" />
       <p-button
-        label="Crear"
-        icon="pi pi-check"
-        [loading]="saving()"
-        [disabled]="!newProject().name.trim()"
-        (onClick)="saveProject()"
+        label="Cancelar"
+        severity="secondary"
+        text
+        (onClick)="projectDialogVisible.set(false)"
       />
+      <span pTooltip="Escribí un nombre para crear el proyecto" showDelay="400" class="inline-flex">
+        <p-button
+          label="Crear"
+          icon="md md-check"
+          [loading]="saving()"
+          [disabled]="!newProject().name.trim()"
+          (onClick)="saveProject()"
+          styleClass="active:scale-[0.98]"
+        />
+      </span>
     </ng-template>
   </p-dialog>
 
   <!-- ─── New program dialog ────────────────────────────────── -->
   <p-dialog
     header="Nuevo programa"
-    [visible]="programDialogVisible()" (visibleChange)="programDialogVisible.set($event)"
+    [visible]="programDialogVisible()"
+    (visibleChange)="programDialogVisible.set($event)"
     [modal]="true"
     [style]="{ width: 'min(92vw, 28rem)' }"
     [draggable]="false"
@@ -310,8 +387,8 @@
   >
     <div class="flex flex-col gap-4 pt-2">
       <div class="flex flex-col gap-2">
-        <label for="program-number" class="text-sm font-medium text-(--text-primary)">
-          Número <span class="text-red-500">*</span>
+        <label for="program-number" class="text-xs font-bold text-ink-on-dark">
+          Número <span class="text-danger">*</span>
         </label>
         <p-inputNumber
           inputId="program-number"
@@ -323,7 +400,7 @@
         />
       </div>
       <div class="flex flex-col gap-2">
-        <label for="program-name" class="text-sm font-medium text-(--text-primary)">Nombre</label>
+        <label for="program-name" class="text-xs font-bold text-ink-on-dark">Nombre</label>
         <input
           pInputText
           id="program-name"
@@ -335,7 +412,7 @@
         />
       </div>
       <div class="flex flex-col gap-2">
-        <label for="program-desc" class="text-sm font-medium text-(--text-primary)">Descripción</label>
+        <label for="program-desc" class="text-xs font-bold text-ink-on-dark">Descripción</label>
         <textarea
           pTextarea
           id="program-desc"
@@ -348,15 +425,27 @@
       </div>
     </div>
     <ng-template #footer>
-      <p-button label="Cancelar" severity="secondary" text (onClick)="programDialogVisible.set(false)" />
-      <p-button label="Crear" icon="pi pi-check" [loading]="saving()" (onClick)="saveProgram()" />
+      <p-button
+        label="Cancelar"
+        severity="secondary"
+        text
+        (onClick)="programDialogVisible.set(false)"
+      />
+      <p-button
+        label="Crear"
+        icon="md md-check"
+        [loading]="saving()"
+        (onClick)="saveProgram()"
+        styleClass="active:scale-[0.98]"
+      />
     </ng-template>
   </p-dialog>
 
   <!-- ─── New piece dialog ──────────────────────────────────── -->
   <p-dialog
     header="Nueva pieza"
-    [visible]="pieceDialogVisible()" (visibleChange)="pieceDialogVisible.set($event)"
+    [visible]="pieceDialogVisible()"
+    (visibleChange)="pieceDialogVisible.set($event)"
     [modal]="true"
     [style]="{ width: 'min(92vw, 32rem)' }"
     [draggable]="false"
@@ -365,10 +454,17 @@
     <div class="flex flex-col gap-4 pt-2">
       <div class="grid gap-4 sm:grid-cols-2">
         <div class="flex flex-col gap-2">
-          <label for="piece-program" class="text-sm font-medium text-(--text-primary)">Programa</label>
+          <label for="piece-program" class="text-xs font-bold text-ink-on-dark">Programa</label>
           <p-select
             inputId="piece-program"
-            [options]="$any(programs().map((pw) => ({ label: '#' + pw.program.number + (pw.program.name ? ' ' + pw.program.name : ''), value: pw.program.id })))"
+            [options]="
+              $any(
+                programs().map((pw) => ({
+                  label: '#' + pw.program.number + (pw.program.name ? ' ' + pw.program.name : ''),
+                  value: pw.program.id,
+                }))
+              )
+            "
             [ngModel]="newPiece().program_id"
             (ngModelChange)="newPiece().program_id = $event"
             placeholder="Sin programa"
@@ -378,8 +474,8 @@
           />
         </div>
         <div class="flex flex-col gap-2">
-          <label for="piece-number" class="text-sm font-medium text-(--text-primary)">
-            Número <span class="text-red-500">*</span>
+          <label for="piece-number" class="text-xs font-bold text-ink-on-dark">
+            Número <span class="text-danger">*</span>
           </label>
           <p-inputNumber
             inputId="piece-number"
@@ -393,7 +489,7 @@
       </div>
       <div class="grid gap-4 sm:grid-cols-2">
         <div class="flex flex-col gap-2">
-          <label for="piece-name" class="text-sm font-medium text-(--text-primary)">Nombre</label>
+          <label for="piece-name" class="text-xs font-bold text-ink-on-dark">Nombre</label>
           <input
             pInputText
             id="piece-name"
@@ -404,7 +500,7 @@
           />
         </div>
         <div class="flex flex-col gap-2">
-          <label for="piece-code" class="text-sm font-medium text-(--text-primary)">Código</label>
+          <label for="piece-code" class="text-xs font-bold text-ink-on-dark">Código</label>
           <input
             pInputText
             id="piece-code"
@@ -416,7 +512,9 @@
         </div>
       </div>
       <div class="flex flex-col gap-2">
-        <label for="piece-desc" class="text-sm font-medium text-(--text-primary)">Descripción / Prompt guía</label>
+        <label for="piece-desc" class="text-xs font-bold text-ink-on-dark"
+          >Descripción / Prompt guía</label
+        >
         <textarea
           pTextarea
           id="piece-desc"
@@ -429,7 +527,7 @@
       </div>
       <div class="grid gap-4 sm:grid-cols-3">
         <div class="flex flex-col gap-2">
-          <label for="piece-type" class="text-sm font-medium text-(--text-primary)">Tipo</label>
+          <label for="piece-type" class="text-xs font-bold text-ink-on-dark">Tipo</label>
           <p-select
             inputId="piece-type"
             [options]="$any(pieceTypeOptions)"
@@ -442,7 +540,9 @@
           />
         </div>
         <div class="flex flex-col gap-2">
-          <label for="piece-duration" class="text-sm font-medium text-(--text-primary)">Duración (s)</label>
+          <label for="piece-duration" class="text-xs font-bold text-ink-on-dark"
+            >Duración (s)</label
+          >
           <p-inputNumber
             inputId="piece-duration"
             [ngModel]="newPiece().duration"
@@ -452,7 +552,7 @@
           />
         </div>
         <div class="flex flex-col gap-2">
-          <label for="piece-ratio" class="text-sm font-medium text-(--text-primary)">Aspecto</label>
+          <label for="piece-ratio" class="text-xs font-bold text-ink-on-dark">Aspecto</label>
           <p-select
             inputId="piece-ratio"
             [options]="$any(aspectRatioOptions)"
@@ -466,8 +566,19 @@
       </div>
     </div>
     <ng-template #footer>
-      <p-button label="Cancelar" severity="secondary" text (onClick)="pieceDialogVisible.set(false)" />
-      <p-button label="Crear" icon="pi pi-check" [loading]="saving()" (onClick)="savePiece()" />
+      <p-button
+        label="Cancelar"
+        severity="secondary"
+        text
+        (onClick)="pieceDialogVisible.set(false)"
+      />
+      <p-button
+        label="Crear"
+        icon="md md-check"
+        [loading]="saving()"
+        (onClick)="savePiece()"
+        styleClass="active:scale-[0.98]"
+      />
     </ng-template>
   </p-dialog>
 

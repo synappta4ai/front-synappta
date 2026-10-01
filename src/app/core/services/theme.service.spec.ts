@@ -276,17 +276,9 @@ describe('ThemeService', () => {
       expect(service.currentPalette()).toBe('violet');
     });
 
-    it('should have dark as default mode (verified through API)', () => {
+    it('should have light as default mode', () => {
       const service = getService();
-      try {
-        const req = httpMock.expectOne('/api/user/preferences/theme');
-        req.flush({
-          theme: { palette: 'violet', mode: 'dark' },
-        });
-      } catch (e) {
-        /* ignore */
-      }
-      expect(service.currentMode()).toBe('dark');
+      expect(service.currentMode()).toBe('light');
     });
   });
 });

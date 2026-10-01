@@ -12,7 +12,10 @@ const POLL_INTERVAL_MS = 2500;
 
 /** Backend statuses that mean a task is done (no more polling). */
 const TERMINAL_BACKEND_STATUSES: readonly string[] = [
-  'succeeded', 'completed', 'failed', 'cancelled',
+  'succeeded',
+  'completed',
+  'failed',
+  'cancelled',
 ];
 
 /** Finished takes newer than this surface as unread on hydration. */
@@ -79,9 +82,7 @@ export class GenerationEventsStore {
 
   /** Patches one event by id. */
   patch(id: string, patch: Partial<StudioTake>): void {
-    this._events.update((list) =>
-      list.map((e) => (e.id === id ? { ...e, ...patch } : e)),
-    );
+    this._events.update((list) => list.map((e) => (e.id === id ? { ...e, ...patch } : e)));
   }
 
   /** Removes an event from the list (e.g. discarded by the user). */
@@ -132,7 +133,9 @@ export class GenerationEventsStore {
    * Refines display fields of hydrated takes once the model catalog is
    * available (hydrated rows only know the raw model name).
    */
-  applyCatalog(models: { name: string; displayName: string; type: StudioTake['modelType'] }[]): void {
+  applyCatalog(
+    models: { name: string; displayName: string; type: StudioTake['modelType'] }[],
+  ): void {
     if (!models.length) {
       return;
     }

@@ -1,371 +1,376 @@
 <!-- Tenant selector (superadmin only) -->
-@if (isSuperadmin()) {
-  <div class="mb-6">
-    <p-message
-      severity="info"
-      text="Selecciona primero el tenant que quieres gestionar."
-      styleClass="w-full mb-4"
-    />
-    @if (loadingTenants()) {
-      <div class="flex items-center gap-3 py-4">
-        <p-progressSpinner styleClass="w-8 h-8" strokeWidth="3" />
-        <span class="text-sm text-(--text-secondary)">Cargando tenants...</span>
+<div animate.enter="anim-page">
+  @if (isSuperadmin()) {
+    <div class="mb-6">
+      <p-message
+        severity="info"
+        text="Selecciona primero el tenant que quieres gestionar."
+        styleClass="w-full mb-4"
+      />
+      @if (loadingTenants()) {
+        <div class="flex flex-col gap-2 py-4" aria-busy="true">
+          <span class="sr-only">Cargando tenants…</span>
+          <div class="skel skel-text max-w-xl" aria-hidden="true"></div>
+          <div class="skel skel-text max-w-xl" aria-hidden="true"></div>
+        </div>
+      } @else {
+        <p-select
+          [options]="$any(tenantOptions())"
+          [ngModel]="selectedTenantId()"
+          (ngModelChange)="onTenantSelect($event)"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Selecciona un tenant para gestionar sus modelos y API keys"
+          aria-label="Seleccionar tenant"
+          [filter]="true"
+          filterPlaceholder="Buscar tenant..."
+          styleClass="w-full max-w-xl"
+          appendTo="body"
+        />
+      }
+    </div>
+  }
+
+  @if (error(); as message) {
+    <div class="mb-6">
+      <p-message severity="error" [text]="message" [escape]="false" styleClass="w-full" />
+    </div>
+  }
+
+  @if (saved()) {
+    <div class="mb-6">
+      <p-message severity="success" text="Credencial guardada correctamente." styleClass="w-full" />
+    </div>
+  }
+
+  @if (savedMessage(); as msg) {
+    <div class="mb-6">
+      <p-message severity="success" [text]="msg" styleClass="w-full" />
+    </div>
+  }
+
+  @if (selectedTenantId()) {
+    @if (loadingConfig()) {
+      <div
+        class="flex flex-col gap-2 rounded-3xl border border-surface-border bg-surface p-6"
+        aria-busy="true"
+      >
+        <span class="sr-only">Cargando configuración del tenant…</span>
+        <div class="skel skel-title" aria-hidden="true"></div>
+        <div class="skel skel-text" aria-hidden="true"></div>
+        <div class="skel skel-text" aria-hidden="true"></div>
       </div>
     } @else {
-      <p-select
-        [options]="$any(tenantOptions())"
-        [ngModel]="selectedTenantId()"
-        (ngModelChange)="onTenantSelect($event)"
-        optionLabel="label"
-        optionValue="value"
-        placeholder="Selecciona un tenant para gestionar sus modelos y API keys"
-        [filter]="true"
-        filterPlaceholder="Buscar tenant..."
-        styleClass="w-full max-w-xl"
-        appendTo="body"
-      />
-    }
-  </div>
-}
-
-@if (error(); as message) {
-  <div class="mb-6">
-    <p-message severity="error" [text]="message" [escape]="false" styleClass="w-full" />
-  </div>
-}
-
-@if (saved()) {
-  <div class="mb-6">
-    <p-message severity="success" text="Credencial guardada correctamente." styleClass="w-full" />
-  </div>
-}
-
-@if (savedMessage(); as msg) {
-  <div class="mb-6">
-    <p-message severity="success" [text]="msg" styleClass="w-full" />
-  </div>
-}
-
-@if (selectedTenantId()) {
-  @if (loadingConfig()) {
-    <div
-      class="flex flex-col items-center gap-4 rounded-xl border border-[var(--surface-200)] bg-[var(--surface-0)] py-16"
-    >
-      <p-progressSpinner styleClass="w-12 h-12" strokeWidth="3" />
-      <p class="text-sm text-(--text-secondary)">Cargando configuración del tenant...</p>
-    </div>
-  } @else {
-    <div class="grid items-start gap-6 lg:grid-cols-5">
-      <!-- Left: credential form -->
-      <div class="lg:col-span-2">
-        <div class="rounded-xl border border-[var(--surface-200)] bg-[var(--surface-0)] p-6">
-          <div class="mb-4 flex items-center gap-3">
-            <div
-              class="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--primary-100)]"
-            >
-              <i class="pi pi-key text-sm text-[var(--primary-600)]"></i>
-            </div>
-            <div>
-              <h4 class="font-semibold text-(--text-primary)">API Keys del tenant</h4>
-              @if (selectedTenant(); as tenant) {
-                <p class="text-xs text-(--text-secondary)">
-                  <code
-                    class="rounded bg-[var(--surface-100)] px-1.5 py-0.5 text-[var(--primary-600)]"
-                    >{{ tenant.slug }}</code
-                  >
-                </p>
-              }
-            </div>
-          </div>
-
-          <div class="mb-4 flex flex-wrap gap-2">
-            <p-button
-              label="Exportar"
-              icon="pi pi-download"
-              size="small"
-              outlined
-              [loading]="exporting()"
-              [disabled]="credentials().length === 0"
-              pTooltip="Descarga las credenciales (incluye las claves) como archivo JSON"
-              tooltipPosition="top"
-              (onClick)="exportCredentials()"
-            />
-            <p-button
-              label="Importar"
-              icon="pi pi-upload"
-              size="small"
-              outlined
-              [loading]="importing()"
-              pTooltip="Carga un archivo JSON de credenciales exportado y sobrescribe las existentes"
-              tooltipPosition="top"
-              (onClick)="importInput.click()"
-            />
-            <input
-              #importInput
-              type="file"
-              accept="application/json,.json"
-              class="hidden"
-              (change)="onImportFileSelected($event)"
-            />
-          </div>
-
-          <form
-            [formGroup]="credForm"
-            (ngSubmit)="saveCredential()"
-            class="flex flex-col gap-4"
-          >
-            <div class="flex flex-col gap-2">
-              <label for="cred-provider" class="text-sm font-medium text-(--text-primary)">
-                Proveedor <span class="text-red-500">*</span>
-              </label>
-              <p-select
-                inputId="cred-provider"
-                formControlName="provider"
-                [options]="providerOptions"
-                optionLabel="label"
-                optionValue="value"
-                placeholder="Selecciona un proveedor"
-                class="w-full"
-                appendTo="body"
-              >
-                <ng-template let-option #item>
-                  <div class="flex items-center gap-2">
-                    <i class="{{ option.icon }} text-[var(--primary-500)]"></i>
-                    <span>{{ option.label }}</span>
-                    @if (credentialForProvider(option.value); as cred) {
-                      <p-tag value="Configurado" severity="success" styleClass="ml-auto" />
-                    }
-                  </div>
-                </ng-template>
-              </p-select>
-            </div>
-
-            @if (credForm.controls.provider.value === 'byteplus') {
-              <div class="flex flex-col gap-2">
-                <label for="cred-apikey" class="text-sm font-medium text-(--text-primary)">
-                  API Key <span class="text-red-500">*</span>
-                </label>
-                <p-password
-                  inputId="cred-apikey"
-                  formControlName="api_key"
-                  [feedback]="false"
-                  [toggleMask]="true"
-                  placeholder="API key de ModelArk — NO es la AK/SK ni una key 'sk-...'"
-                  styleClass="w-full"
-                  inputStyleClass="w-full"
-                />
-                <small class="text-[var(--text-muted)]">
-                  Consíguela en BytePlus Console → ModelArk → API Key Management. Se envía como
-                  Bearer token.
-                </small>
+      <div class="grid items-start gap-6 lg:grid-cols-5">
+        <!-- Left: credential form -->
+        <div class="lg:col-span-2">
+          <div class="rounded-2xl border border-surface-border bg-surface p-6">
+            <div class="mb-4 flex items-center gap-3">
+              <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
+                <i class="md md-key text-sm text-accent"></i>
               </div>
-              <div class="flex flex-col gap-2">
-                <label for="cred-ak" class="text-sm font-medium text-(--text-primary)"
-                  >Access Key ID</label
-                >
-                <input
-                  pInputText
-                  id="cred-ak"
-                  formControlName="access_key_id"
-                  placeholder="AK... (opcional)"
-                  class="w-full"
-                />
-                <small class="text-[var(--text-muted)]"
-                  >Solo para sincronización de assets (gallery sync)</small
-                >
-              </div>
-              <div class="flex flex-col gap-2">
-                <label for="cred-sk" class="text-sm font-medium text-(--text-primary)"
-                  >Secret Access Key</label
-                >
-                <p-password
-                  inputId="cred-sk"
-                  formControlName="secret_access_key"
-                  [feedback]="false"
-                  [toggleMask]="true"
-                  placeholder="SK... (opcional)"
-                  styleClass="w-full"
-                  inputStyleClass="w-full"
-                />
-              </div>
-            } @else if (credForm.controls.provider.value === 'higgsfield') {
-              <div class="flex flex-col gap-2">
-                <label for="cred-hf-keyid" class="text-sm font-medium text-(--text-primary)">
-                  Key ID <span class="text-red-500">*</span>
-                </label>
-                <input
-                  pInputText
-                  id="cred-hf-keyid"
-                  formControlName="access_key_id"
-                  placeholder="Higgsfield API Key ID"
-                  class="w-full"
-                />
-              </div>
-              <div class="flex flex-col gap-2">
-                <label for="cred-hf-secret" class="text-sm font-medium text-(--text-primary)">
-                  Key Secret <span class="text-red-500">*</span>
-                </label>
-                <p-password
-                  inputId="cred-hf-secret"
-                  formControlName="secret_access_key"
-                  [feedback]="false"
-                  [toggleMask]="true"
-                  placeholder="Higgsfield API Key Secret"
-                  styleClass="w-full"
-                  inputStyleClass="w-full"
-                />
-                <small class="text-[var(--text-muted)]">
-                  Consigue ambos en Higgsfield Console (open.higgsfield.ai) → API Keys. Se envían
-                  como "Authorization: Key &lt;id&gt;:&lt;secret&gt;".
-                </small>
-              </div>
-            } @else {
-              <div class="flex flex-col gap-2">
-                <label for="cred-apikey" class="text-sm font-medium text-(--text-primary)">
-                  API Key <span class="text-red-500">*</span>
-                </label>
-                <p-password
-                  inputId="cred-apikey"
-                  formControlName="api_key"
-                  [feedback]="false"
-                  [toggleMask]="true"
-                  [placeholder]="
-                    credForm.controls.provider.value === 'gemini'
-                      ? 'AIza... (Google AI Studio)'
-                      : 'sk-ant-... (Anthropic Console)'
-                  "
-                  styleClass="w-full"
-                  inputStyleClass="w-full"
-                />
-              </div>
-            }
-
-            <p-button
-              type="submit"
-              label="Guardar credencial"
-              icon="pi pi-save"
-              [loading]="savingCredential()"
-              [disabled]="savingCredential()"
-              styleClass="w-full"
-            />
-          </form>
-
-          @if (credentials().length > 0) {
-            <div class="mt-5 border-t border-[var(--surface-200)] pt-4">
-              <h5 class="mb-3 text-sm font-semibold text-(--text-primary)">
-                Credenciales actuales
-              </h5>
-              <div class="flex flex-col gap-2">
-                @for (cred of credentials(); track cred.id) {
-                  <div
-                    class="flex items-center justify-between gap-2 rounded-lg border border-[var(--surface-200)] bg-[var(--surface-50)] px-3 py-2"
-                  >
-                    <div class="flex min-w-0 items-center gap-2">
-                      <i class="pi pi-lock text-xs text-green-600"></i>
-                      <span class="truncate text-sm text-(--text-primary)">
-                        {{ providerLabel(cred.provider) }}
-                      </span>
-                      <code class="truncate text-xs text-[var(--text-muted)]">
-                        {{ cred.api_key_mask || cred.access_key_id || '—' }}
-                      </code>
-                    </div>
-                    <p-button
-                      icon="pi pi-trash"
-                      severity="danger"
-                      size="small"
-                      text
-                      pTooltip="Eliminar"
-                      tooltipPosition="left"
-                      (onClick)="confirmDeleteCredential(cred)"
-                    />
-                  </div>
+              <div>
+                <h4 class="font-bold text-ink-on-dark">API Keys del tenant</h4>
+                @if (selectedTenant(); as tenant) {
+                  <p class="text-xs text-ink-muted-on-dark">
+                    <code class="rounded bg-surface-2 px-1.5 py-0.5 text-ink-on-dark">{{
+                      tenant.slug
+                    }}</code>
+                  </p>
                 }
               </div>
             </div>
-          }
+
+            <div class="mb-4 flex flex-wrap gap-2">
+              <span
+                pTooltip="No hay credenciales para exportar"
+                showDelay="400"
+                class="inline-flex"
+              >
+                <p-button
+                  label="Exportar"
+                  icon="md md-download"
+                  size="small"
+                  outlined
+                  [loading]="exporting()"
+                  [disabled]="credentials().length === 0"
+                  pTooltip="Descarga las credenciales (incluye las claves) como archivo JSON"
+                  showDelay="400"
+                  tooltipPosition="top"
+                  (onClick)="exportCredentials()"
+                />
+              </span>
+              <p-button
+                label="Importar"
+                icon="md md-upload"
+                size="small"
+                outlined
+                [loading]="importing()"
+                pTooltip="Carga un archivo JSON de credenciales exportado y sobrescribe las existentes"
+                showDelay="400"
+                tooltipPosition="top"
+                (onClick)="importInput.click()"
+              />
+              <input
+                #importInput
+                type="file"
+                accept="application/json,.json"
+                class="hidden"
+                (change)="onImportFileSelected($event)"
+              />
+            </div>
+
+            <form [formGroup]="credForm" (ngSubmit)="saveCredential()" class="flex flex-col gap-4">
+              <div class="flex flex-col gap-2">
+                <label for="cred-provider" class="text-xs font-bold text-ink-on-dark">
+                  Proveedor <span class="text-danger">*</span>
+                </label>
+                <p-select
+                  inputId="cred-provider"
+                  formControlName="provider"
+                  [options]="providerOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                  placeholder="Selecciona un proveedor"
+                  class="w-full"
+                  appendTo="body"
+                >
+                  <ng-template let-option #item>
+                    <div class="flex items-center gap-2">
+                      <i class="{{ option.icon }} text-ink-muted-on-dark"></i>
+                      <span>{{ option.label }}</span>
+                      @if (credentialForProvider(option.value); as cred) {
+                        <p-tag value="Configurado" severity="success" styleClass="ml-auto" />
+                      }
+                    </div>
+                  </ng-template>
+                </p-select>
+              </div>
+
+              @if (credForm.controls.provider.value === 'byteplus') {
+                <div class="flex flex-col gap-2">
+                  <label for="cred-apikey" class="text-xs font-bold text-ink-on-dark">
+                    API Key <span class="text-danger">*</span>
+                  </label>
+                  <p-password
+                    inputId="cred-apikey"
+                    formControlName="api_key"
+                    [feedback]="false"
+                    [toggleMask]="true"
+                    placeholder="API key de ModelArk — NO es la AK/SK ni una key 'sk-...'"
+                    styleClass="w-full"
+                    inputStyleClass="w-full"
+                  />
+                  <small class="text-ink-muted-on-dark">
+                    Consíguela en BytePlus Console → ModelArk → API Key Management. Se envía como
+                    Bearer token.
+                  </small>
+                </div>
+                <div class="flex flex-col gap-2">
+                  <label for="cred-ak" class="text-xs font-bold text-ink-on-dark"
+                    >Access Key ID</label
+                  >
+                  <input
+                    pInputText
+                    id="cred-ak"
+                    formControlName="access_key_id"
+                    placeholder="AK... (opcional)"
+                    class="w-full"
+                  />
+                  <small class="text-ink-muted-on-dark"
+                    >Solo para sincronización de assets (gallery sync)</small
+                  >
+                </div>
+                <div class="flex flex-col gap-2">
+                  <label for="cred-sk" class="text-xs font-bold text-ink-on-dark"
+                    >Secret Access Key</label
+                  >
+                  <p-password
+                    inputId="cred-sk"
+                    formControlName="secret_access_key"
+                    [feedback]="false"
+                    [toggleMask]="true"
+                    placeholder="SK... (opcional)"
+                    styleClass="w-full"
+                    inputStyleClass="w-full"
+                  />
+                </div>
+              } @else if (credForm.controls.provider.value === 'higgsfield') {
+                <div class="flex flex-col gap-2">
+                  <label for="cred-hf-keyid" class="text-xs font-bold text-ink-on-dark">
+                    Key ID <span class="text-danger">*</span>
+                  </label>
+                  <input
+                    pInputText
+                    id="cred-hf-keyid"
+                    formControlName="access_key_id"
+                    placeholder="Higgsfield API Key ID"
+                    class="w-full"
+                  />
+                </div>
+                <div class="flex flex-col gap-2">
+                  <label for="cred-hf-secret" class="text-xs font-bold text-ink-on-dark">
+                    Key Secret <span class="text-danger">*</span>
+                  </label>
+                  <p-password
+                    inputId="cred-hf-secret"
+                    formControlName="secret_access_key"
+                    [feedback]="false"
+                    [toggleMask]="true"
+                    placeholder="Higgsfield API Key Secret"
+                    styleClass="w-full"
+                    inputStyleClass="w-full"
+                  />
+                  <small class="text-ink-muted-on-dark">
+                    Consigue ambos en Higgsfield Console (open.higgsfield.ai) → API Keys. Se envían
+                    como "Authorization: Key &lt;id&gt;:&lt;secret&gt;".
+                  </small>
+                </div>
+              } @else {
+                <div class="flex flex-col gap-2">
+                  <label for="cred-apikey" class="text-xs font-bold text-ink-on-dark">
+                    API Key <span class="text-danger">*</span>
+                  </label>
+                  <p-password
+                    inputId="cred-apikey"
+                    formControlName="api_key"
+                    [feedback]="false"
+                    [toggleMask]="true"
+                    [placeholder]="
+                      credForm.controls.provider.value === 'gemini'
+                        ? 'AIza... (Google AI Studio)'
+                        : 'sk-ant-... (Anthropic Console)'
+                    "
+                    styleClass="w-full"
+                    inputStyleClass="w-full"
+                  />
+                </div>
+              }
+
+              <p-button
+                type="submit"
+                label="Guardar credencial"
+                icon="md md-save"
+                [loading]="savingCredential()"
+                [disabled]="savingCredential()"
+                styleClass="w-full active:scale-[0.98]"
+              />
+            </form>
+
+            @if (credentials().length > 0) {
+              <div class="mt-5 border-t border-surface-border pt-4">
+                <h5 class="mb-3 text-sm font-bold text-ink-on-dark">Credenciales actuales</h5>
+                <div class="flex flex-col gap-2">
+                  @for (cred of credentials(); track cred.id; let i = $index) {
+                    <div
+                      animate.enter="anim-item"
+                      [style.animation-delay.ms]="i < 8 ? i * 35 : 280"
+                      class="flex items-center justify-between gap-2 rounded-xl border border-surface-border bg-surface-2 px-3 py-2"
+                    >
+                      <div class="flex min-w-0 items-center gap-2">
+                        <i class="md md-lock text-xs text-success"></i>
+                        <span class="truncate text-sm text-ink-on-dark">
+                          {{ providerLabel(cred.provider) }}
+                        </span>
+                        <code class="truncate text-xs text-ink-muted-on-dark">
+                          {{ cred.api_key_mask || cred.access_key_id || '—' }}
+                        </code>
+                      </div>
+                      <p-button
+                        icon="md md-delete"
+                        severity="danger"
+                        size="small"
+                        text
+                        pTooltip="Eliminar"
+                        showDelay="400"
+                        tooltipPosition="left"
+                        (onClick)="confirmDeleteCredential(cred)"
+                      />
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Right: models table -->
+        <div class="lg:col-span-3">
+          <div class="overflow-hidden rounded-3xl border border-surface-border bg-surface">
+            <div class="flex items-center gap-3 border-b border-surface-border px-5 py-4">
+              <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
+                <i class="md md-memory text-sm text-accent"></i>
+              </div>
+              <div>
+                <h4 class="font-bold text-ink-on-dark">Modelos disponibles</h4>
+                <p class="text-xs text-ink-muted-on-dark">
+                  {{ models().length }} modelos · el estado depende de las credenciales del tenant
+                </p>
+              </div>
+            </div>
+
+            <p-table
+              [value]="$any(models())"
+              [tableStyle]="{ 'min-width': '30rem' }"
+              [rowHover]="true"
+              [scrollable]="true"
+              scrollHeight="calc(75vh - 16rem)"
+              styleClass="p-datatable-sm"
+            >
+              <ng-template #header>
+                <tr>
+                  <th>Modelo</th>
+                  <th style="width: 12%" class="text-center">Tipo</th>
+                  <th style="width: 18%">Proveedor</th>
+                  <th style="width: 16%" class="text-center">Estado</th>
+                </tr>
+              </ng-template>
+              <ng-template #body let-m let-i="rowIndex">
+                <tr animate.enter="anim-item" [style.animation-delay.ms]="i < 8 ? i * 35 : 280">
+                  <td>
+                    <p class="font-bold text-ink-on-dark">
+                      {{ m.display_name || m.name }}
+                    </p>
+                    <p class="text-xs text-ink-muted-on-dark">{{ m.name }}</p>
+                  </td>
+                  <td class="text-center">
+                    <p-tag [value]="m.modality" [severity]="modalitySeverity(m.modality)" />
+                  </td>
+                  <td>
+                    <span class="text-sm text-ink-muted-on-dark">
+                      {{ providerLabel(m.credential_provider) }}
+                    </span>
+                  </td>
+                  <td class="text-center">
+                    @if (isModelConfigured(m)) {
+                      <p-tag value="Listo" severity="success" icon="md md-check" />
+                    } @else {
+                      <p-tag value="Sin API key" severity="warn" icon="md md-error" />
+                    }
+                  </td>
+                </tr>
+              </ng-template>
+            </p-table>
+          </div>
         </div>
       </div>
-
-      <!-- Right: models table -->
-      <div class="lg:col-span-3">
-        <div
-          class="overflow-hidden rounded-xl border border-[var(--surface-200)] bg-[var(--surface-0)]"
-        >
-          <div class="flex items-center gap-3 border-b border-[var(--surface-200)] px-5 py-4">
-            <div
-              class="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--primary-100)]"
-            >
-              <i class="pi pi-microchip text-sm text-[var(--primary-600)]"></i>
-            </div>
-            <div>
-              <h4 class="font-semibold text-(--text-primary)">Modelos disponibles</h4>
-              <p class="text-xs text-(--text-secondary)">
-                {{ models().length }} modelos · el estado depende de las credenciales del tenant
-              </p>
-            </div>
-          </div>
-
-          <p-table
-            [value]="$any(models())"
-            [tableStyle]="{ 'min-width': '30rem' }"
-            [rowHover]="true"
-            [scrollable]="true"
-            scrollHeight="calc(75vh - 16rem)"
-            styleClass="p-datatable-sm"
-          >
-            <ng-template #header>
-              <tr>
-                <th>Modelo</th>
-                <th style="width: 12%" class="text-center">Tipo</th>
-                <th style="width: 18%">Proveedor</th>
-                <th style="width: 16%" class="text-center">Estado</th>
-              </tr>
-            </ng-template>
-            <ng-template #body let-m>
-              <tr>
-                <td>
-                  <p class="font-medium text-(--text-primary)">
-                    {{ m.display_name || m.name }}
-                  </p>
-                  <p class="text-xs text-[var(--text-muted)]">{{ m.name }}</p>
-                </td>
-                <td class="text-center">
-                  <p-tag [value]="m.modality" [severity]="modalitySeverity(m.modality)" />
-                </td>
-                <td>
-                  <span class="text-sm text-(--text-secondary)">
-                    {{ providerLabel(m.credential_provider) }}
-                  </span>
-                </td>
-                <td class="text-center">
-                  @if (isModelConfigured(m)) {
-                    <p-tag value="Listo" severity="success" icon="pi pi-check" />
-                  } @else {
-                    <p-tag value="Sin API key" severity="warn" icon="pi pi-exclamation-circle" />
-                  }
-                </td>
-              </tr>
-            </ng-template>
-          </p-table>
-        </div>
+    }
+  } @else if (isSuperadmin()) {
+    <!-- Superadmin sin tenant seleccionado: empty state -->
+    <div
+      class="flex flex-col items-center gap-4 rounded-3xl border border-surface-border bg-surface py-20"
+    >
+      <div class="flex h-16 w-16 items-center justify-center rounded-full bg-surface-2">
+        <i class="md md-business text-3xl text-ink-muted-on-dark"></i>
+      </div>
+      <div class="text-center">
+        <p class="font-bold text-ink-on-dark">Selecciona un tenant</p>
+        <p class="mt-1 text-sm text-ink-muted-on-dark">
+          Para gestionar modelos y API keys elige primero el tenant a administrar
+        </p>
       </div>
     </div>
   }
-} @else if (isSuperadmin()) {
-  <!-- Superadmin sin tenant seleccionado: empty state -->
-  <div
-    class="flex flex-col items-center gap-4 rounded-xl border border-[var(--surface-200)] bg-[var(--surface-0)] py-20"
-  >
-    <div class="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--surface-100)]">
-      <i class="pi pi-building text-3xl text-[var(--surface-400)]"></i>
-    </div>
-    <div class="text-center">
-      <p class="font-medium text-(--text-primary)">Selecciona un tenant</p>
-      <p class="mt-1 text-sm text-(--text-secondary)">
-        Para gestionar modelos y API keys elige primero el tenant a administrar
-      </p>
-    </div>
-  </div>
-}
 
-<p-confirmDialog styleClass="custom-confirm-dialog" />
+  <p-confirmDialog styleClass="custom-confirm-dialog" />
+</div>

@@ -204,8 +204,20 @@ export class AdminLogsComponent {
   protected phases(r: CommRow): PhaseTab[] {
     const pollBadge = `POLLING ×${r.poll?.poll_count ?? 0}`;
     return [
-      { value: 'generation', label: 'Generación', icon: 'pi pi-upload', badge: 'ENVÍO', comm: r.generate },
-      { value: 'polling', label: 'Último polling', icon: 'pi pi-refresh', badge: pollBadge, comm: r.poll },
+      {
+        value: 'generation',
+        label: 'Generación',
+        icon: 'md md-upload',
+        badge: 'ENVÍO',
+        comm: r.generate,
+      },
+      {
+        value: 'polling',
+        label: 'Último polling',
+        icon: 'md md-refresh',
+        badge: pollBadge,
+        comm: r.poll,
+      },
     ];
   }
 
@@ -258,8 +270,8 @@ export class AdminLogsComponent {
       () => {
         const icon = button.querySelector('i');
         if (icon) {
-          icon.className = 'pi pi-check text-green-500';
-          setTimeout(() => (icon.className = 'pi pi-copy'), 1500);
+          icon.className = 'md md-check text-success';
+          setTimeout(() => (icon.className = 'md md-content_copy'), 1500);
         }
       },
       () => {},

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" role="img" aria-label="Showreel placeholder">
+  <rect width="1280" height="720" fill="#101010"/>
+  <rect x="24" y="24" width="1232" height="672" fill="none" stroke="#2A2A2A" stroke-width="2"/>
+  <line x1="24" y1="96" x2="1256" y2="96" stroke="#2A2A2A" stroke-width="2"/>
+  <text x="48" y="66" font-family="Arial, sans-serif" font-size="22" letter-spacing="6" fill="#8A8A8A">SYNAPPTA — SHOWREEL</text>
+  <text x="1232" y="66" font-family="Arial, sans-serif" font-size="22" text-anchor="end" fill="#8A8A8A">16:9</text>
+  <text x="640" y="400" font-family="Arial, sans-serif" font-weight="900" font-size="200" text-anchor="middle" fill="#1E1E1E">01</text>
+  <text x="640" y="640" font-family="Arial, sans-serif" font-size="22" letter-spacing="4" text-anchor="middle" fill="#8A8A8A">REEMPLAZAR CON VIDEO FINAL · 1920×1080</text>
+</svg>

@@ -1,4 +1,4 @@
-<div class="events-page">
+<div class="events-page" animate.enter="anim-page">
   <header class="events-header">
     <h1>Eventos de generación</h1>
     <div class="header-underline"></div>
@@ -6,10 +6,10 @@
   <div class="events-layout">
     <!-- Lista de eventos -->
     <div class="events-list-col">
-      <div class="filter-row">
+      <div class="filter-row seg-slide" appSlidePill=".filter-chip">
         <button
           type="button"
-          class="filter-chip"
+          class="filter-chip seg-btn"
           [class.active]="filter() === 'all'"
           (click)="setFilter('all')"
         >
@@ -17,7 +17,7 @@
         </button>
         <button
           type="button"
-          class="filter-chip"
+          class="filter-chip seg-btn"
           [class.active]="filter() === 'active'"
           (click)="setFilter('active')"
         >
@@ -25,23 +25,24 @@
         </button>
         <button
           type="button"
-          class="filter-chip"
+          class="filter-chip seg-btn"
           [class.active]="filter() === 'done'"
           (click)="setFilter('done')"
         >
           Listos
         </button>
-        <a routerLink="/studio" class="new-btn">
-          <i class="pi pi-plus"></i> Nuevo
-        </a>
+        <a routerLink="/studio" class="new-btn"> <i class="md md-add"></i> Nuevo </a>
       </div>
 
       @if (filtered().length === 0) {
         <div class="empty-state">
-          <i class="pi pi-inboxes text-3xl"></i>
-          <p>No hay eventos {{ filter() === 'done' ? 'listos' : filter() === 'active' ? 'en curso' : 'todavía' }}.</p>
-          <a routerLink="/studio" class="new-btn">
-            <i class="pi pi-sparkles"></i> Ir al Studio
+          <i class="md md-all_inbox text-3xl"></i>
+          <p>
+            No hay eventos
+            {{ filter() === 'done' ? 'listos' : filter() === 'active' ? 'en curso' : 'todavía' }}.
+          </p>
+          <a routerLink="/studio" class="new-btn ghost">
+            <i class="md md-arrow_forward"></i> Ir al Studio
           </a>
         </div>
       }
@@ -55,16 +56,29 @@
             (click)="select(take)"
           >
             @if (take.status === 'succeeded' && take.videoUrl) {
-              <video class="card-thumb" [src]="take.videoUrl | serverUrl" preload="metadata" muted></video>
+              <video
+                class="card-thumb"
+                [src]="take.videoUrl | serverUrl"
+                preload="metadata"
+                muted
+              ></video>
             } @else {
               <div class="card-thumb placeholder">
-                <i class="pi" [class.pi-spin.pi-spinner]="take.status === 'running'"></i>
+                <i
+                  class="md"
+                  [class.md-spin]="take.status === 'running'"
+                  [class.md-autorenew]="take.status === 'running'"
+                ></i>
               </div>
             }
             <div class="card-body">
               <div class="card-top">
                 <span class="card-model">{{ take.modelDisplayName }}</span>
-                <p-tag [value]="label(take.status)" [severity]="severity(take.status)" styleClass="text-[10px]" />
+                <p-tag
+                  [value]="label(take.status)"
+                  [severity]="severity(take.status)"
+                  styleClass="text-xs"
+                />
               </div>
               <p class="card-prompt">{{ take.prompt }}</p>
               @if (take.status === 'running' || take.status === 'queued') {
@@ -74,7 +88,7 @@
                 <div class="card-foot">
                   <span class="pct">{{ take.progress }}%</span>
                   <p-button
-                    icon="pi pi-times"
+                    icon="md md-close"
                     [rounded]="true"
                     [text]="true"
                     severity="secondary"
@@ -84,10 +98,15 @@
                 </div>
               } @else {
                 <div class="card-foot">
-                  <span class="meta">{{ take.ratio }} @if (take.duration) {· {{ take.duration }}s}</span>
+                  <span class="meta"
+                    >{{ take.ratio }}
+                    @if (take.duration) {
+                      · {{ take.duration }}s
+                    }
+                  </span>
                   <span class="meta">{{ time(take.createdAt) }}</span>
                   <p-button
-                    icon="pi pi-trash"
+                    icon="md md-delete"
                     [rounded]="true"
                     [text]="true"
                     severity="secondary"
@@ -110,17 +129,22 @@
           </video>
           <div class="viewer-meta">
             <span class="viewer-model">{{ take.modelDisplayName }}</span>
-            <span class="meta">{{ take.ratio }} @if (take.duration) {· {{ take.duration }}s}</span>
+            <span class="meta"
+              >{{ take.ratio }}
+              @if (take.duration) {
+                · {{ take.duration }}s
+              }
+            </span>
           </div>
           <p class="viewer-prompt">{{ take.prompt }}</p>
         } @else if (take.status === 'failed') {
           <div class="viewer-empty error">
-            <i class="pi pi-times-circle text-3xl"></i>
+            <i class="md md-cancel text-3xl"></i>
             <p>{{ take.error ?? 'La generación falló' }}</p>
           </div>
         } @else {
           <div class="viewer-empty">
-            <i class="pi pi-spin pi-spinner text-3xl"></i>
+            <i class="md md-autorenew md-spin text-3xl"></i>
             <p>{{ take.status === 'queued' ? 'En cola…' : 'Generando…' }}</p>
             <div class="progress-track">
               <div class="progress-fill" [style.width.%]="take.progress"></div>
@@ -130,7 +154,7 @@
         }
       } @else {
         <div class="viewer-empty">
-          <i class="pi pi-video text-3xl"></i>
+          <i class="md md-videocam text-3xl"></i>
           <p>Elegí un evento para verlo</p>
         </div>
       }

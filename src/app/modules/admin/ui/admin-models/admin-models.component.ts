@@ -1,6 +1,11 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { FormsModule, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  FormsModule,
+  NonNullableFormBuilder,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { catchError, EMPTY, finalize, forkJoin, switchMap, tap } from 'rxjs';
 import { HttpResponse } from '@angular/common/http';
 
@@ -84,10 +89,10 @@ export class AdminModelsComponent {
   protected readonly savedMessage = signal<string | null>(null);
 
   protected readonly providerOptions: ProviderOption[] = [
-    { label: 'BytePlus', value: 'byteplus', icon: 'pi pi-video' },
-    { label: 'Gemini', value: 'gemini', icon: 'pi pi-image' },
-    { label: 'Anthropic', value: 'anthropic', icon: 'pi pi-file' },
-    { label: 'Higgsfield', value: 'higgsfield', icon: 'pi pi-sparkles' },
+    { label: 'BytePlus', value: 'byteplus', icon: 'md md-videocam' },
+    { label: 'Gemini', value: 'gemini', icon: 'md md-image' },
+    { label: 'Anthropic', value: 'anthropic', icon: 'md md-description' },
+    { label: 'Higgsfield', value: 'higgsfield', icon: 'md md-inventory_2' },
   ];
 
   protected readonly tenantOptions = computed<TenantOption[]>(() =>
@@ -180,8 +185,7 @@ export class AdminModelsComponent {
 
   protected isModelConfigured(model: TenantModel): boolean {
     return (
-      this.credentialForProvider(model.credential_provider) !== null ||
-      model.credential_configured
+      this.credentialForProvider(model.credential_provider) !== null || model.credential_configured
     );
   }
 
@@ -255,7 +259,7 @@ export class AdminModelsComponent {
     this.confirmationService.confirm({
       message: `¿Eliminar la credencial de "${cred.provider}"? Los modelos que la usen dejarán de funcionar.`,
       header: 'Confirmar eliminación',
-      icon: 'pi pi-exclamation-triangle',
+      icon: 'md md-warning',
       acceptLabel: 'Eliminar',
       rejectLabel: 'Cancelar',
       acceptButtonStyleClass: 'p-button-danger',

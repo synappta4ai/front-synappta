@@ -24,7 +24,10 @@ describe('GenerationEventsStore hydration', () => {
     piece_id: '',
     piece_code: '',
     generation_number: 1,
-    request: JSON.stringify({ model: 'Wan2.1-T2V-1.3B', content: [{ type: 'text', text: 'gatos corriendo' }] }),
+    request: JSON.stringify({
+      model: 'Wan2.1-T2V-1.3B',
+      content: [{ type: 'text', text: 'gatos corriendo' }],
+    }),
     outputs: [{ url: 'https://cdn/video.mp4', type: 'video' }],
     status: 'running',
     error_message: '',
@@ -92,16 +95,11 @@ describe('GenerationEventsStore hydration', () => {
   it('skips logs without task id and does not duplicate known ids', () => {
     store.hydrate();
 
-    httpMock
-      .expectOne(`${base}/agency/tasks/recent?limit=20`)
-      .flush({
-        success: true,
-        message: 'ok',
-        data: [
-          log({ task_id: '' }),
-          log({ task_id: 'syn_123' }),
-        ],
-      });
+    httpMock.expectOne(`${base}/agency/tasks/recent?limit=20`).flush({
+      success: true,
+      message: 'ok',
+      data: [log({ task_id: '' }), log({ task_id: 'syn_123' })],
+    });
     expect(store.events().length).toBe(1);
 
     store.hydrate();
@@ -124,13 +122,11 @@ describe('GenerationEventsStore hydration', () => {
   it('flags recent finished takes as unread on hydration and clears on markAllRead', () => {
     store.hydrate();
 
-    httpMock
-      .expectOne(`${base}/agency/tasks/recent?limit=20`)
-      .flush({
-        success: true,
-        message: 'ok',
-        data: [log({ status: 'succeeded', progress: 100 })],
-      });
+    httpMock.expectOne(`${base}/agency/tasks/recent?limit=20`).flush({
+      success: true,
+      message: 'ok',
+      data: [log({ status: 'succeeded', progress: 100 })],
+    });
 
     expect(store.unreadCount()).toBe(1);
     expect(store.isUnread('syn_123')).toBe(true);
@@ -143,17 +139,17 @@ describe('GenerationEventsStore hydration', () => {
   it('does not flag old finished takes as unread', () => {
     store.hydrate();
 
-    httpMock
-      .expectOne(`${base}/agency/tasks/recent?limit=20`)
-      .flush({
-        success: true,
-        message: 'ok',
-        data: [log({
+    httpMock.expectOne(`${base}/agency/tasks/recent?limit=20`).flush({
+      success: true,
+      message: 'ok',
+      data: [
+        log({
           status: 'failed',
           error_message: 'boom',
           created_at: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
-        })],
-      });
+        }),
+      ],
+    });
 
     expect(store.unreadCount()).toBe(0);
   });
@@ -168,13 +164,11 @@ describe('GenerationEventsStore hydration', () => {
 
     // timer(0) fires the first poll tick on the next macrotask.
     await new Promise((r) => setTimeout(r, 0));
-    httpMock
-      .expectOne(`${base}/agency/video/status/syn_123`)
-      .flush({
-        success: true,
-        message: 'ok',
-        data: { status: 'succeeded', progress_percent: 100, outputs: [{ url: 'https://x/v.mp4' }] },
-      });
+    httpMock.expectOne(`${base}/agency/video/status/syn_123`).flush({
+      success: true,
+      message: 'ok',
+      data: { status: 'succeeded', progress_percent: 100, outputs: [{ url: 'https://x/v.mp4' }] },
+    });
 
     expect(store.events()[0].status).toBe('succeeded');
     expect(store.unreadCount()).toBe(1);
@@ -187,7 +181,13 @@ describe('GenerationEventsStore hydration', () => {
       .expectOne(`${base}/agency/tasks/recent?limit=20`)
       .flush({ success: true, message: 'ok', data: [log({})] });
 
-    store.applyCatalog([{ name: 'Wan2.1-T2V-1.3B', displayName: 'Wan 2.1 T2V 1.3B (video ligero)', type: 'downloaded' }]);
+    store.applyCatalog([
+      {
+        name: 'Wan2.1-T2V-1.3B',
+        displayName: 'Wan 2.1 T2V 1.3B (video ligero)',
+        type: 'downloaded',
+      },
+    ]);
 
     expect(store.events()[0].modelDisplayName).toBe('Wan 2.1 T2V 1.3B (video ligero)');
     expect(store.events()[0].modelType).toBe('downloaded');

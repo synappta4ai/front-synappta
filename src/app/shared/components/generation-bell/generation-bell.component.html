@@ -1,12 +1,14 @@
 <p-button
   #bell
-  icon="pi pi-bell"
+  icon="md md-notifications"
   [rounded]="true"
   [text]="true"
   severity="contrast"
   styleClass="relative"
   (onClick)="toggle($event)"
   ariaLabel="Eventos de generación"
+  pTooltip="Eventos de generación"
+  showDelay="400"
 />
 @if (unreadCount() > 0) {
   <span class="bell-count">{{ unreadCount() > 9 ? '9+' : unreadCount() }}</span>
@@ -16,7 +18,7 @@
 
 <p-popover #popoverRef styleClass="gen-bell-popover">
   <div class="pop-head">
-    <span><i class="pi pi-bolt"></i> Generaciones</span>
+    <span><i class="md md-bolt"></i> Generaciones</span>
     @if (hasActive()) {
       <span class="pop-live"><span class="dot"></span> {{ store.activeCount() }} en curso</span>
     }
@@ -30,17 +32,32 @@
     @for (take of visible(); track take.id) {
       <a routerLink="/events" class="pop-item" [class.pop-unread]="store.isUnread(take.id)">
         @if (take.status === 'succeeded' && take.videoUrl) {
-          <video class="pop-thumb" [src]="take.videoUrl | serverUrl" preload="metadata" muted></video>
+          <video
+            class="pop-thumb"
+            [src]="take.videoUrl | serverUrl"
+            preload="metadata"
+            muted
+          ></video>
         } @else {
           <span class="pop-thumb icon" [class.spin]="take.status === 'running'">
-            <i class="pi" [class.pi-spin.pi-spinner]="take.status === 'running'"
-               [class.pi-image]="take.status !== 'running' && take.status !== 'failed' && take.status !== 'cancelled'"></i>
+            <i
+              class="md"
+              [class.md-spin]="take.status === 'running'"
+              [class.md-autorenew]="take.status === 'running'"
+              [class.md-image]="
+                take.status !== 'running' && take.status !== 'failed' && take.status !== 'cancelled'
+              "
+            ></i>
           </span>
         }
         <span class="pop-info">
           <span class="pop-title-row">
             <span class="pop-model">{{ take.modelDisplayName }}</span>
-            <p-tag [value]="take.progress + '%'" [severity]="severity(take.status)" styleClass="text-[10px]" />
+            <p-tag
+              [value]="take.progress + '%'"
+              [severity]="severity(take.status)"
+              styleClass="text-xs"
+            />
           </span>
           <span class="pop-prompt">{{ shortPrompt(take.prompt) }}</span>
           @if (take.status === 'running' || take.status === 'queued') {
@@ -57,6 +74,6 @@
   </div>
 
   <a routerLink="/events" class="pop-footer">
-    Ver todos los eventos <i class="pi pi-arrow-right"></i>
+    Ver todos los eventos <i class="md md-arrow_forward"></i>
   </a>
 </p-popover>
