@@ -97,6 +97,7 @@
                       [alt]="slot.label"
                       loading="lazy"
                       decoding="async"
+                      (error)="onThumbError($event)"
                     />
                     <span class="slot-replace"><i class="md md-refresh"></i></span>
                     <button
@@ -153,6 +154,7 @@
                       [alt]="asset.filename"
                       loading="lazy"
                       decoding="async"
+                      (error)="onThumbError($event)"
                     />
                     <span class="asset-check"><i class="md md-check"></i></span>
                     <button

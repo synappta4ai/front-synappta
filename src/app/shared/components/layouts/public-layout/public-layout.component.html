@@ -3,8 +3,18 @@
     <router-outlet />
   </main>
   <footer class="border-t border-secondary py-6">
-    <div class="mx-auto flex max-w-6xl items-center justify-between px-4 sm:px-6">
+    <div
+      class="mx-auto flex max-w-6xl flex-col gap-3 px-4 sm:flex-row sm:items-center sm:justify-between sm:px-6"
+    >
       <p class="text-sm font-bold text-ink">Synapta</p>
+      <nav class="flex flex-wrap items-center gap-x-5 gap-y-1" aria-label="Contacto y redes">
+        <a [href]="'mailto:' + contactEmail" class="text-sm text-ink-muted hover:text-ink">Email</a>
+        @for (social of socials; track social.label) {
+          <a [href]="social.href" class="text-sm text-ink-muted hover:text-ink">{{
+            social.label
+          }}</a>
+        }
+      </nav>
       <p class="text-sm text-ink-muted">&copy; {{ currentYear() }} Synapta</p>
     </div>
   </footer>

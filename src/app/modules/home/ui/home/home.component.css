@@ -1,23 +1,53 @@
-/* Home editorial: cintillo con ritmo de marca. El movimiento se desactiva
-   con prefers-reduced-motion (regla global). */
-.marquee-track {
+/* Logo original en el header: negro sobre claro, invertido en oscuro. */
+.dark .landing-logo {
+  filter: invert(1) brightness(1.15);
+}
+
+/* Carrusel nativo (scroll-snap): sin librerías, con dots y flechas. */
+.carousel-track {
   display: flex;
-  width: max-content;
-  animation: marquee 32s linear infinite;
+  gap: 1.5rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  padding-inline: max(1.25rem, calc((100vw - 1400px) / 2 + 2rem));
+  padding-bottom: 0.25rem;
 }
 
-.marquee-chunk {
-  white-space: nowrap;
-  padding-right: 3rem;
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  color: var(--color-ink-muted);
+.carousel-track::-webkit-scrollbar {
+  display: none;
 }
 
-@keyframes marquee {
-  to {
-    transform: translateX(-50%);
+.carousel-slide {
+  flex: 0 0 min(82%, 880px);
+  scroll-snap-align: center;
+  min-width: 0;
+}
+
+/* Indicador de scroll del hero: línea de luz tenue en loop. */
+.scroll-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.scroll-hint::after {
+  content: '';
+  width: 56px;
+  height: 2px;
+  background: var(--color-accent);
+  transform-origin: left center;
+  animation: scroll-hint 2.2s var(--ease-app) infinite;
+}
+
+@keyframes scroll-hint {
+  0%,
+  100% {
+    transform: scaleX(0.35);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scaleX(1);
+    opacity: 1;
   }
 }

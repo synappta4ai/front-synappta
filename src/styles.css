@@ -196,6 +196,10 @@
 .md-memory::before {
   content: 'memory';
 }
+
+.md-menu::before {
+  content: 'menu';
+}
 .md-movie::before {
   content: 'movie';
 }
@@ -3192,6 +3196,21 @@ p-selectbutton:has(.section-toggle) {
 
 .anim-leave-fade {
   animation: fade-out 150ms var(--ease-app) both;
+}
+
+/* Reveal al entrar en viewport (directiva appReveal). La clase oculta
+   solo existe con JS en navegador: sin JS/SSR el contenido se ve. */
+.reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity 0.5s var(--ease-app),
+    transform 0.5s var(--ease-app);
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
 }
 
 @keyframes shimmer {

@@ -1204,13 +1204,19 @@ export class StudioComponent {
   /** Library URL for a slot thumbnail; falls back to a placeholder frame. */
   protected assetThumbUrl(assetId: string): string {
     const asset = this.assets().find((a) => a.id === assetId);
-    if (!asset?.url) {
+    const url = asset?.thumbnail_url || asset?.url;
+    if (!url) {
       return '';
     }
-    const url = asset.url;
     const origin = environment.apiUrl.replace(/\/api\/v1\/?$/, '');
     const path = url.startsWith('/') ? url : `/${url}`;
     return /^https?:\/\//i.test(url) ? url : `${origin}${path}`;
+  }
+
+  /** Oculta miniaturas rotas (el thumb conserva fondo + tooltip del nombre). */
+  protected onThumbError(event: Event): void {
+    const img = event.target as HTMLImageElement | null;
+    img?.style.setProperty('display', 'none');
   }
 
   // ─── Generate ──────────────────────────────────────────────────

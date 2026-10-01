@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" role="img" aria-label="Retrato placeholder">
+  <rect width="800" height="1000" fill="#101010"/>
+  <rect x="24" y="24" width="752" height="952" fill="none" stroke="#2A2A2A" stroke-width="2"/>
+  <text x="48" y="76" font-family="Arial, sans-serif" font-size="22" letter-spacing="6" fill="#8A8A8A">SYNAPPTA — SET</text>
+  <text x="752" y="76" font-family="Arial, sans-serif" font-size="22" text-anchor="end" fill="#8A8A8A">4:5</text>
+  <text x="400" y="560" font-family="Arial, sans-serif" font-weight="900" font-size="220" text-anchor="middle" fill="#1E1E1E">02</text>
+  <text x="400" y="920" font-family="Arial, sans-serif" font-size="22" letter-spacing="4" text-anchor="middle" fill="#8A8A8A">REEMPLAZAR CON FOTO FINAL</text>
+</svg>

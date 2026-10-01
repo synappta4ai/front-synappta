@@ -1,0 +1,27 @@
+.logo-media-frame {
+  overflow: hidden;
+  border-radius: 16px;
+  background: var(--color-surface);
+}
+
+.logo-media-content {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  will-change: transform;
+}
+
+/* Máscara con la forma del wordmark (PNG con alfa, sin deformar). */
+.logo-media-masked .logo-media-frame {
+  border-radius: 0;
+  background: transparent;
+  -webkit-mask-image: url('/assets/img/sinappta-title.png');
+  mask-image: url('/assets/img/sinappta-title.png');
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
