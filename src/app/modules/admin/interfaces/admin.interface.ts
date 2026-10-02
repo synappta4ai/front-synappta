@@ -3,6 +3,8 @@ export interface Tenant {
   slug: string;
   name: string;
   active: boolean;
+  /** Permisos base de la empresa: aplican a todos sus usuarios. */
+  permissions: string[];
   created_at: string;
   updated_at: string;
 }
@@ -100,6 +102,11 @@ export interface TenantMember {
   active: boolean;
   role_level: number;
   role_name: string;
+  permissions: string[];
+}
+
+/** Reemplazo de los permisos base de una empresa (heredados por sus usuarios). */
+export interface UpdateTenantPermissionsRequest {
   permissions: string[];
 }
 

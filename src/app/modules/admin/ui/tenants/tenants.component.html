@@ -234,5 +234,9 @@
     </p-card>
   }
 
-  <app-tenant-users-dialog [tenant]="usersTenant()" (closed)="closeUsers()" />
+  <app-tenant-users-dialog
+    [tenant]="usersTenant()"
+    (closed)="closeUsers()"
+    (tenantPermissionsChanged)="onTenantPermissionsChanged($event)"
+  />
 </app-page-container>

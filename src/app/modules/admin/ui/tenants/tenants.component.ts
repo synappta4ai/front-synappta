@@ -113,6 +113,13 @@ export class TenantsComponent {
     this.usersTenant.set(tenant);
   }
 
+  /** Refresca la fila del tenant cuando cambiaron sus permisos de empresa. */
+  protected onTenantPermissionsChanged(change: { tenantId: number; permissions: string[] }): void {
+    this.tenants.update((list) =>
+      list.map((t) => (t.id === change.tenantId ? { ...t, permissions: change.permissions } : t)),
+    );
+  }
+
   protected closeUsers(): void {
     this.usersTenant.set(null);
   }

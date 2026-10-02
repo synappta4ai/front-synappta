@@ -18,6 +18,7 @@ import {
   TenantMember,
   TenantModel,
   TenantUser,
+  UpdateTenantPermissionsRequest,
   UpsertTenantCredentialRequest,
 } from '../interfaces';
 
@@ -36,6 +37,16 @@ export class AdminApiRepository {
 
   deactivateTenant(id: number): Observable<ApiResponse<null>> {
     return this.http.patch<ApiResponse<null>>(`${this.apiUrl}/tenants/${id}/deactivate`, {});
+  }
+
+  updateTenantPermissions(
+    id: number,
+    payload: UpdateTenantPermissionsRequest,
+  ): Observable<ApiResponse<{ permissions: string[] }>> {
+    return this.http.put<ApiResponse<{ permissions: string[] }>>(
+      `${this.apiUrl}/tenants/${id}/permissions`,
+      payload,
+    );
   }
 
   // ─── Per-tenant models & credentials (platform superadmin) ───

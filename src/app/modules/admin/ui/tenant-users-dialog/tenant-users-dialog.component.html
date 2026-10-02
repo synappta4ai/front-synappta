@@ -12,6 +12,39 @@
     <p-message severity="error" [text]="message" [escape]="false" styleClass="w-full" />
   }
 
+  <!-- Permisos de la empresa: se heredan a todos sus usuarios -->
+  <div class="company-section">
+    <div class="company-head">
+      <div>
+        <p class="text-sm font-bold text-ink-on-dark">Permisos de la empresa</p>
+        <p class="text-xs text-ink-muted-on-dark">
+          Heredados por todos los usuarios: si agregás o quitás acá, afecta a cada usuario del tenant.
+        </p>
+      </div>
+      <p-button
+        label="Guardar empresa"
+        size="small"
+        [loading]="savingCompany()"
+        (onClick)="saveCompanyPerms()"
+      />
+    </div>
+    <div class="perms-grid">
+      @for (def of catalog(); track def.key) {
+        <label class="perm-check">
+          <input
+            type="checkbox"
+            [checked]="coPermsDraft().has(def.key)"
+            (change)="toggleCompanyPerm(def.key)"
+          />
+          <span>{{ def.label }}</span>
+          <code class="perm-key">{{ def.key }}</code>
+        </label>
+      }
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
   <!-- Lista de miembros -->
   <div class="members-section">
     @if (loading()) {
@@ -30,22 +63,22 @@
             </p>
           </div>
           <div class="member-role">
-            <select
-              class="role-select"
-              [ngModel]="member.role_level"
-              (ngModelChange)="onRoleChange(member, $event)"
-            >
-              @for (role of roleOptions; track role.value) {
-                <option [value]="role.value">{{ role.label }}</option>
-              }
-            </select>
+            @if (member.role_level === 0) {
+              <span class="text-xs font-bold text-ink-on-dark">SUPER_ADMIN</span>
+            } @else {
+              <select
+                class="role-select"
+                [ngModel]="member.role_level"
+                (ngModelChange)="onRoleChange(member, $event)"
+              >
+                @for (role of roleOptions; track role.value) {
+                  <option [value]="role.value">{{ role.label }}</option>
+                }
+              </select>
+            }
           </div>
           <div class="member-perms">
-            @if (member.permissions.length === 0) {
-              <span class="text-xs text-ink-muted-on-dark">sin permisos extra</span>
-            } @else {
-              <p-tag [value]="member.permissions.length + ' permisos'" />
-            }
+            <p-tag [value]="effectiveCount(member) + ' efectivos'" />
             <button
               type="button"
               class="link-btn"
@@ -67,15 +100,21 @@
         </div>
         @if (editingPerms() === member.id) {
           <div class="perms-panel">
-            <p class="text-xs font-bold text-ink-on-dark">Permisos de &#64;{{ member.username }} en este tenant</p>
+            <p class="text-xs font-bold text-ink-on-dark">
+              Permisos de &#64;{{ member.username }} — los de la empresa son heredados; marcá solo los adicionales.
+            </p>
             <div class="perms-grid">
               @for (def of catalog(); track def.key) {
-                <label class="perm-check">
-                  <input
-                    type="checkbox"
-                    [checked]="editPerms().has(def.key)"
-                    (change)="toggleEditPerm(def.key)"
-                  />
+                <label class="perm-check" [class.inherited]="inherited().has(def.key)">
+                  @if (inherited().has(def.key)) {
+                    <input type="checkbox" [checked]="true" disabled />
+                  } @else {
+                    <input
+                      type="checkbox"
+                      [checked]="editPerms().has(def.key)"
+                      (change)="toggleEditPerm(def.key)"
+                    />
+                  }
                   <span>{{ def.label }}</span>
                   <code class="perm-key">{{ def.key }}</code>
                 </label>
@@ -149,11 +188,15 @@
         </select>
       </div>
       <div class="field field-wide">
-        <label>Permisos iniciales</label>
+        <label>Permisos adicionales (los de la empresa ya los hereda)</label>
         <div class="perms-grid">
           @for (def of catalog(); track def.key) {
-            <label class="perm-check">
-              <input type="checkbox" [(ngModel)]="form.perms[def.key]" />
+            <label class="perm-check" [class.inherited]="inherited().has(def.key)">
+              @if (inherited().has(def.key)) {
+                <input type="checkbox" [checked]="true" disabled />
+              } @else {
+                <input type="checkbox" [(ngModel)]="form.perms[def.key]" />
+              }
               <span>{{ def.label }}</span>
               <code class="perm-key">{{ def.key }}</code>
             </label>
@@ -187,11 +230,6 @@
                 <p class="member-name">&#64;{{ user.username }}</p>
                 <p class="member-sub">{{ user.name }} {{ user.surname }} @if (user.email) { · {{ user.email }} }</p>
               </div>
-              <select class="role-select" [ngModel]="attachRole" disabled>
-                @for (role of roleOptions; track role.value) {
-                  <option [value]="role.value">{{ role.label }}</option>
-                }
-              </select>
               <p-button
                 label="Agregar"
                 size="small"
@@ -202,8 +240,26 @@
           }
         </div>
         <p class="text-xs text-ink-muted-on-dark">
-          El rol y permisos se ajustan luego en la lista; se agregan como USER sin permisos.
+          Se agrega como USER y hereda los permisos de la empresa; ajustá rol y extras en la lista.
         </p>
+        <div class="field field-wide">
+          <label>Permisos adicionales para los resultados</label>
+          <div class="perms-grid">
+            @for (def of catalog(); track def.key) {
+              @if (!inherited().has(def.key)) {
+                <label class="perm-check">
+                  <input
+                    type="checkbox"
+                    [checked]="attachPerms().has(def.key)"
+                    (change)="toggleAttachPerm(def.key)"
+                  />
+                  <span>{{ def.label }}</span>
+                  <code class="perm-key">{{ def.key }}</code>
+                </label>
+              }
+            }
+          </div>
+        </div>
       }
     </div>
   }

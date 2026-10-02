@@ -6,22 +6,29 @@ import { Button } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
-import { Select } from 'primeng/select';
 import { Tag } from 'primeng/tag';
 
 import { AdminService } from '../../services/admin.service';
 import { PermissionDef, PlatformUser, Tenant, TenantMember } from '../../interfaces';
 
-const ROLE_OPTIONS = [
-  { label: 'SUPER_ADMIN (0)', value: 0 },
-  { label: 'ADMIN (1)', value: 1 },
-  { label: 'DIRECTOR (2)', value: 2 },
-  { label: 'USER (3)', value: 3 },
-];
+/** Nombres de rol por nivel (solo lectura; el 0 nunca se asigna desde acá). */
+const ROLE_NAMES: Record<number, string> = {
+  0: 'SUPER_ADMIN',
+  1: 'ADMIN',
+  2: 'DIRECTOR',
+  3: 'USER',
+};
+
+/** Roles asignables desde la gestión de usuarios: 1..3 (el 0 es el
+ * superadmin de plataforma y no se lista ni se guarda). */
+const ASSIGNABLE_ROLES = [1, 2, 3].map((value) => ({
+  label: `${ROLE_NAMES[value]} (${value})`,
+  value,
+}));
 
 @Component({
   selector: 'app-tenant-users-dialog',
-  imports: [FormsModule, Dialog, Button, InputText, Message, Select, Tag],
+  imports: [FormsModule, Dialog, Button, InputText, Message, Tag],
   templateUrl: './tenant-users-dialog.component.html',
   styleUrls: ['./tenant-users-dialog.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -32,14 +39,22 @@ export class TenantUsersDialogComponent {
   /** Tenant en gestión (null = diálogo cerrado). */
   readonly tenant = input<Tenant | null>(null);
   readonly closed = output<void>();
+  /** Notifica a la lista padre que los permisos de la empresa cambiaron. */
+  readonly tenantPermissionsChanged = output<{ tenantId: number; permissions: string[] }>();
 
-  protected readonly roleOptions = ROLE_OPTIONS;
+  protected readonly roleOptions = ASSIGNABLE_ROLES;
 
   protected readonly members = signal<TenantMember[]>([]);
   protected readonly catalog = signal<PermissionDef[]>([]);
   protected readonly loading = signal(false);
   protected readonly saving = signal(false);
   protected readonly error = signal('');
+
+  /** Permisos base de la empresa (heredados por todos sus usuarios). */
+  protected readonly companyPerms = signal<Set<string>>(new Set());
+  /** Borrador del editor de permisos de empresa. */
+  protected readonly coPermsDraft = signal<Set<string>>(new Set());
+  protected readonly savingCompany = signal(false);
 
   /** Pestaña del formulario de alta: nuevo usuario global o existente. */
   protected readonly mode = signal<'new' | 'existing'>('new');
@@ -65,9 +80,14 @@ export class TenantUsersDialogComponent {
   protected readonly visible = computed(() => this.tenant() !== null);
   protected readonly header = computed(() => `Usuarios · ${this.tenant()?.name ?? ''}`);
 
+  /** Permisos heredados de la empresa (mostrados marcados y bloqueados). */
+  protected readonly inherited = computed(() => this.companyPerms());
+
   /** Se ejecuta cada vez que el diálogo se muestra (p-dialog onShow). */
   protected onShow(): void {
     this.error.set('');
+    this.companyPerms.set(new Set(this.tenant()?.permissions ?? []));
+    this.coPermsDraft.set(new Set(this.companyPerms()));
     this.loadMembers();
     if (this.catalog().length === 0) {
       this.adminService
@@ -95,6 +115,44 @@ export class TenantUsersDialogComponent {
         finalize(() => this.loading.set(false)),
       )
       .subscribe((members) => this.members.set(members));
+  }
+
+  // ─── Permisos de la empresa ─────────────────────────────────
+
+  protected toggleCompanyPerm(key: string): void {
+    const next = new Set(this.coPermsDraft());
+    if (next.has(key)) {
+      next.delete(key);
+    } else {
+      next.add(key);
+    }
+    this.coPermsDraft.set(next);
+  }
+
+  protected saveCompanyPerms(): void {
+    const id = this.tenantId();
+    if (!id || this.savingCompany()) return;
+    this.savingCompany.set(true);
+    this.error.set('');
+    this.adminService
+      .updateTenantPermissions(id, [...this.coPermsDraft()])
+      .pipe(
+        catchError(() => {
+          this.error.set('No se pudieron guardar los permisos de la empresa.');
+          return EMPTY;
+        }),
+        finalize(() => this.savingCompany.set(false)),
+      )
+      .subscribe(({ permissions }) => {
+        this.companyPerms.set(new Set(permissions));
+        this.tenantPermissionsChanged.emit({ tenantId: id, permissions });
+      });
+  }
+
+  /** Permisos efectivos de un miembro = empresa ∪ extras. */
+  protected effectiveCount(member: TenantMember): number {
+    const all = new Set([...this.companyPerms(), ...member.permissions]);
+    return all.size;
   }
 
   // ─── Alta ───────────────────────────────────────────────────
@@ -128,6 +186,7 @@ export class TenantUsersDialogComponent {
         surname: this.form.surname.trim(),
         email: this.form.email.trim(),
         role_level: this.form.role,
+        // Solo los extras: los de la empresa ya los hereda por unión.
         permissions: this.selectedPermKeys(),
       })
       .pipe(
@@ -228,7 +287,7 @@ export class TenantUsersDialogComponent {
   }
 
   protected roleName(level: number): string {
-    return this.roleOptions.find((r) => r.value === level)?.label.split(' ')[0] ?? 'USER';
+    return ROLE_NAMES[level] ?? 'USER';
   }
 
   protected toggleEditPerms(member: TenantMember): void {
@@ -236,6 +295,8 @@ export class TenantUsersDialogComponent {
       this.editingPerms.set(null);
       return;
     }
+    // editPerms guarda solo los EXTRAS del miembro; los de la empresa son
+    // heredados (marcados y bloqueados en la plantilla).
     this.editPerms.set(new Set(member.permissions));
     this.editingPerms.set(member.id);
   }

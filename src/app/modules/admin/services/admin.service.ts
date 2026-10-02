@@ -17,6 +17,7 @@ import {
   TenantMember,
   TenantModel,
   TenantUser,
+  UpdateTenantPermissionsRequest,
   UpsertTenantCredentialRequest,
 } from '../interfaces';
 import { AdminApiRepository } from '../repositories';
@@ -35,6 +36,10 @@ export class AdminService {
 
   deactivateTenant(id: number): Observable<null> {
     return unwrap(this.adminApiRepository.deactivateTenant(id));
+  }
+
+  updateTenantPermissions(id: number, permissions: string[]): Observable<{ permissions: string[] }> {
+    return unwrap(this.adminApiRepository.updateTenantPermissions(id, { permissions }));
   }
 
   // ─── Per-tenant models & credentials (platform superadmin) ───
