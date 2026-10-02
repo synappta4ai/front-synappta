@@ -14,7 +14,12 @@
     <!-- User Profile Section -->
     <div class="user-section">
       <div class="user-avatar">
-        <img [src]="userAvatarUrl" [alt]="currentUser()?.name ?? 'User'" loading="lazy" />
+        <img
+          [src]="userAvatarUrl()"
+          [alt]="currentUser()?.name ?? 'User'"
+          loading="lazy"
+          (error)="onAvatarLoadError()"
+        />
       </div>
       <div class="user-info">
         <h4 class="user-name">{{ currentUser()?.name }} {{ currentUser()?.surname }}</h4>
@@ -98,14 +103,59 @@
 >
   @if (currentUser(); as user) {
     <div class="profile-head">
-      <div class="user-avatar">
-        <img [src]="userAvatarUrl" [alt]="user.name ?? 'User'" loading="lazy" />
+      <div class="profile-avatar-wrap">
+        <div class="user-avatar profile-avatar">
+          <img
+            [src]="userAvatarUrl()"
+            [alt]="user.name"
+            (error)="onAvatarLoadError()"
+          />
+        </div>
+        @if (avatarUploading()) {
+          <div class="avatar-overlay avatar-overlay--busy">
+            <i class="md md-autorenew md-spin"></i>
+          </div>
+        } @else {
+          <button
+            type="button"
+            class="avatar-overlay"
+            (click)="triggerAvatarSelect()"
+            [attr.aria-label]="hasCustomAvatar() ? 'Cambiar foto de perfil' : 'Añadir foto de perfil'"
+            pTooltip="Cambiar foto"
+            tooltipPosition="bottom"
+          >
+            <i class="md md-photo_camera"></i>
+          </button>
+        }
       </div>
       <div class="user-info">
         <h4 class="user-name">{{ user.name }} {{ user.surname }}</h4>
         <span class="user-role">{{ user.role_name }}</span>
+        <div class="avatar-actions">
+          <button type="button" class="avatar-action" (click)="triggerAvatarSelect()">
+            {{ hasCustomAvatar() ? 'Cambiar' : 'Añadir foto' }}
+          </button>
+          @if (hasCustomAvatar()) {
+            <span class="avatar-action-sep">·</span>
+            <button type="button" class="avatar-action avatar-action--danger" (click)="removeAvatar()">
+              Quitar
+            </button>
+          }
+        </div>
       </div>
+      <input
+        #avatarInput
+        type="file"
+        accept="image/*"
+        class="visually-hidden-input"
+        tabindex="-1"
+        aria-hidden="true"
+        (change)="onAvatarFileSelected($event)"
+      />
     </div>
+    @if (avatarError()) {
+      <p class="avatar-error" role="alert">{{ avatarError() }}</p>
+    }
     <dl class="pref-list">
       <div class="pref-row">
         <dt>Usuario</dt>

@@ -209,8 +209,17 @@
 .md-open_in_new::before {
   content: 'open_in_new';
 }
+.md-people::before {
+  content: 'people';
+}
 .md-person::before {
   content: 'person';
+}
+.md-person_add::before {
+  content: 'person_add';
+}
+.md-photo_camera::before {
+  content: 'photo_camera';
 }
 .md-photo_library::before {
   content: 'photo_library';

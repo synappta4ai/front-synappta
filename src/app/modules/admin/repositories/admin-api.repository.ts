@@ -6,12 +6,16 @@ import { ApiResponse } from '@interfaces/api.interface';
 import { environment } from '@env/environment';
 
 import {
+  CreateTenantMemberRequest,
   CreateTenantRequest,
   GeneratedImagesPage,
   GeneratedVideosPage,
+  PermissionDef,
+  PlatformUser,
   ServerCommsPage,
   Tenant,
   TenantCredential,
+  TenantMember,
   TenantModel,
   TenantUser,
   UpsertTenantCredentialRequest,
@@ -65,6 +69,52 @@ export class AdminApiRepository {
   /** Usuarios miembros de un tenant (para el selector de logs/modelos). */
   listTenantUsers(id: number): Observable<ApiResponse<TenantUser[]>> {
     return this.http.get<ApiResponse<TenantUser[]>>(`${this.apiUrl}/admin/tenants/${id}/users`);
+  }
+
+  // ─── Per-tenant user management (platform superadmin) ───
+
+  listTenantMembers(id: number): Observable<ApiResponse<TenantMember[]>> {
+    return this.http.get<ApiResponse<TenantMember[]>>(`${this.apiUrl}/tenants/${id}/users`);
+  }
+
+  createTenantMember(id: number, payload: CreateTenantMemberRequest): Observable<ApiResponse<TenantMember>> {
+    return this.http.post<ApiResponse<TenantMember>>(`${this.apiUrl}/tenants/${id}/users`, payload);
+  }
+
+  updateTenantMemberRole(tenantId: number, userId: number, roleLevel: number): Observable<ApiResponse<{ role_level: number; role_name: string }>> {
+    return this.http.patch<ApiResponse<{ role_level: number; role_name: string }>>(
+      `${this.apiUrl}/tenants/${tenantId}/users/${userId}/role`,
+      { role_level: roleLevel },
+    );
+  }
+
+  updateTenantMemberPermissions(tenantId: number, userId: number, permissions: string[]): Observable<ApiResponse<{ permissions: string[] }>> {
+    return this.http.put<ApiResponse<{ permissions: string[] }>>(
+      `${this.apiUrl}/tenants/${tenantId}/users/${userId}/permissions`,
+      { permissions },
+    );
+  }
+
+  removeTenantMember(tenantId: number, userId: number): Observable<ApiResponse<null>> {
+    return this.http.delete<ApiResponse<null>>(`${this.apiUrl}/tenants/${tenantId}/users/${userId}`);
+  }
+
+  listPlatformUsers(q?: string): Observable<ApiResponse<PlatformUser[]>> {
+    return this.http.get<ApiResponse<PlatformUser[]>>(`${this.apiUrl}/tenants/platform-users`, {
+      params: q ? { q } : {},
+    });
+  }
+
+  listPermissionCatalog(): Observable<ApiResponse<PermissionDef[]>> {
+    return this.http.get<ApiResponse<PermissionDef[]>>(`${this.apiUrl}/tenants/permissions`);
+  }
+
+  /** Login con selector de tenant (permisos de la membresía en el token). */
+  loginTenant(username: string, password: string, tenantId: number): Observable<ApiResponse<{ token: string; tenant_id: number; tenant_slug?: string; permissions?: string[] }>> {
+    return this.http.post<ApiResponse<{ token: string; tenant_id: number; tenant_slug?: string; permissions?: string[] }>>(
+      `${this.apiUrl}/auth/login-tenant`,
+      { username, password, tenant_id: tenantId },
+    );
   }
 
   /** Descarga el archivo de exportación de credenciales (secretos en claro). */

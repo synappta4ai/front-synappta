@@ -5,7 +5,7 @@ import { Observable } from 'rxjs';
 import { ApiResponse } from '@interfaces/api.interface';
 import { environment } from '@env/environment';
 
-import { LoginRequest, RegisterRequest, TokenResponse, User } from '../interfaces';
+import { LoginRequest, RegisterRequest, TokenResponse, UpdateAvatarRequest, User } from '../interfaces';
 
 @Injectable({ providedIn: 'root' })
 export class AuthApiRepository {
@@ -22,5 +22,10 @@ export class AuthApiRepository {
 
   getProfile(): Observable<ApiResponse<User>> {
     return this.http.get<ApiResponse<User>>(`${this.apiUrl}/auth/profile`);
+  }
+
+  /** Actualiza (o borra, con payload vacío) la foto de perfil del usuario. */
+  updateAvatar(payload: UpdateAvatarRequest): Observable<ApiResponse<User>> {
+    return this.http.put<ApiResponse<User>>(`${this.apiUrl}/user/profile/avatar`, payload);
   }
 }

@@ -5,12 +5,16 @@ import { Observable } from 'rxjs';
 import { ApiResponse } from '@interfaces/api.interface';
 
 import {
+  CreateTenantMemberRequest,
   CreateTenantRequest,
   GeneratedImagesPage,
   GeneratedVideosPage,
+  PermissionDef,
+  PlatformUser,
   ServerCommsPage,
   Tenant,
   TenantCredential,
+  TenantMember,
   TenantModel,
   TenantUser,
   UpsertTenantCredentialRequest,
@@ -66,6 +70,36 @@ export class AdminService {
 
   listTenantUsers(id: number): Observable<TenantUser[]> {
     return unwrap(this.adminApiRepository.listTenantUsers(id));
+  }
+
+  // ─── Per-tenant user management (platform superadmin) ───
+
+  listTenantMembers(id: number): Observable<TenantMember[]> {
+    return unwrap(this.adminApiRepository.listTenantMembers(id));
+  }
+
+  createTenantMember(id: number, payload: CreateTenantMemberRequest): Observable<TenantMember> {
+    return unwrap(this.adminApiRepository.createTenantMember(id, payload));
+  }
+
+  updateTenantMemberRole(tenantId: number, userId: number, roleLevel: number): Observable<{ role_level: number; role_name: string }> {
+    return unwrap(this.adminApiRepository.updateTenantMemberRole(tenantId, userId, roleLevel));
+  }
+
+  updateTenantMemberPermissions(tenantId: number, userId: number, permissions: string[]): Observable<{ permissions: string[] }> {
+    return unwrap(this.adminApiRepository.updateTenantMemberPermissions(tenantId, userId, permissions));
+  }
+
+  removeTenantMember(tenantId: number, userId: number): Observable<null> {
+    return unwrap(this.adminApiRepository.removeTenantMember(tenantId, userId));
+  }
+
+  listPlatformUsers(q?: string): Observable<PlatformUser[]> {
+    return unwrap(this.adminApiRepository.listPlatformUsers(q));
+  }
+
+  listPermissionCatalog(): Observable<PermissionDef[]> {
+    return unwrap(this.adminApiRepository.listPermissionCatalog());
   }
 
   listServerComms(page = 1, limit = 20, taskId?: string): Observable<ServerCommsPage> {

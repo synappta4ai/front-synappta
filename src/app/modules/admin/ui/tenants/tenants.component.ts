@@ -17,6 +17,7 @@ import { Tenant } from '../../interfaces';
 import { PageContainerComponent } from '@shared/components/index';
 import { CountUpDirective } from '@shared/components/count-up/count-up.directive';
 import { ProgressSpinner } from 'primeng/progressspinner';
+import { TenantUsersDialogComponent } from '../tenant-users-dialog/tenant-users-dialog.component';
 
 @Component({
   selector: 'app-admin-tenants',
@@ -33,6 +34,7 @@ import { ProgressSpinner } from 'primeng/progressspinner';
     ConfirmDialog,
     ProgressSpinner,
     CountUpDirective,
+    TenantUsersDialogComponent,
   ],
   providers: [ConfirmationService],
   templateUrl: './tenants.component.html',
@@ -48,10 +50,19 @@ export class TenantsComponent {
   protected readonly error = signal<string | null>(null);
   protected readonly creating = signal(false);
 
+  /** Tenant cuyo diálogo de usuarios está abierto (null = cerrado). */
+  protected readonly usersTenant = signal<Tenant | null>(null);
+
   /** Formulario de creación de tenants. */
   protected readonly form = this.formBuilder.group({
     name: ['', Validators.required],
-    slug: ['', Validators.required],
+    slug: [
+      '',
+      [
+        Validators.required,
+        Validators.pattern(/^[a-z0-9][a-z0-9_-]{1,54}$/),
+      ],
+    ],
   });
 
   constructor() {
@@ -96,6 +107,14 @@ export class TenantsComponent {
         this.form.reset();
         this.loadTenants();
       });
+  }
+
+  protected openUsers(tenant: Tenant): void {
+    this.usersTenant.set(tenant);
+  }
+
+  protected closeUsers(): void {
+    this.usersTenant.set(null);
   }
 
   protected confirmDeactivate(tenant: Tenant): void {

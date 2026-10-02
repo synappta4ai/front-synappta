@@ -98,7 +98,7 @@
           placeholder="Ej: empresa-xyz"
           class="w-full"
         />
-        <small class="text-ink-muted-on-dark">Identificador URL (minúsculas, sin espacios)</small>
+        <small class="text-ink-muted-on-dark">Identificador URL: minúsculas, números, guion o guion bajo (2–55)</small>
       </div>
       <p-button
         type="submit"
@@ -190,18 +190,26 @@
               }
             </td>
             <td class="text-center">
-              @if (tenant.active) {
+              <div class="inline-flex items-center gap-1">
                 <p-button
-                  label="Desactivar"
-                  icon="md md-block"
-                  severity="danger"
+                  label="Usuarios"
+                  icon="md md-people"
                   size="small"
                   text
-                  (onClick)="confirmDeactivate(tenant)"
+                  [disabled]="!tenant.active"
+                  (onClick)="openUsers(tenant)"
                 />
-              } @else {
-                <span class="text-sm text-ink-muted-on-dark">—</span>
-              }
+                @if (tenant.active) {
+                  <p-button
+                    label="Desactivar"
+                    icon="md md-block"
+                    severity="danger"
+                    size="small"
+                    text
+                    (onClick)="confirmDeactivate(tenant)"
+                  />
+                }
+              </div>
             </td>
           </tr>
         </ng-template>
@@ -225,4 +233,6 @@
       </p-table>
     </p-card>
   }
+
+  <app-tenant-users-dialog [tenant]="usersTenant()" (closed)="closeUsers()" />
 </app-page-container>

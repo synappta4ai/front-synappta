@@ -1,7 +1,9 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   OnInit,
+  computed,
   inject,
   signal,
   viewChild,
@@ -15,9 +17,14 @@ import { TranslateService } from '@ngx-translate/core';
 
 import { UserSessionStore } from '@core/store/user.session';
 import { AuthService } from '@modules/auth/services/auth.service';
+import { UpdateAvatarRequest } from '@modules/auth/interfaces';
+import { LibraryService } from '@modules/library/services';
 import { ThemeService } from '@services/theme.service';
 import { ThemeMode, AccentId, ACCENTS } from '@interfaces/theme.interface';
 import { AUTH } from '@constants/routes';
+
+/** Tamaño máximo de la foto de perfil: 5 MB. */
+const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
 
 @Component({
   selector: 'app-theme-panel',
@@ -30,10 +37,12 @@ export class ThemePanelComponent implements OnInit {
   private readonly themeService = inject(ThemeService);
   private readonly sessionStore = inject(UserSessionStore);
   private readonly authService = inject(AuthService);
+  private readonly libraryService = inject(LibraryService);
   private readonly router = inject(Router);
   private readonly translate = inject(TranslateService);
 
   protected readonly popover = viewChild.required<Popover>('popover');
+  private readonly avatarInput = viewChild<ElementRef<HTMLInputElement>>('avatarInput');
 
   readonly currentUser = this.sessionStore.currentUser;
   readonly currentMode = this.themeService.currentMode;
@@ -44,7 +53,21 @@ export class ThemePanelComponent implements OnInit {
   protected readonly profileVisible = signal(false);
   protected readonly settingsVisible = signal(false);
 
-  readonly userAvatarUrl = this.buildAvatarUrl();
+  // ─── Foto de perfil ─────────────────────────────────────────
+  protected readonly avatarUploading = signal(false);
+  protected readonly avatarError = signal('');
+  private readonly avatarLoadFailed = signal(false);
+
+  /** URL del avatar: foto del usuario si la hay; iniciales como fallback. */
+  readonly userAvatarUrl = computed(() => {
+    if (this.avatarLoadFailed()) {
+      return this.buildFallbackAvatarUrl();
+    }
+    const url = this.currentUser()?.avatar_url;
+    return url ? url : this.buildFallbackAvatarUrl();
+  });
+
+  protected readonly hasCustomAvatar = computed(() => !!this.currentUser()?.avatar_file_id);
 
   togglePopover(event: Event): void {
     this.popover().toggle(event);
@@ -94,8 +117,92 @@ export class ThemePanelComponent implements OnInit {
     void this.router.navigate([AUTH.ROOT, AUTH.LOGIN]);
   }
 
-  private buildAvatarUrl(): string {
-    const user = this.sessionStore.currentUser();
+  // ─── Cambio de foto de perfil ───────────────────────────────
+
+  protected triggerAvatarSelect(): void {
+    if (this.avatarUploading()) {
+      return;
+    }
+    this.avatarError.set('');
+    this.avatarInput()?.nativeElement.click();
+  }
+
+  protected onAvatarFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = ''; // permite re-seleccionar el mismo archivo
+    if (!file) {
+      return;
+    }
+    if (!file.type.startsWith('image/')) {
+      this.avatarError.set('Selecciona un archivo de imagen.');
+      return;
+    }
+    if (file.size > AVATAR_MAX_BYTES) {
+      this.avatarError.set('La imagen no puede superar los 5 MB.');
+      return;
+    }
+    this.uploadAvatar(file);
+  }
+
+  private uploadAvatar(file: File): void {
+    this.avatarUploading.set(true);
+    this.avatarError.set('');
+    this.libraryService.uploadFile(file, 'images').subscribe({
+      next: (asset) => {
+        const payload: UpdateAvatarRequest = {
+          avatar_file_id: asset.id,
+          avatar_url: asset.url ?? '',
+        };
+        this.authService.updateAvatar(payload).subscribe({
+          next: () => {
+            this.avatarUploading.set(false);
+            this.avatarLoadFailed.set(false);
+          },
+          error: (err: unknown) => {
+            this.avatarUploading.set(false);
+            this.avatarError.set(this.describeError(err, 'No se pudo guardar la foto.'));
+          },
+        });
+      },
+      error: (err: unknown) => {
+        this.avatarUploading.set(false);
+        this.avatarError.set(this.describeError(err, 'No se pudo subir la imagen.'));
+      },
+    });
+  }
+
+  protected removeAvatar(): void {
+    if (this.avatarUploading()) {
+      return;
+    }
+    this.avatarUploading.set(true);
+    this.avatarError.set('');
+    this.authService.updateAvatar({}).subscribe({
+      next: () => {
+        this.avatarUploading.set(false);
+        this.avatarLoadFailed.set(false);
+      },
+      error: (err: unknown) => {
+        this.avatarUploading.set(false);
+        this.avatarError.set(this.describeError(err, 'No se pudo quitar la foto.'));
+      },
+    });
+  }
+
+  protected onAvatarLoadError(): void {
+    this.avatarLoadFailed.set(true);
+  }
+
+  private describeError(err: unknown, fallback: string): string {
+    if (err instanceof Error && err.message) {
+      return `${fallback} ${err.message}`;
+    }
+    return fallback;
+  }
+
+  private buildFallbackAvatarUrl(): string {
+    const user = this.currentUser();
     const name = user ? `${user.name} ${user.surname}` : 'User';
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&color=fff`;
   }

@@ -1,0 +1,214 @@
+<p-dialog
+  [visible]="visible()"
+  [header]="header()"
+  [modal]="true"
+  [style]="{ width: 'min(96vw, 46rem)' }"
+  [draggable]="false"
+  [resizable]="false"
+  (onShow)="onShow()"
+  (onHide)="close()"
+>
+  @if (error(); as message) {
+    <p-message severity="error" [text]="message" [escape]="false" styleClass="w-full" />
+  }
+
+  <!-- Lista de miembros -->
+  <div class="members-section">
+    @if (loading()) {
+      <p class="text-sm text-ink-muted-on-dark">Cargando usuarios…</p>
+    } @else if (members().length === 0) {
+      <p class="text-sm text-ink-muted-on-dark">
+        Este tenant todavía no tiene usuarios. Creá el primero abajo.
+      </p>
+    } @else {
+      @for (member of members(); track member.id) {
+        <div class="member-row">
+          <div class="member-identity">
+            <p class="member-name">{{ member.name }} {{ member.surname }}</p>
+            <p class="member-sub">
+              &#64;{{ member.username }}@if (member.email) { · {{ member.email }} }
+            </p>
+          </div>
+          <div class="member-role">
+            <select
+              class="role-select"
+              [ngModel]="member.role_level"
+              (ngModelChange)="onRoleChange(member, $event)"
+            >
+              @for (role of roleOptions; track role.value) {
+                <option [value]="role.value">{{ role.label }}</option>
+              }
+            </select>
+          </div>
+          <div class="member-perms">
+            @if (member.permissions.length === 0) {
+              <span class="text-xs text-ink-muted-on-dark">sin permisos extra</span>
+            } @else {
+              <p-tag [value]="member.permissions.length + ' permisos'" />
+            }
+            <button
+              type="button"
+              class="link-btn"
+              (click)="toggleEditPerms(member)"
+            >
+              {{ editingPerms() === member.id ? 'Cerrar' : 'Permisos' }}
+            </button>
+          </div>
+          <div class="member-actions">
+            <button
+              type="button"
+              class="link-btn danger"
+              [disabled]="saving()"
+              (click)="remove(member)"
+            >
+              Quitar
+            </button>
+          </div>
+        </div>
+        @if (editingPerms() === member.id) {
+          <div class="perms-panel">
+            <p class="text-xs font-bold text-ink-on-dark">Permisos de &#64;{{ member.username }} en este tenant</p>
+            <div class="perms-grid">
+              @for (def of catalog(); track def.key) {
+                <label class="perm-check">
+                  <input
+                    type="checkbox"
+                    [checked]="editPerms().has(def.key)"
+                    (change)="toggleEditPerm(def.key)"
+                  />
+                  <span>{{ def.label }}</span>
+                  <code class="perm-key">{{ def.key }}</code>
+                </label>
+              }
+            </div>
+            <div class="perms-panel-actions">
+              <p-button
+                label="Guardar permisos"
+                size="small"
+                [loading]="saving()"
+                (onClick)="savePerms(member)"
+              />
+            </div>
+          </div>
+        }
+      }
+    }
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Alta de usuarios -->
+  <h4 class="text-sm font-bold text-ink-on-dark">Agregar usuario al tenant</h4>
+  <div class="mode-toggle">
+    <button
+      type="button"
+      class="mode-btn"
+      [class.active]="mode() === 'new'"
+      (click)="setMode('new')"
+    >
+      Usuario nuevo
+    </button>
+    <button
+      type="button"
+      class="mode-btn"
+      [class.active]="mode() === 'existing'"
+      (click)="setMode('existing')"
+    >
+      Usuario existente
+    </button>
+  </div>
+
+  @if (mode() === 'new') {
+    <div class="new-form">
+      <div class="field">
+        <label>Usuario *</label>
+        <input pInputText type="text" [(ngModel)]="form.username" placeholder="nombre.apellido" />
+      </div>
+      <div class="field">
+        <label>Contraseña * (mín. 8)</label>
+        <input pInputText type="password" [(ngModel)]="form.password" />
+      </div>
+      <div class="field">
+        <label>Nombre</label>
+        <input pInputText type="text" [(ngModel)]="form.name" />
+      </div>
+      <div class="field">
+        <label>Apellido</label>
+        <input pInputText type="text" [(ngModel)]="form.surname" />
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input pInputText type="email" [(ngModel)]="form.email" />
+      </div>
+      <div class="field">
+        <label>Rol en el tenant</label>
+        <select class="role-select" [ngModel]="form.role" (ngModelChange)="form.role = $event">
+          @for (role of roleOptions; track role.value) {
+            <option [value]="role.value">{{ role.label }}</option>
+          }
+        </select>
+      </div>
+      <div class="field field-wide">
+        <label>Permisos iniciales</label>
+        <div class="perms-grid">
+          @for (def of catalog(); track def.key) {
+            <label class="perm-check">
+              <input type="checkbox" [(ngModel)]="form.perms[def.key]" />
+              <span>{{ def.label }}</span>
+              <code class="perm-key">{{ def.key }}</code>
+            </label>
+          }
+        </div>
+      </div>
+      <p-button
+        label="Crear usuario"
+        icon="md md-person_add"
+        [loading]="saving()"
+        (onClick)="createNew()"
+      />
+    </div>
+  } @else {
+    <div class="existing-form">
+      <div class="field">
+        <label>Buscar usuario existente (usuario, nombre o email)</label>
+        <input
+          pInputText
+          type="text"
+          [ngModel]="search()"
+          (ngModelChange)="onSearchChange($event)"
+          placeholder="mínimo 2 caracteres"
+        />
+      </div>
+      @if (results().length > 0) {
+        <div class="results">
+          @for (user of results(); track user.id) {
+            <div class="result-row">
+              <div>
+                <p class="member-name">&#64;{{ user.username }}</p>
+                <p class="member-sub">{{ user.name }} {{ user.surname }} @if (user.email) { · {{ user.email }} }</p>
+              </div>
+              <select class="role-select" [ngModel]="attachRole" disabled>
+                @for (role of roleOptions; track role.value) {
+                  <option [value]="role.value">{{ role.label }}</option>
+                }
+              </select>
+              <p-button
+                label="Agregar"
+                size="small"
+                [loading]="saving()"
+                (onClick)="attachExisting(user)"
+              />
+            </div>
+          }
+        </div>
+        <p class="text-xs text-ink-muted-on-dark">
+          El rol y permisos se ajustan luego en la lista; se agregan como USER sin permisos.
+        </p>
+      }
+    </div>
+  }
+
+  <ng-template #footer>
+    <p-button label="Cerrar" size="small" [text]="true" (onClick)="close()" />
+  </ng-template>
+</p-dialog>

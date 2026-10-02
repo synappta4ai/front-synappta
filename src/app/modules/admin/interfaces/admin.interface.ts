@@ -89,6 +89,49 @@ export interface TenantUser {
   active: boolean;
 }
 
+/** Miembro de un tenant con su rol de membresía y permisos. */
+export interface TenantMember {
+  id: number;
+  username: string;
+  name: string;
+  surname: string;
+  user_name: string;
+  email: string;
+  active: boolean;
+  role_level: number;
+  role_name: string;
+  permissions: string[];
+}
+
+/** Entrada del catálogo de permisos del back. */
+export interface PermissionDef {
+  key: string;
+  label: string;
+}
+
+/** Usuario global (para adjuntar uno existente a un tenant). */
+export interface PlatformUser {
+  id: number;
+  username: string;
+  name: string;
+  surname: string;
+  email: string;
+  active: boolean;
+}
+
+export interface CreateTenantMemberRequest {
+  /** Adjuntar un usuario existente (si se define, ignora username/password). */
+  user_id?: number;
+  username?: string;
+  password?: string;
+  name?: string;
+  surname?: string;
+  user_name?: string;
+  email?: string;
+  role_level?: number;
+  permissions?: string[];
+}
+
 /** Traza de una comunicación con una API externa (auditada). */
 export interface ServerCommunicationLog {
   id: string;

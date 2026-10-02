@@ -4,7 +4,7 @@ import { Observable, tap } from 'rxjs';
 import { ApiResponse } from '@interfaces/api.interface';
 import { UserSessionStore } from '@core/store/user.session';
 
-import { LoginRequest, RegisterRequest, TokenResponse, User } from '../interfaces';
+import { LoginRequest, RegisterRequest, TokenResponse, UpdateAvatarRequest, User } from '../interfaces';
 import { AuthApiRepository } from '../repositories';
 
 @Injectable({ providedIn: 'root' })
@@ -24,6 +24,21 @@ export class AuthService {
 
   getProfile(): Observable<User> {
     return unwrap(this.authApiRepository.getProfile());
+  }
+
+  /** Actualiza (o borra) la foto de perfil y refleja el cambio en la sesión. */
+  updateAvatar(payload: UpdateAvatarRequest): Observable<User> {
+    return unwrap(this.authApiRepository.updateAvatar(payload)).pipe(
+      // El back omite las claves cuando el avatar queda vacío (omitempty);
+      // se normalizan a null para que el merge del store sí las borre.
+      tap((user) =>
+        this.sessionStore.updateUser({
+          ...user,
+          avatar_file_id: user.avatar_file_id ?? null,
+          avatar_url: user.avatar_url ?? null,
+        }),
+      ),
+    );
   }
 
   logout(): void {
