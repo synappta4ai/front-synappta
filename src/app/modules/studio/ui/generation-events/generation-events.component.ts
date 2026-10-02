@@ -7,6 +7,7 @@ import { Tag } from 'primeng/tag';
 import { ServerUrlPipe } from '@pipes/server-url.pipe';
 import { GenerationEventsStore } from '@core/store/generation.events';
 import { SlidePillDirective } from '@shared/components/slide-pill/slide-pill.directive';
+import { TiltDirective } from '@shared/components/tilt/tilt.directive';
 
 import { StudioTake } from '../../interfaces';
 
@@ -14,7 +15,7 @@ type Filter = 'all' | 'active' | 'done';
 
 @Component({
   selector: 'app-generation-events',
-  imports: [RouterLink, Button, Tag, ServerUrlPipe, SlidePillDirective],
+  imports: [RouterLink, Button, Tag, ServerUrlPipe, SlidePillDirective, TiltDirective],
   templateUrl: './generation-events.component.html',
   styleUrl: './generation-events.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

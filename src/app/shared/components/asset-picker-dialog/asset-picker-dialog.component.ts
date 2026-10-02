@@ -22,6 +22,8 @@ import { SelectButton } from 'primeng/selectbutton';
 import { LibraryService } from '@modules/library/services';
 import { FileAsset, FileListFilters } from '@modules/library/interfaces';
 import { ServerUrlPipe } from '@core/pipes/server-url.pipe';
+import { TiltDirective } from '@shared/components/tilt/tilt.directive';
+import { ImgFadeDirective } from '@shared/components/img-fade/img-fade.directive';
 
 type PickerFilter = 'all' | 'images' | 'videos';
 
@@ -42,6 +44,8 @@ type PickerFilter = 'all' | 'images' | 'videos';
     IconField,
     SelectButton,
     ServerUrlPipe,
+    TiltDirective,
+    ImgFadeDirective,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -106,13 +110,15 @@ type PickerFilter = 'all' | 'images' | 'videos';
             <button
               type="button"
               class="picker-card"
+              appTilt
               [class.picked]="isSelected(asset.id)"
               (click)="toggle(asset.id)"
               [title]="asset.filename"
             >
-              <div class="picker-thumb">
+              <div class="picker-thumb zoomable">
                 @if (asset.mime_type?.startsWith('image/')) {
                   <img
+                    appImgFade
                     [src]="assetThumb(asset) | serverUrl"
                     [alt]="asset.filename"
                     loading="lazy"

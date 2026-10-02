@@ -139,9 +139,9 @@
             }
             @if (assets().length > 0) {
               <div class="asset-grid">
-                @for (asset of assets().slice(0, 8); track asset.id) {
+                @for (asset of assets().slice(0, 4); track asset.id) {
                   <div
-                    class="asset-thumb"
+                    class="asset-thumb zoomable"
                     [class.selected]="selectedAssetIds().has(asset.id)"
                     role="button"
                     tabindex="0"
@@ -150,6 +150,7 @@
                     [title]="asset.filename"
                   >
                     <img
+                      appImgFade
                       [src]="asset.thumbnail_url || asset.url | serverUrl"
                       [alt]="asset.filename"
                       loading="lazy"
@@ -176,6 +177,16 @@
                     </span>
                   </div>
                 }
+                @if (assets().length > 4) {
+                  <button
+                    type="button"
+                    class="asset-thumb more"
+                    (click)="libraryPickerVisible.set(true)"
+                    [title]="'Ver los ' + assets().length + ' recursos en la biblioteca'"
+                  >
+                    +{{ assets().length - 4 }}
+                  </button>
+                }
               </div>
             }
           </div>
@@ -196,7 +207,8 @@
           (ngModelChange)="onPromptInput($event)"
           (keydown)="onMentionKeydown($event)"
           (blur)="closeMentionMenu()"
-          rows="7"
+          rows="3"
+          wrap="soft"
           placeholder="AGREGÁ TU PROMPT — usá @ para citar recursos"
           class="prompt-input big"
         ></textarea>
@@ -515,7 +527,7 @@
           [class.md-bolt]="!submitting()"
         ></i>
         {{ submitting() ? 'Enviando…' : 'Generar ' + (mode() === 'video' ? 'Video' : 'Imagen') }}
-        <kbd class="ml-1 rounded border border-current px-1 text-[10px] opacity-70">Ctrl+↵</kbd>
+        <kbd class="kbd ml-1">Ctrl+↵</kbd>
       </button>
     </span>
   </aside>
@@ -643,6 +655,7 @@
         <button
           type="button"
           class="take-card"
+          appTilt
           animate.enter="anim-item"
           [style.animation-delay.ms]="reelIdx < 8 ? reelIdx * 35 : 280"
           [class.selected]="take.id === selectedTakeId()"
@@ -707,7 +720,7 @@
     <div class="queue-list">
       @for (take of activeTakes(); track take.id) {
         <div class="queue-item" animate.enter="anim-item" [attr.data-status]="take.status">
-          <i class="md md-autorenew md-spin"></i>
+          <span class="pulse-dot" aria-hidden="true"></span>
           <div class="queue-info">
             <p class="truncate">{{ take.modelDisplayName }}</p>
             <div class="progress-track slim">

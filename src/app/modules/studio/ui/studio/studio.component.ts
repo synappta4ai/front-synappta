@@ -37,6 +37,8 @@ import { StudioService } from '../../services/studio.service';
 import { StudioModel, StudioTake } from '../../interfaces';
 import { AssetPickerDialogComponent } from '@shared/components/index';
 import { SlidePillDirective } from '@shared/components/slide-pill/slide-pill.directive';
+import { TiltDirective } from '@shared/components/tilt/tilt.directive';
+import { ImgFadeDirective } from '@shared/components/img-fade/img-fade.directive';
 
 interface RatioOption {
   label: string;
@@ -72,6 +74,8 @@ const REF_SLOT_DEFS: RefSlotDef[] = [
     ServerUrlPipe,
     AssetPickerDialogComponent,
     SlidePillDirective,
+    TiltDirective,
+    ImgFadeDirective,
   ],
   templateUrl: './studio.component.html',
   styleUrl: './studio.component.css',

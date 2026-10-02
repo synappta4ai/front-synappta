@@ -418,6 +418,7 @@
                 >
                   @if (ref.thumbnail_url || ref.url) {
                     <img
+                      appImgFade
                       [src]="ref.thumbnail_url || ref.url | serverUrl"
                       [alt]="ref.filename"
                       loading="lazy"

@@ -15,6 +15,8 @@ import { ConfirmationService } from 'primeng/api';
 import { AdminService } from '../../services/admin.service';
 import { Tenant } from '../../interfaces';
 import { PageContainerComponent } from '@shared/components/index';
+import { CountUpDirective } from '@shared/components/count-up/count-up.directive';
+import { ProgressSpinner } from 'primeng/progressspinner';
 
 @Component({
   selector: 'app-admin-tenants',
@@ -29,6 +31,8 @@ import { PageContainerComponent } from '@shared/components/index';
     Tag,
     Message,
     ConfirmDialog,
+    ProgressSpinner,
+    CountUpDirective,
   ],
   providers: [ConfirmationService],
   templateUrl: './tenants.component.html',

@@ -4,7 +4,11 @@
    raíz:Budget anyComponentStyle (8 kB) se respeta sin moverlos. */
 :host {
   display: block;
-  min-height: calc(100vh - 64px);
+  /* Altura bloqueada al viewport: la página no hace scroll; cada columna
+     tiene su propio scroll interno como fallback. En pantallas bajas,
+     min-height permite crecer con scroll de página. */
+  height: calc(100dvh - 64px);
+  min-height: 480px;
   padding: 12px 16px;
 }
 
@@ -26,7 +30,8 @@
   display: grid;
   grid-template-columns: var(--col-left, 340px) 10px minmax(0, 1fr) 10px var(--col-right, 320px);
   gap: 12px;
-  min-height: 640px;
+  height: 100%;
+  min-height: 0;
   color: var(--color-ink);
 }
 

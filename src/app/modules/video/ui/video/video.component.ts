@@ -29,6 +29,7 @@ import { LibraryService } from '@modules/library/services';
 import { FileAsset } from '@modules/library/interfaces';
 import { PageContainerComponent, AssetPickerDialogComponent } from '@shared/components/index';
 import { ServerUrlPipe } from '@pipes/server-url.pipe';
+import { ImgFadeDirective } from '@shared/components/img-fade/img-fade.directive';
 
 @Component({
   selector: 'app-video',
@@ -50,6 +51,7 @@ import { ServerUrlPipe } from '@pipes/server-url.pipe';
     Tooltip,
     ServerUrlPipe,
     AssetPickerDialogComponent,
+    ImgFadeDirective,
   ],
   templateUrl: './video.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

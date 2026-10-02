@@ -17,6 +17,8 @@ import { UserSessionStore } from '@core/store/user.session';
 import { AdminService } from '../../services/admin.service';
 import { GeneratedImage } from '../../interfaces';
 import { ServerUrlPipe } from '@pipes/server-url.pipe';
+import { TiltDirective } from '@shared/components/tilt/tilt.directive';
+import { ImgFadeDirective } from '@shared/components/img-fade/img-fade.directive';
 import { LibraryService } from '@modules/library/services';
 import { FileAsset, FileIngredientRef } from '@modules/library/interfaces';
 import { EventsService } from '@modules/events/services';
@@ -40,6 +42,8 @@ type IngFilter = 'all' | 'character' | 'location' | 'prop';
     SelectButton,
     Select,
     ServerUrlPipe,
+    TiltDirective,
+    ImgFadeDirective,
   ],
   templateUrl: './admin-images.component.html',
   styleUrl: './admin-images.component.css',

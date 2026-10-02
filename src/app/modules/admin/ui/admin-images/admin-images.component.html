@@ -104,6 +104,7 @@
             animate.enter="anim-item"
             [style.animation-delay.ms]="i < 8 ? i * 35 : 280"
             class="group cursor-pointer overflow-hidden rounded-2xl border border-surface-border bg-surface transition-shadow hover:border-surface-border-strong"
+            appTilt
             (click)="openViewer(img)"
             (keydown.enter)="openViewer(img)"
             tabindex="0"
@@ -112,6 +113,7 @@
           >
             <div class="relative aspect-square overflow-hidden bg-surface-2">
               <img
+                appImgFade
                 [src]="outputUrl(img) | serverUrl"
                 [alt]="img.event_name || img.task_id"
                 loading="lazy"
@@ -244,6 +246,7 @@
             animate.enter="anim-item"
             [style.animation-delay.ms]="i < 8 ? i * 35 : 280"
             class="resource-card group cursor-pointer"
+            appTilt
             (click)="openViewer(asset)"
             (keydown.enter)="openViewer(asset)"
             tabindex="0"
@@ -253,6 +256,7 @@
             <div class="relative aspect-square overflow-hidden bg-surface-2">
               @if (asset.mime_type?.startsWith('image/')) {
                 <img
+                  appImgFade
                   [src]="assetThumb(asset) | serverUrl"
                   [alt]="asset.filename"
                   loading="lazy"
@@ -381,6 +385,7 @@
 
       @if (isGenerated(item)) {
         <img
+          appImgFade
           [src]="outputUrl(item) | serverUrl"
           [alt]="selectedName()"
           decoding="async"
@@ -419,6 +424,7 @@
       } @else {
         @if (item.mime_type?.startsWith('image/')) {
           <img
+            appImgFade
             [src]="item.url | serverUrl"
             [alt]="item.filename"
             decoding="async"

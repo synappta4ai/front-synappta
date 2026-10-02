@@ -1,0 +1,65 @@
+<div
+  role="region"
+  aria-roledescription="carrusel"
+  aria-label="Destacados del estudio"
+  tabindex="0"
+  (keydown)="onArrow($event)"
+  (mouseenter)="pause()"
+  (mouseleave)="resume()"
+>
+  <div
+    #strip
+    class="hero-strip"
+    [class.hero-strip-dragging]="dragging()"
+    (pointerdown)="onDown($event)"
+    (pointermove)="onMove($event)"
+    (pointerup)="onUp($event)"
+    (pointercancel)="onUp($event)"
+  >
+    @for (slide of slides(); track slide.src; let i = $index) {
+      <figure
+        class="hero-slide"
+        [class.hero-slide-active]="index() === i"
+        role="group"
+        aria-roledescription="diapositiva"
+        [attr.aria-label]="i + 1 + ' de ' + slides().length"
+        [attr.aria-hidden]="index() === i ? null : 'true'"
+      >
+        @if (slide.type === 'video') {
+          <video
+            class="hero-media"
+            [src]="slide.src"
+            [poster]="slide.poster"
+            [attr.aria-label]="slide.alt"
+            muted
+            loop
+            playsinline
+            preload="metadata"
+            disablepictureinpicture
+          ></video>
+        } @else {
+          <img
+            class="hero-media"
+            [src]="slide.src"
+            [alt]="slide.alt"
+            [loading]="i === 0 ? 'eager' : 'lazy'"
+            decoding="async"
+            draggable="false"
+          />
+        }
+      </figure>
+    }
+  </div>
+  <div class="hero-dots" role="group" aria-label="Elegir diapositiva">
+    @for (slide of slides(); track slide.src; let i = $index) {
+      <button
+        type="button"
+        (click)="goTo(i)"
+        [attr.aria-current]="index() === i"
+        [attr.aria-label]="'Ir a la diapositiva ' + (i + 1)"
+        class="hero-dot"
+        [class.hero-dot-active]="index() === i"
+      ></button>
+    }
+  </div>
+</div>
