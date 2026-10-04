@@ -146,7 +146,7 @@ export interface ServerCommunicationLog {
   model_name: string;
   endpoint: string;
   method: string;
-  /** "generate" = envío de la generación, "poll" = última respuesta del polling. */
+  /** "generate" = envío de la generación, "estimate" = gasto estimado por el proveedor, "poll" = última respuesta del polling. */
   phase?: string;
   /** Cuántas llamadas de polling se acumularon para esta tarea. */
   poll_count: number;

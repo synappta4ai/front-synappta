@@ -20,7 +20,12 @@ import { ServerUrlPipe } from '@pipes/server-url.pipe';
 import { TiltDirective } from '@shared/components/tilt/tilt.directive';
 import { ImgFadeDirective } from '@shared/components/img-fade/img-fade.directive';
 import { LibraryService } from '@modules/library/services';
-import { FileAsset, FileIngredientRef } from '@modules/library/interfaces';
+import {
+  ASSET_SECTIONS,
+  FileAsset,
+  FileIngredientRef,
+  isAssetSection,
+} from '@modules/library/interfaces';
 import { EventsService } from '@modules/events/services';
 import { Event as Project } from '@modules/events/interfaces';
 
@@ -190,6 +195,19 @@ export class AdminImagesComponent {
       }
       return true;
     });
+  });
+
+  /** Recursos agrupados por sección de referencia (Personaje/Ubicación/Props). */
+  protected readonly assetSections = computed<{ label: string; assets: FileAsset[] }[]>(() => {
+    const list = this.filteredAssets();
+    const groups = [
+      ...ASSET_SECTIONS.map((s) => ({
+        label: s.label,
+        assets: list.filter((a) => a.category === s.key),
+      })),
+      { label: 'Otros recursos', assets: list.filter((a) => !isAssetSection(a.category)) },
+    ];
+    return groups.filter((g) => g.assets.length > 0);
   });
 
   constructor() {

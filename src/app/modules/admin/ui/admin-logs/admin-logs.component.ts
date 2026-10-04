@@ -16,10 +16,15 @@ import { UserSessionStore } from '@core/store/user.session';
 import { AdminService } from '../../services/admin.service';
 import { ServerCommunicationLog } from '../../interfaces';
 
-/** One logical record: the generation submit plus the latest polling trace. */
+/**
+ * One logical record: the generation submit, the provider spend estimate
+ * (phase "estimate", when the provider reports one) and the latest polling
+ * trace.
+ */
 interface CommRow {
   task_id: string;
   generate: ServerCommunicationLog | null;
+  estimate: ServerCommunicationLog | null;
   poll: ServerCommunicationLog | null;
 }
 
@@ -127,10 +132,13 @@ export class AdminLogsComponent {
       const key = c.task_id || `id:${c.id}`;
       let row = byTask.get(key);
       if (!row) {
-        row = { task_id: c.task_id, generate: null, poll: null };
+        row = { task_id: c.task_id, generate: null, estimate: null, poll: null };
         byTask.set(key, row);
       }
-      if (c.phase === 'poll' || c.method === 'GET') {
+      if (c.phase === 'estimate') {
+        // Provider spend estimate (credits + USD reported by the API).
+        if (!row.estimate) row.estimate = c;
+      } else if (c.phase === 'poll' || c.method === 'GET') {
         // List comes newest-first: the first poll seen is the latest.
         if (!row.poll) row.poll = c;
       } else if (!row.generate) {
@@ -198,10 +206,10 @@ export class AdminLogsComponent {
     return this.formatMs(Math.max(0, Date.now() - new Date(raw).getTime()));
   }
 
-  /** The two phase tabs of the detail dialog for a merged row. */
+  /** The phase tabs of the detail dialog for a merged row. */
   protected phases(r: CommRow): PhaseTab[] {
     const pollBadge = `POLLING ×${r.poll?.poll_count ?? 0}`;
-    return [
+    const tabs: PhaseTab[] = [
       {
         value: 'generation',
         label: 'Generación',
@@ -209,14 +217,50 @@ export class AdminLogsComponent {
         badge: 'ENVÍO',
         comm: r.generate,
       },
-      {
-        value: 'polling',
-        label: 'Último polling',
-        icon: 'md md-refresh',
-        badge: pollBadge,
-        comm: r.poll,
-      },
     ];
+    if (r.estimate) {
+      tabs.push({
+        value: 'estimate',
+        label: 'Gasto estimado',
+        icon: 'md md-description',
+        badge: 'GASTO',
+        comm: r.estimate,
+      });
+    }
+    tabs.push({
+      value: 'polling',
+      label: 'Último polling',
+      icon: 'md md-refresh',
+      badge: pollBadge,
+      comm: r.poll,
+    });
+    return tabs;
+  }
+
+  /** Provider-reported spend parsed from the estimate trace (null = none). */
+  protected rowCost(r: CommRow): { credits: number; usd: number } | null {
+    const raw = r.estimate?.response_body;
+    if (!raw) return null;
+    try {
+      const j = JSON.parse(raw) as { credits?: unknown; usd?: unknown };
+      const credits = Number(j.credits);
+      const usd = Number(j.usd);
+      if (!Number.isFinite(credits) && !Number.isFinite(usd)) return null;
+      return {
+        credits: Number.isFinite(credits) ? credits : 0,
+        usd: Number.isFinite(usd) ? usd : 0,
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  /** Compact spend for the table cell: "$0.094 · 1.5 cr". */
+  protected formatCost(cost: { credits: number; usd: number }): string {
+    const parts: string[] = [];
+    if (cost.usd > 0) parts.push(`$${Math.round(cost.usd * 1000) / 1000}`);
+    if (cost.credits > 0) parts.push(`${Math.round(cost.credits * 100) / 100} cr`);
+    return parts.join(' · ');
   }
 
   protected statusSeverity(status: number): 'success' | 'danger' | 'warn' {

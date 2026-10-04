@@ -20,12 +20,17 @@ import { IconField } from 'primeng/iconfield';
 import { SelectButton } from 'primeng/selectbutton';
 
 import { LibraryService } from '@modules/library/services';
-import { FileAsset, FileListFilters } from '@modules/library/interfaces';
+import {
+  ASSET_SECTIONS,
+  FileAsset,
+  FileListFilters,
+  isAssetSection,
+} from '@modules/library/interfaces';
 import { ServerUrlPipe } from '@core/pipes/server-url.pipe';
 import { TiltDirective } from '@shared/components/tilt/tilt.directive';
 import { ImgFadeDirective } from '@shared/components/img-fade/img-fade.directive';
 
-type PickerFilter = 'all' | 'images' | 'videos';
+type PickerFilter = 'all' | 'character' | 'location' | 'props' | 'images' | 'videos';
 
 /**
  * Modal de selección de recursos existentes de la biblioteca (los mismos
@@ -105,8 +110,15 @@ type PickerFilter = 'all' | 'images' | 'videos';
           <p>Sube recursos desde Admin → Imágenes y aparecerán aquí.</p>
         </div>
       } @else {
-        <div class="picker-grid">
-          @for (asset of paged(); track asset.id) {
+        @for (group of groups(); track group.label) {
+          @if (group.label) {
+            <h4 class="picker-section-head">
+              {{ group.label }}
+              <span class="picker-section-count">{{ group.assets.length }}</span>
+            </h4>
+          }
+          <div class="picker-grid">
+          @for (asset of group.assets; track asset.id) {
             <button
               type="button"
               class="picker-card"
@@ -141,7 +153,8 @@ type PickerFilter = 'all' | 'images' | 'videos';
               <p class="picker-filename">{{ asset.filename }}</p>
             </button>
           }
-        </div>
+          </div>
+        }
 
         <!-- Paginación -->
         @if (total() > pageSize()) {
@@ -245,6 +258,31 @@ type PickerFilter = 'all' | 'images' | 'videos';
       max-height: 56vh;
       overflow-y: auto;
       padding: 2px;
+    }
+
+    .picker-section-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 16px 2px 8px;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--color-ink-muted);
+    }
+
+    .picker-section-head:first-child {
+      margin-top: 2px;
+    }
+
+    .picker-section-count {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 0 7px;
+      border-radius: 999px;
+      border: 1px solid var(--st-line, rgba(255, 255, 255, 0.1));
+      background: var(--st-panel-2, rgba(255, 255, 255, 0.06));
     }
 
     .picker-card {
@@ -417,20 +455,49 @@ export class AssetPickerDialogComponent {
 
   readonly filterOptions = [
     { label: 'Todos', value: 'all' as const, icon: 'md md-grid_view' },
+    { label: 'Personaje', value: 'character' as const, icon: 'md md-person' },
+    { label: 'Ubicación', value: 'location' as const, icon: 'md md-place' },
+    { label: 'Props', value: 'props' as const, icon: 'md md-inventory_2' },
     { label: 'Imágenes', value: 'images' as const, icon: 'md md-image' },
     { label: 'Videos', value: 'videos' as const, icon: 'md md-videocam' },
   ];
 
   readonly paged = computed(() => {
     const term = this.search().trim().toLowerCase();
+    const f = this.filter();
+    // Imágenes/Videos filtran por contenido (mime), no por categoría: las
+    // referencias con sección (character/location/props) son imágenes.
     const base =
-      this.filter() === 'all'
+      f === 'all'
         ? this.assets()
-        : this.assets().filter((a) => a.category === this.filter());
+        : f === 'images'
+          ? this.assets().filter((a) => a.mime_type?.startsWith('image/'))
+          : f === 'videos'
+            ? this.assets().filter((a) => a.mime_type?.startsWith('video/'))
+            : this.assets().filter((a) => a.category === f);
     if (!term) {
       return base;
     }
     return base.filter((a) => a.filename.toLowerCase().includes(term));
+  });
+
+  /**
+   * Grid agrupado por sección de referencia (Personaje / Ubicación / Props /
+   * Otros). Con búsqueda o filtro activo se muestra plano (un solo grupo).
+   */
+  readonly groups = computed<{ label: string; assets: FileAsset[] }[]>(() => {
+    const list = this.paged();
+    if (this.filter() !== 'all' || this.search().trim()) {
+      return [{ label: '', assets: list }];
+    }
+    const groups = [
+      ...ASSET_SECTIONS.map((s) => ({
+        label: s.label,
+        assets: list.filter((a) => a.category === s.key),
+      })),
+      { label: 'Otros recursos', assets: list.filter((a) => !isAssetSection(a.category)) },
+    ];
+    return groups.filter((g) => g.assets.length > 0);
   });
 
   constructor() {

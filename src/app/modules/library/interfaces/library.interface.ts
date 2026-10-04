@@ -81,6 +81,26 @@ export interface FileListFilters {
   event_id?: string;
 }
 
+// ─── Secciones de la galería de referencias ────────────────
+
+/**
+ * Secciones de referencia (files.category): el Studio las usa para los
+ * slots tipados y la galería/picker agrupan por ellas. Los valores son
+ * libres en la BD; el resto ("images", "videos", "audios") cae en "Otros".
+ */
+export const ASSET_SECTIONS = [
+  { key: 'character', label: 'Personaje' },
+  { key: 'location', label: 'Ubicación' },
+  { key: 'props', label: 'Utilería / Props' },
+] as const;
+
+export type AssetSectionKey = (typeof ASSET_SECTIONS)[number]['key'];
+
+/** true si la categoría del recurso es una sección de referencia. */
+export function isAssetSection(category: string | null | undefined): category is AssetSectionKey {
+  return !!category && ASSET_SECTIONS.some((s) => s.key === category);
+}
+
 export interface IngredientListFilters {
   page?: number;
   pageSize?: number;
