@@ -73,6 +73,35 @@ export class AgencyApiRepository {
     });
   }
 
+  /**
+   * The caller's generations inside a date window (RFC3339 or YYYY-MM-DD
+   * bounds) — studio take-reel session recovery by day.
+   */
+  taskHistory(params: {
+    from?: string;
+    to?: string;
+    resource_type?: string;
+    limit?: number;
+  }): Observable<ApiResponse<GenerationLog[]>> {
+    const query: Record<string, string> = {};
+    if (params.from) query['from'] = params.from;
+    if (params.to) query['to'] = params.to;
+    if (params.resource_type) query['resource_type'] = params.resource_type;
+    if (params.limit) query['limit'] = String(params.limit);
+    return this.http.get<ApiResponse<GenerationLog[]>>(`${this.apiUrl}/agency/tasks/history`, {
+      params: query,
+    });
+  }
+
+  /** Two-check rating ("Buena toma"/"Elegida final") of the caller's task. */
+  updateTaskRating(taskId: string, good: boolean, final: boolean): Observable<ApiResponse<null>> {
+    return this.http.patch<ApiResponse<null>>(`${this.apiUrl}/agency/tasks/rating`, {
+      task_id: taskId,
+      good,
+      final,
+    });
+  }
+
   cancelTask(modality: Modality, taskId: string): Observable<ApiResponse<null>> {
     return this.http.delete<ApiResponse<null>>(`${this.apiUrl}/agency/${modality}/task/${taskId}`);
   }

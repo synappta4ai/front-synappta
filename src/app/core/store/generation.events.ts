@@ -4,8 +4,8 @@ import { catchError, EMPTY } from 'rxjs';
 
 import { AgencyService } from '@modules/agency/services';
 
-import type { GenerationLog } from '@modules/agency/interfaces';
-import type { StudioTake } from '@modules/studio/interfaces';
+import type { GenerateRequest, GenerationLog } from '@modules/agency/interfaces';
+import type { StudioTake, StudioTakeRef } from '@modules/studio/interfaces';
 
 /** How often running tasks are re-polled (shared, global). */
 const POLL_INTERVAL_MS = 2500;
@@ -35,11 +35,19 @@ export class GenerationEventsStore {
   private readonly _events = signal<StudioTake[]>([]);
   /** Ids of takes that finished (ok/failed) while tracked and not seen yet. */
   private readonly _unread = signal<string[]>([]);
+  /**
+   * Selected history day (local YYYY-MM-DD) when the user recovers a past
+   * session from the date history; null = live reel (all recent takes).
+   */
+  private readonly _sessionDate = signal<string | null>(null);
   private readonly polling = new Set<string>();
   private timerSub: Subscription | null = null;
 
   /** All events, newest first. */
   readonly events = this._events.asReadonly();
+
+  /** Selected history day (null = live reel). */
+  readonly sessionDate = this._sessionDate.asReadonly();
 
   /** Events currently queued or running. */
   readonly active = computed(() =>
@@ -111,7 +119,7 @@ export class GenerationEventsStore {
       .pipe(catchError(() => EMPTY))
       .subscribe((logs) => {
         for (const log of logs ?? []) {
-          if (!log.task_id || this._events().some((e) => e.id === log.task_id)) {
+          if (!log.task_id || log.task_id === '<no-task>' || this._events().some((e) => e.id === log.task_id)) {
             continue;
           }
           const take = this.takeFromLog(log);
@@ -127,6 +135,61 @@ export class GenerationEventsStore {
           }
         }
       });
+  }
+
+  /**
+   * Recovers the session of a given local day (YYYY-MM-DD): pulls the user's
+   * video generations from the backend between that day's boundaries and
+   * merges them into the reel (newest first). Running tasks resume polling.
+   */
+  loadSession(dateISO: string): void {
+    this._sessionDate.set(dateISO);
+    const from = new Date(`${dateISO}T00:00:00`);
+    const to = new Date(from.getTime() + 24 * 60 * 60 * 1000);
+    this.agencyService
+      .taskHistory({ from: from.toISOString(), to: to.toISOString(), resource_type: 'video', limit: 200 })
+      .pipe(catchError(() => EMPTY))
+      .subscribe((logs) => {
+        for (const log of logs ?? []) {
+          if (!log.task_id || log.task_id === '<no-task>') {
+            continue;
+          }
+          this.upsert(this.takeFromLog(log));
+          if (!TERMINAL_BACKEND_STATUSES.includes(log.status)) {
+            this.track(log.task_id);
+          }
+        }
+      });
+  }
+
+  /** Leaves session mode: the reel goes back to the live (all-days) view. */
+  clearSession(): void {
+    this._sessionDate.set(null);
+  }
+
+  /**
+   * Sets the two-check rating ("Buena toma" / "Elegida final") of a take:
+   * optimistic local patch, then persisted on the backend (owner-only).
+   * On API failure the previous flags are restored.
+   */
+  setRating(id: string, good: boolean, final: boolean): void {
+    const previous = this._events().find((e) => e.id === id);
+    if (!previous) {
+      return;
+    }
+    this.patch(id, { ratingGood: good, ratingFinal: final });
+    this.agencyService
+      .updateTaskRating(id, good, final)
+      .pipe(
+        catchError(() => {
+          this.patch(id, {
+            ratingGood: previous.ratingGood ?? false,
+            ratingFinal: previous.ratingFinal ?? false,
+          });
+          return EMPTY;
+        }),
+      )
+      .subscribe();
   }
 
   /**
@@ -158,17 +221,20 @@ export class GenerationEventsStore {
     let ratio = log.video_ratio ?? '';
     let resolution = log.video_resolution ?? '';
     let duration = log.video_duration ?? 0;
+    let request: GenerateRequest | null = null;
+    let refImages: StudioTakeRef[] = [];
     try {
-      const req = JSON.parse(log.request ?? '{}') as {
-        content?: { type?: string; text?: string }[];
-        ratio?: string;
-        resolution?: string;
-        duration?: number;
+      const req = JSON.parse(log.request ?? '{}') as GenerateRequest & {
+        content?: { type?: string; text?: string; id?: string; name?: string }[];
       };
       prompt = (req.content ?? []).find((c) => c.type === 'text')?.text ?? '';
       ratio = ratio || req.ratio || '';
       resolution = resolution || req.resolution || '';
       duration = duration || req.duration || 0;
+      request = req;
+      refImages = (req.content ?? [])
+        .filter((c) => c.type === 'image' && !!c.id)
+        .map((c) => ({ id: c.id as string, name: c.name ?? c.id as string }));
     } catch {
       prompt = '';
     }
@@ -187,6 +253,14 @@ export class GenerationEventsStore {
       videoUrl: out?.localUrl ?? out?.url ?? null,
       error: log.error_message || null,
       createdAt: new Date(log.created_at).getTime(),
+      ratingGood: !!log.rating_good,
+      ratingFinal: !!log.rating_final,
+      costCredits: log.cost_credits ?? 0,
+      costUsd: log.estimated_cost ?? 0,
+      transactionId: log.provider_transaction_id || null,
+      eventName: log.event_name || null,
+      refImages,
+      request,
     };
   }
 

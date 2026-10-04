@@ -34,6 +34,8 @@ describe('GenerationEventsStore hydration', () => {
     resource_type: 'video',
     estimated_cost: 0,
     cost_source: '',
+    cost_credits: 0,
+    provider_transaction_id: '',
     usage_tokens: 0,
     usage_completion_tokens: 0,
     video_duration: 5,

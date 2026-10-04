@@ -74,6 +74,11 @@ export interface GenerateResponse {
   model: string;
   status: string;
   outputs?: OutputResource[];
+  /** Gasto estimado por el proveedor (Higgsfield): créditos y USD. */
+  cost_credits?: number;
+  cost_usd?: number;
+  /** "Transaction ID" con el que la generación aparece en la consola del proveedor. */
+  provider_transaction_id?: string;
 }
 
 export interface StatusOutput {
@@ -126,6 +131,10 @@ export interface GenerationLog {
   resource_type: string | null;
   estimated_cost: number | null;
   cost_source: string | null;
+  /** Gasto en créditos del proveedor (Higgsfield). */
+  cost_credits: number;
+  /** "Transaction ID" del proveedor (request_id de Higgsfield). */
+  provider_transaction_id: string;
   usage_tokens: number;
   usage_completion_tokens: number;
   video_duration: number;
@@ -134,6 +143,11 @@ export interface GenerationLog {
   video_seed: number;
   video_fps: number;
   progress: number;
+  rating_good: boolean;
+  rating_final: boolean;
+  event_name: string | null;
+  piece_name: string | null;
+  user_display_name: string | null;
   created_at: string;
 }
 

@@ -611,8 +611,69 @@
           <span class="muted">·</span>
           <span>{{ take.duration }}s</span>
         }
+        @if (take.eventName) {
+          <span class="muted">·</span>
+          <span [title]="take.eventName">{{ take.eventName }}</span>
+        }
         <span class="muted">·</span>
         <span class="prompt-ellipsis" [title]="take.prompt">{{ take.prompt }}</span>
+        @if (hasCost(take)) {
+          <span class="take-cost" [title]="costTitle(take)">
+            @if ((take.costUsd ?? 0) > 0) {
+              <span>{{ formatCostUsd(take.costUsd!) }}</span>
+            }
+            @if ((take.costCredits ?? 0) > 0) {
+              <span class="cost-credits">{{ formatCredits(take.costCredits!) }}</span>
+            }
+            @if (take.transactionId) {
+              <span class="cost-tx">TX {{ take.transactionId }}</span>
+            }
+          </span>
+        }
+        <div class="viewer-actions">
+            @if (take.status === 'succeeded' || take.status === 'failed') {
+              <div class="rating-group" role="group" aria-label="Calificación de la toma">
+                <button
+                  type="button"
+                  class="rating-check"
+                  [class.active]="take.ratingGood"
+                  [title]="take.ratingGood ? 'Quitar “Buena toma”' : 'Buena toma'"
+                  (click)="toggleGood(take)"
+                >
+                  <i class="md md-check"></i>
+                </button>
+                <button
+                  type="button"
+                  class="rating-check"
+                  [class.active]="take.ratingFinal"
+                  [title]="take.ratingFinal ? 'Quitar “Elegida final”' : 'Elegida final'"
+                  (click)="toggleFinal(take)"
+                >
+                  <i class="md md-check md-double"></i>
+                </button>
+                @if (take.ratingGood || take.ratingFinal) {
+                  <button
+                    type="button"
+                    class="rating-clear"
+                    title="Limpiar calificación"
+                    (click)="clearRating(take)"
+                  >
+                    CLEAR
+                  </button>
+                }
+              </div>
+              <button
+                type="button"
+                class="rating-redo"
+                title="Generar un video nuevo con los mismos datos"
+                [disabled]="submitting()"
+                (click)="regenerate(take)"
+              >
+                <i class="md md-refresh"></i>
+                <span>REHACER</span>
+              </button>
+            }
+          </div>
       </div>
     } @else {
       <div class="viewer" [style.--canvas-ar]="canvasAr()">
@@ -645,21 +706,53 @@
   <aside class="studio-right">
     <div class="reel-head">
       <span><i class="md md-movie"></i> Take Reel</span>
+      @if (sessionLabel()) {
+        <span class="session-chip" [title]="'Sesión del ' + sessionLabel()">
+          <i class="md md-history"></i>
+          {{ sessionLabel() }}
+          <button
+            type="button"
+            class="session-clear"
+            (click)="clearSession()"
+            aria-label="Volver al reel en vivo"
+          >
+            <i class="md md-close"></i>
+          </button>
+        </span>
+      }
+      <input
+        type="date"
+        class="reel-history-input"
+        [value]="historyPickIso()"
+        (change)="onHistoryInput($event)"
+        aria-label="Ir a un día del historial"
+        title="Ir a un día"
+      />
       <p-tag [value]="takes().length.toString()" severity="secondary" />
     </div>
-    @if (takes().length === 0) {
-      <p class="muted small pad">Todavía no hay tomas en esta sesión.</p>
+    @if (reelGroups().length === 0) {
+      <p class="muted small pad">
+        {{ sessionDate() ? 'Sin generaciones ese día.' : 'Todavía no hay tomas en esta sesión.' }}
+      </p>
     }
     <div class="reel-list">
-      @for (take of takes(); track take.id; let reelIdx = $index) {
-        <button
-          type="button"
+      @for (group of reelGroups(); track group.key) {
+        <div class="reel-day">
+          <div class="reel-day-head">
+            <span>{{ group.label }}</span>
+            <span class="muted small">{{ group.takes.length }}</span>
+          </div>
+          @for (take of group.takes; track take.id; let reelIdx = $index) {
+        <div
           class="take-card"
+          role="button"
+          tabindex="0"
           appTilt
           animate.enter="anim-item"
           [style.animation-delay.ms]="reelIdx < 8 ? reelIdx * 35 : 280"
           [class.selected]="take.id === selectedTakeId()"
           (click)="selectTake(take)"
+          (keydown.enter)="selectTake(take)"
         >
           @if (take.status === 'succeeded' && take.videoUrl) {
             <video
@@ -680,7 +773,28 @@
           }
           <div class="take-info">
             <p class="take-title truncate">{{ take.modelDisplayName }}</p>
+            @if (take.eventName) {
+              <p class="take-project truncate">
+                <i class="md md-folder_open"></i> {{ take.eventName }}
+              </p>
+            }
             <p class="take-sub muted small truncate">{{ take.prompt }}</p>
+            @if (take.refImages?.length) {
+              <div class="ref-strip">
+                @for (ref of take.refImages!.slice(0, 4); track ref.id) {
+                  <img
+                    class="ref-thumb"
+                    [src]="refThumbUrl(ref.id)"
+                    [alt]="ref.name"
+                    [title]="ref.name"
+                    (error)="onThumbError($event)"
+                  />
+                }
+                @if (take.refImages!.length > 4) {
+                  <span class="ref-more muted">+{{ take.refImages!.length - 4 }}</span>
+                }
+              </div>
+            }
             <div class="take-foot">
               <p-tag
                 [value]="takeStatusLabel(take.status)"
@@ -700,10 +814,64 @@
                   showDelay="400"
                 />
               }
+              @if (take.status === 'succeeded' || take.status === 'failed') {
+                <div class="rating-group" role="group" aria-label="Calificación de la toma">
+                  <button
+                    type="button"
+                    class="rating-check"
+                    [class.active]="take.ratingGood"
+                    [title]="take.ratingGood ? 'Quitar “Buena toma”' : 'Buena toma'"
+                    (click)="toggleGood(take); $event.stopPropagation()"
+                  >
+                    <i class="md md-check"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="rating-check"
+                    [class.active]="take.ratingFinal"
+                    [title]="take.ratingFinal ? 'Quitar “Elegida final”' : 'Elegida final'"
+                    (click)="toggleFinal(take); $event.stopPropagation()"
+                  >
+                    <i class="md md-check md-double"></i>
+                  </button>
+                  @if (take.ratingGood || take.ratingFinal) {
+                    <button
+                      type="button"
+                      class="rating-clear"
+                      title="Limpiar calificación"
+                      (click)="clearRating(take); $event.stopPropagation()"
+                    >
+                      CLEAR
+                    </button>
+                  }
+                </div>
+                <button
+                  type="button"
+                  class="rating-redo"
+                  title="Generar un video nuevo con los mismos datos"
+                  [disabled]="submitting()"
+                  (click)="regenerate(take); $event.stopPropagation()"
+                >
+                  <i class="md md-refresh"></i>
+                  <span>REHACER</span>
+                </button>
+              }
+              @if (hasCost(take)) {
+                <span class="take-cost" [title]="costTitle(take)">
+                  @if ((take.costUsd ?? 0) > 0) {
+                    <span>{{ formatCostUsd(take.costUsd!) }}</span>
+                  }
+                  @if ((take.costCredits ?? 0) > 0) {
+                    <span class="cost-credits">{{ formatCredits(take.costCredits!) }}</span>
+                  }
+                </span>
+              }
               <span class="small muted time">{{ formatTime(take.createdAt) }}</span>
             </div>
           </div>
-        </button>
+        </div>
+          }
+        </div>
       }
     </div>
 
@@ -723,9 +891,30 @@
           <span class="pulse-dot" aria-hidden="true"></span>
           <div class="queue-info">
             <p class="truncate">{{ take.modelDisplayName }}</p>
+            @if (take.eventName) {
+              <p class="queue-project truncate">
+                <i class="md md-folder_open"></i> {{ take.eventName }}
+              </p>
+            }
             <div class="progress-track slim">
               <div class="progress-fill" [style.width.%]="take.progress"></div>
             </div>
+            @if (take.refImages?.length) {
+              <div class="ref-strip">
+                @for (ref of take.refImages!.slice(0, 5); track ref.id) {
+                  <img
+                    class="ref-thumb"
+                    [src]="refThumbUrl(ref.id)"
+                    [alt]="ref.name"
+                    [title]="ref.name"
+                    (error)="onThumbError($event)"
+                  />
+                }
+                @if (take.refImages!.length > 5) {
+                  <span class="ref-more muted">+{{ take.refImages!.length - 5 }}</span>
+                }
+              </div>
+            }
           </div>
           <span class="small muted">{{ take.progress }}%</span>
         </div>

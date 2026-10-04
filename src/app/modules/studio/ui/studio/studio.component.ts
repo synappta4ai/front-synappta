@@ -24,6 +24,7 @@ import { Tag } from 'primeng/tag';
 import { Tooltip } from 'primeng/tooltip';
 import { Message } from 'primeng/message';
 
+import type { GenerateRequest, Modality } from '@modules/agency/interfaces';
 import { AgencyService } from '@modules/agency/services';
 import { LibraryService } from '@modules/library/services';
 import { FileAsset, Ingredient, IngredientWithFiles } from '@modules/library/interfaces';
@@ -34,7 +35,7 @@ import { GenerationEventsStore } from '@core/store/generation.events';
 import { environment } from '@env/environment';
 
 import { StudioService } from '../../services/studio.service';
-import { StudioModel, StudioTake } from '../../interfaces';
+import { StudioModel, StudioModelType, StudioTake } from '../../interfaces';
 import { AssetPickerDialogComponent } from '@shared/components/index';
 import { SlidePillDirective } from '@shared/components/slide-pill/slide-pill.directive';
 import { TiltDirective } from '@shared/components/tilt/tilt.directive';
@@ -740,6 +741,104 @@ export class StudioComponent {
   protected readonly error = signal<string | null>(null);
   private takeCounter = 0;
 
+  // ─── Historial por día: agrupación del reel + recuperar sesión ──
+  protected readonly sessionDate = this.eventsStore.sessionDate;
+  /** Día elegido en el input de historial (native <input type=date>). */
+  protected readonly historyPick = signal<Date | null>(null);
+  /** Valor ISO (YYYY-MM-DD) para el input nativo. */
+  protected readonly historyPickIso = computed(() => {
+    const pick = this.historyPick();
+    return pick ? this.dayKey(pick.getTime()) : '';
+  });
+
+  /** Orden "resultados arriba": Listo → en curso → error/cancelado. */
+  private static statusRank(status: StudioTake['status']): number {
+    return status === 'succeeded' ? 0 : status === 'failed' || status === 'cancelled' ? 2 : 1;
+  }
+
+  /**
+   * Reel agrupado por día (más reciente arriba); dentro de cada día los
+   * resultados van primero y la cola de trabajos en curso después. Con una
+   * sesión de historial activa solo se muestra ese día.
+   */
+  protected readonly reelGroups = computed<{ key: string; label: string; takes: StudioTake[] }[]>(
+    () => {
+      const session = this.sessionDate();
+      const visible = this.takes().filter((t) => !session || this.dayKey(t.createdAt) === session);
+      const groups = new Map<string, StudioTake[]>();
+      for (const take of visible) {
+        const key = this.dayKey(take.createdAt);
+        const list = groups.get(key);
+        if (list) {
+          list.push(take);
+        } else {
+          groups.set(key, [take]);
+        }
+      }
+      return [...groups.entries()]
+        .sort((a, b) => (a[0] < b[0] ? 1 : a[0] > b[0] ? -1 : 0))
+        .map(([key, list]) => ({
+          key,
+          label: this.dayLabel(key),
+          takes: list.sort(
+            (a, b) =>
+              StudioComponent.statusRank(a.status) - StudioComponent.statusRank(b.status) ||
+              b.createdAt - a.createdAt,
+          ),
+        }));
+    },
+  );
+
+  /** Etiqueta de la sesión activa ("Hoy", "Ayer" o fecha corta). */
+  protected readonly sessionLabel = computed(() => {
+    const session = this.sessionDate();
+    return session ? this.dayLabel(session) : '';
+  });
+
+  /** Clave local YYYY-MM-DD de un timestamp. */
+  protected dayKey(ts: number): string {
+    const d = new Date(ts);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  }
+
+  /** Etiqueta del día: Hoy / Ayer / fecha corta local. */
+  protected dayLabel(key: string): string {
+    if (key === this.dayKey(Date.now())) {
+      return 'Hoy';
+    }
+    if (key === this.dayKey(Date.now() - 24 * 60 * 60 * 1000)) {
+      return 'Ayer';
+    }
+    return new Date(`${key}T00:00:00`).toLocaleDateString(undefined, {
+      weekday: 'short',
+      day: '2-digit',
+      month: 'short',
+    });
+  }
+
+  /** Día elegido en el input → recupera la sesión desde el servidor. */
+  protected onHistoryInput(event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    if (!value) {
+      this.clearSession();
+      return;
+    }
+    const [y, m, d] = value.split('-').map(Number);
+    if (!y || !m || !d) {
+      return;
+    }
+    const date = new Date(y, m - 1, d);
+    this.historyPick.set(date);
+    this.eventsStore.loadSession(this.dayKey(date.getTime()));
+  }
+
+  /** Sale del modo sesión: el reel vuelve a mostrar todos los días. */
+  protected clearSession(): void {
+    this.historyPick.set(null);
+    this.eventsStore.clearSession();
+  }
+
   /** Duration popover (slider) anchored to the prompt-foot chip. */
   private readonly durationPopover = viewChild<Popover>('durationPopover');
   private readonly assetPopover = viewChild<Popover>('assetPopover');
@@ -1257,9 +1356,24 @@ export class StudioComponent {
 
     const ratio = this.ratio();
     const duration = this.mode() === 'video' ? this.duration() : 0;
-    const takeId = `pending_${Date.now()}`;
-    const take: StudioTake = {
-      id: takeId,
+    const payload: GenerateRequest = {
+      model: model.name,
+      content: [
+        ...mentions.map((a) => ({ type: 'image' as const, id: a.id, name: a.filename })),
+        { type: 'text' as const, text },
+      ],
+      ratio,
+      duration: duration || undefined,
+      resolution: this.resolution(),
+      seed: this.seed().trim() || undefined,
+      // ensureTakeSlot resuelve proyecto/pieza (auto "Studio" si no hay uno).
+      event_id: this.selectedProjectId() ?? '',
+      program_id: undefined,
+      piece_id: '',
+      piece_code: this.takeCode(),
+      generation_number: 0,
+    };
+    this.launchGeneration(payload, {
       prompt: rawText,
       modelName: model.name,
       modelDisplayName: model.displayName,
@@ -1267,63 +1381,102 @@ export class StudioComponent {
       ratio,
       resolution: this.resolution(),
       duration,
+      eventName: this.selectedProject()?.name ?? null,
+      refImages: mentions.map((a) => ({ id: a.id, name: a.filename })),
+    });
+  }
+
+  /**
+   * Lanza una generación (nueva o re-generada): crea la toma pendiente en el
+   * reel, resuelve proyecto/pieza y envía el request. `display` alimenta la
+   * tarjeta mientras viaja; el request queda guardado para poder re-generar.
+   */
+  private launchGeneration(
+    payload: GenerateRequest,
+    display: {
+      prompt: string;
+      modelName: string;
+      modelDisplayName: string;
+      modelType: StudioModelType;
+      ratio: string;
+      resolution: string;
+      duration: number;
+      eventName: string | null;
+      refImages: { id: string; name: string }[];
+    },
+  ): void {
+    const takeId = `pending_${Date.now()}`;
+    const take: StudioTake = {
+      id: takeId,
+      prompt: display.prompt,
+      modelName: display.modelName,
+      modelDisplayName: display.modelDisplayName,
+      modelType: display.modelType,
+      ratio: display.ratio,
+      resolution: display.resolution,
+      duration: display.duration,
       status: 'queued',
       progress: 0,
       videoUrl: null,
       error: null,
       createdAt: Date.now(),
+      ratingGood: false,
+      ratingFinal: false,
+      eventName: display.eventName,
+      refImages: display.refImages,
+      request: payload,
     };
     this.eventsStore.upsert(take);
     this.selectedTakeId.set(takeId);
 
-    // Centralización: la generación se liga al proyecto elegido (o al auto "Studio").
+    // Centralización: la generación se liga al proyecto del request (o al
+    // auto "Studio" cuando no tiene). Reutilizable al regenerar tomas.
     this.studioService
       .ensureTakeSlot(
         `Studio ${new Date().toLocaleDateString()}`,
-        this.takeCode(),
-        this.selectedProjectId() ?? undefined,
+        payload.piece_code,
+        payload.event_id || undefined,
       )
       .pipe(
         catchError(() => {
           this.error.set('No se pudo preparar el proyecto Studio.');
           this.submitting.set(false);
-          this.eventsStore.patch(takeId, { status: 'failed', error: 'no slot' });
+          // Nada se creó en el server: se descarta la take pendiente
+          // (en rehacer, la toma original queda intacta para reintentar).
+          this.eventsStore.remove(takeId);
           return EMPTY;
         }),
       )
       .subscribe(({ project, piece }) => {
-        // Menciones @ → items image (el core resuelve IDs a URLs públicas
-        // o asset:// si el recurso está sincronizado con la galería).
-        const mentionItems = mentions.map((a) => ({
-          type: 'image' as const,
-          id: a.id,
-          name: a.filename,
-        }));
-        const payload = {
-          model: model.name,
-          content: [...mentionItems, { type: 'text' as const, text }],
-          ratio,
-          duration: duration || undefined,
-          resolution: this.resolution(),
-          seed: this.seed().trim() || undefined,
+        const finalPayload: GenerateRequest = {
+          ...payload,
           event_id: project.id,
-          program_id: undefined,
           piece_id: piece.id,
           piece_code: piece.piece_code ?? piece.id,
           generation_number: ++this.takeCounter,
         };
+        const modality =
+          (this.models().find((m) => m.name === payload.model)?.modality as Modality) ??
+          this.mode();
         this.agencyService
-          .generate(this.mode(), payload)
+          .generate(modality, finalPayload)
           .pipe(
             catchError(() => {
               this.error.set('No se pudo iniciar la generación.');
               this.submitting.set(false);
-              this.eventsStore.patch(takeId, { status: 'failed', error: 'submit error' });
+              // Nada se creó en el server: se descarta la take pendiente
+              // (en rehacer, la toma original queda intacta para reintentar).
+              this.eventsStore.remove(takeId);
               return EMPTY;
             }),
           )
           .subscribe((response) => {
-            this.eventsStore.patch(takeId, { id: response.taskId });
+            this.eventsStore.patch(takeId, {
+              id: response.taskId,
+              costCredits: response.cost_credits ?? 0,
+              costUsd: response.cost_usd ?? 0,
+              transactionId: response.provider_transaction_id || null,
+            });
             this.eventsStore.track(response.taskId);
             this.selectedTakeId.set(response.taskId);
             this.submitting.set(false);
@@ -1338,6 +1491,81 @@ export class StudioComponent {
 
   protected cancelTake(take: StudioTake): void {
     this.eventsStore.cancel(take.id);
+  }
+
+  /** Alterna el check "Buena toma" (persistente por video). */
+  protected toggleGood(take: StudioTake): void {
+    this.eventsStore.setRating(take.id, !take.ratingGood, !!take.ratingFinal);
+  }
+
+  /** Alterna el check "Elegida final" (persistente por video). */
+  protected toggleFinal(take: StudioTake): void {
+    this.eventsStore.setRating(take.id, !!take.ratingGood, !take.ratingFinal);
+  }
+
+  /** Limpia ambas calificaciones del video (CLEAR). */
+  protected clearRating(take: StudioTake): void {
+    if (!take.ratingGood && !take.ratingFinal) {
+      return;
+    }
+    this.eventsStore.setRating(take.id, false, false);
+  }
+
+  // ─── Gasto del proveedor (logs de la app) ───────────────────
+
+  /** Hay gasto registrado para la toma (créditos o USD). */
+  protected hasCost(take: StudioTake): boolean {
+    return (take.costUsd ?? 0) > 0 || (take.costCredits ?? 0) > 0;
+  }
+
+  /** USD compacto (0.094 → "$0.094", 1.5 → "$1.50"). */
+  protected formatCostUsd(value: number): string {
+    const rounded = Math.round(value * 1000) / 1000;
+    const text = rounded.toFixed(rounded >= 1 ? 2 : 3).replace(/\.?0+$/, '');
+    return `$${text}`;
+  }
+
+  /** Créditos del proveedor (1.5 → "1.5 cr"). */
+  protected formatCredits(value: number): string {
+    return `${Math.round(value * 100) / 100} cr`;
+  }
+
+  /** Tooltip del gasto: créditos + Transaction ID del proveedor. */
+  protected costTitle(take: StudioTake): string {
+    const parts: string[] = [];
+    if ((take.costCredits ?? 0) > 0) {
+      parts.push(`${this.formatCredits(take.costCredits!)} en Higgsfield`);
+    }
+    if (take.transactionId) {
+      parts.push(`Transaction ID: ${take.transactionId}`);
+    }
+    return parts.join(' · ');
+  }
+
+  /** Volver a generar: relanza el request original de la toma. */
+  protected regenerate(take: StudioTake): void {
+    if (!take.request || this.submitting()) {
+      return;
+    }
+    this.error.set(null);
+    this.submitting.set(true);
+    this.launchGeneration(take.request, {
+      prompt: take.prompt,
+      modelName: take.modelName,
+      modelDisplayName: take.modelDisplayName,
+      modelType: take.modelType,
+      ratio: take.ratio,
+      resolution: take.resolution,
+      duration: take.duration,
+      eventName: take.eventName ?? null,
+      refImages: take.refImages ?? [],
+    });
+  }
+
+  /** Miniatura pública de una imagen de referencia (asset ya cargado). */
+  protected refThumbUrl(refId: string): string {
+    const asset = this.assets().find((a) => a.id === refId);
+    return asset?.thumbnail_url || asset?.url || '';
   }
 
   private takeCode(): string {

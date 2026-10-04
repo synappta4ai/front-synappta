@@ -104,6 +104,21 @@ export class AgencyService {
     return unwrap(this.agencyApiRepository.listRecentTasks(limit));
   }
 
+  /** The caller's generations inside a date window (session recovery by day). */
+  taskHistory(params: {
+    from?: string;
+    to?: string;
+    resource_type?: string;
+    limit?: number;
+  }): Observable<GenerationLog[]> {
+    return unwrap(this.agencyApiRepository.taskHistory(params));
+  }
+
+  /** Two-check rating ("Buena toma"/"Elegida final") of the caller's task. */
+  updateTaskRating(taskId: string, good: boolean, final: boolean): Observable<null> {
+    return unwrap(this.agencyApiRepository.updateTaskRating(taskId, good, final));
+  }
+
   pollTaskUntilDone(
     modality: Modality,
     taskId: string,

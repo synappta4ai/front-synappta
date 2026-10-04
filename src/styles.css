@@ -3073,6 +3073,272 @@ p-selectbutton:has(.section-toggle) {
   margin-left: auto;
 }
 
+/* Gasto de la API del proveedor (Higgsfield): USD + créditos. */
+.studio-shell .take-cost {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-ink);
+  background: var(--st-panel-2, rgba(255, 255, 255, 0.06));
+  border: 1px solid var(--st-line, rgba(255, 255, 255, 0.1));
+  border-radius: 999px;
+  padding: 1px 8px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.studio-shell .take-cost .cost-credits {
+  color: var(--color-ink-muted);
+  font-weight: 500;
+  border-left: 1px solid var(--st-line, rgba(255, 255, 255, 0.1));
+  padding-left: 4px;
+}
+
+/* Transaction ID del proveedor (solo en el visor), truncado. */
+.studio-shell .take-cost .cost-tx {
+  max-width: 16ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--color-ink-muted);
+  font-weight: 500;
+  font-size: 10px;
+  border-left: 1px solid var(--st-line, rgba(255, 255, 255, 0.1));
+  padding-left: 4px;
+}
+
+/* ── Historial por día + calificación + referencias ─────────── */
+.studio-shell .reel-day {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.studio-shell .reel-day-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: capitalize;
+  color: var(--color-ink-muted);
+  padding: 0 2px 3px;
+  border-bottom: 1px solid var(--st-line);
+}
+
+.studio-shell .session-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--st-accent);
+  background: color-mix(in srgb, var(--st-accent) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--st-accent) 35%, transparent);
+  border-radius: 999px;
+  padding: 2px 6px;
+  white-space: nowrap;
+}
+
+.studio-shell .session-chip i {
+  font-size: 13px;
+}
+
+.studio-shell .session-clear {
+  display: inline-flex;
+  align-items: center;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  font-size: 12px;
+}
+
+.studio-shell .reel-history-input {
+  width: 118px;
+  font-size: 11px;
+  font-family: inherit;
+  color: var(--st-text);
+  background: var(--st-panel-2);
+  border: 1px solid var(--st-line);
+  border-radius: 8px;
+  padding: 2px 6px;
+  height: 24px;
+}
+
+.studio-shell .reel-history-input:hover {
+  border-color: var(--st-text-2);
+}
+
+.studio-shell .reel-history-input:focus-visible {
+  outline: none;
+  border-color: var(--st-accent);
+}
+
+.studio-shell .reel-history-input::-webkit-calendar-picker-indicator {
+  filter: invert(0.7);
+  cursor: pointer;
+}
+
+.studio-shell .take-project,
+.studio-shell .queue-project {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--st-accent);
+  margin: 1px 0 0;
+}
+
+.studio-shell .take-project i,
+.studio-shell .queue-project i {
+  font-size: 12px;
+}
+
+.studio-shell .ref-strip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.studio-shell .ref-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  object-fit: cover;
+  border: 1px solid var(--st-line);
+  background: var(--st-bg);
+}
+
+.studio-shell .ref-more {
+  font-size: 10px;
+}
+
+/* Grupo de calificación: un solo botón contenedor con los checks dentro
+   (✓ Buena / ✓✓ Final + CLEAR), estilo segmentado. */
+.studio-shell .rating-group {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid var(--st-line);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--st-panel-2);
+}
+
+.studio-shell .rating-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  padding: 2px 8px;
+  border: 0;
+  background: transparent;
+  color: var(--st-muted);
+  cursor: pointer;
+  transition:
+    color 120ms var(--ease-app),
+    background-color 120ms var(--ease-app);
+}
+
+.studio-shell .rating-check i {
+  font-size: 14px;
+}
+
+/* "Elegida final": doble check (dos glifos check, el segundo solapado). */
+.studio-shell .rating-check i.md-double {
+  position: relative;
+  width: 20px;
+}
+
+.studio-shell .rating-check i.md-double::after {
+  content: 'check';
+  position: absolute;
+  left: 6px;
+  top: 0;
+}
+
+.studio-shell .rating-check:hover {
+  color: var(--st-text);
+}
+
+.studio-shell .rating-check.active {
+  color: var(--st-warn);
+  background: color-mix(in srgb, var(--st-warn) 14%, transparent);
+}
+
+.studio-shell .rating-check + .rating-check,
+.studio-shell .rating-clear {
+  border-left: 1px solid var(--st-line);
+}
+
+.studio-shell .rating-clear {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-top: 0;
+  border-right: 0;
+  border-bottom: 0;
+  background: transparent;
+  color: var(--st-accent);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition:
+    color 120ms var(--ease-app),
+    background-color 120ms var(--ease-app);
+}
+
+.studio-shell .rating-clear:hover {
+  color: var(--st-text);
+  background: color-mix(in srgb, var(--st-accent) 12%, transparent);
+}
+
+/* REHACER: genera un video nuevo con los mismos datos de la toma. */
+.studio-shell .rating-redo {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--st-line);
+  border-radius: 10px;
+  background: var(--st-panel-2);
+  color: var(--st-muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 2px 9px;
+  cursor: pointer;
+  transition:
+    color 120ms var(--ease-app),
+    border-color 120ms var(--ease-app),
+    background-color 120ms var(--ease-app);
+}
+
+.studio-shell .rating-redo i {
+  font-size: 13px;
+}
+
+.studio-shell .rating-redo:hover:not(:disabled) {
+  color: var(--st-text);
+  border-color: var(--st-accent);
+}
+
+.studio-shell .rating-redo:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.studio-shell .viewer-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
 /* ── Cola ────────────────────────────────────────────────────── */
 .studio-shell .queue-list {
   display: flex;
