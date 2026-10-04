@@ -259,6 +259,7 @@ export class GenerationEventsStore {
       costUsd: log.estimated_cost ?? 0,
       transactionId: log.provider_transaction_id || null,
       eventName: log.event_name || null,
+      userName: log.user_display_name || null,
       refImages,
       request,
     };

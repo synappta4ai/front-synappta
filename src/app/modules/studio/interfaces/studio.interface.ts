@@ -50,6 +50,8 @@ export interface StudioTake {
   transactionId?: string | null;
   /** Proyecto (evento) al que quedó ligada la generación. */
   eventName?: string | null;
+  /** Usuario creador (según el log; en el reel siempre es el propio). */
+  userName?: string | null;
   /** Imágenes de referencia enviadas (para miniaturas en reel y cola). */
   refImages?: StudioTakeRef[];
   /** Request original; permite "volver a generar" una toma existente. */
