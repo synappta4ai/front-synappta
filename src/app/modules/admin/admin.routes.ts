@@ -13,18 +13,17 @@ import { TenantsComponent } from './ui/tenants/tenants.component';
 export const adminRoutes: Routes = [
   {
     path: '',
-    canActivate: [authGuard],
+    // Toda la consola es solo para superadmin (role_level 0): el back ya
+    // rechaza los datos con 403 para roles inferiores, acá evitamos
+    // renderizar la consola vacía.
+    canActivate: [authGuard, superadminGuard],
     component: AdminConsoleComponent,
     children: [
       { path: 'models', component: AdminModelsComponent },
       { path: 'logs', component: AdminLogsComponent },
       { path: 'videos', component: AdminVideosComponent },
       { path: 'imagens', component: AdminImagesComponent },
-      {
-        path: 'tenants',
-        component: TenantsComponent,
-        canActivate: [superadminGuard],
-      },
+      { path: 'tenants', component: TenantsComponent },
       { path: '', redirectTo: 'models', pathMatch: 'full' },
     ],
   },
