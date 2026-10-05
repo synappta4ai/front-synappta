@@ -87,6 +87,7 @@ const REF_SLOT_DEFS: RefSlotDef[] = [
   host: {
     '(document:keydown)': 'onShortcut($event)',
     '(document:click)': 'onDocClick($event)',
+    '(window:resize)': 'onWinResize()',
   },
 })
 export class StudioComponent {
@@ -941,8 +942,15 @@ export class StudioComponent {
    */
   protected readonly reelGroups = computed<{ key: string; label: string; takes: StudioTake[] }[]>(
     () => {
+      const project = this.selectedProject();
       const session = this.sessionDate();
-      const visible = this.takes().filter((t) => !session || this.dayKey(t.createdAt) === session);
+      // Con un proyecto seleccionado, el reel muestra TODAS sus generaciones
+      // (el trabajo de un proyecto cruza días): el filtro por día cede.
+      const visible = this.takes().filter((t) =>
+        project
+          ? t.request?.event_id === project.id || t.eventName === project.name
+          : !session || this.dayKey(t.createdAt) === session,
+      );
       const groups = new Map<string, StudioTake[]>();
       for (const take of visible) {
         const key = this.dayKey(take.createdAt);
@@ -1054,6 +1062,29 @@ export class StudioComponent {
         }
       }
     });
+    // Reuse pedido desde /projects: se aplica cuando el catálogo de modelos
+    // esté disponible (el request viaja por sessionStorage).
+    if (isPlatformBrowser(this.platformId)) {
+      const raw = sessionStorage.getItem('studio:reuse');
+      if (raw) {
+        sessionStorage.removeItem('studio:reuse');
+        try {
+          const req = JSON.parse(raw) as GenerateRequest;
+          const prompt = (req.content ?? []).find((c) => c.type === 'text')?.text ?? '';
+          this.pendingReuse.set({ req, prompt });
+        } catch {
+          // Payload inválido: se ignora.
+        }
+      }
+    }
+    effect(() => {
+      const pending = this.pendingReuse();
+      if (!pending || !this.models().length) {
+        return;
+      }
+      this.pendingReuse.set(null);
+      this.applyReuseRequest(pending.req, pending.prompt);
+    });
     this.loadModels();
     this.loadProjects();
     this.loadAssets();
@@ -1076,7 +1107,10 @@ export class StudioComponent {
     }
     const onMove = (move: PointerEvent): void => {
       const delta = move.clientX - startX;
-      const next = StudioComponent.clampCol(side === 'left' ? startW + delta : startW - delta);
+      const next = StudioComponent.clampCol(
+        side === 'left' ? startW + delta : startW - delta,
+        side === 'right' ? this.colRightMax() : StudioComponent.COL_MAX,
+      );
       if (side === 'left') {
         this.colLeft.set(next);
       } else {
@@ -1099,10 +1133,10 @@ export class StudioComponent {
     const step = event.shiftKey ? 48 : 12;
     const signal = side === 'left' ? this.colLeft : this.colRight;
     if (event.key === 'ArrowLeft') {
-      signal.set(StudioComponent.clampCol(signal() - step));
+      signal.set(StudioComponent.clampCol(signal() - step, this.colMaxFor(side)));
       event.preventDefault();
     } else if (event.key === 'ArrowRight') {
-      signal.set(StudioComponent.clampCol(signal() + step));
+      signal.set(StudioComponent.clampCol(signal() + step, this.colMaxFor(side)));
       event.preventDefault();
     } else if (event.key === 'Home' && side === 'left') {
       this.resetCols();
@@ -1119,15 +1153,30 @@ export class StudioComponent {
     this.persistCols();
   }
 
-  private static clampCol(width: number): number {
-    return Math.min(StudioComponent.COL_MAX, Math.max(StudioComponent.COL_MIN, Math.round(width)));
+  private static clampCol(width: number, max = StudioComponent.COL_MAX): number {
+    return Math.min(max, Math.max(StudioComponent.COL_MIN, Math.round(width)));
+  }
+
+  /** Tope dinámico del Take Reel: nunca más de la mitad de la pantalla. */
+  private colRightMax(): number {
+    const half = Math.floor(window.innerWidth / 2);
+    return Math.max(StudioComponent.COL_MIN, Math.min(StudioComponent.COL_MAX, half));
+  }
+
+  private colMaxFor(side: 'left' | 'right'): number {
+    return side === 'right' ? this.colRightMax() : StudioComponent.COL_MAX;
+  }
+
+  /** Re-clampa la columna derecha si la ventana se achica. */
+  protected onWinResize(): void {
+    this.colRight.set(StudioComponent.clampCol(this.colRight(), this.colRightMax()));
   }
 
   private restoreCols(): void {
     const saved = this.readCols();
     if (saved) {
       this.colLeft.set(StudioComponent.clampCol(saved.left));
-      this.colRight.set(StudioComponent.clampCol(saved.right));
+      this.colRight.set(StudioComponent.clampCol(saved.right, this.colRightMax()));
     }
   }
 
@@ -1214,11 +1263,13 @@ export class StudioComponent {
       .subscribe((projects) => this.projects.set(projects));
   }
 
-  /** Cambio de proyecto: los recursos se filtran a los asignados a ese proyecto. */
+  /** Cambio de proyecto: los recursos se filtran a los asignados a ese
+      proyecto y el historial por día cede prioridad (se limpia la sesión). */
   protected onProjectChange(projectId: string | null): void {
     this.selectedProjectId.set(projectId);
     this.selectedAssetIds.set(new Set());
     this.refSlots.update((slots) => ({ ...slots, character: null, location: null, props: null }));
+    this.eventsStore.clearSession();
     this.loadAssets();
   }
 
@@ -1241,6 +1292,10 @@ export class StudioComponent {
         const files = [...(pageData.items ?? [])] as FileAsset[];
         this.assets.set(files);
         this.autoAssignRefs(files);
+        // Con la lista definitiva de recursos, re-resolver los @ del prompt
+        // (p.ej. un REUSAR que cambió de proyecto antes de que llegaran).
+        this.syncMentionsFromText();
+        this.syncSelectionWithMentions();
       });
   }
 
@@ -1692,14 +1747,16 @@ export class StudioComponent {
     this.eventsStore.cancel(take.id);
   }
 
-  /** Alterna el check "Buena toma" (persistente por video). */
+  /** Alterna el check "Buena toma" (persistente por video): excluye
+      "Elegida final", solo puede haber una calificación o ninguna. */
   protected toggleGood(take: StudioTake): void {
-    this.eventsStore.setRating(take.id, !take.ratingGood, !!take.ratingFinal);
+    this.eventsStore.setRating(take.id, !take.ratingGood, false);
   }
 
-  /** Alterna el check "Elegida final" (persistente por video). */
+  /** Alterna el check "Elegida final" (persistente por video): excluye
+      "Buena toma", solo puede haber una calificación o ninguna. */
   protected toggleFinal(take: StudioTake): void {
-    this.eventsStore.setRating(take.id, !!take.ratingGood, !take.ratingFinal);
+    this.eventsStore.setRating(take.id, false, !take.ratingFinal);
   }
 
   /** Limpia ambas calificaciones del video (CLEAR). */
@@ -1729,37 +1786,63 @@ export class StudioComponent {
     return `${Math.round(value * 100) / 100} cr`;
   }
 
-  /** Tooltip del gasto: créditos + Transaction ID del proveedor. */
-  protected costTitle(take: StudioTake): string {
-    const parts: string[] = [];
+  /** Tooltip explicativo del gasto: qué significa "cr", el equivalente USD
+      y la política de reembolso del proveedor. */
+  protected costTooltip(take: StudioTake): string {
+    const bits: string[] = [];
     if ((take.costCredits ?? 0) > 0) {
-      parts.push(`${this.formatCredits(take.costCredits!)} en Higgsfield`);
+      bits.push(`${this.formatCredits(take.costCredits!)} = créditos del proveedor (Higgsfield)`);
     }
+    if ((take.costUsd ?? 0) > 0) {
+      bits.push(`${this.formatCostUsd(take.costUsd!)} = equivalente en dólares (USD)`);
+    }
+    let text = `Gasto estimado por Higgsfield: ${bits.join(', ')}. Las generaciones fallidas o canceladas se reembolsan.`;
     if (take.transactionId) {
-      parts.push(`Transaction ID: ${take.transactionId}`);
+      text += ` Transaction ID: ${take.transactionId}`;
     }
-    return parts.join(' · ');
+    return text;
   }
 
-  /** Volver a generar: relanza el request original de la toma. */
-  protected regenerate(take: StudioTake): void {
+  /** Reuso pendiente desde /projects (request guardado en sessionStorage). */
+  private readonly pendingReuse = signal<{ req: GenerateRequest; prompt: string } | null>(null);
+
+  /** Reusar: carga el request original de la toma en el studio (prompt,
+      modelo, formato, seed y proyecto) sin generar nada, para que el
+      usuario ajuste lo que necesite y lance la generación manualmente. */
+  protected reuse(take: StudioTake): void {
     if (!take.request || this.submitting()) {
       return;
     }
     this.takeDetailId.set(null);
+    this.takeDetailVisible.set(false);
     this.error.set(null);
-    this.submitting.set(true);
-    this.launchGeneration(take.request, {
-      prompt: take.prompt,
-      modelName: take.modelName,
-      modelDisplayName: take.modelDisplayName,
-      modelType: take.modelType,
-      ratio: take.ratio,
-      resolution: take.resolution,
-      duration: take.duration,
-      eventName: take.eventName ?? null,
-      refImages: take.refImages ?? [],
-    });
+    this.applyReuseRequest(take.request, take.prompt);
+  }
+
+  /** Aplica un request guardado al formulario del studio (sin generar). */
+  private applyReuseRequest(req: GenerateRequest, prompt: string): void {
+    this.setMode('video');
+    this.prompt.set(prompt);
+    this.ratio.set(req.ratio || '16:9');
+    this.resolution.set(req.resolution || '720p');
+    this.duration.set(req.duration || 5);
+    this.seed.set(req.seed ?? '');
+    const model = this.models().find((m) => m.name === req.model);
+    if (model) {
+      this.selectedModel.set(model);
+    }
+    // Proyecto de la generación original (si tuvo uno y sigue existiendo):
+    // onProjectChange recarga SUS recursos (slots + selección) y limpia la
+    // sesión de día.
+    const eventId = req.event_id || '';
+    if (eventId && this.projects().some((p) => p.id === eventId)) {
+      this.onProjectChange(eventId);
+    }
+    // Los @ del prompt restauran los recursos citados: menciones, selección
+    // y slots (al llegar los assets del proyecto se re-resuelven solos).
+    this.syncMentionsFromText();
+    this.syncSelectionWithMentions();
+    setTimeout(() => this.promptTextarea?.focus());
   }
 
   /** Miniatura pública de una imagen de referencia (asset ya cargado). */

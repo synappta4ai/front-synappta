@@ -168,7 +168,7 @@
               @if (rowCost(r); as cost) {
                 <span
                   class="text-sm font-bold text-ink-on-dark"
-                  [pTooltip]="'Estimado por el proveedor (créditos + USD)'"
+                  [pTooltip]="costTooltip(cost)"
                   showDelay="400"
                   tooltipPosition="top"
                 >

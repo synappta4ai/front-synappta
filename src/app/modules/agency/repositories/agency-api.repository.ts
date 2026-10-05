@@ -81,12 +81,14 @@ export class AgencyApiRepository {
     from?: string;
     to?: string;
     resource_type?: string;
+    event_id?: string;
     limit?: number;
   }): Observable<ApiResponse<GenerationLog[]>> {
     const query: Record<string, string> = {};
     if (params.from) query['from'] = params.from;
     if (params.to) query['to'] = params.to;
     if (params.resource_type) query['resource_type'] = params.resource_type;
+    if (params.event_id) query['event_id'] = params.event_id;
     if (params.limit) query['limit'] = String(params.limit);
     return this.http.get<ApiResponse<GenerationLog[]>>(`${this.apiUrl}/agency/tasks/history`, {
       params: query,

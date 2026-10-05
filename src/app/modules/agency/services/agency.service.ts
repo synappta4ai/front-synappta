@@ -104,11 +104,12 @@ export class AgencyService {
     return unwrap(this.agencyApiRepository.listRecentTasks(limit));
   }
 
-  /** The caller's generations inside a date window (session recovery by day). */
+  /** Generaciones dentro de una ventana de fechas o de un proyecto. */
   taskHistory(params: {
     from?: string;
     to?: string;
     resource_type?: string;
+    event_id?: string;
     limit?: number;
   }): Observable<GenerationLog[]> {
     return unwrap(this.agencyApiRepository.taskHistory(params));

@@ -618,12 +618,16 @@
         <span class="muted">·</span>
         <span class="prompt-ellipsis" [title]="take.prompt">{{ take.prompt }}</span>
         @if (hasCost(take)) {
-          <span class="take-cost" [title]="costTitle(take)">
+          <span class="take-cost">
             @if ((take.costUsd ?? 0) > 0) {
-              <span>{{ formatCostUsd(take.costUsd!) }}</span>
+              <span tooltipPosition="top" showDelay="300" pTooltip="Costo equivalente en dólares (USD), estimado por Higgsfield">{{
+                formatCostUsd(take.costUsd!)
+              }}</span>
             }
             @if ((take.costCredits ?? 0) > 0) {
-              <span class="cost-credits">{{ formatCredits(take.costCredits!) }}</span>
+              <span tooltipPosition="top" showDelay="300" pTooltip="Costo en créditos de Higgsfield. Las generaciones fallidas o canceladas se reembolsan" class="cost-credits">{{
+                formatCredits(take.costCredits!)
+              }}</span>
             }
             @if (take.transactionId) {
               <span class="cost-tx">TX {{ take.transactionId }}</span>
@@ -673,12 +677,12 @@
             <button
               type="button"
               class="rating-redo"
-              title="Generar un video nuevo con los mismos datos"
+              title="Cargar estos datos en el studio para ajustar y volver a generar"
               [disabled]="submitting()"
-              (click)="regenerate(take)"
+              (click)="reuse(take)"
             >
               <i class="md md-refresh"></i>
-              <span>REHACER</span>
+              <span>REUSAR</span>
             </button>
           }
         </div>
@@ -728,65 +732,73 @@
           </button>
         </span> -->
       }
-      <div class="reel-day-select">
-        <button
-          type="button"
-          class="reel-day-trigger"
-          (click)="toggleDayMenu()"
-          [attr.aria-expanded]="dayMenuOpen()"
-          aria-haspopup="listbox"
-          aria-label="Elegir un día del historial"
-          title="Días con generaciones"
-        >
-          <span>{{ sessionLabel() || 'Historial' }}</span>
-          <i class="md md-expand_more" [class.open]="dayMenuOpen()"></i>
-        </button>
-        @if (dayMenuOpen()) {
-          <div
-            class="reel-day-panel"
-            role="listbox"
-            (scroll)="onDayPanelScroll($event)"
-            (click)="$event.stopPropagation()"
+      @if (!selectedProject()) {
+        <div class="reel-day-select">
+          <button
+            type="button"
+            class="reel-day-trigger"
+            (click)="toggleDayMenu()"
+            [attr.aria-expanded]="dayMenuOpen()"
+            aria-haspopup="listbox"
+            aria-label="Elegir un día del historial"
+            title="Días con generaciones"
           >
-            <button
-              type="button"
-              class="reel-day-option"
-              role="option"
-              [class.active]="!sessionDate()"
-              [attr.aria-selected]="!sessionDate()"
-              (click)="pickDay(null)"
+            <span>{{ sessionLabel() || 'Historial' }}</span>
+            <i class="md md-expand_more" [class.open]="dayMenuOpen()"></i>
+          </button>
+          @if (dayMenuOpen()) {
+            <div
+              class="reel-day-panel"
+              role="listbox"
+              (scroll)="onDayPanelScroll($event)"
+              (click)="$event.stopPropagation()"
             >
-              <span>Reel en vivo</span>
-            </button>
-            @for (d of visibleDayOptions(); track d.key) {
               <button
                 type="button"
                 class="reel-day-option"
                 role="option"
-                [class.active]="sessionDate() === d.key"
-                [attr.aria-selected]="sessionDate() === d.key"
-                (click)="pickDay(d.key)"
+                [class.active]="!sessionDate()"
+                [attr.aria-selected]="!sessionDate()"
+                (click)="pickDay(null)"
               >
-                <span>{{ d.label }}</span>
-                <span class="reel-day-count">{{ d.count }}</span>
+                <span>Reel en vivo</span>
               </button>
-            }
-            @if (loadingDays() && visibleDayOptions().length === 0) {
-              <div class="reel-day-hint">Cargando días…</div>
-            } @else if (visibleDayOptions().length === 0) {
-              <div class="reel-day-hint">Sin generaciones todavía</div>
-            }
-            @if (loadingDays() && visibleDayOptions().length > 0) {
-              <div class="reel-day-hint">Cargando más…</div>
-            }
-          </div>
-        }
-      </div>
+              @for (d of visibleDayOptions(); track d.key) {
+                <button
+                  type="button"
+                  class="reel-day-option"
+                  role="option"
+                  [class.active]="sessionDate() === d.key"
+                  [attr.aria-selected]="sessionDate() === d.key"
+                  (click)="pickDay(d.key)"
+                >
+                  <span>{{ d.label }}</span>
+                  <span class="reel-day-count">{{ d.count }}</span>
+                </button>
+              }
+              @if (loadingDays() && visibleDayOptions().length === 0) {
+                <div class="reel-day-hint">Cargando días…</div>
+              } @else if (visibleDayOptions().length === 0) {
+                <div class="reel-day-hint">Sin generaciones todavía</div>
+              }
+              @if (loadingDays() && visibleDayOptions().length > 0) {
+                <div class="reel-day-hint">Cargando más…</div>
+              }
+            </div>
+          }
+        </div>
+      }
       <p-tag [value]="takes().length.toString()" severity="secondary" />
     </div>
     @if (reelGroups().length === 0) {
       <p class="muted small pad">
-        {{ sessionDate() ? 'Sin generaciones ese día.' : 'Todavía no hay tomas en esta sesión.' }}
+        {{
+          selectedProject()
+            ? 'Sin generaciones para este proyecto.'
+            : sessionDate()
+              ? 'Sin generaciones ese día.'
+              : 'Todavía no hay tomas en esta sesión.'
+        }}
       </p>
     }
     <div class="reel-list">
@@ -894,21 +906,29 @@
                     <button
                       type="button"
                       class="rating-redo"
-                      title="Generar un video nuevo con los mismos datos"
+                      title="Cargar estos datos en el studio para ajustar y volver a generar"
                       [disabled]="submitting()"
-                      (click)="regenerate(take); $event.stopPropagation()"
+                      (click)="reuse(take); $event.stopPropagation()"
                     >
                       <i class="md md-refresh"></i>
-                      <span>REHACER</span>
+                      <span>REUSAR</span>
                     </button>
                   }
                   @if (hasCost(take)) {
-                    <span class="take-cost" [title]="costTitle(take)">
+                    <span class="take-cost">
                       @if ((take.costUsd ?? 0) > 0) {
-                        <span>{{ formatCostUsd(take.costUsd!) }}</span>
+                        <span tooltipPosition="top" showDelay="300" pTooltip="Costo equivalente en dólares (USD), estimado por Higgsfield">{{
+                          formatCostUsd(take.costUsd!)
+                        }}</span>
                       }
                       @if ((take.costCredits ?? 0) > 0) {
-                        <span class="cost-credits">{{ formatCredits(take.costCredits!) }}</span>
+                        <span
+                          tooltipPosition="top"
+                          showDelay="300"
+                          pTooltip="Costo en créditos de Higgsfield. Las generaciones fallidas o canceladas se reembolsan"
+                          class="cost-credits"
+                          >{{ formatCredits(take.costCredits!) }}</span
+                        >
                       }
                     </span>
                   }
@@ -1153,7 +1173,13 @@
           </div>
           <div class="detail-row">
             <span class="detail-label">Gasto</span>
-            <span class="detail-value detail-cost">{{ takeCostLabel(dt) }}</span>
+            <span
+              class="detail-value detail-cost"
+              [pTooltip]="costTooltip(dt)"
+              showDelay="300"
+              tooltipPosition="top"
+              >{{ takeCostLabel(dt) }}</span
+            >
           </div>
           @if (dt.transactionId) {
             <div class="detail-row">
@@ -1207,12 +1233,12 @@
             <button
               type="button"
               class="rating-redo"
-              title="Generar un video nuevo con los mismos datos"
+              title="Cargar estos datos en el studio para ajustar y volver a generar"
               [disabled]="submitting()"
-              (click)="regenerate(dt)"
+              (click)="reuse(dt)"
             >
               <i class="md md-refresh"></i>
-              <span>REHACER</span>
+              <span>REUSAR</span>
             </button>
           </div>
         }

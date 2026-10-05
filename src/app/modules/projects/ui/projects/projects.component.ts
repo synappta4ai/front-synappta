@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { catchError, EMPTY, finalize } from 'rxjs';
+import { catchError, EMPTY, finalize, forkJoin, of } from 'rxjs';
 
 import { Button } from 'primeng/button';
 import { Card } from 'primeng/card';
@@ -9,22 +9,22 @@ import { Checkbox } from 'primeng/checkbox';
 import { Dialog } from 'primeng/dialog';
 import { InputText } from 'primeng/inputtext';
 import { Textarea } from 'primeng/textarea';
-import { InputNumber } from 'primeng/inputnumber';
-import { Select } from 'primeng/select';
 import { Tag } from 'primeng/tag';
 import { Message } from 'primeng/message';
+import { Tabs, Tab, TabList, TabPanel, TabPanels } from 'primeng/tabs';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { ConfirmationService } from 'primeng/api';
 import { Tooltip } from 'primeng/tooltip';
 
 import { EventsService } from '@modules/events/services/events.service';
-import { Event, Piece, Program, ProgramWithPieces } from '@modules/events/interfaces';
-import { PageContainerComponent } from '@shared/components/index';
-
-interface PieceTypeOption {
-  label: string;
-  value: string;
-}
+import { Event } from '@modules/events/interfaces';
+import { AgencyService } from '@modules/agency/services';
+import type { GenerationLog } from '@modules/agency/interfaces';
+import { LibraryService } from '@modules/library/services';
+import { ASSET_SECTIONS, isAssetSection } from '@modules/library/interfaces';
+import type { FileAsset } from '@modules/library/interfaces';
+import { ServerUrlPipe } from '@core/pipes/server-url.pipe';
+import { AssetPickerDialogComponent, PageContainerComponent } from '@shared/components/index';
 
 @Component({
   selector: 'app-projects',
@@ -37,11 +37,16 @@ interface PieceTypeOption {
     Dialog,
     InputText,
     Textarea,
-    InputNumber,
-    Select,
     Tag,
     Message,
+    Tabs,
+    Tab,
+    TabList,
+    TabPanel,
+    TabPanels,
     ConfirmDialog,
+    AssetPickerDialogComponent,
+    ServerUrlPipe,
     Tooltip,
   ],
   providers: [ConfirmationService],
@@ -50,6 +55,8 @@ interface PieceTypeOption {
 })
 export class ProjectsComponent {
   private readonly eventsService = inject(EventsService);
+  private readonly agencyService = inject(AgencyService);
+  private readonly libraryService = inject(LibraryService);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -63,38 +70,22 @@ export class ProjectsComponent {
 
   // Selected project detail
   protected readonly selectedProject = signal<Event | null>(null);
-  protected readonly programs = signal<readonly ProgramWithPieces[]>([]);
+  /** Generaciones (videos/imágenes) hechas en el proyecto. */
+  protected readonly generations = signal<readonly GenerationLog[]>([]);
+  /** Recursos de la biblioteca asignados al proyecto. */
+  protected readonly projectFiles = signal<readonly FileAsset[]>([]);
   protected readonly loadingDetail = signal(false);
+  /** Diálogo de asignación de recursos de la biblioteca. */
+  protected readonly assignDialogVisible = signal(false);
+  protected readonly assigning = signal(false);
+  /** Thumbs que fallaron al cargar (se muestra un placeholder). */
+  private readonly brokenThumbs = signal<Set<string>>(new Set());
 
   // New entity dialogs
   protected readonly projectDialogVisible = signal(false);
-  protected readonly programDialogVisible = signal(false);
-  protected readonly pieceDialogVisible = signal(false);
   protected readonly saving = signal(false);
 
   protected readonly newProject = signal({ name: '', description: '', venue: '' });
-  protected readonly newProgram = signal({ number: 1, name: '', description: '' });
-  protected readonly newPiece = signal({
-    program_id: '' as string,
-    number: 1,
-    piece_code: '',
-    name: '',
-    description: '',
-    type: 'video',
-    duration: 10,
-    aspect_ratio: '16:9',
-  });
-
-  protected readonly pieceTypeOptions: PieceTypeOption[] = [
-    { label: 'Video', value: 'video' },
-    { label: 'Imagen', value: 'image' },
-    { label: 'Texto', value: 'text' },
-    { label: 'Flyer', value: 'flyer' },
-    { label: 'Lower Third', value: 'lower_third' },
-    { label: 'Otro', value: 'other' },
-  ];
-
-  protected readonly aspectRatioOptions = ['16:9', '9:16', '1:1', '4:3', '21:9'];
 
   constructor() {
     // Deep-link: /projects?project=<id> opens the detail panel directly.
@@ -181,7 +172,8 @@ export class ProjectsComponent {
           .subscribe(() => {
             if (this.selectedProject()?.id === project.id) {
               this.selectedProject.set(null);
-              this.programs.set([]);
+              this.generations.set([]);
+              this.projectFiles.set([]);
             }
             this.loadProjects();
           });
@@ -202,162 +194,159 @@ export class ProjectsComponent {
 
   protected closeDetail(): void {
     this.selectedProject.set(null);
-    this.programs.set([]);
+    this.generations.set([]);
+    this.projectFiles.set([]);
     this.router.navigate([], { relativeTo: this.route, queryParams: { project: null } });
   }
 
+  /** Carga las generaciones hechas en el proyecto y sus recursos asignados. */
   private loadDetail(projectId: string): void {
     this.loadingDetail.set(true);
-    this.eventsService
-      .getEvent(projectId)
-      .pipe(
-        catchError(() => {
-          this.error.set('No se pudo cargar el detalle del proyecto.');
-          return EMPTY;
-        }),
-        finalize(() => this.loadingDetail.set(false)),
-      )
-      .subscribe((detail) => this.programs.set(detail.programs ?? []));
-  }
-
-  // ─── Programs ───────────────────────────────────────────────────
-  protected openProgramDialog(): void {
-    const programCount = this.programs().length;
-    this.newProgram.set({ number: programCount + 1, name: '', description: '' });
-    this.programDialogVisible.set(true);
-  }
-
-  protected saveProgram(): void {
-    const project = this.selectedProject();
-    const data = this.newProgram();
-    if (!project || !data.number) {
-      return;
-    }
-    this.saving.set(true);
-    this.eventsService
-      .createProgram(project.id, {
-        number: data.number,
-        name: data.name.trim() || undefined,
-        description: data.description.trim() || undefined,
-      })
-      .pipe(
-        catchError(() => {
-          this.error.set('No se pudo crear el programa.');
-          return EMPTY;
-        }),
-        finalize(() => this.saving.set(false)),
-      )
-      .subscribe(() => {
-        this.programDialogVisible.set(false);
-        this.flashSaved();
-        this.loadDetail(project.id);
+    forkJoin({
+      logs: this.agencyService
+        .taskHistory({ event_id: projectId, limit: 200 })
+        .pipe(catchError(() => of<GenerationLog[]>([]))),
+      files: this.libraryService
+        .listFilesByEvent(projectId)
+        .pipe(catchError(() => of<FileAsset[]>([]))),
+    })
+      .pipe(finalize(() => this.loadingDetail.set(false)))
+      .subscribe(({ logs, files }) => {
+        this.generations.set(logs ?? []);
+        this.projectFiles.set(files ?? []);
       });
   }
 
-  protected confirmDeleteProgram(program: Program): void {
-    this.confirmationService.confirm({
-      message: `¿Eliminar el programa #${program.number}${program.name ? ` "${program.name}"` : ''}?`,
-      header: 'Eliminar programa',
-      icon: 'md md-warning',
-      acceptButtonProps: { label: 'Eliminar', severity: 'danger' },
-      rejectButtonProps: { label: 'Cancelar', severity: 'secondary' },
-      accept: () => {
-        const projectId = this.selectedProject()?.id;
-        if (!projectId) {
-          return;
-        }
-        this.eventsService
-          .deleteProgram(program.id)
-          .pipe(
-            catchError(() => {
-              this.error.set('No se pudo eliminar el programa.');
-              return EMPTY;
-            }),
-          )
-          .subscribe(() => this.loadDetail(projectId));
-      },
-    });
+  /** Salida principal del log (video o imagen). */
+  protected logOutput(log: GenerationLog): string {
+    return log.outputs?.[0]?.localUrl || log.outputs?.[0]?.url || '';
   }
 
-  // ─── Pieces ─────────────────────────────────────────────────────
-  protected openPieceDialog(programId?: string): void {
-    const data = this.newPiece();
-    const allPieces = this.programs().flatMap((p) => p.pieces);
-    this.newPiece.set({
-      ...data,
-      program_id: programId ?? '',
-      number: allPieces.length + 1,
-    });
-    this.pieceDialogVisible.set(true);
+  protected isVideoLog(log: GenerationLog): boolean {
+    return (log.resource_type ?? 'video') !== 'image';
   }
 
-  protected savePiece(): void {
-    const project = this.selectedProject();
-    const data = this.newPiece();
-    if (!project || !data.number) {
+  /** Recursos agrupados por sección, igual que la galería de la biblioteca
+      (Personaje / Ubicación / Props + Otros). */
+  protected readonly fileGroups = computed<{ label: string; files: FileAsset[] }[]>(() => {
+    const list = this.projectFiles();
+    return [
+      ...ASSET_SECTIONS.map((s) => ({
+        label: s.label,
+        files: list.filter((f) => f.category === s.key),
+      })),
+      { label: 'Otros recursos', files: list.filter((f) => !isAssetSection(f.category)) },
+    ].filter((g) => g.files.length > 0);
+  });
+
+  protected openAssignDialog(): void {
+    this.assignDialogVisible.set(true);
+  }
+
+  /** Confirma la asignación de recursos elegidos en el picker. */
+  protected onAssignConfirmed(assets: FileAsset[]): void {
+    const projectId = this.selectedProject()?.id;
+    if (!projectId || !assets.length) {
       return;
     }
-    this.saving.set(true);
-    this.eventsService
-      .createPiece(project.id, {
-        program_id: data.program_id || undefined,
-        number: data.number,
-        piece_code: data.piece_code.trim() || undefined,
-        name: data.name.trim() || undefined,
-        description: data.description.trim() || undefined,
-        type: data.type || undefined,
-        duration: data.duration || undefined,
-        aspect_ratio: data.aspect_ratio || undefined,
-      })
+    this.assigning.set(true);
+    forkJoin(
+      assets.map((a) =>
+        this.libraryService.linkFileEvent(a.id, projectId).pipe(
+          catchError(() => {
+            this.error.set(`No se pudo asignar "${a.filename}".`);
+            return of(null);
+          }),
+        ),
+      ),
+    )
       .pipe(
-        catchError(() => {
-          this.error.set('No se pudo crear la pieza.');
-          return EMPTY;
-        }),
-        finalize(() => this.saving.set(false)),
+        finalize(() => this.assigning.set(false)),
       )
       .subscribe(() => {
-        this.pieceDialogVisible.set(false);
         this.flashSaved();
-        this.loadDetail(project.id);
+        this.loadDetail(projectId);
       });
   }
 
-  protected confirmDeletePiece(piece: Piece): void {
-    this.confirmationService.confirm({
-      message: `¿Eliminar la pieza #${piece.number}${piece.name ? ` "${piece.name}"` : ''}?`,
-      header: 'Eliminar pieza',
-      icon: 'md md-warning',
-      acceptButtonProps: { label: 'Eliminar', severity: 'danger' },
-      rejectButtonProps: { label: 'Cancelar', severity: 'secondary' },
-      accept: () => {
-        const projectId = this.selectedProject()?.id;
-        if (!projectId) {
-          return;
-        }
-        this.eventsService
-          .deletePiece(piece.id)
-          .pipe(
-            catchError(() => {
-              this.error.set('No se pudo eliminar la pieza.');
-              return EMPTY;
-            }),
-          )
-          .subscribe(() => this.loadDetail(projectId));
-      },
+  /** Quita un recurso del proyecto (queda en la biblioteca). */
+  protected unassignFile(file: FileAsset): void {
+    const projectId = this.selectedProject()?.id;
+    if (!projectId) {
+      return;
+    }
+    this.libraryService
+      .unlinkFileEvent(file.id, projectId)
+      .pipe(
+        catchError(() => {
+          this.error.set('No se pudo quitar el recurso.');
+          return EMPTY;
+        }),
+      )
+      .subscribe(() => this.loadDetail(projectId));
+  }
+
+  protected thumbBroken(id: string): boolean {
+    return this.brokenThumbs().has(id);
+  }
+
+  protected markThumbBroken(id: string): void {
+    this.brokenThumbs.update((set) => new Set(set).add(id));
+  }
+
+  protected logDate(log: GenerationLog): string {
+    return new Date(log.created_at).toLocaleDateString(undefined, {
+      day: '2-digit',
+      month: 'short',
     });
   }
 
-  /** Navigate to /video preconfigured with this piece. */
-  protected generateForPiece(piece: Piece): void {
-    this.router.navigate(['/video'], {
-      queryParams: {
-        event_id: piece.event_id,
-        piece_id: piece.id,
-        piece_code: piece.piece_code ?? '',
-        generation_number: 1,
-      },
-    });
+  /** Alterna la calificación de una generación (una o ninguna, como el
+      studio): parche optimista + persistencia en el backend. */
+  protected rateLog(log: GenerationLog, kind: 'good' | 'final'): void {
+    const good = kind === 'good' ? !log.rating_good : false;
+    const final = kind === 'final' ? !log.rating_final : false;
+    this.patchLog(log, { rating_good: good, rating_final: final });
+    this.agencyService
+      .updateTaskRating(log.task_id, good, final)
+      .pipe(
+        catchError(() => {
+          this.patchLog(log, { rating_good: log.rating_good, rating_final: log.rating_final });
+          this.error.set('No se pudo guardar la calificación.');
+          return EMPTY;
+        }),
+      )
+      .subscribe();
+  }
+
+  /** Limpia la calificación de una generación. */
+  protected clearLogRating(log: GenerationLog): void {
+    this.patchLog(log, { rating_good: false, rating_final: false });
+    this.agencyService
+      .updateTaskRating(log.task_id, false, false)
+      .pipe(
+        catchError(() => {
+          this.patchLog(log, { rating_good: log.rating_good, rating_final: log.rating_final });
+          this.error.set('No se pudo guardar la calificación.');
+          return EMPTY;
+        }),
+      )
+      .subscribe();
+  }
+
+  private patchLog(log: GenerationLog, patch: Partial<GenerationLog>): void {
+    this.generations.update((list) =>
+      list.map((l) => (l.task_id === log.task_id ? { ...l, ...patch } : l)),
+    );
+  }
+
+  /** Reusar desde /projects: manda el request al studio vía sessionStorage
+      y navega; el studio lo aplica apenas carga el catálogo de modelos. */
+  protected reuseLog(log: GenerationLog): void {
+    if (log.request) {
+      sessionStorage.setItem('studio:reuse', log.request);
+    }
+    this.router.navigate(['/studio']);
   }
 
   private flashSaved(): void {

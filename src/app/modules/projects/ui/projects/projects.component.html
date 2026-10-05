@@ -148,26 +148,13 @@
                 <div>
                   <h2 class="text-lg font-bold text-ink-on-dark">{{ project.name }}</h2>
                   <p class="text-sm text-ink-muted-on-dark">
-                    {{ programs().length }} programas ·
-                    {{ programs().flatMap((p) => p.pieces).length }} piezas
+                    {{ generations().length }}
+                    {{ generations().length === 1 ? 'generación' : 'generaciones' }}
+                    ·
+                    {{ projectFiles().length }}
+                    {{ projectFiles().length === 1 ? 'recurso' : 'recursos' }}
                   </p>
                 </div>
-              </div>
-              <div class="flex items-center gap-2">
-                <p-button
-                  label="Programa"
-                  icon="md md-add"
-                  severity="secondary"
-                  size="small"
-                  (onClick)="openProgramDialog()"
-                />
-                <p-button
-                  label="Pieza"
-                  icon="md md-add"
-                  severity="secondary"
-                  size="small"
-                  (onClick)="openPieceDialog()"
-                />
               </div>
             </div>
           </ng-template>
@@ -179,127 +166,187 @@
               <div class="skel skel-text" aria-hidden="true"></div>
               <div class="skel skel-text" aria-hidden="true"></div>
             </div>
-          } @else if (programs().length === 0) {
-            <div class="flex flex-col items-center gap-3 py-12 text-center">
-              <div class="flex h-14 w-14 items-center justify-center rounded-full bg-surface-2">
-                <i class="md md-list text-2xl text-ink-muted-on-dark"></i>
-              </div>
-              <p class="font-bold text-ink-on-dark">Sin programas todavía</p>
-              <p class="text-sm text-ink-muted-on-dark">
-                Los programas agrupan piezas (un video de apertura, un flyer...)
-              </p>
-              <p-button
-                label="Crear programa"
-                icon="md md-add"
-                (onClick)="openProgramDialog()"
-                styleClass="active:scale-[0.98]"
-              />
-            </div>
           } @else {
-            <div class="flex flex-col gap-6">
-              @for (pw of programs(); track pw.program.id; let i = $index) {
-                <div
-                  animate.enter="anim-item"
-                  [style.animation-delay.ms]="i < 8 ? i * 35 : 280"
-                  class="rounded-2xl border border-surface-border"
-                >
-                  <div
-                    class="flex items-center justify-between gap-3 border-b border-surface-border px-5 py-3"
-                  >
-                    <div class="flex items-center gap-3">
-                      <p-tag [value]="'#' + pw.program.number" />
-                      <h4 class="font-bold text-ink-on-dark">
-                        {{ pw.program.name || 'Programa ' + pw.program.number }}
-                      </h4>
-                      <span class="text-xs text-ink-muted-on-dark">
-                        {{ pw.pieces.length }} piezas
-                      </span>
+            <p-tabs value="gen" class="projects-tabs">
+              <p-tablist>
+                <p-tab value="gen">Generaciones</p-tab>
+                <p-tab value="res">Recursos asignados</p-tab>
+              </p-tablist>
+              <p-tabpanels>
+                <p-tabpanel value="gen">
+                  @if (generations().length === 0) {
+                    <div class="flex flex-col items-center gap-2 py-8 text-center">
+                      <div class="flex h-12 w-12 items-center justify-center rounded-full bg-surface-2">
+                        <i class="md md-movie text-xl text-ink-muted-on-dark"></i>
+                      </div>
+                      <p class="text-sm text-ink-muted-on-dark">
+                        Sin generaciones en este proyecto todavía.
+                      </p>
                     </div>
-                    <div class="flex items-center gap-1">
-                      <p-button
-                        label="Pieza"
-                        icon="md md-add"
-                        text
-                        size="small"
-                        (onClick)="openPieceDialog(pw.program.id)"
-                      />
-                      <p-button
-                        icon="md md-delete"
-                        severity="danger"
-                        text
-                        size="small"
-                        pTooltip="Eliminar programa"
-                        showDelay="400"
-                        (onClick)="confirmDeleteProgram(pw.program)"
-                        (keydown.enter)="$event.stopPropagation()"
-                      />
-                    </div>
-                  </div>
-
-                  @if (pw.pieces.length === 0) {
-                    <p class="px-5 py-4 text-sm text-ink-muted-on-dark">
-                      Sin piezas en este programa.
-                    </p>
                   } @else {
-                    <div class="flex flex-col divide-y divide-surface-border">
-                      @for (piece of pw.pieces; track piece.id) {
-                        <div class="flex items-center justify-between gap-3 px-5 py-3">
-                          <div class="min-w-0">
-                            <p class="truncate text-sm font-bold text-ink-on-dark">
-                              <span class="text-ink-muted-on-dark">#{{ piece.number }}</span>
-                              {{ piece.name || piece.piece_code || 'Pieza' }}
-                            </p>
-                            <div class="mt-1 flex flex-wrap items-center gap-2">
-                              @if (piece.piece_code) {
-                                <code
-                                  class="rounded-full bg-surface-2 px-1.5 py-0.5 text-xs text-ink-muted-on-dark"
-                                  >{{ piece.piece_code }}</code
-                                >
-                              }
-                              @if (piece.type) {
-                                <p-tag [value]="piece.type" severity="info" />
-                              }
-                              @if (piece.duration) {
-                                <span class="text-xs text-ink-muted-on-dark"
-                                  >{{ piece.duration }}s</span
-                                >
-                              }
-                              @if (piece.aspect_ratio) {
-                                <span class="text-xs text-ink-muted-on-dark">{{
-                                  piece.aspect_ratio
-                                }}</span>
-                              }
-                            </div>
+                    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                      @for (log of generations(); track log.task_id) {
+                        <div
+                          animate.enter="anim-item"
+                          class="overflow-hidden rounded-2xl border border-surface-border bg-surface"
+                        >
+                          @if (logOutput(log); as url) {
+                            @if (isVideoLog(log)) {
+                              <video
+                                [src]="url | serverUrl"
+                                controls
+                                preload="metadata"
+                                class="aspect-video w-full bg-black"
+                              ></video>
+                            } @else {
+                              <img
+                                [src]="url | serverUrl"
+                                [alt]="log.piece_code || log.model_name"
+                                class="aspect-video w-full object-cover"
+                                loading="lazy"
+                              />
+                            }
+                          }
+                          <div class="flex items-center justify-between gap-2 px-3 py-2">
+                            <span class="truncate text-xs font-bold text-ink-on-dark">
+                              {{ log.piece_code || log.model_name }}
+                            </span>
+                            <span class="shrink-0 text-xs text-ink-muted-on-dark">
+                              {{ logDate(log) }}
+                            </span>
                           </div>
-                          <div class="flex shrink-0 items-center gap-1">
-                            <p-button
-                              label="Generar"
-                              icon="md md-play_arrow"
-                              text
-                              size="small"
-                              pTooltip="Generar en /video con esta pieza"
-                              showDelay="400"
-                              (onClick)="generateForPiece(piece)"
-                              (keydown.enter)="$event.stopPropagation()"
-                            />
-                            <p-button
-                              icon="md md-delete"
-                              severity="danger"
-                              text
-                              size="small"
-                              pTooltip="Eliminar pieza"
-                              showDelay="400"
-                              (onClick)="confirmDeletePiece(piece)"
-                              (keydown.enter)="$event.stopPropagation()"
-                            />
+                          @if (log.status === 'succeeded' || log.status === 'failed') {
+                            <div
+                              class="flex items-center justify-between gap-2 border-t border-surface-border px-3 py-2"
+                            >
+                              <div
+                                class="log-rating-group"
+                                role="group"
+                                aria-label="Calificación de la generación"
+                              >
+                                <button
+                                  type="button"
+                                  class="log-rating-check"
+                                  [class.active]="log.rating_good"
+                                  [title]="log.rating_good ? 'Quitar Buena toma' : 'Buena toma'"
+                                  (click)="rateLog(log, 'good')"
+                                >
+                                  <i class="md md-check"></i>
+                                </button>
+                                <button
+                                  type="button"
+                                  class="log-rating-check"
+                                  [class.active]="log.rating_final"
+                                  [title]="log.rating_final ? 'Quitar Elegida final' : 'Elegida final'"
+                                  (click)="rateLog(log, 'final')"
+                                >
+                                  <i class="md md-check md-double"></i>
+                                </button>
+                                @if (log.rating_good || log.rating_final) {
+                                  <button
+                                    type="button"
+                                    class="log-rating-clear"
+                                    title="Limpiar calificación"
+                                    (click)="clearLogRating(log)"
+                                  >
+                                    CLEAR
+                                  </button>
+                                }
+                              </div>
+                              <button
+                                type="button"
+                                class="log-reuse"
+                                title="Cargar estos datos en el studio para ajustar y volver a generar"
+                                (click)="reuseLog(log)"
+                              >
+                                <i class="md md-refresh"></i>
+                                <span>REUSAR</span>
+                              </button>
+                            </div>
+                          }
+                        </div>
+                      }
+                    </div>
+                  }
+                </p-tabpanel>
+                <p-tabpanel value="res">
+                  <div class="mb-4 flex justify-end">
+                    <p-button
+                      label="Asignar recursos"
+                      icon="md md-add"
+                      size="small"
+                      [loading]="assigning()"
+                      (onClick)="openAssignDialog()"
+                      styleClass="active:scale-[0.98]"
+                    />
+                  </div>
+                  @if (projectFiles().length === 0) {
+                    <div class="flex flex-col items-center gap-2 py-8 text-center">
+                      <div class="flex h-12 w-12 items-center justify-center rounded-full bg-surface-2">
+                        <i class="md md-inventory_2 text-xl text-ink-muted-on-dark"></i>
+                      </div>
+                      <p class="text-sm text-ink-muted-on-dark">
+                        Sin recursos asignados. Asignalos desde la biblioteca o el studio.
+                      </p>
+                    </div>
+                  } @else {
+                    <div class="flex flex-col gap-6">
+                      @for (group of fileGroups(); track group.label) {
+                        <div>
+                          <h4 class="mb-2 text-sm font-bold text-ink-on-dark">
+                            {{ group.label }}
+                            <span class="ml-1 text-xs font-normal text-ink-muted-on-dark">
+                              {{ group.files.length }}
+                            </span>
+                          </h4>
+                          <div class="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+                            @for (file of group.files; track file.id) {
+                              <div
+                                class="group relative overflow-hidden rounded-xl border border-surface-border bg-surface-2"
+                                [title]="file.filename"
+                              >
+                                <div class="relative aspect-square w-full">
+                                  @if (!thumbBroken(file.id)) {
+                                    <img
+                                      [src]="file.thumbnail_url || file.url | serverUrl"
+                                      [alt]="file.filename"
+                                      class="h-full w-full object-cover"
+                                      loading="lazy"
+                                      (error)="markThumbBroken(file.id)"
+                                    />
+                                  } @else {
+                                    <div
+                                      class="flex h-full w-full items-center justify-center"
+                                      aria-hidden="true"
+                                    >
+                                      <i class="md md-image text-2xl text-ink-muted-on-dark"></i>
+                                    </div>
+                                  }
+                                </div>
+                                <p
+                                  class="truncate bg-surface px-2 py-1 text-xs text-ink-muted-on-dark"
+                                >
+                                  {{ file.filename }}
+                                </p>
+                                <button
+                                  type="button"
+                                  class="resource-unassign"
+                                  title="Quitar del proyecto"
+                                  [attr.aria-label]="'Quitar ' + file.filename + ' del proyecto'"
+                                  (click)="unassignFile(file)"
+                                >
+                                  <i class="md md-close"></i>
+                                </button>
+                              </div>
+                            }
                           </div>
                         </div>
                       }
                     </div>
                   }
-                </div>
-              }
-            </div>
+                </p-tabpanel>
+              </p-tabpanels>
+            </p-tabs>
           }
         </p-card>
       </div>
@@ -375,212 +422,12 @@
     </ng-template>
   </p-dialog>
 
-  <!-- ─── New program dialog ────────────────────────────────── -->
-  <p-dialog
-    header="Nuevo programa"
-    [visible]="programDialogVisible()"
-    (visibleChange)="programDialogVisible.set($event)"
-    [modal]="true"
-    [style]="{ width: 'min(92vw, 28rem)' }"
-    [draggable]="false"
-    [resizable]="false"
-  >
-    <div class="flex flex-col gap-4 pt-2">
-      <div class="flex flex-col gap-2">
-        <label for="program-number" class="text-xs font-bold text-ink-on-dark">
-          Número <span class="text-danger">*</span>
-        </label>
-        <p-inputNumber
-          inputId="program-number"
-          [ngModel]="newProgram().number"
-          (ngModelChange)="newProgram().number = $event"
-          [min]="1"
-          [showButtons]="true"
-          styleClass="w-full"
-        />
-      </div>
-      <div class="flex flex-col gap-2">
-        <label for="program-name" class="text-xs font-bold text-ink-on-dark">Nombre</label>
-        <input
-          pInputText
-          id="program-name"
-          [ngModel]="newProgram().name"
-          (ngModelChange)="newProgram().name = $event"
-          placeholder="Ej: Show apertura"
-          class="w-full"
-          (keydown.enter)="saveProgram()"
-        />
-      </div>
-      <div class="flex flex-col gap-2">
-        <label for="program-desc" class="text-xs font-bold text-ink-on-dark">Descripción</label>
-        <textarea
-          pTextarea
-          id="program-desc"
-          rows="3"
-          [ngModel]="newProgram().description"
-          (ngModelChange)="newProgram().description = $event"
-          placeholder="Opcional"
-          class="w-full"
-        ></textarea>
-      </div>
-    </div>
-    <ng-template #footer>
-      <p-button
-        label="Cancelar"
-        severity="secondary"
-        text
-        (onClick)="programDialogVisible.set(false)"
-      />
-      <p-button
-        label="Crear"
-        icon="md md-check"
-        [loading]="saving()"
-        (onClick)="saveProgram()"
-        styleClass="active:scale-[0.98]"
-      />
-    </ng-template>
-  </p-dialog>
-
-  <!-- ─── New piece dialog ──────────────────────────────────── -->
-  <p-dialog
-    header="Nueva pieza"
-    [visible]="pieceDialogVisible()"
-    (visibleChange)="pieceDialogVisible.set($event)"
-    [modal]="true"
-    [style]="{ width: 'min(92vw, 32rem)' }"
-    [draggable]="false"
-    [resizable]="false"
-  >
-    <div class="flex flex-col gap-4 pt-2">
-      <div class="grid gap-4 sm:grid-cols-2">
-        <div class="flex flex-col gap-2">
-          <label for="piece-program" class="text-xs font-bold text-ink-on-dark">Programa</label>
-          <p-select
-            inputId="piece-program"
-            [options]="
-              $any(
-                programs().map((pw) => ({
-                  label: '#' + pw.program.number + (pw.program.name ? ' ' + pw.program.name : ''),
-                  value: pw.program.id,
-                }))
-              )
-            "
-            [ngModel]="newPiece().program_id"
-            (ngModelChange)="newPiece().program_id = $event"
-            placeholder="Sin programa"
-            [showClear]="true"
-            styleClass="w-full"
-            appendTo="body"
-          />
-        </div>
-        <div class="flex flex-col gap-2">
-          <label for="piece-number" class="text-xs font-bold text-ink-on-dark">
-            Número <span class="text-danger">*</span>
-          </label>
-          <p-inputNumber
-            inputId="piece-number"
-            [ngModel]="newPiece().number"
-            (ngModelChange)="newPiece().number = $event"
-            [min]="1"
-            [showButtons]="true"
-            styleClass="w-full"
-          />
-        </div>
-      </div>
-      <div class="grid gap-4 sm:grid-cols-2">
-        <div class="flex flex-col gap-2">
-          <label for="piece-name" class="text-xs font-bold text-ink-on-dark">Nombre</label>
-          <input
-            pInputText
-            id="piece-name"
-            [ngModel]="newPiece().name"
-            (ngModelChange)="newPiece().name = $event"
-            placeholder="Ej: Video apertura"
-            class="w-full"
-          />
-        </div>
-        <div class="flex flex-col gap-2">
-          <label for="piece-code" class="text-xs font-bold text-ink-on-dark">Código</label>
-          <input
-            pInputText
-            id="piece-code"
-            [ngModel]="newPiece().piece_code"
-            (ngModelChange)="newPiece().piece_code = $event"
-            placeholder="Ej: ABR-01"
-            class="w-full"
-          />
-        </div>
-      </div>
-      <div class="flex flex-col gap-2">
-        <label for="piece-desc" class="text-xs font-bold text-ink-on-dark"
-          >Descripción / Prompt guía</label
-        >
-        <textarea
-          pTextarea
-          id="piece-desc"
-          rows="3"
-          [ngModel]="newPiece().description"
-          (ngModelChange)="newPiece().description = $event"
-          placeholder="Opcional — describe qué debe contener la pieza"
-          class="w-full"
-        ></textarea>
-      </div>
-      <div class="grid gap-4 sm:grid-cols-3">
-        <div class="flex flex-col gap-2">
-          <label for="piece-type" class="text-xs font-bold text-ink-on-dark">Tipo</label>
-          <p-select
-            inputId="piece-type"
-            [options]="$any(pieceTypeOptions)"
-            optionLabel="label"
-            optionValue="value"
-            [ngModel]="newPiece().type"
-            (ngModelChange)="newPiece().type = $event"
-            styleClass="w-full"
-            appendTo="body"
-          />
-        </div>
-        <div class="flex flex-col gap-2">
-          <label for="piece-duration" class="text-xs font-bold text-ink-on-dark"
-            >Duración (s)</label
-          >
-          <p-inputNumber
-            inputId="piece-duration"
-            [ngModel]="newPiece().duration"
-            (ngModelChange)="newPiece().duration = $event"
-            [min]="1"
-            styleClass="w-full"
-          />
-        </div>
-        <div class="flex flex-col gap-2">
-          <label for="piece-ratio" class="text-xs font-bold text-ink-on-dark">Aspecto</label>
-          <p-select
-            inputId="piece-ratio"
-            [options]="$any(aspectRatioOptions)"
-            [ngModel]="newPiece().aspect_ratio"
-            (ngModelChange)="newPiece().aspect_ratio = $event"
-            [editable]="true"
-            styleClass="w-full"
-            appendTo="body"
-          />
-        </div>
-      </div>
-    </div>
-    <ng-template #footer>
-      <p-button
-        label="Cancelar"
-        severity="secondary"
-        text
-        (onClick)="pieceDialogVisible.set(false)"
-      />
-      <p-button
-        label="Crear"
-        icon="md md-check"
-        [loading]="saving()"
-        (onClick)="savePiece()"
-        styleClass="active:scale-[0.98]"
-      />
-    </ng-template>
-  </p-dialog>
+  <app-asset-picker-dialog
+    [visible]="assignDialogVisible()"
+    (visibleChange)="assignDialogVisible.set($event)"
+    (confirmed)="onAssignConfirmed($event)"
+    title="Asignar recursos al proyecto"
+  />
 
   <p-confirmDialog styleClass="custom-confirm-dialog" />
 </app-page-container>

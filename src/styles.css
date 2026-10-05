@@ -2006,6 +2006,181 @@ main:has(> app-studio) {
   display: contents;
 }
 
+/* ── Tabs del detalle de proyecto (/projects) ────────────────── */
+.projects-tabs .p-tablist-tab-list {
+  display: inline-flex;
+  gap: 6px;
+  padding: 4px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-surface-border);
+  border-radius: 12px;
+}
+
+.projects-tabs .p-tab {
+  padding: 6px 16px;
+  border: 0;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-ink-muted-on-dark);
+  background: transparent;
+  transition:
+    color 120ms ease,
+    background-color 120ms ease;
+}
+
+.projects-tabs .p-tab:hover {
+  color: var(--color-ink-on-dark);
+}
+
+.projects-tabs .p-tab.p-tab-active {
+  color: var(--color-ink-on-dark);
+  background: var(--color-accent);
+}
+
+/* El estado activo lo lleva la píldora: la barrita inferior sobra. */
+.projects-tabs .p-tablist-active-bar {
+  display: none;
+}
+
+.projects-tabs .p-tabpanels {
+  background: transparent;
+  padding: 16px 0 0;
+}
+
+/* Quitar recurso asignado (overlay sobre la miniatura). */
+.resource-unassign {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  color: var(--color-ink-on-dark);
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+.resource-unassign:hover {
+  background: var(--color-danger);
+}
+
+.resource-unassign i {
+  font-size: 14px;
+}
+
+/* ── Generaciones de /projects: calificación + reusar ──────────
+   Mismo lenguaje visual que el rating del studio, pero con los tokens
+   de la página (no cuelga de .studio-shell). */
+.log-rating-group {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid var(--color-surface-border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--color-surface-2);
+}
+
+.log-rating-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  padding: 2px 8px;
+  border: 0;
+  background: transparent;
+  color: var(--color-ink-muted-on-dark);
+  cursor: pointer;
+  transition:
+    color 120ms ease,
+    background-color 120ms ease;
+}
+
+.log-rating-check i {
+  font-size: 14px;
+}
+
+.log-rating-check i.md-double {
+  position: relative;
+  width: 20px;
+}
+
+.log-rating-check i.md-double::after {
+  content: 'check';
+  position: absolute;
+  left: 6px;
+  top: 0;
+}
+
+.log-rating-check:hover {
+  color: var(--color-ink-on-dark);
+}
+
+.log-rating-check.active {
+  color: var(--color-warning);
+  background: color-mix(in srgb, var(--color-warning) 14%, transparent);
+}
+
+.log-rating-check + .log-rating-check,
+.log-rating-clear {
+  border-left: 1px solid var(--color-surface-border);
+}
+
+.log-rating-clear {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-top: 0;
+  border-right: 0;
+  border-bottom: 0;
+  background: transparent;
+  color: var(--color-accent);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition:
+    color 120ms ease,
+    background-color 120ms ease;
+}
+
+.log-rating-clear:hover {
+  color: var(--color-ink-on-dark);
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+}
+
+.log-reuse {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 12px;
+  border: 1px solid var(--color-surface-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-ink-on-dark);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition:
+    color 120ms ease,
+    border-color 120ms ease;
+}
+
+.log-reuse:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.log-reuse i {
+  font-size: 14px;
+}
+
 /* ── Columnas ────────────────────────────────────────────────── */
 .studio-shell .studio-left,
 .studio-shell .studio-right {
@@ -3015,6 +3190,7 @@ main:has(> app-studio) {
 }
 
 .studio-shell .reel-list {
+  padding-bottom: 5px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -3137,7 +3313,9 @@ main:has(> app-studio) {
   background: transparent;
   color: var(--color-ink-muted);
   cursor: pointer;
-  transition: color 0.15s ease, border-color 0.15s ease;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .studio-shell .rating-expand i {

@@ -263,6 +263,19 @@ export class AdminLogsComponent {
     return parts.join(' · ');
   }
 
+  /** Explicación del gasto para el tooltip: qué es "cr", el equivalente USD
+      y la política de reembolso del proveedor. */
+  protected costTooltip(cost: { credits: number; usd: number }): string {
+    const parts: string[] = [];
+    if (cost.credits > 0) {
+      parts.push(`${Math.round(cost.credits * 100) / 100} cr = créditos del proveedor (Higgsfield)`);
+    }
+    if (cost.usd > 0) {
+      parts.push(`$${Math.round(cost.usd * 1000) / 1000} = equivalente en dólares (USD)`);
+    }
+    return `Gasto estimado por el proveedor: ${parts.join(', ')}. Las generaciones fallidas o canceladas se reembolsan.`;
+  }
+
   protected statusSeverity(status: number): 'success' | 'danger' | 'warn' {
     if (status >= 200 && status < 300) return 'success';
     if (status >= 400) return 'danger';
