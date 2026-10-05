@@ -2048,6 +2048,94 @@ main:has(> app-studio) {
   padding: 16px 0 0;
 }
 
+/* ── /projects: filtro de recursos por sección (mismo look que la galería
+   de admin-images, scopeado al detalle para no duplicar reglas ahí) ── */
+.projects-tabs .type-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  border-bottom: 1px solid var(--color-secondary);
+}
+
+.projects-tabs .type-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 14px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  color: var(--color-ink-muted-on-dark);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease,
+    background 0.15s ease;
+  border-radius: 12px 12px 0 0;
+}
+
+.projects-tabs .type-tab:hover:not(.active) {
+  background: color-mix(in srgb, var(--color-ink) 6%, transparent);
+}
+
+.projects-tabs .type-tab:hover {
+  color: var(--color-ink-on-dark);
+}
+
+.projects-tabs .type-tab.active {
+  color: var(--color-ink-on-dark);
+  border-bottom-color: var(--color-ink-on-dark);
+}
+
+.projects-tabs .type-tab .md {
+  font-size: 12px;
+}
+
+.projects-tabs .type-tab .count {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-ink-on-dark);
+  background: var(--color-secondary);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
+.projects-tabs .type-tab .count.badge {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  box-shadow: inset 0 0 0 1px var(--color-ink);
+}
+
+/* Mini etiqueta del ingrediente sobre la miniatura (mismo look que
+   .picker-ing del AssetPickerDialog). */
+.projects-tabs .resource-ing {
+  position: absolute;
+  bottom: 6px;
+  left: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: calc(100% - 12px);
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-scrim) 62%, transparent);
+  backdrop-filter: blur(4px);
+  color: var(--color-ink-on-dark);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.projects-tabs .resource-ing .md {
+  font-size: 12px;
+  flex: none;
+}
+
 /* Quitar recurso asignado (overlay sobre la miniatura). */
 .resource-unassign {
   position: absolute;

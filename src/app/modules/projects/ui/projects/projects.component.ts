@@ -21,8 +21,11 @@ import { Event } from '@modules/events/interfaces';
 import { AgencyService } from '@modules/agency/services';
 import type { GenerationLog } from '@modules/agency/interfaces';
 import { LibraryService } from '@modules/library/services';
-import { ASSET_SECTIONS, isAssetSection } from '@modules/library/interfaces';
-import type { FileAsset } from '@modules/library/interfaces';
+import { ASSET_SECTIONS, assetMatchesSection } from '@modules/library/interfaces';
+import type { AssetSectionKey, FileAsset } from '@modules/library/interfaces';
+
+/** Filtro de recursos del proyecto: todas las secciones, una, u "Otros". */
+type ResourceFilter = 'all' | AssetSectionKey | 'other';
 import { ServerUrlPipe } from '@core/pipes/server-url.pipe';
 import { AssetPickerDialogComponent, PageContainerComponent } from '@shared/components/index';
 
@@ -184,6 +187,7 @@ export class ProjectsComponent {
   // ─── Detail: programs + pieces ─────────────────────────────────
   protected selectProject(project: Event): void {
     this.selectedProject.set(project);
+    this.resourceFilter.set('all');
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: { project: project.id },
@@ -226,17 +230,62 @@ export class ProjectsComponent {
     return (log.resource_type ?? 'video') !== 'image';
   }
 
+  /** Filtro de recursos activo (chips con contadores, como la galería). */
+  protected readonly resourceFilter = signal<ResourceFilter>('all');
+
+  /** Opciones del filtro (iconos verificados en el subset local .md-*). */
+  protected readonly resourceFilterOptions: {
+    value: ResourceFilter;
+    label: string;
+    icon: string;
+  }[] = [
+    { value: 'all', label: 'Todos', icon: 'md md-grid_view' },
+    { value: 'character', label: 'Personaje', icon: 'md md-person' },
+    { value: 'location', label: 'Ubicación', icon: 'md md-place' },
+    { value: 'props', label: 'Utilería / Props', icon: 'md md-inventory_2' },
+    { value: 'other', label: 'Otros', icon: 'md md-image' },
+  ];
+
+  /** Cantidad de recursos por sección, para los contadores de los chips. */
+  protected readonly resourceCounts = computed<Record<string, number>>(() => {
+    const list = this.projectFiles();
+    const counts: Record<string, number> = { all: list.length, other: 0 };
+    for (const s of ASSET_SECTIONS) {
+      counts[s.key] = 0;
+    }
+    for (const f of list) {
+      const section = ASSET_SECTIONS.find((s) => assetMatchesSection(f, s.key));
+      if (section) {
+        counts[section.key] += 1;
+      } else {
+        counts['other'] += 1;
+      }
+    }
+    return counts;
+  });
+
   /** Recursos agrupados por sección, igual que la galería de la biblioteca
-      (Personaje / Ubicación / Props + Otros). */
+      (Personaje / Ubicación / Props + Otros), respetando el filtro activo. */
   protected readonly fileGroups = computed<{ label: string; files: FileAsset[] }[]>(() => {
     const list = this.projectFiles();
-    return [
+    const filter = this.resourceFilter();
+    const groups: { key: ResourceFilter; label: string; files: FileAsset[] }[] = [
       ...ASSET_SECTIONS.map((s) => ({
+        key: s.key as ResourceFilter,
         label: s.label,
-        files: list.filter((f) => f.category === s.key),
+        files: list.filter((f) => assetMatchesSection(f, s.key)),
       })),
-      { label: 'Otros recursos', files: list.filter((f) => !isAssetSection(f.category)) },
-    ].filter((g) => g.files.length > 0);
+      {
+        key: 'other',
+        label: 'Otros recursos',
+        files: list.filter(
+          (f) => !ASSET_SECTIONS.some((s) => assetMatchesSection(f, s.key)),
+        ),
+      },
+    ];
+    return (filter === 'all' ? groups : groups.filter((g) => g.key === filter)).filter(
+      (g) => g.files.length > 0,
+    );
   });
 
   protected openAssignDialog(): void {

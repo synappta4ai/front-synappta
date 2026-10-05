@@ -280,6 +280,23 @@
                       styleClass="active:scale-[0.98]"
                     />
                   </div>
+                  <!-- Filtro por sección con contadores (como la galería) -->
+                  <div class="type-tabs mb-4">
+                    @for (opt of resourceFilterOptions; track opt.value) {
+                      <button
+                        type="button"
+                        class="type-tab"
+                        [class.active]="resourceFilter() === opt.value"
+                        (click)="resourceFilter.set(opt.value)"
+                      >
+                        <i class="md {{ opt.icon }}"></i>
+                        {{ opt.label }}
+                        <span class="count" [class.badge]="resourceFilter() === opt.value">{{
+                          resourceCounts()[opt.value]
+                        }}</span>
+                      </button>
+                    }
+                  </div>
                   @if (projectFiles().length === 0) {
                     <div class="flex flex-col items-center gap-2 py-8 text-center">
                       <div class="flex h-12 w-12 items-center justify-center rounded-full bg-surface-2">
@@ -291,6 +308,13 @@
                     </div>
                   } @else {
                     <div class="flex flex-col gap-6">
+                      @if (fileGroups().length === 0) {
+                        <div class="flex flex-col items-center gap-2 py-8 text-center">
+                          <p class="text-sm text-ink-muted-on-dark">
+                            No hay recursos de este tipo en el proyecto.
+                          </p>
+                        </div>
+                      }
                       @for (group of fileGroups(); track group.label) {
                         <div>
                           <h4 class="mb-2 text-sm font-bold text-ink-on-dark">
@@ -321,6 +345,15 @@
                                     >
                                       <i class="md md-image text-2xl text-ink-muted-on-dark"></i>
                                     </div>
+                                  }
+                                  @if (file.ingredients?.length) {
+                                    <span
+                                      class="resource-ing"
+                                      [title]="'Ingrediente: ' + file.ingredients![0].name"
+                                    >
+                                      <i class="md md-label"></i>
+                                      {{ file.ingredients![0].name }}
+                                    </span>
                                   }
                                 </div>
                                 <p
