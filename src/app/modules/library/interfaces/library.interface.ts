@@ -101,6 +101,21 @@ export function isAssetSection(category: string | null | undefined): category is
   return !!category && ASSET_SECTIONS.some((s) => s.key === category);
 }
 
+/** true si el recurso pertenece a la sección: por `category` o por alguno
+    de sus ingredientes tipados (character/location/prop), igual que la
+    galería de Admin → Imágenes distingue sus tipos. */
+export function assetMatchesSection(
+  asset: Pick<FileAsset, 'category' | 'ingredients'>,
+  key: AssetSectionKey,
+): boolean {
+  if (asset.category === key) {
+    return true;
+  }
+  return (asset.ingredients ?? []).some(
+    (i) => i.type === key || (key === 'props' && i.type === 'prop'),
+  );
+}
+
 export interface IngredientListFilters {
   page?: number;
   pageSize?: number;

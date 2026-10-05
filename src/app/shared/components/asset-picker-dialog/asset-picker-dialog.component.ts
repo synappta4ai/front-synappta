@@ -22,9 +22,9 @@ import { SelectButton } from 'primeng/selectbutton';
 import { LibraryService } from '@modules/library/services';
 import {
   ASSET_SECTIONS,
+  assetMatchesSection,
   FileAsset,
   FileListFilters,
-  isAssetSection,
 } from '@modules/library/interfaces';
 import { ServerUrlPipe } from '@core/pipes/server-url.pipe';
 import { TiltDirective } from '@shared/components/tilt/tilt.directive';
@@ -84,7 +84,15 @@ type PickerFilter = 'all' | 'character' | 'location' | 'props' | 'images' | 'vid
           optionValue="value"
           [allowEmpty]="false"
           styleClass="section-toggle"
-        />
+        >
+          <ng-template #item let-option>
+            <span class="picker-tab-item">
+              <i class="md {{ option.icon }}"></i>
+              <span>{{ option.label }}</span>
+              <span class="picker-tab-count">{{ pickerCounts()[option.value] }}</span>
+            </span>
+          </ng-template>
+        </p-selectbutton>
         <span class="flex-1"></span>
         <p-iconfield iconPosition="left" styleClass="picker-search">
           <p-inputicon styleClass="md md-search" />
@@ -239,6 +247,28 @@ type PickerFilter = 'all' | 'character' | 'location' | 'props' | 'images' | 'vid
       align-items: center;
       gap: 10px;
       margin-bottom: 14px;
+    }
+
+    /* Contenido de cada tab del filtro (icono + label + contador). */
+    .picker-tab-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .picker-tab-item .md {
+      font-size: 13px;
+    }
+
+    .picker-tab-count {
+      min-width: 20px;
+      padding: 1px 7px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      text-align: center;
+      background: var(--st-panel-2, rgba(255, 255, 255, 0.12));
+      border: 1px solid var(--st-line, rgba(255, 255, 255, 0.14));
     }
 
     .picker-search {
@@ -462,6 +492,21 @@ export class AssetPickerDialogComponent {
     { label: 'Videos', value: 'videos' as const, icon: 'md md-videocam' },
   ];
 
+  /** Contadores por filtro para los tabs (como la galería): secciones por
+      category o ingrediente; imágenes/videos por mime. */
+  readonly pickerCounts = computed<Record<string, number>>(() => {
+    const list = this.assets();
+    const count = (fn: (a: FileAsset) => boolean) => list.filter(fn).length;
+    return {
+      all: list.length,
+      character: count((a) => assetMatchesSection(a, 'character')),
+      location: count((a) => assetMatchesSection(a, 'location')),
+      props: count((a) => assetMatchesSection(a, 'props')),
+      images: count((a) => !!a.mime_type?.startsWith('image/')),
+      videos: count((a) => !!a.mime_type?.startsWith('video/')),
+    };
+  });
+
   readonly paged = computed(() => {
     const term = this.search().trim().toLowerCase();
     const f = this.filter();
@@ -474,7 +519,7 @@ export class AssetPickerDialogComponent {
           ? this.assets().filter((a) => a.mime_type?.startsWith('image/'))
           : f === 'videos'
             ? this.assets().filter((a) => a.mime_type?.startsWith('video/'))
-            : this.assets().filter((a) => a.category === f);
+            : this.assets().filter((a) => assetMatchesSection(a, f));
     if (!term) {
       return base;
     }
@@ -493,9 +538,14 @@ export class AssetPickerDialogComponent {
     const groups = [
       ...ASSET_SECTIONS.map((s) => ({
         label: s.label,
-        assets: list.filter((a) => a.category === s.key),
+        assets: list.filter((a) => assetMatchesSection(a, s.key)),
       })),
-      { label: 'Otros recursos', assets: list.filter((a) => !isAssetSection(a.category)) },
+      {
+        label: 'Otros recursos',
+        assets: list.filter(
+          (a) => !ASSET_SECTIONS.some((s) => assetMatchesSection(a, s.key)),
+        ),
+      },
     ];
     return groups.filter((g) => g.assets.length > 0);
   });
