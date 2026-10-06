@@ -76,6 +76,9 @@ export const routes: Routes = [
         loadChildren: () =>
           import('@modules/agency/agency.routes').then((m) => m.myGenerationsRoutes),
       },
+      // Rutas antiguas (español): redirigen a las rutas en inglés.
+      { path: 'recursos', redirectTo: 'resources', pathMatch: 'full' },
+      { path: 'mis-generaciones', redirectTo: 'my-generations', pathMatch: 'full' },
       {
         path: 'admin',
         canActivate: [authGuard, superadminGuard],
