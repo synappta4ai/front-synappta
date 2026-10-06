@@ -1,6 +1,6 @@
 export const environment = {
   PRODUCTION: false,
-  API_URL: 'http://localhost:8099/api/v1',
+  API_URL: 'https://drako-synaptaback-i2at0w-5d9ff3-187-124-148-219.sslip.io/api/v1',
   SOCKET_URL: 'ws://localhost:3000',
   ATMOSPHERE: 'development',
   DEFAULT_LANGUAGE: 'es',
