@@ -84,12 +84,34 @@ export async function seedSession(page: Page): Promise<void> {
   );
 }
 
-/** Espera la hidratación de Angular (patrón del auth.spec existente). */
-export async function waitForHydration(page: Page): Promise<void> {
-  await page.waitForEvent('console', {
-    predicate: (msg) => msg.text().includes('Angular hydrated'),
-    timeout: 20_000,
+/**
+ * Instala una sonda ANTES de navegar: parchea console.log para marcar
+ * `window.__angularHydrated` cuando Angular reporta la hidratación. Evita la
+ * carrera del waitForEvent (el mensaje puede llegar antes que el listener) y
+ * sobrevive a la carga paralela de 6 workers.
+ */
+export async function installHydrationProbe(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    const w = window as unknown as { __angularHydrated?: boolean };
+    w.__angularHydrated = false;
+    const original = console.log.bind(console);
+    console.log = (...args: unknown[]) => {
+      const text = args.map((arg) => String(arg)).join(' ');
+      if (text.includes('Angular hydrated')) {
+        w.__angularHydrated = true;
+      }
+      return original(...args);
+    };
   });
+}
+
+/** Espera la hidratación de Angular (requiere installHydrationProbe antes del goto). */
+export async function waitForHydration(page: Page): Promise<void> {
+  await page.waitForFunction(
+    () => (window as unknown as { __angularHydrated?: boolean }).__angularHydrated === true,
+    undefined,
+    { timeout: 45_000 },
+  );
 }
 
 /**
@@ -103,6 +125,7 @@ export type SessionFixtures = {
 export const test = base.extend<SessionFixtures>({
   authedPage: async ({ page }, use) => {
     await seedSession(page);
+    await installHydrationProbe(page);
     await page.goto('/');
     await waitForHydration(page);
     await use(page);

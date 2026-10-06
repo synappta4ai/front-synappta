@@ -1,16 +1,12 @@
 import { test, expect, type Page } from '@playwright/test';
 
-const submitButton = (page: Page) => page.locator('button[type="submit"]');
+import { installHydrationProbe, waitForHydration } from './helpers/session';
 
-async function waitForHydration(page: Page): Promise<void> {
-  await page.waitForEvent('console', {
-    predicate: (msg) => msg.text().includes('Angular hydrated'),
-    timeout: 15_000,
-  });
-}
+const submitButton = (page: Page) => page.locator('button[type="submit"]');
 
 test.describe('auth', () => {
   test.beforeEach(async ({ page }) => {
+    await installHydrationProbe(page);
     await page.goto('/auth/login');
     await waitForHydration(page);
     await expect(page).toHaveTitle('Login');
@@ -26,7 +22,7 @@ test.describe('auth', () => {
   test('should show validation errors when submitting empty form', async ({ page }) => {
     await submitButton(page).click();
 
-    await expect(page.locator('.text-red-500')).toHaveCount(2);
+    await expect(page.locator('validator-errors .text-danger')).toHaveCount(2);
 
     await expect(page.getByText('El campo Usuario es requerido', { exact: true })).toBeVisible();
     await expect(page.getByText('El campo Contraseña es requerido', { exact: true })).toBeVisible();
@@ -44,11 +40,11 @@ test.describe('auth', () => {
 
   test('should clear validation errors after filling valid values', async ({ page }) => {
     await submitButton(page).click();
-    await expect(page.locator('.text-red-500')).toHaveCount(2);
+    await expect(page.locator('validator-errors .text-danger')).toHaveCount(2);
 
     await page.getByLabel('Usuario').fill('admin');
     await page.getByLabel('Contraseña').fill('1234');
 
-    await expect(page.locator('.text-red-500')).toHaveCount(0);
+    await expect(page.locator('validator-errors .text-danger')).toHaveCount(0);
   });
 });

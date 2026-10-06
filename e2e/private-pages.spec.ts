@@ -34,29 +34,25 @@ test.describe('studio', () => {
   });
 });
 
-test.describe('video', () => {
-  test('renders the video generation form', async ({ authedPage: page }) => {
+// /video y /events quedaron comentadas en app.routes.ts: el wildcard las
+// redirige a /agency. Estos tests documentan ese retiro.
+test.describe('rutas retiradas', () => {
+  test('/video redirige a /agency', async ({ authedPage: page }) => {
     await page.goto('/video');
-    await expectPageTitle(page, 'Generación de Video');
-    await expect(page.getByText('Imágenes de referencia del proyecto')).toBeVisible();
+    await page.waitForURL(/\/agency$/);
+    await expect(page).toHaveURL(/\/agency$/);
   });
-});
 
-test.describe('events', () => {
-  test('renders the generation events page', async ({ authedPage: page }) => {
+  test('/events redirige a /agency', async ({ authedPage: page }) => {
     await page.goto('/events');
-    await expectPageTitle(page, 'Eventos de generación');
-    await expect(
-      page
-        .getByText('No hay eventos todavía.')
-        .or(page.getByRole('link', { name: 'Nuevo' }))
-        .first(),
-    ).toBeVisible();
+    await page.waitForURL(/\/agency$/);
+    await expect(page).toHaveURL(/\/agency$/);
   });
 
-  test('renders the manage events page', async ({ authedPage: page }) => {
+  test('/events/manage redirige a /agency', async ({ authedPage: page }) => {
     await page.goto('/events/manage');
-    await expectPageTitle(page, 'Eventos');
+    await page.waitForURL(/\/agency$/);
+    await expect(page).toHaveURL(/\/agency$/);
   });
 });
 

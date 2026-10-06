@@ -22,7 +22,11 @@ test.describe('admin console', () => {
 
   test('shows Tenants tab for superadmin', async ({ authedPage: page }) => {
     await page.goto('/admin');
-    await expect(page.locator('.p-tab').filter({ hasText: 'Tenants' })).toBeVisible();
+    // El tab aparece tras hidratar la sesión (role_level 0): bajo carga de
+    // 6 workers la hidratación puede superar el timeout por defecto de 5s.
+    await expect(page.locator('.p-tab').filter({ hasText: 'Tenants' })).toBeVisible({
+      timeout: 20_000,
+    });
     await page.locator('.p-tab').filter({ hasText: 'Tenants' }).click();
     await page.waitForURL(/\/admin\/tenants/);
     await expectPageTitle(page, 'Gestión de Tenants');
