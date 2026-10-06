@@ -1,16 +1,14 @@
 <section
-  class="flex min-h-screen items-center justify-center bg-background"
+  class="flex min-h-full w-full items-center justify-center bg-background"
   animate.enter="anim-page"
 >
-  <p-card styleClass="w-full max-w-md shadow-3">
+  <p-card styleClass="w-full max-w-md shadow-3 my-auto">
     <ng-template #header>
       <div class="flex flex-col items-center gap-3 pt-8 pb-4">
-        <span class="grid h-12 w-12 grid-cols-2 gap-1 rounded-xl bg-accent p-2" aria-hidden="true">
-          <span class="rounded-[3px] bg-on-accent/30"></span>
-          <span class="rounded-[3px] bg-on-accent/30"></span>
-          <span class="rounded-[3px] bg-on-accent/30"></span>
-          <span class="rounded-[3px] bg-on-accent"></span>
-        </span>
+        <div class="mb-4 h-12 w-12">
+          <img src="assets/img/sinappta-logo-sqared.png" alt="Logo" class="w-full" />
+        </div>
+
         <h1 class="text-2xl font-bold text-ink-on-dark">
           {{ 'AUTH.LOGIN_TITLE' | translate }}
         </h1>
