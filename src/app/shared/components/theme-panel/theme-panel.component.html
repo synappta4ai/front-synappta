@@ -3,6 +3,7 @@
   class="inline-flex h-9 w-9 items-center justify-center rounded-xl text-ink-on-dark transition-colors hover:bg-surface-hover"
   aria-label="Configuración de tema"
   pTooltip="Configuración de tema"
+  tooltipPosition="bottom"
   showDelay="400"
   (click)="togglePopover($event)"
 >
@@ -105,11 +106,7 @@
     <div class="profile-head">
       <div class="profile-avatar-wrap">
         <div class="user-avatar profile-avatar">
-          <img
-            [src]="userAvatarUrl()"
-            [alt]="user.name"
-            (error)="onAvatarLoadError()"
-          />
+          <img [src]="userAvatarUrl()" [alt]="user.name" (error)="onAvatarLoadError()" />
         </div>
         @if (avatarUploading()) {
           <div class="avatar-overlay avatar-overlay--busy">
@@ -120,7 +117,9 @@
             type="button"
             class="avatar-overlay"
             (click)="triggerAvatarSelect()"
-            [attr.aria-label]="hasCustomAvatar() ? 'Cambiar foto de perfil' : 'Añadir foto de perfil'"
+            [attr.aria-label]="
+              hasCustomAvatar() ? 'Cambiar foto de perfil' : 'Añadir foto de perfil'
+            "
             pTooltip="Cambiar foto"
             tooltipPosition="bottom"
           >
@@ -137,7 +136,11 @@
           </button>
           @if (hasCustomAvatar()) {
             <span class="avatar-action-sep">·</span>
-            <button type="button" class="avatar-action avatar-action--danger" (click)="removeAvatar()">
+            <button
+              type="button"
+              class="avatar-action avatar-action--danger"
+              (click)="removeAvatar()"
+            >
               Quitar
             </button>
           }

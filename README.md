@@ -1,59 +1,69 @@
 # FrontSynapta
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.7.
+Front de la plataforma **Synapta**: agencia creativa multi-tenant con
+**eventos → programas → piezas → generaciones** (video, imagen, texto, audio),
+studio de generación, biblioteca de recursos con ingredientes tipados
+(Personaje / Ubicación / Props) y consola admin.
 
-## Development server
+## Stack
 
-To start a local development server, run:
+- **Angular 22** (`^22.1.6`) standalone + SSR, TypeScript estricto, signals.
+- **PrimeNG 21.1.10** (tema oscuro; componentes standalone por import).
+- **Tailwind CSS v4** (utilities en templates + tokens en `src/styles.css`).
+- Deploy: Netlify (`@netlify/angular-runtime`, handler en `src/server.ts`).
 
-```bash
-ng serve
-```
-
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Arranque
 
 ```bash
-ng generate component component-name
+npm install
+npm start            # ng serve con SSR → http://localhost:4200
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+El API al que habla se define en `src/environments/environment.ts`
+(`API_URL`). En desarrollo local: `http://localhost:8099/api/v1`
+(back-synapta; ver `../back-synapta/README.md`).
 
-```bash
-ng generate --help
-```
+## Comandos
 
-## Building
+| Comando | Qué hace |
+|---|---|
+| `npm start` | Dev server con SSR (`ng serve`) |
+| `npm run build` | Build producción (SSR) |
+| `npm run build:dev` | Build configuración `dev` |
+| `npm test` | Unit tests (Vitest, jsdom) |
+| `npm run test:e2e` | E2E con Playwright |
+| `npm run serve:ssr:front-synapta` | Servir el build SSR |
 
-To build the project run:
+Los `pre*` scripts generan `environment.ts` desde `scripts/generate-env.ts`.
 
-```bash
-ng build
-```
+## Módulos (`src/app/modules/`)
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+- `agency` — generación (video/imagen/texto), logs con costo del proveedor
+  (créditos + USD), catálogo de modelos (`api` vs `downloaded`).
+- `studio` — el studio: prompt, referencias de biblioteca, cola de
+  generaciones en vivo, take reel con historial por día, rating excluyente
+  (buena toma / elegida final), reuso de requests.
+- `projects` — proyectos con generaciones (rating, reuso) y recursos
+  asignados (picker, filtro por tipo con contadores, etiqueta de ingrediente).
+- `library` — biblioteca de recursos; secciones de referencia
+  (`ASSET_SECTIONS` en `interfaces/library.interface.ts`) + ingredientes.
+- `admin` — logs (server communications con gasto), imágenes, tenants,
+  usuarios y permisos.
+- `events` — proyectos/programas/piezas.
 
-## Running unit tests
+## Convenciones y gotchas (leer antes de tocar UI)
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- Guía completa para agentes: [`AGENTS.md`](AGENTS.md).
+- **Iconos**: subset local Material Icons con mapping manual `.md-*` en
+  `styles.css`. Verificar con `grep "md-<nombre>" src/styles.css` antes de
+  usar un icono nuevo (no existe el set completo).
+- **PrimeNG**: `p-tabs` estilar con `class` directo (`styleClass` no aplica en
+  algunas versiones); `p-selectbutton` renderiza cada opción como
+  `p-togglebutton`; `p-datepicker` rompe SSR (NG0502); no existe `Boolean` en
+  templates (TS2339).
+- **Build junto a `ng serve`**: usar `NG_BUILD_CACHE=0 npx ng build
+  --configuration development` — correr el build sin esto envenena
+  `.angular/cache`. Si `ng serve` sirve template viejo: reiniciarlo.
+- Login E2E: `POST /api/v1/auth/login-tenant` con credenciales de
+  `.env.e2e` (el password contiene un en-dash U+2013: con curl falla el
+  encoding, usar Node/fetch).

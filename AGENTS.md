@@ -231,3 +231,37 @@ Reglas:
 - Nombres: kebab-case para archivos, PascalCase para clases/interfaces, camelCase para variables y funciones.
 - Imports relativos dentro de cada módulo; `app.routes.ts` y los archivos cross-layer usan los aliases de tsconfig (`@modules/*`, `@shared/*`, etc.), no rutas relativas hacia `core/`, `shared/` o `environments/`.
 - No agregar comentarios innecesarios; el código debe ser autoexplicativo.
+
+## Gotchas verificados en este proyecto (no improvisar)
+
+- **Iconos**: subset local Material Icons con mapping manual `.md-*` en
+  `styles.css`. Antes de usar un icono nuevo, verificar que exista:
+  `grep "md-<nombre>" src/styles.css`. Confirmados: `md-close`, `md-check`,
+  `md-remove`, `md-delete`, `md-refresh`, `md-visibility`, `md-movie`,
+  `md-place`, `md-inventory_2`, `md-person`, `md-expand_more`, `md-image`,
+  `md-grid_view`, `md-label`, `md-add`, `md-search`, `md-chevron_right`,
+  `md-cancel`, `md-block`, `md-work`, `md-photo_library`, `md-play_arrow`.
+- **PrimeNG 21.1.10**:
+  - `p-tabs`: `styleClass` NO aplica en el tablist; usar `class` directo.
+  - `p-selectbutton`: renderiza cada opción como `p-togglebutton` (los
+    selectores CSS van contra `p-togglebutton.section-toggle`, no contra
+    un contenedor); para contenido custom usar el slot `<ng-template #item
+    let-option>`.
+  - `p-datepicker`: rompe SSR (NG0502) — evitar.
+  - `p-dialog` controlado con signal + `(visibleChange)`.
+  - En templates NO existe `Boolean` (TS2339) ni globals (`Math`, `Date`).
+- **Build + serve**: para compilar mientras `ng serve` corre, usar
+  `NG_BUILD_CACHE=0 npx ng build --configuration development` (el build
+  normal envenena `.angular/cache`). Si `ng serve` sirve template viejo
+  aunque el archivo esté bien: matar el listener (:4200) y relanzar.
+- **Tooltips**: PrimeNG `Tooltip` importado como `Tooltip` desde
+  `primeng/tooltip`; el fade-in usa rAF (en el panel preview puede quedarse
+  en opacity 0 — artefacto del entorno, no un bug).
+- **Login E2E**: `POST /api/v1/auth/login-tenant` `{username, password,
+  tenant_id: 1}` con credenciales de `.env.e2e`. El password contiene un
+  en-dash U+2013: curl desde terminal lo rompe — usar Node/fetch (en
+  preview_evaluate escribirlo como `\u20135`).
+- **Tipos de recursos**: las secciones de referencia viven en
+  `library.interface.ts` (`ASSET_SECTIONS`, claves `character`/`location`/
+  `props`) y el matching por tipo se hace con `assetMatchesSection()`
+  (categoría **o** ingrediente tipado; `IngredientType` usa `prop` singular).

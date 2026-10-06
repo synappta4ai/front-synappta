@@ -4393,3 +4393,8 @@ main:has(> app-studio) {
     border-color 0.15s var(--ease-app),
     background-color 0.15s var(--ease-app);
 }
+
+.p-tooltip-text {
+  padding-left: 4px;
+  padding-right: 4px;
+}
