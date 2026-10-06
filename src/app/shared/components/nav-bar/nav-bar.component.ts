@@ -34,8 +34,8 @@ export class NavBarComponent {
       { label: 'Proyectos', icon: 'md md-folder', routerLink: '/projects' },
       { label: 'Recursos', icon: 'md md-photo_library', routerLink: '/recursos' },
       { label: 'Mis generaciones', icon: 'md md-movie', routerLink: '/mis-generaciones' },
-      { label: 'Eventos', icon: 'md md-calendar_month', routerLink: '/events' },
-      { label: 'Video', icon: 'md md-videocam', routerLink: '/video' },
+      // { label: 'Eventos', icon: 'md md-calendar_month', routerLink: '/events' },
+      // { label: 'Video', icon: 'md md-videocam', routerLink: '/video' },
     ];
     if (isSuperadmin) {
       items.push({ label: 'Admin', icon: 'md md-settings', routerLink: '/admin/models' });
