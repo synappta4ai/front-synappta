@@ -174,29 +174,6 @@
   }
 }
 
-/* ── Secciones ────────────────────────────────────────────────────────── */
-
-.asset-section-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 26px 0 14px;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--color-ink-muted-on-dark);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-}
-
-.asset-section-count {
-  font-size: 11px;
-  font-weight: 600;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: var(--color-surface-hover);
-  color: var(--color-ink-muted-on-dark);
-}
-
 /* ── Cards ────────────────────────────────────────────────────────────── */
 
 .resource-card {

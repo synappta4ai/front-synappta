@@ -32,8 +32,8 @@ export class NavBarComponent {
       { label: 'Agencia', icon: 'md md-work', routerLink: '/agency' },
       { label: 'Studio', icon: 'md md-bolt', routerLink: '/studio' },
       { label: 'Proyectos', icon: 'md md-folder', routerLink: '/projects' },
-      { label: 'Recursos', icon: 'md md-photo_library', routerLink: '/recursos' },
-      { label: 'Mis generaciones', icon: 'md md-movie', routerLink: '/mis-generaciones' },
+      { label: 'Recursos', icon: 'md md-photo_library', routerLink: '/resources' },
+      { label: 'Mis generaciones', icon: 'md md-movie', routerLink: '/my-generations' },
       // { label: 'Eventos', icon: 'md md-calendar_month', routerLink: '/events' },
       // { label: 'Video', icon: 'md md-videocam', routerLink: '/video' },
     ];

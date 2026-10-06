@@ -36,6 +36,30 @@ interface TypeOption {
 
 type StatusSeverity = 'success' | 'danger' | 'info' | 'warn' | 'secondary';
 
+/** Agrupación por día local de `created_at` (orden cronológico descendente). */
+interface DateGroup {
+  /** Etiqueta tipo "septiembre 12, 2026". */
+  label: string;
+  /** Epoch del día (medianoche local) para ordenar los grupos. */
+  ts: number;
+  logs: GenerationLog[];
+}
+
+const ES_MONTHS = [
+  'enero',
+  'febrero',
+  'marzo',
+  'abril',
+  'mayo',
+  'junio',
+  'julio',
+  'agosto',
+  'septiembre',
+  'octubre',
+  'noviembre',
+  'diciembre',
+];
+
 @Component({
   selector: 'app-my-generations',
   imports: [
@@ -196,6 +220,25 @@ export class MyGenerationsComponent {
     });
   });
 
+  /** Generaciones agrupadas por fecha (estilo historial). */
+  protected readonly dateGroups = computed<DateGroup[]>(() => {
+    const groups = new Map<number, DateGroup>();
+    for (const log of this.filtered()) {
+      const date = new Date(log.created_at);
+      if (Number.isNaN(date.getTime())) {
+        continue;
+      }
+      const ts = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+      let group = groups.get(ts);
+      if (!group) {
+        group = { label: this.formatDayLabel(date), ts, logs: [] };
+        groups.set(ts, group);
+      }
+      group.logs.push(log);
+    }
+    return [...groups.values()].sort((a, b) => b.ts - a.ts);
+  });
+
   protected readonly projectOptions = computed<{ label: string; value: string }[]>(() => {
     const map = new Map<string, string>();
     for (const log of this.logs()) {
@@ -287,6 +330,11 @@ export class MyGenerationsComponent {
   }
 
   // ── Helpers de plantilla ─────────────────────────────────────────────────
+
+  /** "septiembre 12, 2026" (mes en español, sin depender del locale de Angular). */
+  private formatDayLabel(date: Date): string {
+    return `${ES_MONTHS[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+  }
 
   protected isVideo(log: GenerationLog): boolean {
     return (log.resource_type ?? 'video') !== 'image';

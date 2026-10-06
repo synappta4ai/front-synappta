@@ -81,8 +81,13 @@
       </p>
     </div>
   } @else {
-    <div class="gen-grid">
-      @for (log of filtered(); track log.task_id; let i = $index) {
+    @for (group of dateGroups(); track group.ts) {
+      <h3 class="date-group-head">
+        {{ group.label }}
+        <span class="date-group-count">{{ group.logs.length }}</span>
+      </h3>
+      <div class="gen-grid">
+        @for (log of group.logs; track log.task_id; let i = $index) {
         <article
           class="gen-card"
           animate.enter="anim-item"
@@ -238,8 +243,9 @@
             </div>
           </div>
         </article>
-      }
-    </div>
+        }
+      </div>
+    }
 
     <!-- Paginado incremental -->
     <div class="load-more">

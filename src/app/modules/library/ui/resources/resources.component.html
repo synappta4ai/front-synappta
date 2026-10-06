@@ -76,7 +76,7 @@
       <div class="skel skel-text" aria-hidden="true"></div>
       <div class="skel skel-text" aria-hidden="true"></div>
     </div>
-  } @else if (groups().length === 0) {
+  } @else if (filteredFiles().length === 0) {
     <div class="empty-state">
       <div class="empty-icon">
         <i class="md md-inbox"></i>
@@ -88,15 +88,8 @@
       </p>
     </div>
   } @else {
-    @for (group of groups(); track group.label) {
-      @if (group.label) {
-        <h3 class="asset-section-head">
-          {{ group.label }}
-          <span class="asset-section-count">{{ group.files.length }}</span>
-        </h3>
-      }
-      <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
-        @for (file of group.files; track file.id; let i = $index) {
+    <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+      @for (file of filteredFiles(); track file.id; let i = $index) {
           <div
             class="resource-card"
             role="button"
@@ -164,9 +157,8 @@
               </div>
             </div>
           </div>
-        }
-      </div>
-    }
+      }
+    </div>
   }
 
   <!-- Paginación -->

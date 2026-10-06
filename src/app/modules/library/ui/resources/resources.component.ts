@@ -32,7 +32,6 @@ import { ServerUrlPipe } from '@pipes/server-url.pipe';
 import { Event as Project } from '@modules/events/interfaces';
 import { EventsService } from '@modules/events/services';
 import {
-  ASSET_SECTIONS,
   AssetSectionKey,
   assetMatchesSection,
   FileAsset,
@@ -260,47 +259,6 @@ export class ResourcesComponent {
     return filter === 'all'
       ? this.files()
       : this.files().filter((file) => this.matchesFilter(file, filter));
-  });
-
-  /** Grupos: secciones primero, después medios por tipo, al final otros. */
-  protected readonly groups = computed<{ label: string; files: FileAsset[] }[]>(() => {
-    const filter = this.filter();
-    const list = this.filteredFiles();
-    if (filter !== 'all') {
-      return [{ label: '', files: list }];
-    }
-
-    const claimed = new Set<string>();
-    const groups: { label: string; files: FileAsset[] }[] = [];
-
-    for (const section of ASSET_SECTIONS) {
-      const files = list.filter(
-        (file) => !claimed.has(file.id) && assetMatchesSection(file, section.key),
-      );
-      files.forEach((file) => claimed.add(file.id));
-      if (files.length > 0) {
-        groups.push({ label: section.label, files });
-      }
-    }
-
-    const media = (prefix: string, label: string): void => {
-      const files = list.filter(
-        (file) => !claimed.has(file.id) && !!file.mime_type?.startsWith(prefix),
-      );
-      files.forEach((file) => claimed.add(file.id));
-      if (files.length > 0) {
-        groups.push({ label, files });
-      }
-    };
-    media('image/', 'Imágenes');
-    media('video/', 'Videos');
-    media('audio/', 'Audio');
-
-    const rest = list.filter((file) => !claimed.has(file.id));
-    if (rest.length > 0) {
-      groups.push({ label: 'Otros', files: rest });
-    }
-    return groups;
   });
 
   // ── Subida ───────────────────────────────────────────────────────────────
