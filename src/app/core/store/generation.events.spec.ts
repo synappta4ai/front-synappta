@@ -44,6 +44,11 @@ describe('GenerationEventsStore hydration', () => {
     video_seed: 0,
     video_fps: 0,
     progress: 42,
+    rating_good: false,
+    rating_final: false,
+    event_name: null,
+    piece_name: null,
+    user_display_name: null,
     created_at: new Date().toISOString(),
     ...over,
   });
