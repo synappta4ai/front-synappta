@@ -1,0 +1,456 @@
+import { DatePipe } from '@angular/common';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  inject,
+  signal,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormsModule } from '@angular/forms';
+import {
+  catchError,
+  debounceTime,
+  EMPTY,
+  finalize,
+  lastValueFrom,
+  Subject,
+} from 'rxjs';
+
+import { ConfirmationService } from 'primeng/api';
+import { Button } from 'primeng/button';
+import { ConfirmDialog } from 'primeng/confirmdialog';
+import { Dialog } from 'primeng/dialog';
+import { IconField } from 'primeng/iconfield';
+import { InputIcon } from 'primeng/inputicon';
+import { InputText } from 'primeng/inputtext';
+import { Message } from 'primeng/message';
+import { Select } from 'primeng/select';
+
+import { ServerUrlPipe } from '@pipes/server-url.pipe';
+import { Event as Project } from '@modules/events/interfaces';
+import { EventsService } from '@modules/events/services';
+import {
+  ASSET_SECTIONS,
+  AssetSectionKey,
+  assetMatchesSection,
+  FileAsset,
+  FileListFilters,
+} from '@modules/library/interfaces';
+import { LibraryService } from '@modules/library/services';
+import { ImgFadeDirective } from '@shared/components/img-fade/img-fade.directive';
+import { PageContainerComponent } from '@shared/components/page-container/page-container.component';
+import { downloadRemoteFile } from '@utils/download-url';
+
+/** Clasificación de la biblioteca: medios por MIME + secciones de assets. */
+type ResFilter = 'all' | 'images' | 'videos' | 'audio' | AssetSectionKey | 'other';
+
+interface ResOption {
+  value: ResFilter;
+  label: string;
+  icon: string;
+}
+
+@Component({
+  selector: 'app-resources',
+  imports: [
+    FormsModule,
+    PageContainerComponent,
+    Button,
+    ConfirmDialog,
+    Dialog,
+    IconField,
+    InputIcon,
+    InputText,
+    Message,
+    Select,
+    DatePipe,
+    ServerUrlPipe,
+    ImgFadeDirective,
+  ],
+  providers: [ConfirmationService, ServerUrlPipe],
+  templateUrl: './resources.component.html',
+  styleUrl: './resources.component.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class ResourcesComponent {
+  private readonly libraryService = inject(LibraryService);
+  private readonly eventsService = inject(EventsService);
+  private readonly confirmationService = inject(ConfirmationService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly serverUrl = inject(ServerUrlPipe);
+
+  protected readonly pageSize = 48;
+
+  protected readonly files = signal<FileAsset[]>([]);
+  protected readonly loading = signal(false);
+  protected readonly error = signal<string | null>(null);
+  protected readonly page = signal(1);
+  protected readonly total = signal(0);
+
+  protected readonly searchInput = signal('');
+  private readonly searchTerm = signal('');
+  private readonly search$ = new Subject<string>();
+
+  protected readonly filter = signal<ResFilter>('all');
+
+  protected readonly filterOptions: ResOption[] = [
+    { value: 'all', label: 'Todos', icon: 'md md-grid_view' },
+    { value: 'images', label: 'Imágenes', icon: 'md md-image' },
+    { value: 'videos', label: 'Videos', icon: 'md md-videocam' },
+    { value: 'audio', label: 'Audio', icon: 'md md-play_circle' },
+    { value: 'character', label: 'Personaje', icon: 'md md-person' },
+    { value: 'location', label: 'Ubicación', icon: 'md md-place' },
+    { value: 'props', label: 'Props', icon: 'md md-inventory_2' },
+    { value: 'other', label: 'Otros', icon: 'md md-description' },
+  ];
+
+  protected readonly projects = signal<Project[]>([]);
+  protected readonly projectOptions = signal<{ label: string; value: string }[]>([]);
+
+  protected readonly viewerVisible = signal(false);
+  protected readonly selected = signal<FileAsset | null>(null);
+
+  protected readonly assignVisible = signal(false);
+  protected readonly assignProjectId = signal<string | null>(null);
+  protected readonly assigning = signal(false);
+
+  protected readonly uploading = signal(false);
+  protected readonly uploadProgress = signal<{ done: number; total: number } | null>(null);
+
+  /** Miniaturas que fallaron (archivo ausente/500 en el servidor). */
+  protected readonly brokenThumbs = signal<ReadonlySet<string>>(new Set());
+
+  protected markThumbBroken(id: string): void {
+    if (this.brokenThumbs().has(id)) {
+      return;
+    }
+    const next = new Set(this.brokenThumbs());
+    next.add(id);
+    this.brokenThumbs.set(next);
+  }
+
+  constructor() {
+    this.search$
+      .pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef))
+      .subscribe((value) => {
+        this.searchTerm.set(value);
+        this.page.set(1);
+        this.load();
+      });
+
+    this.load();
+    this.loadProjects();
+  }
+
+  // ── Datos ────────────────────────────────────────────────────────────────
+
+  private load(): void {
+    this.loading.set(true);
+    this.error.set(null);
+    const filters: FileListFilters = {
+      page: this.page(),
+      pageSize: this.pageSize,
+      q: this.searchTerm() || undefined,
+    };
+    this.libraryService
+      .listFilesPaginated(filters)
+      .pipe(
+        catchError(() => {
+          this.error.set('No se pudieron cargar los recursos.');
+          return EMPTY;
+        }),
+        finalize(() => this.loading.set(false)),
+      )
+      .subscribe((res) => {
+        this.files.set([...((res.items ?? []) as FileAsset[])]);
+        this.total.set(res.total ?? 0);
+      });
+  }
+
+  private loadProjects(): void {
+    this.eventsService
+      .listEvents()
+      .pipe(catchError(() => EMPTY))
+      .subscribe((events) => {
+        this.projects.set([...events]);
+        this.projectOptions.set(
+          events.map((event) => ({ label: event.name, value: event.id })),
+        );
+      });
+  }
+
+  protected onSearchInput(value: string): void {
+    this.searchInput.set(value);
+    this.search$.next(value);
+  }
+
+  protected prevPage(): void {
+    if (this.page() <= 1) return;
+    this.page.update((value) => value - 1);
+    this.load();
+  }
+
+  protected nextPage(): void {
+    if (!this.hasNext()) return;
+    this.page.update((value) => value + 1);
+    this.load();
+  }
+
+  protected hasNext(): boolean {
+    return this.page() * this.pageSize < this.total();
+  }
+
+  // ── Clasificación ────────────────────────────────────────────────────────
+
+  private matchesFilter(file: FileAsset, key: ResFilter): boolean {
+    switch (key) {
+      case 'all':
+        return true;
+      case 'images':
+        return !!file.mime_type?.startsWith('image/');
+      case 'videos':
+        return !!file.mime_type?.startsWith('video/');
+      case 'audio':
+        return !!file.mime_type?.startsWith('audio/');
+      case 'other':
+        return (
+          !file.mime_type?.startsWith('image/') &&
+          !file.mime_type?.startsWith('video/') &&
+          !file.mime_type?.startsWith('audio/')
+        );
+      default:
+        return assetMatchesSection(file, key);
+    }
+  }
+
+  protected readonly counts = computed<Record<ResFilter, number>>(() => {
+    const counts: Record<ResFilter, number> = {
+      all: 0,
+      images: 0,
+      videos: 0,
+      audio: 0,
+      character: 0,
+      location: 0,
+      props: 0,
+      other: 0,
+    };
+    for (const file of this.files()) {
+      counts.all += 1;
+      for (const key of [
+        'images',
+        'videos',
+        'audio',
+        'character',
+        'location',
+        'props',
+        'other',
+      ] as const) {
+        if (this.matchesFilter(file, key)) {
+          counts[key] += 1;
+        }
+      }
+    }
+    return counts;
+  });
+
+  protected readonly filteredFiles = computed(() => {
+    const filter = this.filter();
+    return filter === 'all'
+      ? this.files()
+      : this.files().filter((file) => this.matchesFilter(file, filter));
+  });
+
+  /** Grupos: secciones primero, después medios por tipo, al final otros. */
+  protected readonly groups = computed<{ label: string; files: FileAsset[] }[]>(() => {
+    const filter = this.filter();
+    const list = this.filteredFiles();
+    if (filter !== 'all') {
+      return [{ label: '', files: list }];
+    }
+
+    const claimed = new Set<string>();
+    const groups: { label: string; files: FileAsset[] }[] = [];
+
+    for (const section of ASSET_SECTIONS) {
+      const files = list.filter(
+        (file) => !claimed.has(file.id) && assetMatchesSection(file, section.key),
+      );
+      files.forEach((file) => claimed.add(file.id));
+      if (files.length > 0) {
+        groups.push({ label: section.label, files });
+      }
+    }
+
+    const media = (prefix: string, label: string): void => {
+      const files = list.filter(
+        (file) => !claimed.has(file.id) && !!file.mime_type?.startsWith(prefix),
+      );
+      files.forEach((file) => claimed.add(file.id));
+      if (files.length > 0) {
+        groups.push({ label, files });
+      }
+    };
+    media('image/', 'Imágenes');
+    media('video/', 'Videos');
+    media('audio/', 'Audio');
+
+    const rest = list.filter((file) => !claimed.has(file.id));
+    if (rest.length > 0) {
+      groups.push({ label: 'Otros', files: rest });
+    }
+    return groups;
+  });
+
+  // ── Subida ───────────────────────────────────────────────────────────────
+
+  protected onUpload(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files ?? []);
+    if (files.length === 0 || this.uploading()) {
+      return;
+    }
+    this.uploading.set(true);
+    this.uploadProgress.set({ done: 0, total: files.length });
+    void this.uploadSequentially(files, input);
+  }
+
+  private async uploadSequentially(files: File[], input: HTMLInputElement): Promise<void> {
+    let done = 0;
+    for (const file of files) {
+      const category = file.type.startsWith('video/')
+        ? 'videos'
+        : file.type.startsWith('audio/')
+          ? 'audio'
+          : 'images';
+      try {
+        await lastValueFrom(this.libraryService.uploadFile(file, category));
+      } catch {
+        this.error.set(`No se pudo subir "${file.name}".`);
+      }
+      done += 1;
+      this.uploadProgress.set({ done, total: files.length });
+    }
+    this.uploading.set(false);
+    this.uploadProgress.set(null);
+    input.value = '';
+    this.page.set(1);
+    this.load();
+  }
+
+  // ── Visor / acciones ─────────────────────────────────────────────────────
+
+  protected openViewer(file: FileAsset): void {
+    this.selected.set(file);
+    this.viewerVisible.set(true);
+  }
+
+  protected closeViewer(): void {
+    this.viewerVisible.set(false);
+    this.selected.set(null);
+  }
+
+  /** URL absoluta para handlers de usuario (evita pipes en statements). */
+  protected absoluteUrl(url: string | null | undefined): string {
+    return this.serverUrl.transform(url);
+  }
+
+  protected download(url: string | null | undefined, filename?: string | null): void {
+    void downloadRemoteFile(url ?? '', filename ?? undefined);
+  }
+
+  protected openInTab(url: string | null | undefined): void {
+    if (url) {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+  }
+
+  protected openAssign(): void {
+    this.assignProjectId.set(null);
+    this.assignVisible.set(true);
+  }
+
+  protected confirmAssign(): void {
+    const file = this.selected();
+    const projectId = this.assignProjectId();
+    if (!file || !projectId) {
+      return;
+    }
+    this.assigning.set(true);
+    this.libraryService
+      .linkFileEvent(file.id, projectId)
+      .pipe(
+        catchError(() => {
+          this.error.set('No se pudo asignar el recurso al proyecto.');
+          return EMPTY;
+        }),
+        finalize(() => this.assigning.set(false)),
+      )
+      .subscribe(() => {
+        this.assignVisible.set(false);
+        this.load();
+      });
+  }
+
+  protected confirmDelete(file: FileAsset): void {
+    this.confirmationService.confirm({
+      message: `¿Eliminar el recurso <strong>${file.filename}</strong>? Se moverá a la papelera.`,
+      header: 'Eliminar recurso',
+      icon: 'md md-warning',
+      acceptButtonProps: { label: 'Eliminar', severity: 'danger' },
+      rejectButtonProps: { label: 'Cancelar', severity: 'secondary' },
+      accept: () => {
+        this.libraryService
+          .deleteFile(file.id)
+          .pipe(
+            catchError(() => {
+              this.error.set('No se pudo eliminar el recurso.');
+              return EMPTY;
+            }),
+          )
+          .subscribe(() => {
+            this.closeViewer();
+            this.load();
+          });
+      },
+    });
+  }
+
+  // ── Helpers de plantilla ─────────────────────────────────────────────────
+
+  protected formatSize(size: number | null): string {
+    if (!size || size <= 0) {
+      return '—';
+    }
+    if (size < 1024 * 1024) {
+      return `${Math.round(size / 1024)} KB`;
+    }
+    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  protected kindLabel(file: FileAsset): string {
+    const mime = file.mime_type ?? '';
+    if (mime.startsWith('image/')) return 'Imagen';
+    if (mime.startsWith('video/')) return 'Video';
+    if (mime.startsWith('audio/')) return 'Audio';
+    return 'Archivo';
+  }
+
+  protected ingTypeLabel(type: string | null): string {
+    if (type === 'character') return 'personaje';
+    if (type === 'location') return 'locación';
+    if (type === 'props') return 'prop';
+    return type ?? 'recurso';
+  }
+
+  protected projectNames(file: FileAsset): string {
+    const ids = file.project_ids ?? [];
+    if (ids.length === 0) {
+      return '—';
+    }
+    return ids
+      .map((id) => this.projects().find((project) => project.id === id)?.name ?? id)
+      .join(', ');
+  }
+}

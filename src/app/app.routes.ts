@@ -66,6 +66,17 @@ export const routes: Routes = [
           import('@modules/projects/projects.routes').then((m) => m.projectsRoutes),
       },
       {
+        path: 'recursos',
+        canActivate: [authGuard],
+        loadChildren: () => import('@modules/library/library.routes').then((m) => m.libraryRoutes),
+      },
+      {
+        path: 'mis-generaciones',
+        canActivate: [authGuard],
+        loadChildren: () =>
+          import('@modules/agency/agency.routes').then((m) => m.myGenerationsRoutes),
+      },
+      {
         path: 'admin',
         canActivate: [authGuard],
         loadChildren: () => import('@modules/admin/admin.routes').then((m) => m.adminRoutes),

@@ -1,0 +1,357 @@
+<app-page-container title="Recursos" animate.enter="anim-page">
+  @if (error(); as message) {
+    <div class="mb-6">
+      <p-message severity="error" [text]="message" styleClass="w-full" />
+    </div>
+  }
+
+  <!-- Barra superior: buscador + total + subida -->
+  <div class="res-toolbar mb-4">
+    <div class="res-toolbar__group">
+      <p-iconfield iconPosition="left" styleClass="res-search">
+        <p-inputicon styleClass="md md-search" />
+        <input
+          pInputText
+          type="text"
+          aria-label="Buscar recursos por nombre"
+          placeholder="Buscar por nombre…"
+          [ngModel]="searchInput()"
+          (ngModelChange)="onSearchInput($event)"
+        />
+      </p-iconfield>
+      <span class="total-chip">
+        <strong>{{ total() }}</strong>
+        <small>recursos</small>
+      </span>
+    </div>
+
+    <div class="res-toolbar__group">
+      <label
+        class="upload-btn"
+        [class.busy]="uploading()"
+        [title]="uploading() ? 'Subida en curso…' : 'Subir imágenes, videos o audio'"
+        tabindex="0"
+        (keydown.enter)="fileInput.click()"
+      >
+        <i [class]="uploading() ? 'md md-refresh md-spin' : 'md md-upload'"></i>
+        {{
+          uploading() && uploadProgress()
+            ? 'Subiendo ' + uploadProgress()!.done + '/' + uploadProgress()!.total
+            : 'Subir recursos'
+        }}
+        <input
+          #fileInput
+          type="file"
+          class="hidden"
+          multiple
+          accept="image/*,video/*,audio/*"
+          [disabled]="uploading()"
+          (change)="onUpload($event)"
+        />
+      </label>
+    </div>
+  </div>
+
+  <!-- Clasificación por tipo -->
+  <div class="type-tabs res-tabs mb-4">
+    @for (opt of filterOptions; track opt.value) {
+      <button
+        type="button"
+        class="type-tab"
+        [class.active]="filter() === opt.value"
+        (click)="filter.set(opt.value)"
+      >
+        <i [class]="opt.icon"></i>
+        {{ opt.label }}
+        <span class="count" [class.badge]="filter() === opt.value">{{ counts()[opt.value] }}</span>
+      </button>
+    }
+  </div>
+
+  <!-- Estado: cargando / vacío / grilla -->
+  @if (loading()) {
+    <div class="empty-state" aria-busy="true">
+      <span class="sr-only">Cargando recursos…</span>
+      <div class="skel skel-title" aria-hidden="true"></div>
+      <div class="skel skel-text" aria-hidden="true"></div>
+      <div class="skel skel-text" aria-hidden="true"></div>
+    </div>
+  } @else if (groups().length === 0) {
+    <div class="empty-state">
+      <div class="empty-icon">
+        <i class="md md-inbox"></i>
+      </div>
+      <h3>No hay recursos</h3>
+      <p>
+        No se encontraron archivos con la clasificación o búsqueda actual. Sube imágenes, videos o
+        audio para empezar.
+      </p>
+    </div>
+  } @else {
+    @for (group of groups(); track group.label) {
+      @if (group.label) {
+        <h3 class="asset-section-head">
+          {{ group.label }}
+          <span class="asset-section-count">{{ group.files.length }}</span>
+        </h3>
+      }
+      <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+        @for (file of group.files; track file.id; let i = $index) {
+          <div
+            class="resource-card"
+            role="button"
+            tabindex="0"
+            animate.enter="anim-item"
+            [style.animation-delay.ms]="i < 8 ? i * 35 : 280"
+            [attr.aria-label]="'Ver ' + file.filename"
+            (click)="openViewer(file)"
+            (keydown.enter)="openViewer(file)"
+          >
+            <div class="resource-card__thumb">
+              @if (file.mime_type?.startsWith('image/') && !brokenThumbs().has(file.id)) {
+                <img
+                  appImgFade
+                  [src]="(file.thumbnail_url || file.url) | serverUrl"
+                  [alt]="file.filename"
+                  loading="lazy"
+                  decoding="async"
+                  (error)="markThumbBroken(file.id)"
+                />
+              } @else if (file.mime_type?.startsWith('image/')) {
+                <div class="resource-card__fallback">
+                  <i class="md md-image"></i>
+                </div>
+              } @else if (file.mime_type?.startsWith('video/')) {
+                <video [src]="file.url | serverUrl" preload="metadata"></video>
+              } @else if (file.mime_type?.startsWith('audio/')) {
+                <div class="resource-card__fallback">
+                  <i class="md md-play_arrow"></i>
+                </div>
+              } @else {
+                <div class="resource-card__fallback">
+                  <i class="md md-description"></i>
+                </div>
+              }
+              <button
+                type="button"
+                class="card-quick"
+                title="Descargar"
+                aria-label="Descargar recurso"
+                (click)="$event.stopPropagation(); download(absoluteUrl(file.url), file.filename)"
+              >
+                <i class="md md-download"></i>
+              </button>
+              @if ((file.project_ids?.length ?? 0) > 0) {
+                <span class="overlay-badge overlay-badge--bottom">
+                  <i class="md md-work"></i>{{ file.project_ids!.length }}
+                </span>
+              }
+            </div>
+            <div class="resource-card__body">
+              <p class="resource-card__name" [title]="file.filename">{{ file.filename }}</p>
+              @if (file.ingredients?.length) {
+                <div class="ing-row">
+                  @for (ing of file.ingredients; track ing.id) {
+                    <span class="ing-chip" [title]="ingTypeLabel(ing.type) + ': ' + ing.name">
+                      {{ ingTypeLabel(ing.type) }}: {{ ing.name }}
+                    </span>
+                  }
+                </div>
+              }
+              <div class="meta-row">
+                <span>{{ formatSize(file.size) }}</span>
+                <span>{{ file.created_at | date: 'shortDate' }}</span>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  }
+
+  <!-- Paginación -->
+  @if (!loading() && total() > pageSize) {
+    <div class="pagination-bar">
+      <p-button
+        icon="md md-chevron_left"
+        label="Anterior"
+        [disabled]="page() <= 1"
+        (onClick)="prevPage()"
+      />
+      <span class="page-info">Página {{ page() }} · {{ total() }} recursos</span>
+      <p-button
+        icon="md md-chevron_right"
+        iconPos="right"
+        label="Siguiente"
+        [disabled]="!hasNext()"
+        (onClick)="nextPage()"
+      />
+    </div>
+  }
+
+  <!-- Visor con metadata -->
+  <p-dialog
+    [visible]="viewerVisible()"
+    (visibleChange)="viewerVisible.set($event)"
+    [modal]="true"
+    [style]="{ width: 'min(94vw, 56rem)' }"
+    [draggable]="false"
+    [resizable]="false"
+    [closeOnEscape]="true"
+  >
+    <ng-template #header>
+      @if (selected(); as file) {
+        <div class="viewer-head">
+          <div class="viewer-head__icon">
+            <i class="md md-photo_library"></i>
+          </div>
+          <div class="min-w-0">
+            <h3 class="viewer-head__title" [title]="file.filename">{{ file.filename }}</h3>
+            <p class="viewer-head__sub">Recurso de la biblioteca · {{ kindLabel(file) }}</p>
+          </div>
+        </div>
+      }
+    </ng-template>
+
+    @if (selected(); as file) {
+      @if (file.mime_type?.startsWith('image/') && !brokenThumbs().has(file.id)) {
+        <img
+          appImgFade
+          [src]="file.url | serverUrl"
+          [alt]="file.filename"
+          decoding="async"
+          class="viewer-preview"
+          (error)="markThumbBroken(file.id)"
+        />
+      } @else if (file.mime_type?.startsWith('image/')) {
+        <div class="viewer-unknown">
+          <i class="md md-image"></i>
+          <p>Vista previa no disponible (archivo ausente en el servidor)</p>
+        </div>
+      } @else if (file.mime_type?.startsWith('video/')) {
+        <video [src]="file.url | serverUrl" controls class="viewer-preview"></video>
+      } @else if (file.mime_type?.startsWith('audio/')) {
+        <div class="viewer-audio">
+          <i class="md md-audiotrack"></i>
+          <audio [src]="file.url | serverUrl" controls></audio>
+        </div>
+      } @else {
+        <div class="viewer-unknown">
+          <i class="md md-description"></i>
+          <p>{{ file.format || file.mime_type || 'Archivo' }}</p>
+        </div>
+      }
+
+      <div class="viewer-meta">
+        <div class="meta-item">
+          <span class="meta-item__label">Tipo</span>
+          <span class="meta-item__value">{{ kindLabel(file) }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-item__label">Tamaño</span>
+          <span class="meta-item__value">{{ formatSize(file.size) }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-item__label">Formato</span>
+          <span class="meta-item__value">{{ file.format || '—' }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-item__label">Categoría</span>
+          <span class="meta-item__value">{{ file.category || '—' }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-item__label">Subido</span>
+          <span class="meta-item__value">{{ file.created_at | date: 'medium' }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-item__label">Proyectos</span>
+          <span class="meta-item__value" [title]="projectNames(file)">{{
+            projectNames(file)
+          }}</span>
+        </div>
+        @if (file.ingredients?.length) {
+          <div class="meta-item meta-item--wide">
+            <span class="meta-item__label">Ingredientes</span>
+            <span class="meta-item__value">
+              @for (ing of file.ingredients; track ing.id; let last = $last) {
+                {{ ingTypeLabel(ing.type) }}: {{ ing.name }}{{ last ? '' : ' · ' }}
+              }
+            </span>
+          </div>
+        }
+      </div>
+
+      <div class="viewer-actions">
+      <p-button
+        icon="md md-download"
+        label="Descargar"
+        (onClick)="download(absoluteUrl(file.url), file.filename)"
+      />
+      <p-button
+        icon="md md-open_in_new"
+        label="Abrir en pestaña"
+        severity="secondary"
+        (onClick)="openInTab(absoluteUrl(file.url))"
+      />
+      <p-button
+        icon="md md-work"
+        label="Asignar a proyecto"
+        severity="secondary"
+        (onClick)="openAssign()"
+      />
+      <p-button
+        icon="md md-delete"
+        label="Eliminar"
+        severity="danger"
+        [text]="true"
+        (onClick)="confirmDelete(file)"
+      />
+      </div>
+    }
+  </p-dialog>
+
+  <!-- Asignar a proyecto -->
+  <p-dialog
+    header="Asignar a proyecto"
+    [visible]="assignVisible()"
+    (visibleChange)="assignVisible.set($event)"
+    [modal]="true"
+    [style]="{ width: 'min(92vw, 28rem)' }"
+    [draggable]="false"
+    [resizable]="false"
+  >
+    <div class="flex flex-col gap-2">
+      <p-select
+        [ngModel]="assignProjectId()"
+        (ngModelChange)="assignProjectId.set($event)"
+        [options]="projectOptions()"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Elegí un proyecto"
+        [filter]="true"
+        appendTo="body"
+        styleClass="w-full"
+      />
+      <p class="text-xs text-ink-muted-on-dark">
+        El recurso queda disponible para ese proyecto sin perderlo de la biblioteca general.
+      </p>
+    </div>
+    <div class="mt-4 flex justify-end gap-2">
+      <p-button
+        label="Cancelar"
+        severity="secondary"
+        [text]="true"
+        (onClick)="assignVisible.set(false)"
+      />
+      <p-button
+        label="Asignar"
+        icon="md md-check"
+        [loading]="assigning()"
+        [disabled]="!assignProjectId()"
+        (onClick)="confirmAssign()"
+      />
+    </div>
+  </p-dialog>
+
+  <p-confirmDialog styleClass="custom-confirm-dialog" />
+</app-page-container>

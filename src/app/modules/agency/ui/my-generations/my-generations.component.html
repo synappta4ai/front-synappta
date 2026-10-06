@@ -1,0 +1,417 @@
+<app-page-container title="Mis generaciones" animate.enter="anim-page">
+  @if (error(); as message) {
+    <div class="mb-6">
+      <p-message severity="error" [text]="message" styleClass="w-full" />
+    </div>
+  }
+
+  <!-- Barra superior: tipos + búsqueda + proyecto + costo -->
+  <div class="gen-toolbar mb-4">
+    <div class="type-tabs">
+      @for (opt of typeOptions; track opt.value) {
+        <button
+          type="button"
+          class="type-tab"
+          [class.active]="typeFilter() === opt.value"
+          (click)="changeType(opt.value)"
+        >
+          <i [class]="opt.icon"></i>
+          {{ opt.label }}
+          <span class="count" [class.badge]="typeFilter() === opt.value">{{
+            typeCounts()[opt.value]
+          }}</span>
+        </button>
+      }
+    </div>
+
+    <div class="gen-toolbar__side">
+      <p-iconfield iconPosition="left" styleClass="gen-search">
+        <p-inputicon styleClass="md md-search" />
+        <input
+          pInputText
+          type="text"
+          aria-label="Buscar generaciones"
+          placeholder="Buscar modelo, proyecto, pieza…"
+          [ngModel]="search()"
+          (ngModelChange)="onSearch($event)"
+        />
+      </p-iconfield>
+
+      <p-select
+        [ngModel]="projectId()"
+        (ngModelChange)="projectId.set($event)"
+        [options]="projectOptions()"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Todos los proyectos"
+        [filter]="true"
+        [showClear]="true"
+        appendTo="body"
+        styleClass="gen-project-select"
+      />
+
+      <span class="total-chip" title="Costo acumulado de las generaciones listadas">
+        <i class="md md-bolt"></i>
+        <strong>{{ totalCost() | number: '1.2-4' }}</strong>
+        <small>USD</small>
+        @if (totalCredits() > 0) {
+          <em>· {{ totalCredits() | number: '1.0-0' }} créditos</em>
+        }
+      </span>
+    </div>
+  </div>
+
+  <!-- Estados -->
+  @if (loading()) {
+    <div class="empty-state" aria-busy="true">
+      <span class="sr-only">Cargando generaciones…</span>
+      <div class="skel skel-title" aria-hidden="true"></div>
+      <div class="skel skel-text" aria-hidden="true"></div>
+      <div class="skel skel-text" aria-hidden="true"></div>
+    </div>
+  } @else if (filtered().length === 0) {
+    <div class="empty-state">
+      <div class="empty-icon">
+        <i class="md md-movie"></i>
+      </div>
+      <h3>Todavía no hay generaciones</h3>
+      <p>
+        Genera videos o imágenes desde el Studio y van a aparecer acá con su modelo, proyecto,
+        costo y opciones de reutilizar o descargar.
+      </p>
+    </div>
+  } @else {
+    <div class="gen-grid">
+      @for (log of filtered(); track log.task_id; let i = $index) {
+        <article
+          class="gen-card"
+          animate.enter="anim-item"
+          [style.animation-delay.ms]="i < 8 ? i * 35 : 280"
+        >
+          <!-- Preview + click abre detalle -->
+          <div
+            class="gen-card__media"
+            role="button"
+            tabindex="0"
+            [attr.aria-label]="'Ver detalle de la generación'"
+            (click)="open(log)"
+            (keydown.enter)="open(log)"
+          >
+            @if (hasOutput(log)) {
+              @if (isVideo(log)) {
+                <video
+                  [src]="absoluteUrl(outputUrl(log))"
+                  preload="metadata"
+                  tabindex="-1"
+                  aria-hidden="true"
+                ></video>
+                <span class="gen-card__play" aria-hidden="true"
+                  ><i class="md md-play_arrow"></i
+                ></span>
+              } @else {
+                <img
+                  appImgFade
+                  [src]="absoluteUrl(outputUrl(log))"
+                  [alt]="log.piece_name || log.model_name || 'Generación'"
+                  loading="lazy"
+                  decoding="async"
+                />
+              }
+              <span class="gen-card__duration" title="Duración">{{
+                duration(log.video_duration)
+              }}</span>
+            } @else {
+              <div class="gen-card__placeholder">
+                @if (log.status === 'failed') {
+                  <i class="md md-error"></i>
+                  <span>Sin vista previa</span>
+                } @else {
+                  <i class="md md-hourglass_empty" [class.md-spin]="log.status === 'running'"></i>
+                  <span>Procesando…</span>
+                }
+              </div>
+            }
+            <p-tag
+              [value]="statusLabel(log.status)"
+              [severity]="severity(log.status)"
+              styleClass="gen-card__status"
+            />
+          </div>
+
+          <!-- Metadata -->
+          <div class="gen-card__body">
+            <div class="gen-card__head">
+              <p class="gen-card__model" [title]="log.model_name">
+                {{ log.model_name || 'Modelo desconocido' }}
+              </p>
+              @if (log.video_fps && log.video_fps > 0) {
+                <span class="chip-mini">{{ log.video_fps }} fps</span>
+              }
+            </div>
+
+            <p class="gen-card__project" [title]="log.event_name || ''">
+              <i class="md md-work"></i>
+              <span class="truncate">{{ log.event_name || 'Sin proyecto' }}</span>
+              @if (log.piece_code || log.piece_name) {
+                <span class="gen-card__piece" [title]="log.piece_name || log.piece_code"
+                  >· {{ log.piece_code || log.piece_name }}</span
+                >
+              }
+            </p>
+
+            <dl class="gen-card__meta">
+              <div>
+                <dt title="Usuario"><i class="md md-person"></i>Usuario</dt>
+                <dd>{{ log.user_display_name || 'Yo' }}</dd>
+              </div>
+              <div>
+                <dt title="Fecha"><i class="md md-schedule"></i>Fecha</dt>
+                <dd>{{ log.created_at | date: 'short' }}</dd>
+              </div>
+              <div>
+                <dt title="Costo estimado"><i class="md md-bolt"></i>Costo</dt>
+                <dd>{{ cost(log) | number: '1.2-4' }} USD</dd>
+              </div>
+              <div>
+                <dt title="Resolución"><i class="md md-desktop_windows"></i>Resolución</dt>
+                <dd>
+                  {{ log.video_resolution || '—' }}
+                  @if (log.video_duration && log.video_duration > 0) {
+                    · {{ duration(log.video_duration) }}
+                  }
+                </dd>
+              </div>
+            </dl>
+
+            <!-- Acciones -->
+            <div class="gen-card__actions">
+              <button
+                type="button"
+                class="log-reuse"
+                title="Reutilizar en el Studio"
+                [disabled]="!log.request"
+                (click)="reuse(log)"
+              >
+                <i class="md md-refresh"></i><span>REUSAR</span>
+              </button>
+
+              <p-button
+                icon="md md-download"
+                label="Descargar"
+                size="small"
+                severity="secondary"
+                [outlined]="true"
+                [disabled]="!hasOutput(log)"
+                (onClick)="downloadOutput(log, absoluteUrl(outputUrl(log)))"
+              />
+
+              <div class="log-rating-group" role="group" aria-label="Calificación de la generación">
+                <button
+                  type="button"
+                  class="log-rating-check"
+                  [class.active]="log.rating_good"
+                  [title]="log.rating_good ? 'Quitar Me gusta' : 'Me gusta'"
+                  (click)="rate(log, 'good')"
+                >
+                  <i class="md md-check"></i>
+                </button>
+                <button
+                  type="button"
+                  class="log-rating-check"
+                  [class.active]="log.rating_final"
+                  [title]="log.rating_final ? 'Quitar Elegida final' : 'Elegida final'"
+                  (click)="rate(log, 'final')"
+                >
+                  <i class="md md-check md-double"></i>
+                </button>
+                @if (log.rating_good || log.rating_final) {
+                  <button
+                    type="button"
+                    class="log-rating-clear"
+                    title="Limpiar calificación"
+                    (click)="clearRating(log)"
+                  >
+                    <i class="md md-close"></i>
+                  </button>
+                }
+              </div>
+            </div>
+          </div>
+        </article>
+      }
+    </div>
+
+    <!-- Paginado incremental -->
+    <div class="load-more">
+      @if (!exhausted()) {
+        <p-button
+          label="Cargar más"
+          icon="md md-expand_more"
+          severity="secondary"
+          [outlined]="true"
+          [loading]="loadingMore()"
+          (onClick)="loadMore()"
+        />
+      } @else {
+        <span>Llegaste al final · {{ filtered().length }} generaciones listadas</span>
+      }
+      @if (search() || projectId()) {
+        <p-button
+          label="Limpiar filtros"
+          icon="md md-close"
+          severity="secondary"
+          [text]="true"
+          (onClick)="clearFilters()"
+        />
+      }
+    </div>
+  }
+
+  <!-- Detalle con metadata completa -->
+  <p-dialog
+    [visible]="detailVisible()"
+    (visibleChange)="detailVisible.set($event)"
+    [modal]="true"
+    [style]="{ width: 'min(94vw, 58rem)' }"
+    [draggable]="false"
+    [resizable]="false"
+    [closeOnEscape]="true"
+  >
+    <ng-template #header>
+      @if (selected(); as log) {
+        <div class="viewer-head">
+          <div class="viewer-head__icon">
+            <i class="md md-movie"></i>
+          </div>
+          <div class="min-w-0">
+            <h3 class="viewer-head__title">{{ log.model_name || 'Generación' }}</h3>
+            <p class="viewer-head__sub">
+              {{ log.event_name || 'Sin proyecto' }}
+              @if (log.piece_code || log.piece_name) {
+                · {{ log.piece_code || log.piece_name }}
+              }
+            </p>
+          </div>
+        </div>
+      }
+    </ng-template>
+
+    @if (selected(); as log) {
+      @if (hasOutput(log)) {
+        @if (isVideo(log)) {
+          <video [src]="absoluteUrl(outputUrl(log))" controls class="viewer-preview"></video>
+        } @else {
+          <img
+            appImgFade
+            [src]="absoluteUrl(outputUrl(log))"
+            [alt]="log.piece_name || log.model_name || 'Generación'"
+            class="viewer-preview"
+            decoding="async"
+          />
+        }
+      } @else {
+        <div class="viewer-unknown">
+          <i class="md md-hourglass_empty"></i>
+          <p>Sin archivo de salida ({{ statusLabel(log.status).toLowerCase() }})</p>
+        </div>
+      }
+
+      <div class="viewer-meta">
+        <div class="meta-item">
+          <span class="meta-item__label">Usuario</span>
+          <span class="meta-item__value">{{ log.user_display_name || 'Yo' }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-item__label">Proyecto</span>
+          <span class="meta-item__value">{{ log.event_name || 'Sin proyecto' }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-item__label">Pieza</span>
+          <span class="meta-item__value">{{ log.piece_name || log.piece_code || '—' }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-item__label">Modelo</span>
+          <span class="meta-item__value">{{ log.model_name || '—' }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-item__label">Costo</span>
+          <span class="meta-item__value">
+            {{ cost(log) | number: '1.2-4' }} USD
+            @if (log.cost_credits && log.cost_credits > 0) {
+              · {{ log.cost_credits | number: '1.0-0' }} créditos
+            }
+          </span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-item__label">Fuente de costo</span>
+          <span class="meta-item__value">{{ log.cost_source || '—' }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-item__label">Fecha</span>
+          <span class="meta-item__value">{{ log.created_at | date: 'medium' }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-item__label">Estado</span>
+          <span class="meta-item__value">{{ statusLabel(log.status) }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-item__label">Modalidad</span>
+          <span class="meta-item__value">{{ log.resource_type || 'video' }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-item__label">Resolución</span>
+          <span class="meta-item__value">{{ log.video_resolution || '—' }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-item__label">Duración</span>
+          <span class="meta-item__value">{{ duration(log.video_duration) || '—' }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-item__label">FPS</span>
+          <span class="meta-item__value">{{ log.video_fps || '—' }}</span>
+        </div>
+        @if (log.video_ratio) {
+          <div class="meta-item">
+            <span class="meta-item__label">Ratio</span>
+            <span class="meta-item__value">{{ log.video_ratio }}</span>
+          </div>
+        }
+        <div class="meta-item meta-item--wide">
+          <span class="meta-item__label">Task ID</span>
+          <span class="meta-item__value meta-item__code" [title]="log.task_id">{{
+            log.task_id
+          }}</span>
+        </div>
+        @if (promptOf(log); as prompt) {
+          <div class="meta-item meta-item--wide">
+            <span class="meta-item__label">Prompt</span>
+            <span class="meta-item__value meta-item__prompt">{{ prompt }}</span>
+          </div>
+        }
+      </div>
+
+      <div class="viewer-actions">
+        <p-button
+          icon="md md-download"
+          label="Descargar"
+          [disabled]="!hasOutput(log)"
+          (onClick)="downloadOutput(log, absoluteUrl(outputUrl(log)))"
+        />
+        <p-button
+          icon="md md-refresh"
+          label="Reutilizar en Studio"
+          severity="secondary"
+          [disabled]="!log.request"
+          (onClick)="reuse(log)"
+        />
+        <p-button
+          icon="md md-close"
+          label="Cerrar"
+          severity="secondary"
+          [text]="true"
+          (onClick)="close()"
+        />
+      </div>
+    }
+  </p-dialog>
+</app-page-container>
