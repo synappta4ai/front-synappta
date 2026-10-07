@@ -16,7 +16,6 @@ import { AdminService } from '../../services/admin.service';
 import { Tenant } from '../../interfaces';
 import { PageContainerComponent } from '@shared/components/index';
 import { CountUpDirective } from '@shared/components/count-up/count-up.directive';
-import { ProgressSpinner } from 'primeng/progressspinner';
 import { TenantUsersDialogComponent } from '../tenant-users-dialog/tenant-users-dialog.component';
 
 @Component({
@@ -32,7 +31,6 @@ import { TenantUsersDialogComponent } from '../tenant-users-dialog/tenant-users-
     Tag,
     Message,
     ConfirmDialog,
-    ProgressSpinner,
     CountUpDirective,
     TenantUsersDialogComponent,
   ],
