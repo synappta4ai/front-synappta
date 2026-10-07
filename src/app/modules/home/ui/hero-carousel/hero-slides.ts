@@ -14,7 +14,7 @@ export interface HeroSlide {
 export const HERO_SLIDES: readonly HeroSlide[] = [
   {
     type: 'image',
-    src: 'Media/Image header.png',
+    src: '/Media/Image header.png',
     alt: 'Protagonista de una pieza audiovisual de Synappta',
   },
 ];

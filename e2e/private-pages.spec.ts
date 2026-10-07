@@ -6,6 +6,8 @@ import {
   apiLogin,
   API_BASE,
   waitForHydration,
+  seedSession,
+  installHydrationProbe,
 } from './helpers/session';
 
 test.describe('agency', () => {
@@ -86,6 +88,34 @@ test.describe('studio', () => {
       }
     }
   });
+
+  test('las opciones del select de ratio muestran el recuadro de ejemplo', async ({
+    authedPage: page,
+  }) => {
+    await page.goto('/studio');
+    await expect(page.getByPlaceholder(/AGREGÁ TU PROMPT/)).toBeVisible();
+    const select = page.locator('.foot-select').filter({ hasText: '16:9' }).first();
+    let opened = false;
+    for (let i = 0; i < 4 && !opened; i++) {
+      await select.click();
+      opened = await page
+        .locator('.p-select-overlay:not(.p-select-overlay-hidden)')
+        .last()
+        .waitFor({ state: 'visible', timeout: 2000 })
+        .then(() => true)
+        .catch(() => false);
+    }
+    expect(opened, 'overlay del select de ratio no abrió').toBe(true);
+    // El overlay vive en <body> (appendTo): el recuadro no debe colapsar.
+    const overlay = page.locator('.p-select-overlay:not(.p-select-overlay-hidden)').last();
+    await expect(overlay.locator('.ratio-screen')).not.toHaveCount(0);
+    const widths = await overlay.locator('.ratio-screen').evaluateAll((els) =>
+      els.map((el) => (el as HTMLElement).getBoundingClientRect().width),
+    );
+    for (const w of widths) {
+      expect(w, 'recuadro con width 0 en el overlay').toBeGreaterThan(0);
+    }
+  });
 });
 
 // /video y /events quedaron comentadas en app.routes.ts: el wildcard las
@@ -94,6 +124,7 @@ test.describe('menciones @ del studio', () => {
   test('prioriza el id de elemento y abre Referencias al citar', async ({
     authedPage: page,
   }) => {
+    // Catálogo de ingredientes lento bajo paralelismo: margen extra.
     const { token } = await apiLogin();
     const list = await fetch(`${API_BASE}/ingredients`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -151,7 +182,7 @@ test.describe('menciones @ del studio', () => {
       await expect(page.locator('.asset-grid .asset-thumb').first()).toHaveClass(/selected/);
       await expect(page.locator('.refs-panel .refs-meta')).toContainText('seleccionadas');
     }
-  });
+  }, { timeout: 60_000 });
 });
 
 test.describe('rutas retiradas', () => {
@@ -181,6 +212,31 @@ test.describe('projects', () => {
     await expect(
       page.getByRole('heading', { name: 'Proyectos', exact: true, level: 1 }),
     ).toBeVisible();
+  });
+});
+
+test.describe('nav-bar', () => {
+  test('con foto de usuario reemplaza el logo cuadrado por el avatar', async ({ page }) => {
+    await seedSession(page, { avatar_url: '/uploads/nav-avatar-test.png' });
+    await installHydrationProbe(page);
+    await page.goto('/studio');
+    await waitForHydration(page);
+    const avatar = page.locator('app-nav-bar img[alt="Foto de perfil"]');
+    await expect(avatar).toBeVisible();
+    expect(await avatar.getAttribute('src')).toContain('nav-avatar-test.png');
+    // El logo por defecto queda reemplazado.
+    await expect(page.locator('app-nav-bar img[alt="Logo Synapta"]')).toHaveCount(0);
+  });
+
+  test('el nav-bar muestra exactamente una imagen: avatar si hay, si no logo', async ({
+    authedPage: page,
+  }) => {
+    await page.goto('/studio');
+    const logo = page.locator('app-nav-bar img[alt="Logo Synapta"]');
+    const avatar = page.locator('app-nav-bar img[alt="Foto de perfil"]');
+    await expect(logo.or(avatar).first()).toBeVisible();
+    const total = (await logo.count()) + (await avatar.count());
+    expect(total, 'avatar y logo a la vez, o ninguno').toBe(1);
   });
 });
 

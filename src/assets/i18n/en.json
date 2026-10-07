@@ -15,6 +15,9 @@
     "USERNAME_PLACEHOLDER": "Your username",
     "PASSWORD_LABEL": "Password",
     "SUBMIT_BUTTON": "Sign in",
-    "LOGIN_ERROR": "Unable to sign in. Please try again."
+    "LOGIN_ERROR": "Unable to sign in. Please try again.",
+    "INVALID_CREDENTIALS": "Invalid username or password.",
+    "NETWORK_ERROR": "Cannot reach the server. Check your connection.",
+    "SERVER_ERROR": "The server hit an error. Try again in a few minutes."
   }
 }

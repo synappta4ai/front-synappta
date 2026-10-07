@@ -47,4 +47,22 @@ test.describe('auth', () => {
 
     await expect(page.locator('validator-errors .text-danger')).toHaveCount(0);
   });
+
+  test('tras iniciar sesión navega a /studio', async ({ page }) => {
+    await page.getByLabel('Usuario').fill(process.env.E2E_USER ?? 'superadmin');
+    await page.getByLabel('Contraseña').fill(process.env.E2E_PASSWORD ?? '');
+    await submitButton(page).click();
+    await page.waitForURL(/\/studio/, { timeout: 15_000 });
+    await expect(page).toHaveURL(/\/studio$/);
+  });
+
+  test('con credenciales inválidas muestra el message del response', async ({ page }) => {
+    await page.getByLabel('Usuario').fill('noexiste99');
+    await page.getByLabel('Contraseña').fill('wrongpass123');
+    await submitButton(page).click();
+    const msg = page.locator('.p-message-error');
+    await expect(msg).toBeVisible({ timeout: 10_000 });
+    // El back responde 401 {message:"invalid username or password"}.
+    await expect(msg).toContainText('invalid username or password');
+  });
 });

@@ -65,7 +65,7 @@ export class AuthComponent {
 
     this.authService.login({ username, password }).subscribe({
       next: () => {
-        const redirectTo = this.route.snapshot.queryParamMap.get('redirectTo') ?? '/agency';
+        const redirectTo = this.route.snapshot.queryParamMap.get('redirectTo') ?? '/studio';
 
         void this.router.navigateByUrl(redirectTo);
       },
@@ -76,16 +76,48 @@ export class AuthComponent {
     });
   }
 
+  /** Error de login: prioriza el message del response; si no hay cuerpo,
+   *  un texto explícito según el estado HTTP. */
   private readErrorMessage(err: unknown): string {
+    // 1) Cuerpo del response: { success:false, message } o string plano.
     if (typeof err === 'object' && err !== null && 'error' in err) {
-      const body = (err as { error: unknown }).error;
-      if (typeof body === 'object' && body !== null && 'message' in body) {
-        const message = (body as { message: unknown }).message;
-        if (typeof message === 'string') {
-          return message;
+      const fromBody = this.bodyMessage((err as { error: unknown }).error);
+      if (fromBody) {
+        return fromBody;
+      }
+      // 2) Sin cuerpo legible: explícito según estado HTTP.
+      const status = (err as { status?: unknown }).status;
+      if (typeof status === 'number') {
+        if (status === 0) {
+          return this.translate.instant('AUTH.NETWORK_ERROR');
+        }
+        if (status === 401) {
+          return this.translate.instant('AUTH.INVALID_CREDENTIALS');
+        }
+        if (status >= 500) {
+          return this.translate.instant('AUTH.SERVER_ERROR');
         }
       }
     }
+    // 3) Error de unwrap() con success:false: conserva el message del response.
+    if (err instanceof Error && err.message) {
+      return err.message;
+    }
     return this.translate.instant('AUTH.LOGIN_ERROR');
+  }
+
+  /** Lee el message de un body JSON {message} o de un string plano (sin HTML). */
+  private bodyMessage(body: unknown): string | null {
+    if (typeof body === 'string') {
+      const text = body.trim();
+      return text && !text.startsWith('<') ? text : null;
+    }
+    if (typeof body === 'object' && body !== null && 'message' in body) {
+      const message = (body as { message: unknown }).message;
+      if (typeof message === 'string' && message.trim()) {
+        return message.trim();
+      }
+    }
+    return null;
   }
 }

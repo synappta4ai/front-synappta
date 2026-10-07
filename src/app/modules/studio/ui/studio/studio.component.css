@@ -127,3 +127,24 @@
   outline: 2px solid var(--color-accent);
   outline-offset: 1px;
 }
+
+/* Opciones del overlay del select de ratio: el overlay usa appendTo="body"
+   (queda fuera de .studio-shell), así que las reglas globales no alcanzan y
+   el recuadro de ejemplo colapsaba a width:0. Selector solo con el attr de
+   encapsulación (sin ancestro): los nodos del template lo carry aunque el
+   overlay viva en <body>. Mismo estilo que el label. */
+.ratio-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.ratio-screen {
+  display: inline-block;
+  width: 15px;
+  max-height: 13px;
+  border: 1.5px solid currentColor;
+  border-radius: 2.5px;
+  opacity: 0.85;
+  flex-shrink: 0;
+}

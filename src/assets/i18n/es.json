@@ -15,6 +15,9 @@
     "USERNAME_PLACEHOLDER": "Tu usuario",
     "PASSWORD_LABEL": "Contraseña",
     "SUBMIT_BUTTON": "Entrar",
-    "LOGIN_ERROR": "No se pudo iniciar sesión. Inténtalo de nuevo."
+    "LOGIN_ERROR": "No se pudo iniciar sesión. Inténtalo de nuevo.",
+    "INVALID_CREDENTIALS": "Usuario o contraseña incorrectos.",
+    "NETWORK_ERROR": "No se pudo conectar con el servidor. Revisá tu conexión.",
+    "SERVER_ERROR": "El servidor tuvo un error. Intentá de nuevo en unos minutos."
   }
 }

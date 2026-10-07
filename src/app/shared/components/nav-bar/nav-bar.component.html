@@ -9,13 +9,23 @@
   >
     <ng-template #start>
       <a routerLink="/" class="mr-6 flex items-center gap-3 text-white">
-        <img
-          ngSrc="assets/img/sinappta-logo-sqared.png"
-          alt="Logo Synapta"
-          width="36"
-          height="36"
-          class="h-9 w-9"
-        />
+        @if (navAvatarUrl(); as avatar) {
+          <img
+            [src]="avatar | serverUrl"
+            alt="Foto de perfil"
+            width="36"
+            height="36"
+            class="h-9 w-9 rounded-full object-cover"
+          />
+        } @else {
+          <img
+            ngSrc="assets/img/sinappta-logo-sqared.png"
+            alt="Logo Synapta"
+            width="36"
+            height="36"
+            class="h-9 w-9"
+          />
+        }
         <img
           ngSrc="assets/img/sinappta-title-white.png"
           alt="Synapta"

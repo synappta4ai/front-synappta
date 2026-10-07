@@ -50,9 +50,11 @@ export async function apiLogin(): Promise<LoginResponse['data']> {
  * shape que usa el UserSessionStore del front (AUTH_STORAGE_KEY='synapta-auth').
  * Debe ejecutarse ANTES de navegar a rutas privadas: el authGuard espera la
  * hidratación y decide con este estado.
+ * `userPatch` pisa campos del usuario (p.ej. avatar_url) para escenarios UI.
  */
-export async function seedSession(page: Page): Promise<void> {
-  const { user, token, tenant_id } = await apiLogin();
+export async function seedSession(page: Page, userPatch: Partial<LoginUser> = {}): Promise<void> {
+  const { user: baseUser, token, tenant_id } = await apiLogin();
+  const user = { ...baseUser, ...userPatch };
   await page.addInitScript(
     ({ user, token, tenantId }) => {
       const openRequest = indexedDB.open('Synapta-V2', 1);
