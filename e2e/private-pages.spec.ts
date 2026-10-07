@@ -11,9 +11,268 @@ import {
 } from './helpers/session';
 
 test.describe('agency', () => {
-  test('renders the production flow page', async ({ authedPage: page }) => {
+  test('renders the inmobiliaria flow page', async ({ authedPage: page }) => {
     await page.goto('/agency');
-    await expectPageTitle(page, 'Agencia · Flujo de Producción');
+    await expectPageTitle(page, 'Agencia · Flujo de Inmobiliaria');
+  });
+
+  test('/agency es solo el flujo Inmobiliaria con modelo por paso', async ({
+    authedPage: page,
+  }) => {
+    test.setTimeout(60_000);
+    await page.goto('/agency');
+    await expectPageTitle(page, 'Agencia · Flujo de Inmobiliaria');
+    await waitForHydration(page);
+
+    // Sin pestañas de flujo y sin el panel del chat del asistente.
+    await expect(page.getByRole('tablist')).toHaveCount(0);
+    await expect(page.getByText('Cine / Ficción')).toHaveCount(0);
+    await expect(page.getByPlaceholder(/ficha técnica/)).toHaveCount(0);
+    await expect(page.locator('.custom-steps')).toBeVisible();
+
+    // Paso 1: selector del modelo de ángulos con opciones del catálogo.
+    await expect(page.locator('#agencyTextModel')).toBeVisible();
+    await openPrimeSelect(page.locator('#agencyTextModel'));
+    const opts = page.locator('.p-select-overlay:not(.p-select-overlay-hidden) .p-select-option');
+    await expect(opts.first()).toBeVisible();
+    // 'Automático' + al menos un modelo de texto del catálogo.
+    expect(await opts.count()).toBeGreaterThanOrEqual(2);
+  });
+
+  test('elegir un proyecto existente carga sus datos y exige los campos', async ({
+    authedPage: page,
+  }) => {
+    test.setTimeout(60_000);
+    const { token } = await apiLogin();
+    const auth = { Authorization: `Bearer ${token}` };
+    const initial = await fetch(`${API_BASE}/events?all=false`, { headers: auth }).then((r) =>
+      r.json(),
+    );
+    test.skip(
+      !(Array.isArray(initial.data) && initial.data.length > 0),
+      'no hay proyectos para seleccionar',
+    );
+
+    // Otros runs pudieron dejar avance guardado (metadata.agency) en el primer
+    // proyecto: se limpia para que el select cargue el formulario, no la fase.
+    const firstEv = (initial.data as { event?: Record<string, unknown> }[]).map(
+      (row) => (row.event ?? row) as { id?: string; metadata?: string | null },
+    )[0];
+    if (firstEv?.id && firstEv.metadata) {
+      try {
+        const meta = JSON.parse(firstEv.metadata) as Record<string, unknown>;
+        if ('agency' in meta) {
+          delete meta['agency'];
+          await fetch(`${API_BASE}/events/${firstEv.id}`, {
+            method: 'PATCH',
+            headers: { ...auth, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              metadata: Object.keys(meta).length ? JSON.stringify(meta) : '',
+            }),
+          });
+        }
+      } catch {
+        // metadata no-JSON: no hay nada que limpiar de un run previo.
+      }
+    }
+
+    await page.goto('/agency');
+    await expectPageTitle(page, 'Agencia · Flujo de Inmobiliaria');
+    await waitForHydration(page);
+
+    // Selección del primer proyecto del select (ahora en el header de la card).
+    await openPrimeSelect(page.locator('#agencyProject'));
+    const options = page.locator(
+      '.p-select-overlay:not(.p-select-overlay-hidden) .p-select-option',
+    );
+    await expect(options.first()).toBeVisible();
+    await options.first().click();
+
+    // Los datos del proyecto se cargan en los inputs; el nombre queda bloqueado.
+    await expect(page.locator('#propertyName')).not.toHaveValue('');
+    await expect(page.locator('#propertyName')).toBeDisabled();
+    const loadedName = await page.locator('#propertyName').inputValue();
+
+    // Los campos obligatorios que el proyecto no traiga quedan editables.
+    const marker = Date.now();
+    const cityMarker = `E2E City ${marker}`;
+    const descMarker = `E2E Desc ${marker}`;
+    const location = page.locator('#location');
+    const description = page.locator('#description');
+    let patchedLocation = false;
+    let patchedDescription = false;
+    if ((await location.inputValue()) === '') {
+      await location.fill(cityMarker);
+      patchedLocation = true;
+    } else {
+      await expect(location).toBeDisabled();
+    }
+    if ((await description.inputValue()) === '') {
+      await description.fill(descMarker);
+      patchedDescription = true;
+    } else {
+      await expect(description).toBeDisabled();
+    }
+
+    // La creación de ángulos queda habilitada con los tres campos completos.
+    const analyze = page.getByRole('button', { name: /Analizar y generar ángulos/ });
+    await expect(analyze).toBeEnabled();
+    await analyze.click();
+    await expect(page.getByRole('heading', { name: 'Ángulos de Venta' })).toBeVisible({
+      timeout: 20_000,
+    });
+
+    // Verifica lo persistido en el proyecto y limpia el avance (metadata.agency).
+    if (loadedName) {
+      const list = await fetch(`${API_BASE}/events?all=false`, { headers: auth }).then((r) =>
+        r.json(),
+      );
+      const events = (Array.isArray(list.data) ? list.data : []).map(
+        (row: { event?: unknown }) => row.event ?? row,
+      );
+      const target = events.find(
+        (ev: { name?: string; venue?: string | null; description?: string | null }) =>
+          ev.name === loadedName,
+      ) as
+        | { id: string; venue?: string | null; description?: string | null; metadata?: string | null }
+        | undefined;
+      expect(target, 'el proyecto actualizado debe existir').toBeTruthy();
+      if (target) {
+        if (patchedLocation) expect(target.venue ?? '').toContain(cityMarker);
+        if (patchedDescription) expect(target.description ?? '').toContain(descMarker);
+        // Restaurar valores originales y quitar el avance guardado por el test.
+        let strippedMeta = '';
+        try {
+          const meta = JSON.parse(target.metadata ?? '{}') as Record<string, unknown>;
+          delete meta['agency'];
+          strippedMeta = Object.keys(meta).length ? JSON.stringify(meta) : '';
+        } catch {
+          strippedMeta = '';
+        }
+        await fetch(`${API_BASE}/events/${target.id}`, {
+          method: 'PATCH',
+          headers: { ...auth, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            venue: patchedLocation ? '' : target.venue,
+            description: patchedDescription ? '' : target.description,
+            metadata: strippedMeta,
+          }),
+        });
+      }
+    }
+  });
+
+  test('crear un proyecto nuevo va directo a la creación de ángulos', async ({
+    authedPage: page,
+  }) => {
+    test.setTimeout(120_000);
+    const { token } = await apiLogin();
+    const auth = { Authorization: `Bearer ${token}` };
+    const name = `E2E Agencia Ángulos ${Date.now()}`;
+
+    try {
+      await page.goto('/agency');
+      await expectPageTitle(page, 'Agencia · Flujo de Inmobiliaria');
+      await waitForHydration(page);
+
+      // Sin proyecto elegido: los campos están habilitados para crear.
+      await expect(page.locator('#propertyName')).toBeEnabled();
+      await page.locator('#propertyName').fill(name);
+      await page.locator('#location').fill('E2E, Polanco');
+
+      // La descripción/puntos fuertes es obligatoria: sin ella no se avanza.
+      const analyze = page.getByRole('button', { name: /Analizar y generar ángulos/ });
+      await expect(analyze).toBeDisabled();
+      await page.locator('#description').fill('Amenidades premium y azotea con vista.');
+
+      // Por defecto se piden 3 ángulos; el test pide 4.
+      await expect(page.locator('#anglesCount')).toHaveValue('3');
+      await page.locator('#anglesCount').fill('4');
+
+      await expect(analyze).toBeEnabled();
+      await analyze.click();
+      // Directo a la creación de ángulos de venta (sin pasar por otras fases).
+      await expect(page.getByRole('heading', { name: 'Ángulos de Venta' })).toBeVisible({
+        timeout: 20_000,
+      });
+      // Se crearon exactamente los ángulos pedidos en el input numérico.
+      await expect(page.getByLabel('Título del ángulo')).toHaveCount(4);
+      // Paso 2: selector del modelo de imágenes disponible en Ángulos.
+      await expect(page.locator('#agencyImageModel')).toBeVisible();
+
+      // El proyecto quedó creado y fijado en el select (datos cargados y bloqueados).
+      await page.getByRole('button', { name: /← Volver|Volver/ }).first().click();
+      await expect(page.locator('#propertyName')).toHaveValue(name);
+      await expect(page.locator('#propertyName')).toBeDisabled();
+      await expect(page.locator('#location')).toBeDisabled();
+
+      // El avance quedó guardado en metadata del proyecto (evita reprocesos).
+      const list = await fetch(`${API_BASE}/events?all=false`, { headers: auth }).then((r) =>
+        r.json(),
+      );
+      const rows = (Array.isArray(list.data) ? list.data : []).map(
+        (row: { event?: unknown }) => row.event ?? row,
+      );
+      const created = rows.find((ev: { name?: string }) => ev.name === name) as
+        | { id: string; metadata?: string | null }
+        | undefined;
+      expect(created, 'el proyecto creado debe existir').toBeTruthy();
+      const agencyMeta = JSON.parse(created?.metadata ?? '{}') as {
+        agency?: { phase?: string; anglesCount?: number };
+      };
+      expect(agencyMeta.agency?.phase).toBe('angles');
+      expect(agencyMeta.agency?.anglesCount).toBe(4);
+
+      // Recuperar: recargar y elegir el proyecto restaura fase y ángulos.
+      await page.goto('/agency');
+      await expectPageTitle(page, 'Agencia · Flujo de Inmobiliaria');
+      await waitForHydration(page);
+      await openPrimeSelect(page.locator('#agencyProject'));
+      const opts = page.locator(
+        '.p-select-overlay:not(.p-select-overlay-hidden) .p-select-option',
+      );
+      await opts.filter({ hasText: name }).click();
+      await expect(page.getByRole('heading', { name: 'Ángulos de Venta' })).toBeVisible({
+        timeout: 15_000,
+      });
+      await expect(page.getByLabel('Título del ángulo')).toHaveCount(4);
+
+      // Ajuste sobre la generación: editar un ángulo actualiza la vista.
+      const titleInput = page.getByLabel('Título del ángulo').first();
+      await titleInput.fill('Ángulo ajustado E2E');
+      await expect(titleInput).toHaveValue('Ángulo ajustado E2E');
+
+      // El contador restaurado (4) vive en el paso 1: volver y re-analizar.
+      await page.getByRole('button', { name: /← Volver|Volver/ }).first().click();
+      await expect(page.locator('#anglesCount')).toHaveValue('4');
+      await page.getByRole('button', { name: /Analizar y generar ángulos/ }).click();
+      await expect(page.getByRole('heading', { name: 'Ángulos de Venta' })).toBeVisible({
+        timeout: 15_000,
+      });
+      await expect(page.getByLabel('Título del ángulo')).toHaveCount(4);
+
+      // Elegir un ángulo → Storyboard (modelo de videos) → Escenas (video).
+      await page.locator('.phase-card input[type="checkbox"]').first().click();
+      await page.getByRole('button', { name: /Generar Storyboard/ }).click();
+      await expect(page.locator('#agencyVideoModel')).toBeVisible({ timeout: 15_000 });
+      await page.getByRole('button', { name: /Continuar a Escenas/ }).click();
+      await expect(page.getByRole('button', { name: /Generar video/ }).first()).toBeVisible({
+        timeout: 15_000,
+      });
+    } finally {
+      // Limpieza: borra el proyecto creado por el test.
+      const list = await fetch(`${API_BASE}/events?all=true`, { headers: auth }).then((r) =>
+        r.json(),
+      );
+      const created = (Array.isArray(list.data) ? list.data : []).find(
+        (row: { event?: { name?: string; id?: string }; name?: string; id?: string }) =>
+          (row.event ?? row).name === name,
+      );
+      const id = created ? (created.event ?? created).id : null;
+      if (id) {
+        await fetch(`${API_BASE}/events/${id}`, { method: 'DELETE', headers: auth });
+      }
+    }
   });
 });
 
@@ -124,6 +383,9 @@ test.describe('menciones @ del studio', () => {
   test('prioriza el id de elemento y abre Referencias al citar', async ({
     authedPage: page,
   }) => {
+    // El 3er argumento de test() no acepta timeout en Playwright 1.63:
+    // se fija por test.setTimeout (bajo paralelismo supera los 30s).
+    test.setTimeout(60_000);
     // Catálogo de ingredientes lento bajo paralelismo: margen extra.
     const { token } = await apiLogin();
     const list = await fetch(`${API_BASE}/ingredients`, {
@@ -182,7 +444,7 @@ test.describe('menciones @ del studio', () => {
       await expect(page.locator('.asset-grid .asset-thumb').first()).toHaveClass(/selected/);
       await expect(page.locator('.refs-panel .refs-meta')).toContainText('seleccionadas');
     }
-  }, { timeout: 60_000 });
+  });
 });
 
 test.describe('rutas retiradas', () => {

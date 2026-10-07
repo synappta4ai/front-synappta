@@ -1,5 +1,5 @@
 export type Modality = 'video' | 'image' | 'text';
-export type CredentialProvider = 'byteplus' | 'gemini' | 'anthropic';
+export type CredentialProvider = 'byteplus' | 'gemini' | 'anthropic' | 'openrouter';
 export type TaskStatus =
   'pending' | 'processing' | 'completed' | 'succeeded' | 'failed' | 'cancelled';
 
@@ -22,12 +22,19 @@ export interface AiModel {
 export interface Credential {
   provider: CredentialProvider;
   api_key: string | null;
+  /** Enmascarado del back (GET /credentials nunca devuelve el secreto). */
+  api_key_mask?: string;
+  base_url?: string;
+  /** JSON con campos extra del proveedor, p.ej. {"model":"..."}. */
+  extra?: string;
   metadata: Record<string, unknown> | null;
 }
 
 export interface UpsertCredentialRequest {
   provider: CredentialProvider;
   api_key?: string;
+  base_url?: string;
+  extra?: string;
   metadata?: Record<string, unknown>;
 }
 

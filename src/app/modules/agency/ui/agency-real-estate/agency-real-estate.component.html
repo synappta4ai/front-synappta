@@ -1,0 +1,240 @@
+<!-- Flujo Inmobiliaria: chat con el agente DCS (credenciales en Admin → Modelos) -->
+<div class="flex flex-col gap-6">
+  <!-- Chat con el agente -->
+  <p-card styleClass="phase-card">
+    <ng-template #header>
+      <div class="flex items-center gap-3 border-b border-surface-border px-6 py-4">
+        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
+          <i class="md md-apartment text-lg text-accent"></i>
+        </div>
+        <div>
+          <h2 class="text-lg font-bold text-ink-on-dark">Agente · Flujo Inmobiliaria</h2>
+          <p class="text-sm text-ink-muted-on-dark">
+            Ingesta → Ángulos de venta → Storyboard → Galería → Shots
+          </p>
+        </div>
+        @if (stepLabel()) {
+          <p-tag styleClass="ml-auto" [value]="stepLabel()" severity="info" />
+        }
+      </div>
+    </ng-template>
+
+    <div class="flex flex-col gap-4 px-6 py-4">
+      <!-- Estado de credenciales: solo lectura, se gestionan en Admin → Modelos -->
+      @if (configuredProviders().length) {
+        <div class="flex flex-wrap items-center gap-3 rounded-xl border border-surface-border bg-surface-2 px-4 py-3">
+          <span class="text-xs font-bold text-ink-muted-on-dark">Asistente</span>
+          @if (configuredProviders().length > 1) {
+            <p-select
+              [options]="providerOptions()"
+              optionLabel="label"
+              optionValue="value"
+              [ngModel]="provider()"
+              (ngModelChange)="provider.set($event)"
+              [ngModelOptions]="{ standalone: true }"
+              styleClass="w-max"
+              aria-label="Proveedor del asistente"
+            />
+          } @else {
+            <span class="text-sm font-bold text-ink-on-dark">{{ provider() }}</span>
+          }
+          @if (selectedCredential(); as cred) {
+            @if (modelOf(cred); as model) {
+              <code class="rounded bg-surface px-2 py-0.5 text-xs text-ink-muted-on-dark">{{ model }}</code>
+            } @else {
+              <span class="text-xs text-ink-muted-on-dark">modelo por defecto</span>
+            }
+            <p-tag value="key activa" severity="success" />
+          }
+          <span class="ml-auto text-[11px] text-ink-muted-on-dark">
+            Credenciales y modelo: Admin → Modelos
+          </span>
+        </div>
+      } @else {
+        <p-message
+          severity="warn"
+          text="Sin credenciales del asistente: cargalas en Admin → Modelos para usar el chat."
+        />
+      }
+
+      @if (messages().length === 0) {
+        <p class="text-sm text-ink-muted-on-dark">
+          Pegá la ficha técnica del desarrollo (o describilo) y el agente arranca el flujo: propone ángulos
+          de venta, storyboard, galería de espacios y shots de producción.
+        </p>
+      }
+      @for (m of messages(); track $index) {
+        @if (m.role === 'user') {
+          <div class="self-end max-w-[85%] rounded-2xl rounded-br-md bg-accent px-4 py-2 text-sm font-medium text-on-accent whitespace-pre-wrap">
+            {{ m.content }}
+          </div>
+        } @else if (m.role === 'error') {
+          <div class="max-w-[85%] rounded-2xl rounded-bl-md border border-red-500/40 bg-red-500/10 px-4 py-2 text-sm text-red-400 whitespace-pre-wrap">
+            {{ m.content }}
+          </div>
+        } @else {
+          <div class="max-w-[85%] rounded-2xl rounded-bl-md bg-surface-2 px-4 py-2 text-sm text-ink-on-dark whitespace-pre-wrap">
+            {{ m.content }}
+          </div>
+        }
+      }
+      @if (streaming()) {
+        <span class="text-xs text-ink-muted-on-dark">El agente está escribiendo…</span>
+      }
+
+      <div class="flex items-end gap-3">
+        <textarea
+          pTextarea
+          rows="3"
+          class="w-full"
+          placeholder="Describí el proyecto o pegá la ficha técnica…"
+          [ngModel]="draft()"
+          (ngModelChange)="draft.set($event)"
+          [ngModelOptions]="{ standalone: true }"
+          (keydown.ctrl.enter)="send()"
+        ></textarea>
+        <p-button
+          label="Enviar"
+          icon="md md-send"
+          (onClick)="send()"
+          [loading]="streaming()"
+          [disabled]="!canSend()"
+          styleClass="active:scale-[0.98]"
+        />
+      </div>
+    </div>
+  </p-card>
+
+  <!-- Artefacto: Ángulos de venta -->
+  @if (salesAngles(); as angles) {
+    <p-card styleClass="phase-card">
+      <ng-template #header>
+        <div class="flex items-center gap-3 border-b border-surface-border px-6 py-4">
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
+            <i class="md md-lightbulb text-lg text-accent"></i>
+          </div>
+          <div>
+            <h2 class="text-lg font-bold text-ink-on-dark">Ángulos de venta</h2>
+            <p class="text-sm text-ink-muted-on-dark">{{ angles.project_name }} — {{ angles.summary }}</p>
+          </div>
+        </div>
+      </ng-template>
+      <div class="grid gap-4 px-6 py-4 sm:grid-cols-2 lg:grid-cols-3">
+        @for (angle of angles.angles; track angle.title) {
+          <div
+            class="flex flex-col gap-2 rounded-2xl border px-4 py-3"
+            [class.border-accent]="angle.selected"
+            [class.border-surface-border]="!angle.selected"
+          >
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-sm font-bold text-ink-on-dark">{{ angle.title }}</span>
+              @if (angle.selected) {
+                <p-tag value="elegido" severity="success" />
+              }
+            </div>
+            @if (angle.hook) {
+              <p class="text-xs font-bold text-accent">{{ angle.hook }}</p>
+            }
+            @if (angle.target_audience) {
+              <p class="text-xs text-ink-muted-on-dark">Público: {{ angle.target_audience }}</p>
+            }
+            @if (angle.narrative_pitch) {
+              <p class="text-xs text-ink-muted-on-dark">{{ angle.narrative_pitch }}</p>
+            }
+            @if (angle.core_virtues?.length) {
+              <ul class="flex flex-wrap gap-1">
+                @for (v of angle.core_virtues; track v) {
+                  <li class="rounded-full bg-surface-2 px-2 py-0.5 text-[10px] text-ink-muted-on-dark">{{ v }}</li>
+                }
+              </ul>
+            }
+          </div>
+        }
+      </div>
+    </p-card>
+  }
+
+  <!-- Artefacto: Storyboard -->
+  @if (storyboard(); as sb) {
+    <p-card styleClass="phase-card">
+      <ng-template #header>
+        <div class="flex items-center gap-3 border-b border-surface-border px-6 py-4">
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
+            <i class="md md-dashboard text-lg text-accent"></i>
+          </div>
+          <div>
+            <h2 class="text-lg font-bold text-ink-on-dark">Storyboard — {{ sb.project_title }}</h2>
+            <p class="text-sm text-ink-muted-on-dark">{{ sb.angle_used }}</p>
+          </div>
+        </div>
+      </ng-template>
+      <div class="grid gap-4 px-6 py-4 sm:grid-cols-2 lg:grid-cols-3">
+        @for (beat of sb.beats; track beat.beat_number) {
+          <div class="flex flex-col gap-2 rounded-2xl border border-surface-border bg-surface-2 p-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-accent">Viñeta {{ beat.beat_number }}</span>
+              @if (beat.suggested_shot_type) {
+                <span class="text-[10px] text-ink-muted-on-dark">{{ beat.suggested_shot_type }}</span>
+              }
+            </div>
+            @if (beat.sketch_svg) {
+              <div class="overflow-hidden rounded-xl" [innerHTML]="beat.sketch_svg"></div>
+            }
+            <span class="text-xs font-bold text-ink-on-dark">{{ beat.scene_title }}</span>
+            <span class="text-xs text-ink-muted-on-dark">{{ beat.space_location }}</span>
+            <p class="text-xs text-ink-muted-on-dark">{{ beat.visual_description }}</p>
+            @if (beat.video_prompt) {
+              <p class="rounded-lg bg-surface px-2 py-1 text-[10px] text-ink-muted-on-dark">{{ beat.video_prompt }}</p>
+            }
+          </div>
+        }
+      </div>
+    </p-card>
+  }
+
+  <!-- Artefacto: Shots finales -->
+  @if (shots(); as bd) {
+    <p-card styleClass="phase-card">
+      <ng-template #header>
+        <div class="flex items-center gap-3 border-b border-surface-border px-6 py-4">
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
+            <i class="md md-movie text-lg text-accent"></i>
+          </div>
+          <div>
+            <h2 class="text-lg font-bold text-ink-on-dark">Shots de producción</h2>
+            <p class="text-sm text-ink-muted-on-dark">{{ bd.description }}</p>
+          </div>
+          <p-tag styleClass="ml-auto" [value]="bd.scenes.length + ' escenas · ' + shotCount() + ' shots'" severity="success" />
+        </div>
+      </ng-template>
+      <div class="flex flex-col gap-4 px-6 py-4">
+        @for (scene of bd.scenes; track scene.title) {
+          <div class="rounded-2xl border border-surface-border p-4">
+            <span class="text-sm font-bold text-ink-on-dark">{{ scene.title }}</span>
+            @if (scene.scriptLocation) {
+              <span class="ml-2 text-xs text-ink-muted-on-dark">{{ scene.scriptLocation }}</span>
+            }
+            <div class="mt-3 flex flex-col gap-3">
+              @for (shot of scene.shots; track shot.id ?? shot.name) {
+                <div class="rounded-xl bg-surface-2 px-3 py-2">
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="text-xs font-bold text-ink-on-dark">{{ shot.name ?? shot.id }}</span>
+                    @if (shot.duration) {
+                      <span class="text-[10px] text-ink-muted-on-dark">{{ shot.duration }}s</span>
+                    }
+                  </div>
+                  @if (shot.desc) {
+                    <p class="text-xs text-ink-muted-on-dark">{{ shot.desc }}</p>
+                  }
+                  @if (shot.prompt?.en) {
+                    <p class="mt-1 rounded-lg bg-surface px-2 py-1 text-[10px] text-ink-muted-on-dark">{{ shot.prompt!.en }}</p>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </p-card>
+  }
+</div>

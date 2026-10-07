@@ -1,4 +1,5 @@
-<app-page-container title="Agencia · Flujo de Producción" animate.enter="anim-page">
+<!-- /agency = flujo Inmobiliaria: Documentación → Ángulos → Storyboard → Escenas -->
+<app-page-container title="Agencia · Flujo de Inmobiliaria" animate.enter="anim-page">
   @if (error(); as message) {
     <div class="mb-6">
       <p-message severity="error" [text]="message" [escape]="false" styleClass="w-full" />
@@ -22,34 +23,37 @@
             <h2 class="text-lg font-bold text-ink-on-dark">Información del Proyecto</h2>
             <p class="text-sm text-ink-muted-on-dark">Documentación para análisis IA</p>
           </div>
-        </div>
-      </ng-template>
-
-      <form [formGroup]="form" class="flex flex-col gap-6" novalidate>
-        <div class="grid gap-6 sm:grid-cols-2">
-          <div class="flex flex-col gap-2">
-            <label for="agencyProject" class="text-xs font-bold text-ink-on-dark">
-              Proyecto existente <span class="text-ink-muted-on-dark font-normal">(opcional)</span>
-            </label>
+          <!-- Select de proyecto existente en el header de la card -->
+          <div class="ml-auto flex w-full max-w-lg flex-col gap-1">
             <p-select
               inputId="agencyProject"
+              aria-label="Proyecto existente"
               [ngModel]="selectedProjectId()"
               (ngModelChange)="selectedProjectId.set($event)"
               [ngModelOptions]="{ standalone: true }"
               [options]="projectOptions()"
               optionLabel="label"
               optionValue="value"
-              placeholder="Crear a partir del nombre cargado"
+              placeholder="Proyecto existente (opcional)"
               [showClear]="true"
               [filter]="true"
               filterPlaceholder="Buscar proyecto..."
               styleClass="w-full"
               appendTo="body"
             />
-            <small class="text-ink-muted-on-dark">
-              Si elegís uno, escenas e imágenes generadas se centralizan en ese proyecto.
+            <small class="text-right text-ink-muted-on-dark">
+              @if (inputsLocked()) {
+                Datos cargados en el formulario. Limpialo para crear otro proyecto.
+              } @else {
+                Elegí uno para cargar sus datos; escenas e imágenes quedan centralizadas.
+              }
             </small>
           </div>
+        </div>
+      </ng-template>
+
+      <form [formGroup]="form" class="flex flex-col gap-6" novalidate>
+        <div class="grid gap-6 sm:grid-cols-2">
           <div class="flex flex-col gap-2">
             <label for="propertyName" class="text-xs font-bold text-ink-on-dark">
               Nombre del Proyecto <span class="text-danger">*</span>
@@ -97,11 +101,45 @@
               [submitTick]="submitted()"
             />
           </div>
+          <div class="flex flex-col gap-2">
+            <label for="anglesCount" class="text-xs font-bold text-ink-on-dark">
+              Ángulos de venta a crear <span class="text-danger">*</span>
+            </label>
+            <p-inputNumber
+              inputId="anglesCount"
+              formControlName="anglesCount"
+              [min]="1"
+              [max]="10"
+              [showButtons]="true"
+              styleClass="w-40"
+            />
+            <small class="text-ink-muted-on-dark">Entre 1 y 10; por defecto 3.</small>
+          </div>
+          <div class="flex flex-col gap-2">
+            <label for="agencyTextModel" class="text-xs font-bold text-ink-on-dark">
+              Modelo · Ángulos de venta
+            </label>
+            <p-select
+              inputId="agencyTextModel"
+              aria-label="Modelo de ángulos de venta"
+              [options]="modelTextOptions()"
+              optionLabel="label"
+              optionValue="value"
+              [ngModel]="modelText()"
+              (ngModelChange)="modelText.set($event)"
+              [ngModelOptions]="{ standalone: true }"
+              styleClass="w-full"
+              appendTo="body"
+            />
+            <small class="text-ink-muted-on-dark"
+              >Modelo LLM que redacta los ángulos. Automático = el de Admin → Modelos.</small
+            >
+          </div>
         </div>
 
         <div class="flex flex-col gap-2">
           <label for="description" class="text-xs font-bold text-ink-on-dark">
-            Descripción del Proyecto
+            Descripción y puntos fuertes <span class="text-danger">*</span>
           </label>
           <textarea
             pTextarea
@@ -123,14 +161,19 @@
             [submitTick]="submitted()"
           />
           <small class="text-ink-muted-on-dark"
-            >Opcional: detalles adicionales para el análisis IA</small
+            >Obligatorio: amenities, target, precio promedio y puntos fuertes — el insumo de los
+            ángulos de venta</small
           >
         </div>
 
         <div class="flex items-center justify-between border-t border-surface-border pt-4">
           <p class="text-sm text-ink-muted-on-dark">
             <i class="md md-info mr-1"></i>
-            El sistema analizará tu proyecto y generará ángulos de venta
+            @if (inputsLocked()) {
+              Con el proyecto elegido ya podés pasar directo a los ángulos de venta
+            } @else {
+              El sistema creará tu proyecto y generará ángulos de venta
+            }
           </p>
           <span
             pTooltip="Completá los campos requeridos para analizar"
@@ -168,6 +211,26 @@
       </ng-template>
 
       <div class="flex flex-col gap-4">
+        <!-- Modelo elegido en el paso anterior: genera las imágenes -->
+        <div
+          class="flex flex-wrap items-center gap-3 rounded-xl border border-surface-border bg-surface-2 px-4 py-3"
+        >
+          <span class="text-xs font-bold text-ink-muted-on-dark"
+            >Modelo de imágenes (Storyboard y escenas)</span
+          >
+          <p-select
+            inputId="agencyImageModel"
+            aria-label="Modelo de imágenes"
+            [options]="modelImageOptions()"
+            optionLabel="label"
+            optionValue="value"
+            [ngModel]="modelImage()"
+            (ngModelChange)="modelImage.set($event)"
+            [ngModelOptions]="{ standalone: true }"
+            styleClass="w-72"
+            appendTo="body"
+          />
+        </div>
         @if (selectedAnglesCount > 0) {
           <div class="flex items-center gap-2">
             <p-tag [value]="selectedAnglesCount + ' seleccionados'" severity="info" />
@@ -195,7 +258,7 @@
               role="checkbox"
               [attr.aria-checked]="angle.selected"
             >
-              <div class="pt-0.5">
+              <div class="pt-0.5" (click)="$event.stopPropagation()">
                 <p-checkbox
                   [binary]="true"
                   [ngModel]="angle.selected"
@@ -203,13 +266,31 @@
                 />
               </div>
               <div class="flex-1">
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2" (click)="$event.stopPropagation()">
                   <i class="md md-gps_fixed text-ink-muted-on-dark"></i>
-                  <p class="font-bold text-ink-on-dark">{{ angle.title }}</p>
+                  <input
+                    pInputText
+                    class="flex-1 font-bold text-ink-on-dark"
+                    aria-label="Título del ángulo"
+                    [ngModel]="angle.title"
+                    (ngModelChange)="updateAngle(angle.id, 'title', $event)"
+                    (change)="commitAngleEdits()"
+                    (keydown.enter)="$event.stopPropagation()"
+                    [ngModelOptions]="{ standalone: true }"
+                  />
                 </div>
-                <p class="mt-2 text-sm leading-relaxed text-ink-muted-on-dark">
-                  {{ angle.description }}
-                </p>
+                <textarea
+                  pTextarea
+                  rows="2"
+                  class="mt-2 w-full text-sm text-ink-muted-on-dark"
+                  aria-label="Descripción del ángulo"
+                  [ngModel]="angle.description"
+                  (ngModelChange)="updateAngle(angle.id, 'description', $event)"
+                  (change)="commitAngleEdits()"
+                  (click)="$event.stopPropagation()"
+                  (keydown.enter)="$event.stopPropagation()"
+                  [ngModelOptions]="{ standalone: true }"
+                ></textarea>
               </div>
               @if (angle.selected) {
                 <div class="flex h-6 w-6 items-center justify-center rounded-full bg-accent">
@@ -259,22 +340,48 @@
       </ng-template>
 
       <div class="flex flex-col gap-6">
+        <!-- Modelo elegido en el paso anterior: genera los videos -->
+        <div
+          class="flex flex-wrap items-center gap-3 rounded-xl border border-surface-border bg-surface-2 px-4 py-3"
+        >
+          <span class="text-xs font-bold text-ink-muted-on-dark">Modelo de videos (Escenas)</span>
+          <p-select
+            inputId="agencyVideoModel"
+            aria-label="Modelo de videos"
+            [options]="modelVideoOptions()"
+            optionLabel="label"
+            optionValue="value"
+            [ngModel]="modelVideo()"
+            (ngModelChange)="modelVideo.set($event)"
+            [ngModelOptions]="{ standalone: true }"
+            styleClass="w-72"
+            appendTo="body"
+          />
+        </div>
         @for (scene of storyboard(); track scene.id; let i = $index) {
           <div
             animate.enter="anim-item"
             [style.animation-delay.ms]="i < 8 ? i * 35 : 280"
             class="rounded-2xl border border-surface-border bg-surface-2 p-5"
-          >
-            <div class="mb-4 flex items-center justify-between">
+          >              <div class="mb-4 flex items-center justify-between">
               <div class="flex items-center gap-3">
                 <div
                   class="flex h-8 w-8 items-center justify-center rounded-xl bg-accent text-on-accent text-sm font-bold"
                 >
                   {{ i + 1 }}
                 </div>
-                <div>
+                <div class="flex-1">
                   <h3 class="font-bold text-ink-on-dark">{{ scene.title }}</h3>
-                  <p class="text-sm text-ink-muted-on-dark">{{ scene.description }}</p>
+                  <textarea
+                    pTextarea
+                    rows="2"
+                    class="mt-1 w-full text-sm text-ink-muted-on-dark"
+                    aria-label="Prompt de la escena"
+                    [ngModel]="scene.description"
+                    (ngModelChange)="updateSceneDescription(scene.id, $event)"
+                    (change)="commitSceneEdit()"
+                    [ngModelOptions]="{ standalone: true }"
+                  ></textarea>
                 </div>
               </div>
               <p-button
@@ -370,6 +477,27 @@
                 <i class="md md-play_circle"></i>
                 {{ scene.title }}
               </h3>
+
+              <div class="mb-4 flex flex-wrap items-center gap-3">
+                <p-button
+                  label="Generar video"
+                  icon="md md-movie"
+                  severity="secondary"
+                  size="small"
+                  [loading]="!!scene.generatingVideo"
+                  [disabled]="!!scene.generatingVideo"
+                  (onClick)="generateVideo(scene.id)"
+                />
+                @if (scene.videoUrl) {
+                  <video
+                    [src]="scene.videoUrl"
+                    class="w-64 rounded-xl border border-surface-border"
+                    controls
+                    muted
+                    loading="lazy"
+                  ></video>
+                }
+              </div>
 
               <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 @for (shot of scene.shots; track shot.id; let j = $index) {
