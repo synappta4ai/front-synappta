@@ -83,3 +83,47 @@
     display: none;
   }
 }
+
+/* ── Creación rápida de proyecto (modal "Asignar proyecto") ───────── */
+
+.project-quick {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--color-surface-border);
+}
+
+.project-quick-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted-on-dark);
+}
+
+.project-quick-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.project-quick-input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--color-surface-border);
+  border-radius: 10px;
+  background: var(--color-surface-2);
+  color: var(--color-ink-on-dark);
+  font-size: 13px;
+}
+
+.project-quick-input::placeholder {
+  color: var(--color-ink-muted-on-dark);
+}
+
+.project-quick-input:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}

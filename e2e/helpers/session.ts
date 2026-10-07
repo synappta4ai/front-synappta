@@ -4,7 +4,7 @@ import { test as base, expect, type Page } from '@playwright/test';
  * Credenciales del entorno local (variables E2E_USER / E2E_PASSWORD; el
  * password local contiene un en-dash U+2013 — escribirlo en .env, no acá).
  */
-const API_BASE = process.env.E2E_API_BASE ?? 'http://localhost:8099/api/v1';
+export const API_BASE = process.env.E2E_API_BASE ?? 'http://localhost:8099/api/v1';
 const TEST_USER = {
   username: process.env.E2E_USER ?? 'superadmin',
   password: process.env.E2E_PASSWORD ?? '',

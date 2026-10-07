@@ -139,7 +139,7 @@
             }
             @if (assets().length > 0) {
               <div class="asset-grid">
-                @for (asset of assets().slice(0, 4); track asset.id) {
+                @for (asset of refGridAssets(); track asset.id) {
                   <div
                     class="asset-thumb zoomable"
                     [class.selected]="selectedAssetIds().has(asset.id)"
@@ -217,9 +217,10 @@
         @if (mentionMenuOpen() && mentionMenuPos(); as menuPos) {
           <div class="mention-menu" [style.top.px]="menuPos.top" [style.left.px]="menuPos.left">
             <p class="mention-menu-title">
-              <i class="md md-alternate_email"></i> Biblioteca: recursos e ingredientes
+              <i class="md md-alternate_email"></i> Biblioteca: elementos, recursos e
+              ingredientes
             </p>
-            @for (row of mentionRows(); track row.label; let i = $index) {
+            @for (row of mentionRows(); track row.key; let i = $index) {
               <button
                 type="button"
                 class="mention-option"
@@ -240,10 +241,20 @@
                     <span class="mention-ing">{{ asset.ingredients![0].name }}</span>
                   }
                 } @else if (row.kind === 'ingredient' && row.ingredient; as ing) {
-                  <span class="mention-ing-icon" [attr.data-type]="ing.type">
-                    <i class="md {{ ingredientIcon(ing.type) }}"></i>
-                  </span>
-                  <span class="mention-name">{{ ing.name }}</span>
+                  @if (row.wrapper && ingredientThumbUrl(row.wrapper); as thumb) {
+                    <img
+                      class="mention-thumb"
+                      [src]="thumb"
+                      [alt]="row.label"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  } @else {
+                    <span class="mention-ing-icon" [attr.data-type]="ing.type">
+                      <i class="md {{ ingredientIcon(ing.type) }}"></i>
+                    </span>
+                  }
+                  <span class="mention-name">@{{ row.label }}</span>
                   <span class="mention-ing badge-type">{{ ingredientTypeLabel(ing.type) }}</span>
                 }
               </button>
@@ -282,10 +293,20 @@
           }
           @for (ing of mentionedIngredients(); track ing.ingredient.id) {
             <span class="mention-chip ingredient" [title]="'Ingrediente: cita todos sus recursos'">
-              <span class="mention-ing-icon" [attr.data-type]="ing.ingredient.type">
-                <i class="md {{ ingredientIcon(ing.ingredient.type) }}"></i>
-              </span>
-              <span class="mention-chip-name">@{{ ing.ingredient.name }}</span>
+              @if (ingredientThumbUrl(ing); as thumb) {
+                <img
+                  class="mention-chip-thumb"
+                  [src]="thumb"
+                  [alt]="mentionLabelOf(ing)"
+                  loading="lazy"
+                  decoding="async"
+                />
+              } @else {
+                <span class="mention-ing-icon" [attr.data-type]="ing.ingredient.type">
+                  <i class="md {{ ingredientIcon(ing.ingredient.type) }}"></i>
+                </span>
+              }
+              <span class="mention-chip-name">@{{ mentionLabelOf(ing) }}</span>
               <span class="mention-chip-count"
                 >{{ assetsOfIngredientCount(ing) }}
                 {{ assetsOfIngredientCount(ing) === 1 ? 'recurso' : 'recursos' }}</span
@@ -302,13 +323,15 @@
           }
         </div>
       }
-      <input
-        type="text"
-        class="negative-input"
-        placeholder="Negative prompt (opcional)"
-        [ngModel]="negativePrompt()"
-        (ngModelChange)="negativePrompt.set($event)"
-      />
+      @if (workerModel()) {
+        <input
+          type="text"
+          class="negative-input"
+          placeholder="Negative prompt (opcional)"
+          [ngModel]="negativePrompt()"
+          (ngModelChange)="negativePrompt.set($event)"
+        />
+      }
       <div class="prompt-foot">
         <span
           class="foot-chip static"
@@ -496,19 +519,21 @@
       }
     </div>
 
-    <!-- Seed -->
-    <div class="panel">
-      <div class="panel-head">
-        <span><i class="md md-storage"></i> Seed</span>
+    <!-- Seed (solo modelos del inference worker) -->
+    @if (workerModel()) {
+      <div class="panel">
+        <div class="panel-head">
+          <span><i class="md md-storage"></i> Seed</span>
+        </div>
+        <input
+          type="text"
+          class="seed-input"
+          placeholder="aleatoria"
+          [ngModel]="seed()"
+          (ngModelChange)="seed.set($event)"
+        />
       </div>
-      <input
-        type="text"
-        class="seed-input"
-        placeholder="aleatoria"
-        [ngModel]="seed()"
-        (ngModelChange)="seed.set($event)"
-      />
-    </div>
+    }
 
     <span pTooltip="Elegí un modelo y escribí un prompt para generar" showDelay="400" class="grid">
       <button
@@ -1050,6 +1075,30 @@
             (onClick)="clearProject()"
           />
         }
+        <!-- Creación rápida: crear y usar sin salir de la modal -->
+        <div class="project-quick">
+          <span class="project-quick-label">Creación rápida</span>
+          <div class="project-quick-row">
+            <input
+              type="text"
+              class="project-quick-input"
+              aria-label="Nombre del proyecto nuevo"
+              placeholder="Nombre del proyecto"
+              [ngModel]="newProjectName()"
+              (ngModelChange)="newProjectName.set($event)"
+              (keydown.enter)="createProjectQuick()"
+              [disabled]="creatingProject()"
+            />
+            <p-button
+              label="Crear"
+              icon="md md-add"
+              size="small"
+              [loading]="creatingProject()"
+              [disabled]="!newProjectName().trim() || creatingProject()"
+              (onClick)="createProjectQuick()"
+            />
+          </div>
+        </div>
       }
     </div>
     <ng-template #footer>

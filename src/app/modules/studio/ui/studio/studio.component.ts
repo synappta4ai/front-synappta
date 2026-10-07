@@ -28,7 +28,12 @@ import { Message } from 'primeng/message';
 import type { GenerateRequest, Modality } from '@modules/agency/interfaces';
 import { AgencyService } from '@modules/agency/services';
 import { LibraryService } from '@modules/library/services';
-import { FileAsset, Ingredient, IngredientWithFiles } from '@modules/library/interfaces';
+import {
+  FileAsset,
+  Ingredient,
+  IngredientWithFiles,
+  parseElementMetadata,
+} from '@modules/library/interfaces';
 import { EventsService } from '@modules/events/services';
 import { Event as Project } from '@modules/events/interfaces';
 import { ServerUrlPipe } from '@core/pipes/server-url.pipe';
@@ -61,6 +66,16 @@ const REF_SLOT_DEFS: RefSlotDef[] = [
   { key: 'location', label: 'Localización', hint: 'png, jpeg' },
   { key: 'props', label: 'Props', hint: 'png, jpeg' },
 ];
+
+/** Fila del menú @: recurso (filename) o ingrediente (id de elemento o nombre). */
+interface MentionRow {
+  key: string;
+  kind: 'asset' | 'ingredient';
+  asset?: FileAsset;
+  ingredient?: Ingredient;
+  wrapper?: IngredientWithFiles;
+  label: string;
+}
 
 @Component({
   selector: 'app-studio',
@@ -109,6 +124,10 @@ export class StudioComponent {
   protected readonly models = signal<StudioModel[]>([]);
   protected readonly loadingModels = signal(false);
   protected readonly selectedModel = signal<StudioModel | null>(null);
+
+  /** true solo para modelos que corren en el inference worker (downloaded):
+      prompt negativo y seed se muestran/usan únicamente para esos modelos. */
+  protected readonly workerModel = computed(() => this.selectedModel()?.type === 'downloaded');
 
   protected readonly videoModels = computed(() =>
     this.models().filter((m) => m.modality === 'video'),
@@ -222,6 +241,22 @@ export class StudioComponent {
   protected readonly loadingAssets = signal(false);
   protected readonly uploading = signal(false);
   protected readonly showAssetGallery = signal(false);
+  /** true tras auto-abrir Referencias por una mención (una sola vez). */
+  private refsAutoOpened = false;
+
+  /**
+   * Grilla del panel Referencias (máx. 4): los seleccionados — incluidos los
+   * recursos expandidos de los ingredientes citados @ — van primero, para
+   * que sus miniaturas se vean aunque la biblioteca sea grande.
+   */
+  protected readonly refGridAssets = computed<FileAsset[]>(() => {
+    const selected = this.selectedAssetIds();
+    const list = this.assets();
+    return [
+      ...list.filter((a) => selected.has(a.id)),
+      ...list.filter((a) => !selected.has(a.id)),
+    ].slice(0, 4);
+  });
 
   // ─── Menciones @ en el prompt ─────────────────────────────────
   /** Assets citados en el prompt como @Nombre (en orden de aparición). */
@@ -247,40 +282,50 @@ export class StudioComponent {
     return this.promptTextareaRef?.nativeElement;
   }
 
-  /** Filas del menú @: recursos (imágenes) + ingredientes, filtradas por query. */
-  protected readonly mentionRows = computed<
-    {
-      kind: 'asset' | 'ingredient';
-      asset?: FileAsset;
-      ingredient?: Ingredient;
-      wrapper?: IngredientWithFiles;
-      label: string;
-    }[]
-  >(() => {
+  /** Filas del menú @: primero ids de elemento, luego recursos, luego nombres. */
+  protected readonly mentionRows = computed<MentionRow[]>(() => {
     const query = this.mentionQuery().trim().toLowerCase();
     const mentionedAssets = new Set(this.mentionedAssets().map((a) => a.id));
     const mentionedIngs = new Set(this.mentionedIngredients().map((i) => i.ingredient.name));
     const matches = (label: string) => !query || label.toLowerCase().includes(query);
 
-    const rows: {
-      kind: 'asset' | 'ingredient';
-      asset?: FileAsset;
-      ingredient?: Ingredient;
-      wrapper?: IngredientWithFiles;
-      label: string;
-    }[] = [];
+    const rows: MentionRow[] = [];
+    const seenIngs = new Set<string>();
+
+    // 1) Elementos con @id: tienen prioridad sobre filenames y nombres.
+    for (const ing of this.ingredients()) {
+      const id = this.elementIdOf(ing.ingredient);
+      if (id && !mentionedIngs.has(ing.ingredient.name) && matches(id)) {
+        rows.push({
+          key: `ing:${ing.ingredient.id}`,
+          kind: 'ingredient',
+          ingredient: ing.ingredient,
+          wrapper: ing,
+          label: id,
+        });
+        seenIngs.add(ing.ingredient.id);
+      }
+    }
+
+    // 2) Recursos (imágenes) de la biblioteca.
     for (const a of this.assets()) {
       if (
         (a.mime_type ?? '').startsWith('image/') &&
         !mentionedAssets.has(a.id) &&
         matches(a.filename)
       ) {
-        rows.push({ kind: 'asset', asset: a, label: a.filename });
+        rows.push({ key: `asset:${a.id}`, kind: 'asset', asset: a, label: a.filename });
       }
     }
+
+    // 3) Ingredientes sin id (o cuyo id no matcheó), por nombre.
     for (const ing of this.ingredients()) {
-      if (!mentionedIngs.has(ing.ingredient.name) && matches(ing.ingredient.name)) {
+      if (seenIngs.has(ing.ingredient.id) || mentionedIngs.has(ing.ingredient.name)) {
+        continue;
+      }
+      if (matches(ing.ingredient.name)) {
         rows.push({
+          key: `ing:${ing.ingredient.id}`,
           kind: 'ingredient',
           ingredient: ing.ingredient,
           wrapper: ing,
@@ -288,6 +333,7 @@ export class StudioComponent {
         });
       }
     }
+
     return rows.slice(0, 8);
   });
 
@@ -319,8 +365,18 @@ export class StudioComponent {
       string,
       { kind: 'asset' | 'ingredient'; asset?: FileAsset; ing?: IngredientWithFiles }
     >();
+    // IDs de elemento con prioridad: si un id coincide con un filename o con
+    // un nombre de ingrediente, manda el id.
+    for (const ing of this.ingredients()) {
+      const id = this.elementIdOf(ing.ingredient);
+      if (id && !map.has(id)) {
+        map.set(id, { kind: 'ingredient', ing });
+      }
+    }
     for (const a of this.assets()) {
-      map.set(a.filename, { kind: 'asset', asset: a });
+      if (!map.has(a.filename)) {
+        map.set(a.filename, { kind: 'asset', asset: a });
+      }
     }
     for (const ing of this.ingredients()) {
       if (!map.has(ing.ingredient.name)) {
@@ -328,6 +384,17 @@ export class StudioComponent {
       }
     }
     return map;
+  }
+
+  /** ID de elemento citable del ingrediente ('@Mario' → 'Mario'); '' si no tiene. */
+  private elementIdOf(ing: Ingredient): string {
+    const raw = parseElementMetadata(ing.metadata).element_id ?? '';
+    return raw.replace(/^@/, '');
+  }
+
+  /** Etiqueta citable del ingrediente: id de elemento con prioridad, si existe. */
+  protected mentionLabelOf(ing: IngredientWithFiles): string {
+    return this.elementIdOf(ing.ingredient) || ing.ingredient.name;
   }
 
   /**
@@ -502,6 +569,15 @@ export class StudioComponent {
       }
     }
     this.refSlots.set(slots);
+
+    // Auto-abrir Referencias la primera vez que una mención agrega refs.
+    const mentions = this.mentionedAssets().length + this.mentionedIngredients().length;
+    if (mentions === 0) {
+      this.refsAutoOpened = false;
+    } else if (!this.refsAutoOpened) {
+      this.refsAutoOpened = true;
+      this.showAssetGallery.set(true);
+    }
   }
 
   /** ngModelChange del textarea: re-parsea menciones y menú @. */
@@ -606,18 +682,13 @@ export class StudioComponent {
   }
 
   /** Inserta la mención elegida (recurso o ingrediente) en el token @ parcial. */
-  protected pickMention(row: {
-    kind: 'asset' | 'ingredient';
-    asset?: FileAsset;
-    ingredient?: Ingredient;
-    wrapper?: IngredientWithFiles;
-  }): void {
+  protected pickMention(row: MentionRow): void {
     const range = this.mentionRange;
     const textarea = this.promptTextarea;
     if (!range || !textarea) {
       return;
     }
-    const label = row.kind === 'asset' ? row.asset!.filename : row.ingredient!.name;
+    const label = row.label;
     const text = this.prompt();
     const insert = `@${label} `;
     const next = text.slice(0, range.start) + insert + text.slice(range.end);
@@ -662,9 +733,14 @@ export class StudioComponent {
   /** Quita una mención @ del texto (chip de recurso o ingrediente). */
   protected removeMention(target: FileAsset | IngredientWithFiles): void {
     const isAsset = 'filename' in target;
-    const label = isAsset ? target.filename : target.ingredient.name;
-    const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const re = new RegExp(`@${escaped}\\s?`, 'g');
+    // Un ingrediente puede estar citado por id de elemento o por nombre.
+    const labels = isAsset
+      ? [target.filename]
+      : [...new Set([this.mentionLabelOf(target), target.ingredient.name])];
+    const body = labels
+      .map((label) => label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+      .join('|');
+    const re = new RegExp(`@(${body})\\s?`, 'g');
     this.prompt.update((text) => text.replace(re, ''));
     // Quitar la mención también libera sus recursos: selección y slots.
     const removedIds = new Set(
@@ -736,6 +812,10 @@ export class StudioComponent {
   protected readonly selectedProject = computed(
     () => this.projects().find((p) => p.id === this.selectedProjectId()) ?? null,
   );
+  /** Nombre tipeado para la creación rápida de proyecto (modal). */
+  protected readonly newProjectName = signal('');
+  /** true mientras crea el proyecto rápido. */
+  protected readonly creatingProject = signal(false);
 
   // ─── Takes (global generation-events store) ───────────────────
   protected readonly eventsStore = inject(GenerationEventsStore);
@@ -1279,6 +1359,33 @@ export class StudioComponent {
     this.projectDialogVisible.set(false);
   }
 
+  /** Crea un proyecto desde la modal y lo selecciona al instante. */
+  protected createProjectQuick(): void {
+    const name = this.newProjectName().trim();
+    if (!name || this.creatingProject()) {
+      return;
+    }
+    this.creatingProject.set(true);
+    this.eventsService
+      .createEvent({ name })
+      .pipe(
+        catchError(() => {
+          this.error.set('No se pudo crear el proyecto.');
+          return EMPTY;
+        }),
+        finalize(() => this.creatingProject.set(false)),
+      )
+      .subscribe((event) => {
+        if (!event) {
+          return;
+        }
+        this.projects.update((list) => [...list, event]);
+        this.newProjectName.set('');
+        // Elegirlo equivalente: filtra recursos y limpia la sesión del día.
+        this.onProjectChange(event.id);
+      });
+  }
+
   private loadAssets(): void {
     this.loadingAssets.set(true);
     const eventId = this.selectedProjectId() ?? undefined;
@@ -1525,13 +1632,23 @@ export class StudioComponent {
   /** Library URL for a slot thumbnail; falls back to a placeholder frame. */
   protected assetThumbUrl(assetId: string): string {
     const asset = this.assets().find((a) => a.id === assetId);
-    const url = asset?.thumbnail_url || asset?.url;
+    return this.resolveThumbUrl(asset?.thumbnail_url || asset?.url);
+  }
+
+  /** Resuelve una ruta relativa de thumb/url a URL absoluta del back. */
+  private resolveThumbUrl(url?: string | null): string {
     if (!url) {
       return '';
     }
     const origin = environment.API_URL.replace(/\/api\/v1\/?$/, '');
     const path = url.startsWith('/') ? url : `/${url}`;
     return /^https?:\/\//i.test(url) ? url : `${origin}${path}`;
+  }
+
+  /** Miniatura del primer recurso del ingrediente (menú/chip @); '' si no tiene. */
+  protected ingredientThumbUrl(ing: IngredientWithFiles): string {
+    const first = this.assetsOfIngredient(ing)[0];
+    return this.resolveThumbUrl(first?.thumbnail_url || first?.url);
   }
 
   /** Oculta miniaturas rotas (el thumb conserva fondo + tooltip del nombre). */
@@ -1583,7 +1700,8 @@ export class StudioComponent {
       ratio,
       duration: duration || undefined,
       resolution: this.resolution(),
-      seed: this.seed().trim() || undefined,
+      // El seed solo aplica a modelos del inference worker.
+      seed: this.workerModel() ? this.seed().trim() || undefined : undefined,
       // ensureTakeSlot resuelve proyecto/pieza (auto "Studio" si no hay uno).
       event_id: this.selectedProjectId() ?? '',
       program_id: undefined,

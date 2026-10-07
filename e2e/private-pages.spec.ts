@@ -1,4 +1,12 @@
-import { test, expect, expectPageTitle, openPrimeSelect } from './helpers/session';
+import {
+  test,
+  expect,
+  expectPageTitle,
+  openPrimeSelect,
+  apiLogin,
+  API_BASE,
+  waitForHydration,
+} from './helpers/session';
 
 test.describe('agency', () => {
   test('renders the production flow page', async ({ authedPage: page }) => {
@@ -12,9 +20,19 @@ test.describe('studio', () => {
     await page.goto('/studio');
     // "AGREGÁ TU PROMPT" es placeholder del textarea del prompt.
     await expect(page.getByPlaceholder('AGREGÁ TU PROMPT')).toBeVisible();
-    await expect(page.getByPlaceholder('Negative prompt (opcional)')).toBeVisible();
     await expect(page.locator('.studio-mode')).toBeVisible();
     await expect(page.getByRole('button', { name: /Referencias/ })).toBeVisible();
+    // Prompt negativo y seed solo se muestran para modelos del inference
+    // worker: los dos campos comparten la misma condición (0 o 1 juntos).
+    const modelSelect = page.getByRole('combobox', { name: 'Elegí el modelo de generación' });
+    await expect(modelSelect).toBeVisible();
+    const negatives = await page.locator('.negative-input').count();
+    const seeds = await page.locator('.seed-input').count();
+    expect(negatives).toBe(seeds);
+    if ((await modelSelect.innerText()).includes('Elegí el modelo de generación')) {
+      // Sin modelo elegido no hay modelo del worker: los dos campos ocultos.
+      expect(negatives).toBe(0);
+    }
   });
 
   test('shows model selector with Higgsfield entries', async ({ authedPage: page }) => {
@@ -32,10 +50,110 @@ test.describe('studio', () => {
     await expect(options.filter({ hasText: 'Kling 3.0 Turbo' })).toHaveCount(1);
     await expect(options.filter({ hasText: 'Seedance 2.5' }).first()).toBeVisible();
   });
+
+  test('crea un proyecto rápido desde la modal y lo selecciona', async ({
+    authedPage: page,
+  }) => {
+    const name = `E2E Studio ${Date.now()}`;
+    const { token } = await apiLogin();
+    const auth = { Authorization: `Bearer ${token}` };
+    let createdId: string | null = null;
+    try {
+      await page.goto('/studio');
+      await waitForHydration(page);
+      await expect(page.getByPlaceholder(/AGREGÁ TU PROMPT/)).toBeVisible();
+
+      await page.locator('.project-icon-btn').click();
+      const dialog = page.getByRole('dialog');
+      await expect(dialog).toBeVisible({ timeout: 10_000 });
+      await dialog.getByLabel('Nombre del proyecto nuevo').fill(name);
+      await dialog.getByRole('button', { name: 'Crear' }).click();
+
+      // Queda seleccionado: el caption del panel lo muestra.
+      await expect(page.locator('.project-caption')).toContainText(name);
+
+      const list = await fetch(`${API_BASE}/events?all=true`, { headers: auth }).then((r) =>
+        r.json(),
+      );
+      const found = (list.data ?? []).find(
+        (event: { id: string; name: string }) => event.name === name,
+      );
+      expect(found, 'el proyecto creado no aparece en /events').toBeTruthy();
+      createdId = found.id;
+    } finally {
+      if (createdId) {
+        await fetch(`${API_BASE}/events/${createdId}`, { method: 'DELETE', headers: auth });
+      }
+    }
+  });
 });
 
 // /video y /events quedaron comentadas en app.routes.ts: el wildcard las
 // redirige a /agency. Estos tests documentan ese retiro.
+test.describe('menciones @ del studio', () => {
+  test('prioriza el id de elemento y abre Referencias al citar', async ({
+    authedPage: page,
+  }) => {
+    const { token } = await apiLogin();
+    const list = await fetch(`${API_BASE}/ingredients`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }).then((r) => r.json());
+    const ingredients = (Array.isArray(list.data) ? list.data : []).map(
+      (row: { ingredient?: unknown }) => row.ingredient ?? row,
+    );
+    const first = ingredients.find((ing: { metadata?: string }) => {
+      try {
+        return !!JSON.parse(ing.metadata ?? '{}').element_id;
+      } catch {
+        return false;
+      }
+    });
+    const elementId = first
+      ? String(JSON.parse(first.metadata).element_id).replace(/^@/, '')
+      : '';
+    const fileCount: number = first ? (first.files ?? []).length : 0;
+    test.skip(!elementId, 'ningún ingrediente tiene element_id');
+
+    await page.goto('/studio');
+    await expect(page.getByPlaceholder(/AGREGÁ TU PROMPT/)).toBeVisible();
+    // El panel de referencias arranca cerrado.
+    await expect(page.locator('.refs-panel .acc-wrap')).toHaveCount(0);
+
+    const prompt = page.getByPlaceholder(/AGREGÁ TU PROMPT/);
+    const options = page.locator('.mention-menu .mention-option');
+    // El menú solo se abre cuando el catálogo de ingredientes ya cargó.
+    for (let attempt = 0; attempt < 4 && (await options.count()) === 0; attempt++) {
+      await prompt.click();
+      await prompt.fill('');
+      await prompt.type('@');
+      await page.waitForTimeout(1200);
+    }
+    await expect(options.first()).toBeVisible({ timeout: 10_000 });
+    // Prioridad: la primera fila es el id de elemento, no un filename.
+    await expect(options.first()).toContainText(elementId);
+    // La fila de ingrediente muestra la miniatura de su primer recurso.
+    if (fileCount > 0) {
+      await expect(options.first().locator('img.mention-thumb')).toBeVisible();
+    }
+
+    await options.first().click();
+    // La mención cita refs: el panel se auto-abre y muestra las citadas.
+    await expect(page.locator('.mention-chip')).toContainText(`@${elementId}`);
+    await expect(page.locator('.refs-panel .acc-wrap')).toHaveCount(1);
+    if (fileCount > 0) {
+      // El chip del ingrediente usa la miniatura, no solo el ícono de tipo.
+      const chip = page.locator('.mention-chip.ingredient').filter({ hasText: `@${elementId}` });
+      const chipThumb = chip.locator('img.mention-chip-thumb');
+      await expect(chipThumb).toBeVisible();
+      expect(await chipThumb.getAttribute('src'), 'chip sin thumbnail').toBeTruthy();
+      await expect(page.locator('.refs-panel .asset-thumb.selected').first()).toBeVisible();
+      // Los recursos citados quedan al frente de la grilla del panel.
+      await expect(page.locator('.asset-grid .asset-thumb').first()).toHaveClass(/selected/);
+      await expect(page.locator('.refs-panel .refs-meta')).toContainText('seleccionadas');
+    }
+  });
+});
+
 test.describe('rutas retiradas', () => {
   test('/video redirige a /agency', async ({ authedPage: page }) => {
     await page.goto('/video');
