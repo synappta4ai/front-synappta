@@ -37,6 +37,26 @@ test.describe('agency', () => {
     await expect(opts.first()).toBeVisible();
     // 'Automático' + al menos un modelo de texto del catálogo.
     expect(await opts.count()).toBeGreaterThanOrEqual(2);
+
+    // Y el modelo LLM configurado en admin/models (credencial del tenant).
+    const { token } = await apiLogin();
+    const creds = await fetch(`${API_BASE}/credentials`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }).then((r) => r.json());
+    const withModel = (Array.isArray(creds.data) ? creds.data : []).find(
+      (c: { provider?: string; extra?: string }) =>
+        (c.provider === 'openrouter' || c.provider === 'anthropic') && !!c.extra,
+    ) as { extra?: string } | undefined;
+    if (withModel?.extra) {
+      try {
+        const model = (JSON.parse(withModel.extra) as { model?: string }).model;
+        if (model) {
+          await expect(opts.filter({ hasText: model })).toBeVisible();
+        }
+      } catch {
+        // extra no-JSON: nada que asertar.
+      }
+    }
   });
 
   test('elegir un proyecto existente carga sus datos y exige los campos', async ({

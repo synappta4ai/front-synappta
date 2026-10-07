@@ -178,11 +178,27 @@ export class AgencyComponent {
   );
 
   protected readonly models = signal<readonly AiModel[]>([]);
+  /** Credenciales del tenant: de ahí salen los modelos LLM configurados. */
+  protected readonly credentials = signal<Credential[]>([]);
   /** Modelo elegido por paso: '' = automático (default del back). */
   protected readonly modelText = signal('');
   protected readonly modelImage = signal('');
   protected readonly modelVideo = signal('');
-  protected readonly modelTextOptions = computed(() => this.modelOptionsFor('text'));
+  /** Ángulos: catálogo de texto + los modelos LLM guardados en admin/models
+   *  (openrouter/anthropic extra.model), que es donde se configuran. */
+  protected readonly modelTextOptions = computed(() => {
+    const options = this.modelOptionsFor('text');
+    const known = new Set(options.map((o) => o.value));
+    for (const cred of this.credentials()) {
+      if (cred.provider !== 'openrouter' && cred.provider !== 'anthropic') continue;
+      const model = this.credentialModel(cred);
+      if (model && !known.has(model)) {
+        known.add(model);
+        options.push({ label: `${model} · ${cred.provider}`, value: model });
+      }
+    }
+    return options;
+  });
   protected readonly modelImageOptions = computed(() => this.modelOptionsFor('image'));
   protected readonly modelVideoOptions = computed(() => this.modelOptionsFor('video'));
   protected readonly projectDescription = signal('');
@@ -221,6 +237,12 @@ export class AgencyComponent {
       .listModels()
       .pipe(catchError(() => EMPTY))
       .subscribe((models) => this.models.set(models));
+
+    // Credenciales: aportan el modelo LLM configurado en Admin → Modelos.
+    this.agencyService
+      .listCredentials()
+      .pipe(catchError(() => EMPTY))
+      .subscribe((creds) => this.credentials.set(creds ?? []));
 
     // Al elegir un proyecto existente: se cargan sus datos en el formulario
     // (nombre, ciudad/venue, descripción) y los campos con dato quedan
@@ -573,6 +595,16 @@ export class AgencyComponent {
       .filter((m) => m.modality === modality)
       .map((m) => ({ label: m.display_name || m.name, value: m.name }));
     return [{ label: 'Automático', value: '' }, ...list];
+  }
+
+  /** Modelo LLM configurado en la credencial (extra.model de admin/models). */
+  private credentialModel(cred: Credential): string {
+    try {
+      const extra = JSON.parse(cred.extra ?? '{}') as { model?: string };
+      return (extra.model ?? '').trim();
+    } catch {
+      return '';
+    }
   }
 
   /** Ángulos de venta: los genera el LLM elegido (credencial del tenant) vía
