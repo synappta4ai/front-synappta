@@ -4398,3 +4398,7 @@ main:has(> app-studio) {
   padding-left: 4px;
   padding-right: 4px;
 }
+
+.p-iconfield p-inputicon {
+  margin-top: -6px !important;
+}
