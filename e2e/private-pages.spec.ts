@@ -65,85 +65,71 @@ test.describe('agency', () => {
     test.setTimeout(60_000);
     const { token } = await apiLogin();
     const auth = { Authorization: `Bearer ${token}` };
-    const initial = await fetch(`${API_BASE}/events?all=false`, { headers: auth }).then((r) =>
-      r.json(),
-    );
-    test.skip(
-      !(Array.isArray(initial.data) && initial.data.length > 0),
-      'no hay proyectos para seleccionar',
-    );
+    const name = `E2E Proyecto Existe ${Date.now()}`;
+    let myId: string | null = null;
 
-    // Otros runs pudieron dejar avance guardado (metadata.agency) en el primer
-    // proyecto: se limpia para que el select cargue el formulario, no la fase.
-    const firstEv = (initial.data as { event?: Record<string, unknown> }[]).map(
-      (row) => (row.event ?? row) as { id?: string; metadata?: string | null },
-    )[0];
-    if (firstEv?.id && firstEv.metadata) {
-      try {
-        const meta = JSON.parse(firstEv.metadata) as Record<string, unknown>;
-        if ('agency' in meta) {
-          delete meta['agency'];
-          await fetch(`${API_BASE}/events/${firstEv.id}`, {
-            method: 'PATCH',
-            headers: { ...auth, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              metadata: Object.keys(meta).length ? JSON.stringify(meta) : '',
-            }),
-          });
-        }
-      } catch {
-        // metadata no-JSON: no hay nada que limpiar de un run previo.
+    try {
+      // Proyecto propio y sin avance: así no hay que tocar la metadata de
+      // proyectos de otros tests (con fullyParallel eso era una carrera).
+      const created = (await fetch(`${API_BASE}/events`, {
+        method: 'POST',
+        headers: { ...auth, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          venue: '',
+          description: '',
+        }),
+      }).then((r) => r.json())) as { data?: { id?: string }; id?: string };
+      myId = created?.data?.id ?? created?.id ?? null;
+      expect(myId, 'el proyecto de prueba debe crearse').toBeTruthy();
+
+      await page.goto('/agency');
+      await expectPageTitle(page, 'Agencia · Flujo de Inmobiliaria');
+      await waitForHydration(page);
+
+      // Selección del proyecto propio (select en el header de la card).
+      await openPrimeSelect(page.locator('#agencyProject'));
+      const options = page.locator(
+        '.p-select-overlay:not(.p-select-overlay-hidden) .p-select-option',
+      );
+      await expect(options.first()).toBeVisible();
+      await options.filter({ hasText: name }).click();
+
+      // Los datos del proyecto se cargan en los inputs; el nombre queda bloqueado.
+      await expect(page.locator('#propertyName')).toHaveValue(name);
+      await expect(page.locator('#propertyName')).toBeDisabled();
+      const loadedName = name;
+
+      // Los campos obligatorios que el proyecto no traiga quedan editables.
+      const marker = Date.now();
+      const cityMarker = `E2E City ${marker}`;
+      const descMarker = `E2E Desc ${marker}`;
+      const location = page.locator('#location');
+      const description = page.locator('#description');
+      let patchedLocation = false;
+      let patchedDescription = false;
+      if ((await location.inputValue()) === '') {
+        await location.fill(cityMarker);
+        patchedLocation = true;
+      } else {
+        await expect(location).toBeDisabled();
       }
-    }
+      if ((await description.inputValue()) === '') {
+        await description.fill(descMarker);
+        patchedDescription = true;
+      } else {
+        await expect(description).toBeDisabled();
+      }
 
-    await page.goto('/agency');
-    await expectPageTitle(page, 'Agencia · Flujo de Inmobiliaria');
-    await waitForHydration(page);
+      // La creación de ángulos queda habilitada con los tres campos completos.
+      const analyze = page.getByRole('button', { name: /Analizar y generar ángulos/ });
+      await expect(analyze).toBeEnabled();
+      await analyze.click();
+      await expect(page.getByRole('heading', { name: 'Ángulos de Venta' })).toBeVisible({
+        timeout: 20_000,
+      });
 
-    // Selección del primer proyecto del select (ahora en el header de la card).
-    await openPrimeSelect(page.locator('#agencyProject'));
-    const options = page.locator(
-      '.p-select-overlay:not(.p-select-overlay-hidden) .p-select-option',
-    );
-    await expect(options.first()).toBeVisible();
-    await options.first().click();
-
-    // Los datos del proyecto se cargan en los inputs; el nombre queda bloqueado.
-    await expect(page.locator('#propertyName')).not.toHaveValue('');
-    await expect(page.locator('#propertyName')).toBeDisabled();
-    const loadedName = await page.locator('#propertyName').inputValue();
-
-    // Los campos obligatorios que el proyecto no traiga quedan editables.
-    const marker = Date.now();
-    const cityMarker = `E2E City ${marker}`;
-    const descMarker = `E2E Desc ${marker}`;
-    const location = page.locator('#location');
-    const description = page.locator('#description');
-    let patchedLocation = false;
-    let patchedDescription = false;
-    if ((await location.inputValue()) === '') {
-      await location.fill(cityMarker);
-      patchedLocation = true;
-    } else {
-      await expect(location).toBeDisabled();
-    }
-    if ((await description.inputValue()) === '') {
-      await description.fill(descMarker);
-      patchedDescription = true;
-    } else {
-      await expect(description).toBeDisabled();
-    }
-
-    // La creación de ángulos queda habilitada con los tres campos completos.
-    const analyze = page.getByRole('button', { name: /Analizar y generar ángulos/ });
-    await expect(analyze).toBeEnabled();
-    await analyze.click();
-    await expect(page.getByRole('heading', { name: 'Ángulos de Venta' })).toBeVisible({
-      timeout: 20_000,
-    });
-
-    // Verifica lo persistido en el proyecto y limpia el avance (metadata.agency).
-    if (loadedName) {
+      // Verifica lo persistido en el proyecto del test.
       const list = await fetch(`${API_BASE}/events?all=false`, { headers: auth }).then((r) =>
         r.json(),
       );
@@ -160,24 +146,11 @@ test.describe('agency', () => {
       if (target) {
         if (patchedLocation) expect(target.venue ?? '').toContain(cityMarker);
         if (patchedDescription) expect(target.description ?? '').toContain(descMarker);
-        // Restaurar valores originales y quitar el avance guardado por el test.
-        let strippedMeta = '';
-        try {
-          const meta = JSON.parse(target.metadata ?? '{}') as Record<string, unknown>;
-          delete meta['agency'];
-          strippedMeta = Object.keys(meta).length ? JSON.stringify(meta) : '';
-        } catch {
-          strippedMeta = '';
-        }
-        await fetch(`${API_BASE}/events/${target.id}`, {
-          method: 'PATCH',
-          headers: { ...auth, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            venue: patchedLocation ? '' : target.venue,
-            description: patchedDescription ? '' : target.description,
-            metadata: strippedMeta,
-          }),
-        });
+      }
+    } finally {
+      // El proyecto es del test: se borra entero (sin dejar avance).
+      if (myId) {
+        await fetch(`${API_BASE}/events/${myId}`, { method: 'DELETE', headers: auth });
       }
     }
   });
@@ -272,7 +245,11 @@ test.describe('agency', () => {
       await expect(page.getByLabel('Título del ángulo')).toHaveCount(4);
 
       // Elegir un ángulo → Storyboard (modelo de videos) → Escenas (video).
-      await page.locator('.phase-card input[type="checkbox"]').first().click();
+      // Click en la esquina de la card (fuera de los campos editables).
+      await page
+        .locator('.phase-card [role="checkbox"]')
+        .first()
+        .click({ position: { x: 10, y: 10 } });
       await page.getByRole('button', { name: /Generar Storyboard/ }).click();
       await expect(page.locator('#agencyVideoModel')).toBeVisible({ timeout: 15_000 });
       await page.getByRole('button', { name: /Continuar a Escenas/ }).click();
@@ -291,6 +268,123 @@ test.describe('agency', () => {
       const id = created ? (created.event ?? created).id : null;
       if (id) {
         await fetch(`${API_BASE}/events/${id}`, { method: 'DELETE', headers: auth });
+      }
+    }
+  });
+
+  test('tildar ángulos habilita Generar Storyboard y persiste al recargar', async ({
+    authedPage: page,
+  }) => {
+    test.setTimeout(90_000);
+    const { token } = await apiLogin();
+    const auth = { Authorization: `Bearer ${token}` };
+    const name = `E2E Ángulos Check ${Date.now()}`;
+    let projectId: string | null = null;
+
+    try {
+      // Proyecto con la fase de ángulos sembrada por API (sin invocar al agente).
+      const created = await fetch(`${API_BASE}/events`, {
+        method: 'POST',
+        headers: { ...auth, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          venue: 'E2E, CDMX',
+          description: 'Proyecto para verificar el tildado de ángulos.',
+          metadata: JSON.stringify({
+            agency: {
+              phase: 'angles',
+              anglesCount: 3,
+              models: { text: '', image: '', video: '' },
+              angles: [1, 2, 3].map((i) => ({
+                id: `angle-${i}`,
+                title: `Ángulo ${i}`,
+                description: `desc ${i}`,
+                selected: false,
+              })),
+              storyboard: [],
+              projectDescription: name,
+            },
+          }),
+        }),
+      }).then((r) => r.json()) as { data?: { id?: string }; id?: string };
+      projectId = created?.data?.id ?? created?.id ?? null;
+      expect(projectId, 'el proyecto de prueba debe crearse').toBeTruthy();
+
+      await page.goto('/agency');
+      await expectPageTitle(page, 'Agencia · Flujo de Inmobiliaria');
+      await waitForHydration(page);
+
+      await openPrimeSelect(page.locator('#agencyProject'));
+      const opts = page.locator(
+        '.p-select-overlay:not(.p-select-overlay-hidden) .p-select-option',
+      );
+      await opts.filter({ hasText: name }).click();
+      await expect(page.getByRole('heading', { name: 'Ángulos de Venta' })).toBeVisible({
+        timeout: 20_000,
+      });
+
+      const cards = page.locator('.phase-card [role="checkbox"]');
+      const btn = page.getByRole('button', { name: /Generar Storyboard/ });
+      const counter = page.locator('.phase-card .p-tag');
+      await expect(cards).toHaveCount(3);
+      await expect(btn).toBeDisabled();
+      await expect(counter).toHaveCount(0);
+
+      // Un click sobre la zona del checkbox tilda (el checkbox es decorativo
+      // y el evento cae en la card): sin doble disparo ni reversión.
+      for (let i = 0; i < 3; i++) {
+        await cards.nth(i).locator('.p-checkbox').click({ force: true });
+        await expect(cards.nth(i)).toHaveAttribute('aria-checked', 'true');
+      }
+      await expect(btn).toBeEnabled();
+      await expect(counter).toContainText('3 seleccionados');
+
+      // Escribir en los campos no alterna el tildado (mismo click que la card).
+      await page.getByLabel('Descripción del ángulo').first().click();
+      await expect(cards.first()).toHaveAttribute('aria-checked', 'true');
+
+      // role=checkbox con teclado: Space destilda, Enter vuelve a tildar.
+      await cards.first().focus();
+      await page.keyboard.press('Space');
+      await expect(cards.first()).toHaveAttribute('aria-checked', 'false');
+      await expect(counter).toContainText('2 seleccionados');
+      await expect(btn).toBeEnabled();
+      await page.keyboard.press('Enter');
+      await expect(cards.first()).toHaveAttribute('aria-checked', 'true');
+
+      // La selección queda guardada en el proyecto (cola de persistencia:
+      // el último PATCH es el estado definitivo, no un intermedio).
+      const selectedPersisted = async (): Promise<number> => {
+        const persisted = (await fetch(`${API_BASE}/events/${projectId}`, {
+          headers: auth,
+        }).then((r) => r.json())) as {
+          data?: { event?: { metadata?: string | null }; metadata?: string | null };
+        };
+        const persistedMeta =
+          persisted.data?.event?.metadata ?? persisted.data?.metadata ?? '{}';
+        const angles = (
+          JSON.parse(persistedMeta) as {
+            agency?: { angles?: { selected?: boolean }[] };
+          }
+        ).agency?.angles;
+        return angles?.filter((a) => a.selected).length ?? 0;
+      };
+      await expect
+        .poll(selectedPersisted, { timeout: 10_000 })
+        .toBe(3);
+
+      await page.reload();
+      await waitForHydration(page);
+      await openPrimeSelect(page.locator('#agencyProject'));
+      await opts.filter({ hasText: name }).click();
+      await expect(page.getByRole('heading', { name: 'Ángulos de Venta' })).toBeVisible({
+        timeout: 20_000,
+      });
+      await expect(cards.first()).toHaveAttribute('aria-checked', 'true');
+      await expect(btn).toBeEnabled();
+    } finally {
+      if (projectId) {
+        await fetch(`${API_BASE}/events/${projectId}`, { method: 'DELETE', headers: auth });
       }
     }
   });

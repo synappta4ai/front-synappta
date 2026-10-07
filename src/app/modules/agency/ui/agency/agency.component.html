@@ -243,30 +243,27 @@
         <div class="flex flex-col gap-3">
           @for (angle of angles(); track angle.id; let i = $index) {
             <div
-              animate.enter="anim-item"
-              [style.animation-delay.ms]="i < 8 ? i * 35 : 280"
-              class="flex cursor-pointer items-start gap-4 rounded-2xl border-2 p-5 transition-all duration-200 hover:shadow-md"
-              appTilt
+              class="flex cursor-pointer items-start gap-4 rounded-2xl border-2 p-5 transition-colors duration-150"
               [class]="
                 angle.selected
                   ? 'border-accent bg-surface-2 shadow-md'
                   : 'border-surface-border bg-surface hover:border-surface-border-strong'
               "
-              (click)="toggleAngle(angle.id)"
-              (keydown.enter)="toggleAngle(angle.id)"
+              (click)="onAngleCardActivate(angle.id, $event)"
+              (keydown.enter)="onAngleCardActivate(angle.id, $event)"
+              (keydown.space)="onAngleCardActivate(angle.id, $event)"
               tabindex="0"
               role="checkbox"
               [attr.aria-checked]="angle.selected"
+              [attr.aria-label]="'Ángulo ' + (i + 1) + ': ' + angle.title"
             >
-              <div class="pt-0.5" (click)="$event.stopPropagation()">
-                <p-checkbox
-                  [binary]="true"
-                  [ngModel]="angle.selected"
-                  (ngModelChange)="toggleAngle(angle.id)"
-                />
+              <!-- Checkbox decorativo: el control real es la card (role=checkbox).
+                   Pointer-events:none evita el doble disparo (click + ngModelChange). -->
+              <div class="pointer-events-none pt-0.5" aria-hidden="true">
+                <p-checkbox [binary]="true" [ngModel]="angle.selected" />
               </div>
               <div class="flex-1">
-                <div class="flex items-center gap-2" (click)="$event.stopPropagation()">
+                <div class="flex items-center gap-2">
                   <i class="md md-gps_fixed text-ink-muted-on-dark"></i>
                   <input
                     pInputText
@@ -275,7 +272,6 @@
                     [ngModel]="angle.title"
                     (ngModelChange)="updateAngle(angle.id, 'title', $event)"
                     (change)="commitAngleEdits()"
-                    (keydown.enter)="$event.stopPropagation()"
                     [ngModelOptions]="{ standalone: true }"
                   />
                 </div>
@@ -287,8 +283,6 @@
                   [ngModel]="angle.description"
                   (ngModelChange)="updateAngle(angle.id, 'description', $event)"
                   (change)="commitAngleEdits()"
-                  (click)="$event.stopPropagation()"
-                  (keydown.enter)="$event.stopPropagation()"
                   [ngModelOptions]="{ standalone: true }"
                 ></textarea>
               </div>

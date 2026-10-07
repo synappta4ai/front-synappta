@@ -5,7 +5,7 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { catchError, EMPTY, finalize, map, mergeMap, of, throwError } from 'rxjs';
+import { catchError, EMPTY, finalize, firstValueFrom, map, mergeMap, of, throwError } from 'rxjs';
 import { Observable } from 'rxjs';
 
 import { Button } from 'primeng/button';
@@ -27,7 +27,6 @@ import { AiModel, Credential, Modality, GeneratedAsset, StatusResponse } from '.
 import { EventsService } from '@modules/events/services';
 import { Event as Project, Piece } from '@modules/events/interfaces';
 import { PageContainerComponent, ValidatorErrors } from '@shared/components/index';
-import { TiltDirective } from '@shared/components/tilt/tilt.directive';
 import { UserSessionStore } from '@core/store/user.session';
 import { environment } from '@env/environment';
 
@@ -131,7 +130,6 @@ function buildAngles(count: number): SalesAngle[] {
     ReactiveFormsModule,
     PageContainerComponent,
     ValidatorErrors,
-    TiltDirective,
     Tooltip,
     Button,
     Card,
@@ -202,8 +200,15 @@ export class AgencyComponent {
   protected readonly modelImageOptions = computed(() => this.modelOptionsFor('image'));
   protected readonly modelVideoOptions = computed(() => this.modelOptionsFor('video'));
   protected readonly projectDescription = signal('');
-  protected readonly selectedAngles = signal<readonly string[]>([]);
   protected readonly angles = signal<SalesAngle[]>(buildAngles(3));
+  /** Ids de ángulos tildados: derivado de `angles` para que nunca se
+   *  desincronice del estado real (antes era una copia a mano que un
+   *  restore podía pisar). */
+  protected readonly selectedAngles = computed(() =>
+    this.angles()
+      .filter((a) => a.selected)
+      .map((a) => a.id),
+  );
 
   protected readonly storyboard = signal<StoryboardScene[]>([]);
 
@@ -272,11 +277,27 @@ export class AgencyComponent {
         const disable = !!project && hasValue;
         disable ? control.disable({ emitEvent: false }) : control.enable({ emitEvent: false });
       }
-      // Recupera el avance guardado del proyecto (fase, modelos, ángulos,
-      // storyboard) para no reprocesar lo que ya está hecho.
-      this.restoreWorkflow(project);
-    });
+    // Recupera el avance guardado del proyecto (fase, modelos, ángulos,
+    // storyboard) para no reprocesar lo que ya está hecho.
+    //
+    // Se restaura SOLO cuando cambia el proyecto elegido: `projects()` se
+    // actualiza con cada persistencia y re-ejecutaría este effect, que con el
+    // estado viejo pisaba en vivo los tildes del usuario (el botón de
+    // "Generar Storyboard" nunca se habilitaba).
+    if (project) {
+      if (this.restoredProjectId !== id) {
+        this.restoredProjectId = id;
+        this.restoreWorkflow(project);
+      }
+    } else if (!id && this.restoredProjectId !== null) {
+      this.restoredProjectId = null;
+      this.restoreWorkflow(null);
+    }
+  });
   }
+
+  /** Último proyecto cuyo avance se restauró (guard contra re-restores). */
+  private restoredProjectId: string | null | undefined = undefined;
 
   protected get canProceedToAngles(): boolean {
     // Los tres campos son obligatorios (proyecto elegido o nuevo): sin los
@@ -321,11 +342,20 @@ export class AgencyComponent {
     this.angles.update((angles) =>
       angles.map((a) => (a.id === angleId ? { ...a, selected: !a.selected } : a)),
     );
-    this.selectedAngles.set(
-      this.angles()
-        .filter((a) => a.selected)
-        .map((a) => a.id),
-    );
+    // La selección se guarda en el proyecto: si no, al volver a entrar se
+    // pierde y el restore trae los tildes viejos.
+    this.persistWorkflow();
+  }
+
+  /** Click o tecla sobre la card de un ángulo: alterna el tildado. Se ignora
+   *  cuando el evento nace en un campo editable (título/descripción), para
+   *  poder escribir sin tildar y tildar desde cualquier otra zona de la card
+   *  (el checkbox es decorativo: la card entera es el control). */
+  protected onAngleCardActivate(angleId: string, event: Event): void {
+    const target = event.target as HTMLElement | null;
+    if (target?.closest?.('input, textarea, select, [contenteditable="true"]')) return;
+    if (event.type === 'keydown') event.preventDefault();
+    this.toggleAngle(angleId);
   }
 
   protected generateAngles(): void {
@@ -350,7 +380,6 @@ export class AgencyComponent {
     // Los ángulos a crear salen del input numérico (por defecto 3).
     const count = Number((this.form.getRawValue() as { anglesCount?: number }).anglesCount) || 3;
     this.angles.set(buildAngles(count));
-    this.selectedAngles.set([]);
 
     this.loading.set(true);
     this.error.set(null);
@@ -693,10 +722,22 @@ export class AgencyComponent {
 
   // ─── Persistencia del avance (event.metadata.agency) ───────────────
 
-  /** Guarda fase, modelos, ángulos y storyboard en el proyecto elegido. */
+  /** Guarda fase, modelos, ángulos y storyboard en el proyecto elegido.
+   *
+   *  Los envíos se serializan en una cola: tildar varios ángulos seguidos
+   *  disparaba varios PATCH simultáneos que llegaban al servidor desordenados,
+   *  de modo que el estado final guardado era un intermedio (se perdían tildes
+   *  al recargar). El estado se arma recién al enviar: así el último PATCH de
+   *  la cola siempre lleva el estado definitivo. */
+  private persistChain: Promise<void> = Promise.resolve();
+
   private persistWorkflow(): void {
     const id = this.selectedProjectId();
     if (!id) return;
+    this.persistChain = this.persistChain.then(() => this.sendWorkflow(id)).catch(() => undefined);
+  }
+
+  private async sendWorkflow(id: string): Promise<void> {
     const state = {
       phase: this.currentPhase(),
       anglesCount: Number((this.form.getRawValue() as { anglesCount?: number }).anglesCount) || 3,
@@ -714,16 +755,16 @@ export class AgencyComponent {
     }
     base['agency'] = state;
     const metadata = JSON.stringify(base);
-    this.eventsService
-      .updateEvent(id, { metadata })
-      .pipe(catchError(() => EMPTY))
-      .subscribe((updated) => {
-        this.projects.update((list) =>
-          list.map((p) =>
-            p.id === updated.id ? { ...p, metadata: updated.metadata ?? metadata } : p,
-          ),
-        );
-      });
+    try {
+      const updated = await firstValueFrom(this.eventsService.updateEvent(id, { metadata }));
+      this.projects.update((list) =>
+        list.map((p) =>
+          p.id === updated.id ? { ...p, metadata: updated.metadata ?? metadata } : p,
+        ),
+      );
+    } catch {
+      // Sin backend no se corta el flujo: el siguiente guardado reenvía.
+    }
   }
 
   /** Recupera el avance guardado del proyecto elegido: fase, modelos por paso,
@@ -734,7 +775,6 @@ export class AgencyComponent {
       const count =
         Number((this.form.getRawValue() as { anglesCount?: number }).anglesCount) || 3;
       this.angles.set(buildAngles(count));
-      this.selectedAngles.set([]);
       this.storyboard.set([]);
       this.modelText.set('');
       this.modelImage.set('');
@@ -770,7 +810,6 @@ export class AgencyComponent {
             selected: !!a.selected,
           })),
         );
-        this.selectedAngles.set(this.angles().filter((a) => a.selected).map((a) => a.id));
       }
     }
     if (Array.isArray(agency['storyboard'])) {
@@ -899,7 +938,6 @@ export class AgencyComponent {
     this.form.reset();
     this.selectedProjectId.set(null);
     this.projectDescription.set('');
-    this.selectedAngles.set([]);
     this.angles.update((angles) => angles.map((a) => ({ ...a, selected: false })));
     this.storyboard.set([]);
     this.error.set(null);
