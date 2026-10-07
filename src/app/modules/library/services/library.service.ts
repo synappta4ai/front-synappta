@@ -77,7 +77,8 @@ export class LibraryService {
     return unwrap(this.libraryApiRepository.listIngredients());
   }
 
-  getIngredient(id: string): Observable<Ingredient> {
+  /** GET /ingredients/:id devuelve { ingredient, files } (rico). */
+  getIngredient(id: string): Observable<IngredientWithFiles> {
     return unwrap(this.libraryApiRepository.getIngredient(id));
   }
 

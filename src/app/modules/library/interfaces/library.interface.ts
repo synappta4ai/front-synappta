@@ -31,6 +31,9 @@ export interface IngredientFile {
   mime_type: string | null;
   category: string | null;
   format: string | null;
+  /** Puede venir enriquecido desde GET /ingredients/:id/files. */
+  size?: number | null;
+  created_at?: string;
 }
 
 /** Respuesta de GET /ingredients: ingrediente + sus archivos vinculados. */
@@ -173,4 +176,62 @@ export interface CreateSkillRequest {
   name?: string;
   description?: string;
   prompt?: string;
+}
+
+// ─── Elementos de la galería (diálogo "Editar elemento") ────────
+
+/**
+ * Estado del elemento que el diálogo "Editar elemento" guarda dentro de
+ * `Ingredient.metadata` (JSONB). El back no conoce estos campos: sólo los
+ * persiste como JSON, así que el front tolera metadata ausente o inválida.
+ */
+export interface ElementMetadata {
+  /** ID con prefijo '@', p. ej. "@Mario". */
+  element_id?: string;
+  /** Versión libre, p. ej. "v1". */
+  version?: string;
+  /** Estado elegido en el select ('' = sin estado). */
+  status?: string;
+  /** Propiedades personalizadas clave → valor. */
+  props?: Record<string, string>;
+}
+
+/** Parsea `Ingredient.metadata`; nunca lanza (degrada a {}). */
+export function parseElementMetadata(raw: string | null | undefined): ElementMetadata {
+  if (!raw) {
+    return {};
+  }
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      return parsed as ElementMetadata;
+    }
+  } catch {
+    // Metadata corrupta o no-JSON: el editor arranca con valores por defecto.
+  }
+  return {};
+}
+
+/** Nombre por defecto del elemento: filename sin extensión y '_'/'-' → ' '. */
+export function deriveElementName(filename: string): string {
+  return filename
+    .replace(/\.[^.]+$/, '')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/** Slug del elemento (sin '@'): el Nombre con separadores → '_'. */
+export function deriveElementSlug(name: string): string {
+  return name
+    .trim()
+    .replace(/\s+/g, '_')
+    .replace(/-+/g, '_')
+    .replace(/_+/g, '_');
+}
+
+/** ID completo del elemento: '@' + slug ('' si el nombre quedó vacío). */
+export function deriveElementId(name: string): string {
+  const slug = deriveElementSlug(name);
+  return slug ? `@${slug}` : '';
 }

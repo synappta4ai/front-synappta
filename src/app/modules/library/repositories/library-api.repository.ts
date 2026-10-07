@@ -101,8 +101,8 @@ export class LibraryApiRepository {
     return this.http.get<ApiResponse<IngredientWithFiles[]>>(`${this.apiUrl}/ingredients`);
   }
 
-  getIngredient(id: string): Observable<ApiResponse<Ingredient>> {
-    return this.http.get<ApiResponse<Ingredient>>(`${this.apiUrl}/ingredients/${id}`);
+  getIngredient(id: string): Observable<ApiResponse<IngredientWithFiles>> {
+    return this.http.get<ApiResponse<IngredientWithFiles>>(`${this.apiUrl}/ingredients/${id}`);
   }
 
   createIngredient(payload: CreateIngredientRequest): Observable<ApiResponse<Ingredient>> {
