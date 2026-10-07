@@ -89,7 +89,12 @@ export class AdminModelsComponent {
     { label: 'Gemini', value: 'gemini', icon: 'md md-image' },
     { label: 'Anthropic', value: 'anthropic', icon: 'md md-description' },
     { label: 'Higgsfield', value: 'higgsfield', icon: 'md md-inventory_2' },
+    { label: 'OpenRouter', value: 'openrouter', icon: 'md md-smart-toy' },
   ];
+
+  /** Proveedores LLM: su credencial además lleva el modelo del agente de
+   *  agencia (flujo Inmobiliaria), guardado en `extra.model`. */
+  protected readonly agentModelProviders: CredentialProviderType[] = ['openrouter', 'anthropic'];
 
   protected readonly tenantOptions = computed<TenantOption[]>(() =>
     this.tenants()
@@ -106,6 +111,8 @@ export class AdminModelsComponent {
     access_key_id: [''],
     secret_access_key: [''],
     api_key: [''],
+    model: [''],
+    base_url: [''],
   });
 
   constructor() {
@@ -179,6 +186,27 @@ export class AdminModelsComponent {
     return this.credentials().find((c) => c.provider === provider) ?? null;
   }
 
+  /** Modelo del agente guardado en la credencial (extra.model). */
+  protected modelOf(cred: TenantCredential): string {
+    try {
+      const extra = JSON.parse(cred.extra ?? '{}') as { model?: string };
+      return extra.model ?? '';
+    } catch {
+      return '';
+    }
+  }
+
+  /** Al elegir proveedor se precarga su modelo/base URL guardados. */
+  protected onProviderChange(provider: CredentialProviderType | null): void {
+    const cred = provider ? this.credentialForProvider(provider) : null;
+    this.credForm.controls.model.setValue(cred ? this.modelOf(cred) : '');
+    this.credForm.controls.base_url.setValue(cred?.base_url ?? '');
+  }
+
+  protected showsAgentModel(provider: CredentialProviderType | null): boolean {
+    return provider !== null && this.agentModelProviders.includes(provider);
+  }
+
   protected isModelConfigured(model: TenantModel): boolean {
     return (
       this.credentialForProvider(model.credential_provider) !== null || model.credential_configured
@@ -192,17 +220,20 @@ export class AdminModelsComponent {
       return;
     }
 
-    const { provider, access_key_id, secret_access_key, api_key } = this.credForm.getRawValue();
+    const { provider, access_key_id, secret_access_key, api_key, model, base_url } =
+      this.credForm.getRawValue();
     if (!provider) return;
 
     // Higgsfield autentica con Key ID + Key Secret (no usa api_key); el resto
-    // de proveedores requieren api_key.
+    // de proveedores requieren api_key — salvo que ya exista una credencial
+    // guardada: así se puede actualizar solo el modelo sin repegar la key
+    // (el back preserva los secretos vacíos).
     if (provider === 'higgsfield') {
       if (!access_key_id.trim() || !secret_access_key.trim()) {
         this.error.set('Higgsfield necesita Key ID y Key Secret.');
         return;
       }
-    } else if (!api_key.trim()) {
+    } else if (!api_key.trim() && !this.credentialForProvider(provider)) {
       this.error.set('La API Key es obligatoria para este proveedor.');
       return;
     }
@@ -211,6 +242,12 @@ export class AdminModelsComponent {
     if (api_key.trim()) payload.api_key = api_key.trim();
     if (access_key_id.trim()) payload.access_key_id = access_key_id.trim();
     if (secret_access_key.trim()) payload.secret_access_key = secret_access_key.trim();
+    // Los proveedores LLM guardan acá el modelo/base URL del asistente de
+    // agencia; el modelo se envía siempre — `{"model":""}` lo limpia.
+    if (this.showsAgentModel(provider)) {
+      payload.extra = JSON.stringify({ model: model.trim() });
+      if (base_url.trim()) payload.base_url = base_url.trim();
+    }
 
     this.savingCredential.set(true);
     this.error.set(null);

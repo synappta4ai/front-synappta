@@ -14,7 +14,12 @@ export interface CreateTenantRequest {
   slug: string;
 }
 
-export type CredentialProviderType = 'byteplus' | 'gemini' | 'anthropic' | 'higgsfield';
+export type CredentialProviderType =
+  | 'byteplus'
+  | 'gemini'
+  | 'anthropic'
+  | 'higgsfield'
+  | 'openrouter';
 
 /** Modelo del catálogo anotado con el estado de credenciales del tenant. */
 export interface TenantModel {

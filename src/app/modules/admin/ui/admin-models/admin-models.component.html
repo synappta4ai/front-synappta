@@ -134,6 +134,7 @@
                   placeholder="Selecciona un proveedor"
                   class="w-full"
                   appendTo="body"
+                  (onChange)="onProviderChange($event.value)"
                 >
                   <ng-template let-option #item>
                     <div class="flex items-center gap-2">
@@ -247,6 +248,40 @@
                 </div>
               }
 
+              @if (showsAgentModel(credForm.controls.provider.value)) {
+                <div class="flex flex-col gap-2">
+                  <label for="cred-agent-model" class="text-xs font-bold text-ink-on-dark">
+                    Modelo del asistente (flujo de agencia)
+                  </label>
+                  <input
+                    pInputText
+                    id="cred-agent-model"
+                    formControlName="model"
+                    placeholder="anthropic/claude-sonnet-4.5"
+                    class="w-full"
+                  />
+                  <small class="text-ink-muted-on-dark">
+                    El modelo LLM que usa el chat de la Agencia (flujo Inmobiliaria). Vacío = el
+                    proveedor elige por defecto.
+                  </small>
+                </div>
+                <div class="flex flex-col gap-2">
+                  <label for="cred-agent-baseurl" class="text-xs font-bold text-ink-on-dark">
+                    Base URL
+                  </label>
+                  <input
+                    pInputText
+                    id="cred-agent-baseurl"
+                    formControlName="base_url"
+                    placeholder="https://openrouter.ai/api/v1"
+                    class="w-full"
+                  />
+                  <small class="text-ink-muted-on-dark">
+                    Endpoint del proveedor LLM. Vacío = mantener la guardada.
+                  </small>
+                </div>
+              }
+
               <p-button
                 type="submit"
                 label="Guardar credencial"
@@ -275,6 +310,9 @@
                         <code class="truncate text-xs text-ink-muted-on-dark">
                           {{ cred.api_key_mask || cred.access_key_id || '—' }}
                         </code>
+                        @if (modelOf(cred)) {
+                          <p-tag value="{{ modelOf(cred) }}" severity="info" styleClass="shrink-0" />
+                        }
                       </div>
                       <p-button
                         icon="md md-delete"

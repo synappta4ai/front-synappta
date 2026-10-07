@@ -1,4 +1,10 @@
-import { test, expect, expectPageTitle, togglePrimeButton } from './helpers/session';
+import {
+  test,
+  expect,
+  expectPageTitle,
+  togglePrimeButton,
+  openPrimeSelect,
+} from './helpers/session';
 
 test.describe('admin console', () => {
   test('renders models tab by default', async ({ authedPage: page }) => {
@@ -30,6 +36,42 @@ test.describe('admin console', () => {
     await page.locator('.p-tab').filter({ hasText: 'Tenants' }).click();
     await page.waitForURL(/\/admin\/tenants/);
     await expectPageTitle(page, 'Gestión de Tenants');
+  });
+});
+
+test.describe('admin models — modelo del agente', () => {
+  test('el campo aparece para proveedores LLM y no para generación', async ({
+    authedPage: page,
+  }) => {
+    // Playwright 1.63 ignora {timeout} como 3er argumento de test().
+    test.setTimeout(60_000);
+    await page.goto('/admin/models');
+    await expectPageTitle(page, 'Consola de Administración');
+
+    // Superadmin: hay que elegir tenant para cargar credenciales y modelos.
+    await openPrimeSelect(page.locator('[aria-label="Seleccionar tenant"]'));
+    const tenantOptions = page
+      .locator('.p-select-overlay:not(.p-select-overlay-hidden) .p-select-option');
+    await expect(tenantOptions.first()).toBeVisible();
+    await tenantOptions.first().click();
+    await expect(page.getByText('API Keys del tenant')).toBeVisible({ timeout: 20_000 });
+
+    // Proveedor LLM (OpenRouter): muestra modelo + Base URL del asistente.
+    await openPrimeSelect(page.locator('#cred-provider'));
+    let options = page.locator('.p-select-overlay:not(.p-select-overlay-hidden) .p-select-option');
+    await options.filter({ hasText: 'OpenRouter' }).click();
+    await expect(page.locator('#cred-agent-model')).toBeVisible();
+    await expect(page.locator('#cred-agent-baseurl')).toBeVisible();
+    await expect(
+      page.getByText('El modelo LLM que usa el chat de la Agencia'),
+    ).toBeVisible();
+
+    // Proveedor de generación (BytePlus): no lleva modelo/base URL de agente.
+    await openPrimeSelect(page.locator('#cred-provider'));
+    options = page.locator('.p-select-overlay:not(.p-select-overlay-hidden) .p-select-option');
+    await options.filter({ hasText: 'BytePlus' }).click();
+    await expect(page.locator('#cred-agent-model')).toHaveCount(0);
+    await expect(page.locator('#cred-agent-baseurl')).toHaveCount(0);
   });
 });
 
