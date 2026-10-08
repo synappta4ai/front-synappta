@@ -211,26 +211,6 @@
       </ng-template>
 
       <div class="flex flex-col gap-4">
-        <!-- Modelo elegido en el paso anterior: genera las imágenes -->
-        <div
-          class="flex flex-wrap items-center gap-3 rounded-xl border border-surface-border bg-surface-2 px-4 py-3"
-        >
-          <span class="text-xs font-bold text-ink-muted-on-dark"
-            >Modelo de imágenes (Storyboard y escenas)</span
-          >
-          <p-select
-            inputId="agencyImageModel"
-            aria-label="Modelo de imágenes"
-            [options]="modelImageOptions()"
-            optionLabel="label"
-            optionValue="value"
-            [ngModel]="modelImage()"
-            (ngModelChange)="modelImage.set($event)"
-            [ngModelOptions]="{ standalone: true }"
-            styleClass="w-72"
-            appendTo="body"
-          />
-        </div>
         @if (selectedAnglesCount > 0) {
           <div class="flex items-center gap-2">
             <p-tag [value]="selectedAnglesCount + ' seleccionados'" severity="info" />
@@ -327,119 +307,185 @@
           </div>
           <div class="flex-1">
             <h2 class="text-lg font-bold text-ink-on-dark">Storyboard</h2>
-            <p class="text-sm text-ink-muted-on-dark">Genera imágenes para cada escena</p>
+            <p class="text-sm text-ink-muted-on-dark">
+              Generá la hoja de storyboard de cada escena y aprobala para continuar
+            </p>
           </div>
           <p-tag [value]="storyboard().length + ' escenas'" severity="info" />
         </div>
       </ng-template>
 
       <div class="flex flex-col gap-6">
-        <!-- Modelo elegido en el paso anterior: genera los videos -->
+        <!-- Modelo de imágenes: se elige acá porque acá se generan las imágenes -->
         <div
           class="flex flex-wrap items-center gap-3 rounded-xl border border-surface-border bg-surface-2 px-4 py-3"
         >
-          <span class="text-xs font-bold text-ink-muted-on-dark">Modelo de videos (Escenas)</span>
+          <span class="text-xs font-bold text-ink-muted-on-dark"
+            >Modelo de imágenes (hoja de storyboard)</span
+          >
           <p-select
-            inputId="agencyVideoModel"
-            aria-label="Modelo de videos"
-            [options]="modelVideoOptions()"
+            inputId="agencyImageModel"
+            aria-label="Modelo de imágenes"
+            [options]="modelImageOptions()"
             optionLabel="label"
             optionValue="value"
-            [ngModel]="modelVideo()"
-            (ngModelChange)="modelVideo.set($event)"
+            [ngModel]="modelImage()"
+            (ngModelChange)="modelImage.set($event)"
             [ngModelOptions]="{ standalone: true }"
             styleClass="w-72"
             appendTo="body"
           />
         </div>
-        @for (scene of storyboard(); track scene.id; let i = $index) {
+
+        <!-- Escenas agrupadas por su ángulo de venta -->
+        @for (group of scenesByAngle(); track group.angleId; let g = $index) {
           <div
             animate.enter="anim-item"
-            [style.animation-delay.ms]="i < 8 ? i * 35 : 280"
-            class="rounded-2xl border border-surface-border bg-surface-2 p-5"
-          >              <div class="mb-4 flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                <div
-                  class="flex h-8 w-8 items-center justify-center rounded-xl bg-accent text-on-accent text-sm font-bold"
-                >
-                  {{ i + 1 }}
-                </div>
-                <div class="flex-1">
-                  <h3 class="font-bold text-ink-on-dark">{{ scene.title }}</h3>
-                  <textarea
-                    pTextarea
-                    rows="2"
-                    class="mt-1 w-full text-sm text-ink-muted-on-dark"
-                    aria-label="Prompt de la escena"
-                    [ngModel]="scene.description"
-                    (ngModelChange)="updateSceneDescription(scene.id, $event)"
-                    (change)="commitSceneEdit()"
-                    [ngModelOptions]="{ standalone: true }"
-                  ></textarea>
-                </div>
-              </div>
-              <p-button
-                label="Generar imágenes"
-                icon="md md-image"
-                severity="secondary"
-                size="small"
-                [loading]="scene.shots.some((s) => s.generating)"
-                [disabled]="scene.shots.some((s) => s.generating)"
-                (onClick)="generateScene(scene.id)"
-              />
+            [style.animation-delay.ms]="g < 8 ? g * 35 : 280"
+            class="flex flex-col gap-4"
+          >
+            <div class="flex items-center gap-2 border-b border-surface-border pb-2">
+              <i class="md md-gps_fixed text-accent"></i>
+              <h3 class="font-bold text-ink-on-dark">{{ group.angleTitle }}</h3>
+              <p-tag [value]="group.scenes.length + ' escenas'" severity="info" />
             </div>
 
-            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              @for (shot of scene.shots; track shot.id; let k = $index) {
-                <div
-                  animate.enter="anim-item"
-                  [style.animation-delay.ms]="k < 8 ? k * 35 : 280"
-                  class="overflow-hidden rounded-2xl border border-surface-border bg-surface shadow-sm"
-                >
-                  @if (shot.imageUrl) {
-                    <img
-                      [src]="shot.imageUrl"
-                      [alt]="shot.description"
-                      loading="lazy"
-                      decoding="async"
-                      class="aspect-video w-full object-cover"
+            @for (scene of group.scenes; track scene.id; let i = $index) {
+              <div
+                animate.enter="anim-item"
+                [style.animation-delay.ms]="i < 8 ? i * 35 : 280"
+                class="rounded-2xl border border-surface-border bg-surface-2 p-5"
+              >
+                <div class="mb-4 flex items-center justify-between gap-3">
+                  <div class="flex min-w-0 flex-1 items-start gap-3">
+                    <div
+                      class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-accent text-on-accent text-sm font-bold"
+                    >
+                      {{ i + 1 }}
+                    </div>
+                    <div class="min-w-0 flex-1">
+                      <div class="flex flex-wrap items-center gap-2">
+                        <h3 class="font-bold text-ink-on-dark">{{ scene.title }}</h3>
+                        @if (scene.approved) {
+                          <p-tag value="Aprobado" severity="success" />
+                        } @else if (scene.boardImageUrl) {
+                          <p-tag value="Pendiente de aprobación" severity="warn" />
+                        } @else {
+                          <p-tag value="Sin storyboard" severity="danger" />
+                        }
+                      </div>
+                      <textarea
+                        pTextarea
+                        rows="2"
+                        class="mt-1 w-full text-sm text-ink-muted-on-dark"
+                        aria-label="Prompt de la escena"
+                        [ngModel]="scene.description"
+                        (ngModelChange)="updateSceneDescription(scene.id, $event)"
+                        (change)="commitSceneEdit()"
+                        [ngModelOptions]="{ standalone: true }"
+                      ></textarea>
+                    </div>
+                  </div>
+                  <div class="flex shrink-0 items-center gap-2">
+                    <p-button
+                      label="Generar imágenes"
+                      icon="md md-image"
+                      severity="secondary"
+                      size="small"
+                      [loading]="!!scene.boardGenerating"
+                      [disabled]="!!scene.boardGenerating"
+                      (onClick)="openBoardDialog(scene.id)"
                     />
-                  } @else if (shot.generating) {
-                    <div class="flex aspect-video items-center justify-center bg-surface-2">
-                      <div class="text-center">
-                        <p-progressSpinner styleClass="w-10 h-10 mb-2" strokeWidth="3" />
-                        <p class="text-xs font-bold text-ink-on-dark">Generando imagen…</p>
-                      </div>
-                    </div>
-                  } @else {
-                    <div class="flex aspect-video items-center justify-center bg-surface-2">
-                      <div class="text-center">
-                        <i class="md md-image mb-2 text-3xl text-ink-muted-on-dark"></i>
-                        <p class="text-xs text-ink-muted-on-dark">Sin generar</p>
-                      </div>
-                    </div>
-                  }
-                  <div class="p-3">
-                    <p class="text-xs leading-relaxed text-ink-muted-on-dark">
-                      {{ shot.description }}
-                    </p>
+                    <p-button
+                      [label]="scene.approved ? 'Aprobado ✓' : 'Aprobar'"
+                      [icon]="scene.approved ? 'md md-check_circle' : 'md md-radio_button_unchecked'"
+                      [severity]="scene.approved ? 'success' : 'contrast'"
+                      size="small"
+                      [disabled]="!scene.boardImageUrl || !!scene.boardGenerating"
+                      (onClick)="toggleApproveScene(scene.id)"
+                    />
                   </div>
                 </div>
-              }
-            </div>
+
+                <!-- Hoja de storyboard: la guía visual del escenario -->
+                @if (scene.boardImageUrl) {
+                  <img
+                    [src]="scene.boardImageUrl"
+                    [alt]="'Storyboard guía — ' + scene.title"
+                    loading="lazy"
+                    decoding="async"
+                    class="mb-4 w-full rounded-xl border border-surface-border bg-surface"
+                  />
+                } @else if (scene.boardGenerating) {
+                  <div
+                    class="mb-4 flex items-center justify-center gap-3 rounded-xl border border-surface-border bg-surface py-10"
+                  >
+                    <p-progressSpinner styleClass="w-8 h-8" strokeWidth="3" />
+                    <p class="text-xs font-bold text-ink-on-dark">Generando hoja de storyboard…</p>
+                  </div>
+                } @else {
+                  <div
+                    class="mb-4 flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-surface-border-strong bg-surface py-6"
+                  >
+                    <i class="md md-image text-ink-muted-on-dark"></i>
+                    <p class="text-xs text-ink-muted-on-dark">
+                      Sin storyboard cargado — generá la hoja de viñetas y aprobala
+                    </p>
+                  </div>
+                }
+
+                <!-- Tomas de la escena (una por viñeta del storyboard) -->
+                <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  @for (shot of scene.shots; track shot.id; let k = $index) {
+                    <div
+                      class="flex items-center gap-2 rounded-xl border border-surface-border bg-surface px-3 py-2"
+                    >
+                      <span
+                        class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-surface-2 text-xs font-bold text-ink-on-dark"
+                      >
+                        {{ k + 1 }}
+                      </span>
+                      <input
+                        pInputText
+                        class="min-w-0 flex-1 text-xs"
+                        aria-label="Descripción de la toma"
+                        [ngModel]="shot.description"
+                        (ngModelChange)="updateShotDescription(scene.id, shot.id, $event)"
+                        (change)="commitSceneEdit()"
+                        [ngModelOptions]="{ standalone: true }"
+                      />
+                    </div>
+                  }
+                </div>
+              </div>
+            }
           </div>
         }
       </div>
 
       <div class="flex items-center justify-between border-t border-surface-border pt-4 mt-6">
         <p-button label="← Volver" severity="secondary" text (onClick)="prevPhase()" />
-        <p-button
-          label="Continuar a Escenas →"
-          icon="md md-arrow_forward"
-          iconPos="right"
-          (onClick)="nextPhase()"
-          styleClass="px-6 active:scale-[0.98]"
-        />
+        <div class="flex items-center gap-3">
+          @if (storyboard().length > 0 && !canProceedToScenes) {
+            <span class="text-sm text-ink-muted-on-dark">
+              {{ pendingApprovals }} escena(s) sin storyboard aprobado
+            </span>
+          }
+          <span
+            pTooltip="Generá y aprobá el storyboard de todas las escenas para continuar"
+            showDelay="400"
+            class="inline-flex"
+          >
+            <p-button
+              label="Continuar a Escenas →"
+              icon="md md-arrow_forward"
+              iconPos="right"
+              [disabled]="!canProceedToScenes"
+              (onClick)="nextPhase()"
+              styleClass="px-6 active:scale-[0.98]"
+            />
+          </span>
+        </div>
       </div>
     </p-card>
   }
@@ -453,80 +499,275 @@
             <i class="md md-movie text-lg text-accent"></i>
           </div>
           <div>
-            <h2 class="text-lg font-bold text-ink-on-dark">Escenas y Shots Finales</h2>
-            <p class="text-sm text-ink-muted-on-dark">Planos listos para producción</p>
+            <h2 class="text-lg font-bold text-ink-on-dark">Escenas y Prompts Finales</h2>
+            <p class="text-sm text-ink-muted-on-dark">
+              Cada storyboard aprobado, emparentado con su prompt de video
+            </p>
           </div>
         </div>
       </ng-template>
 
       @if (storyboard().length > 0) {
         <div class="flex flex-col gap-6">
-          @for (scene of storyboard(); track scene.id; let i = $index) {
+          <!-- Configuración de los videos: modelo, duración, ratio y tags -->
+          <div
+            class="flex flex-wrap items-end gap-4 rounded-xl border border-surface-border bg-surface-2 px-4 py-3"
+          >
+            <div class="flex flex-col gap-1">
+              <span class="text-xs font-bold text-ink-muted-on-dark">Modelo de video</span>
+              <p-select
+                inputId="agencyVideoModel"
+                aria-label="Modelo de videos"
+                [options]="modelVideoOptions()"
+                optionLabel="label"
+                optionValue="value"
+                [ngModel]="modelVideo()"
+                (ngModelChange)="modelVideo.set($event); onVideoConfigChange()"
+                [ngModelOptions]="{ standalone: true }"
+                styleClass="w-72"
+                appendTo="body"
+              />
+            </div>
+            <div class="flex flex-col gap-1">
+              <span class="text-xs font-bold text-ink-muted-on-dark">Duración por video (s)</span>
+              <p-inputNumber
+                inputId="agencyVideoDuration"
+                [min]="1"
+                [max]="600"
+                [showButtons]="true"
+                styleClass="w-36"
+                [ngModel]="videoDuration()"
+                (ngModelChange)="videoDuration.set($event || 10); onVideoConfigChange()"
+                [ngModelOptions]="{ standalone: true }"
+              />
+              <small class="text-ink-muted-on-dark">
+                @if (videoMaxDuration() > 0) {
+                  El modelo admite hasta {{ videoMaxDuration() }}s.
+                } @else {
+                  Duración pedida al modelo.
+                }
+              </small>
+            </div>
+            <div class="flex flex-col gap-1">
+              <span class="text-xs font-bold text-ink-muted-on-dark">Relación de aspecto</span>
+              <p-select
+                aria-label="Relación de aspecto"
+                [options]="videoRatioOptions()"
+                optionLabel="label"
+                optionValue="value"
+                [ngModel]="videoRatio()"
+                (ngModelChange)="videoRatio.set($event); onVideoConfigChange()"
+                [ngModelOptions]="{ standalone: true }"
+                styleClass="w-56"
+                appendTo="body"
+              />
+            </div>
+            <div class="flex flex-col gap-1">
+              <span class="text-xs font-bold text-ink-muted-on-dark">Tags de referencia</span>
+              <input
+                pInputText
+                aria-label="Tags de referencia"
+                placeholder="Ej: lujo familia cdmx"
+                class="w-56"
+                [ngModel]="videoTags()"
+                (ngModelChange)="videoTags.set($event)"
+                (change)="onVideoConfigChange()"
+                [ngModelOptions]="{ standalone: true }"
+              />
+            </div>
+            <p-button
+              label="Generar prompts"
+              icon="md md-auto_fix_high"
+              severity="secondary"
+              (onClick)="generatePrompts()"
+            />
+            @if (videoSegmentCount() > 1) {
+              <p-tag
+                [value]="'Se parte en ' + videoSegmentCount() + ' videos por toma'"
+                severity="warn"
+              />
+            }
+            @if (activeVideoModel(); as videoModel) {
+              <p-tag [value]="videoModel.display_name || videoModel.name" severity="info" />
+            }
+          </div>
+
+          <!-- Escenas agrupadas por ángulo: storyboard base + prompts -->
+          @for (group of scenesByAngle(); track group.angleId; let g = $index) {
             <div
               animate.enter="anim-item"
-              [style.animation-delay.ms]="i < 8 ? i * 35 : 280"
-              class="rounded-2xl border border-surface-border bg-surface-2 p-5"
+              [style.animation-delay.ms]="g < 8 ? g * 35 : 280"
+              class="flex flex-col gap-4"
             >
-              <h3 class="mb-4 flex items-center gap-2 font-bold text-ink-on-dark">
-                <i class="md md-play_circle"></i>
-                {{ scene.title }}
-              </h3>
-
-              <div class="mb-4 flex flex-wrap items-center gap-3">
-                <p-button
-                  label="Generar video"
-                  icon="md md-movie"
-                  severity="secondary"
-                  size="small"
-                  [loading]="!!scene.generatingVideo"
-                  [disabled]="!!scene.generatingVideo"
-                  (onClick)="generateVideo(scene.id)"
-                />
-                @if (scene.videoUrl) {
-                  <video
-                    [src]="scene.videoUrl"
-                    class="w-64 rounded-xl border border-surface-border"
-                    controls
-                    muted
-                    loading="lazy"
-                  ></video>
-                }
+              <div class="flex items-center gap-2 border-b border-surface-border pb-2">
+                <i class="md md-gps_fixed text-accent"></i>
+                <h3 class="font-bold text-ink-on-dark">{{ group.angleTitle }}</h3>
+                <p-tag [value]="group.scenes.length + ' escenas'" severity="info" />
               </div>
 
-              <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                @for (shot of scene.shots; track shot.id; let j = $index) {
-                  <div
-                    class="overflow-hidden rounded-2xl border border-surface-border bg-surface shadow-sm"
-                  >
-                    @if (shot.imageUrl) {
-                      <img
-                        [src]="shot.imageUrl"
-                        [alt]="shot.description"
-                        loading="lazy"
-                        decoding="async"
-                        class="aspect-video w-full object-cover"
-                      />
-                    } @else {
-                      <div class="flex aspect-video items-center justify-center bg-surface-2">
-                        <i class="md md-schedule text-3xl text-ink-muted-on-dark"></i>
+              @for (scene of group.scenes; track scene.id; let i = $index) {
+                <div
+                  animate.enter="anim-item"
+                  [style.animation-delay.ms]="i < 8 ? i * 35 : 280"
+                  class="rounded-2xl border border-surface-border bg-surface-2 p-5"
+                >
+                  <div class="mb-4 flex items-center justify-between gap-3">
+                    <h3 class="flex min-w-0 flex-1 items-center gap-2 font-bold text-ink-on-dark">
+                      <i class="md md-play_circle"></i>
+                      {{ scene.title }}
+                      @if (scene.approved) {
+                        <p-tag value="Aprobado" severity="success" />
+                      }
+                    </h3>
+                    @if (scene.boardImageUrl) {
+                      <div class="flex shrink-0 items-center gap-2">
+                        <span class="text-xs text-ink-muted-on-dark">Storyboard base</span>
+                        <img
+                          [src]="scene.boardImageUrl"
+                          [alt]="'Storyboard base — ' + scene.title"
+                          loading="lazy"
+                          decoding="async"
+                          class="h-16 w-28 rounded-lg border border-surface-border object-cover"
+                        />
                       </div>
                     }
-                    <div class="p-3">
-                      <div class="mb-1 flex items-center gap-2">
-                        <span
-                          class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-surface-2 text-xs font-bold text-ink-on-dark"
-                        >
-                          {{ j + 1 }}
-                        </span>
-                        <span class="text-xs font-bold text-ink-on-dark">Shot {{ j + 1 }}</span>
-                      </div>
-                      <p class="text-xs leading-relaxed text-ink-muted-on-dark">
-                        {{ shot.description }}
-                      </p>
-                    </div>
                   </div>
-                }
-              </div>
+
+                  <!-- Prompt de la escena (uno por segmento de duración) -->
+                  <div class="mb-4 rounded-xl border border-surface-border bg-surface p-3">
+                    <div class="mb-2 flex items-center justify-between">
+                      <span class="text-xs font-bold text-ink-on-dark">Prompt de la escena</span>
+                      <span class="text-xs text-ink-muted-on-dark">
+                        {{ (scene.prompts ?? []).length }} video(s)
+                      </span>
+                    </div>
+                    @for (prompt of scene.prompts ?? []; track $index; let p = $index) {
+                      <div class="mb-3 flex flex-col gap-2">
+                        <div class="flex flex-wrap items-center gap-2">
+                          <p-tag
+                            [value]="
+                              'Video ' +
+                              (p + 1) +
+                              '/' +
+                              (scene.prompts?.length ?? 0) +
+                              ' · ' +
+                              segmentDuration(p) +
+                              's'
+                            "
+                            severity="info"
+                          />
+                          <p-button
+                            label="Generar video"
+                            icon="md md-movie"
+                            severity="secondary"
+                            size="small"
+                            [loading]="!!prompt.generating"
+                            [disabled]="!!prompt.generating"
+                            (onClick)="generatePromptVideo(scene.id, null, p)"
+                          />
+                          @if (prompt.videoUrl) {
+                            <video
+                              [src]="prompt.videoUrl"
+                              class="w-48 rounded-lg border border-surface-border"
+                              controls
+                              muted
+                              loading="lazy"
+                            ></video>
+                          }
+                        </div>
+                        <textarea
+                          pTextarea
+                          rows="3"
+                          class="w-full text-sm text-ink-muted-on-dark"
+                          [attr.aria-label]="'Prompt de video de ' + scene.title"
+                          [ngModel]="prompt.text"
+                          (ngModelChange)="updateScenePrompt(scene.id, p, $event)"
+                          (change)="commitSceneEdit()"
+                          [ngModelOptions]="{ standalone: true }"
+                        ></textarea>
+                      </div>
+                    }
+                    @if ((scene.prompts ?? []).length === 0) {
+                      <p class="text-xs text-ink-muted-on-dark">
+                        Sin prompts: tocá "Generar prompts" para armarlos desde el storyboard.
+                      </p>
+                    }
+                  </div>
+
+                  <!-- Cada toma, emparentada con su prompt de video -->
+                  <div class="flex flex-col gap-3">
+                    <span class="text-xs font-bold text-ink-on-dark">Tomas y sus prompts</span>
+                    @for (shot of scene.shots; track shot.id; let j = $index) {
+                      <div class="rounded-xl border border-surface-border bg-surface p-3">
+                        <div class="mb-2 flex items-center gap-2">
+                          <span
+                            class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-surface-2 text-xs font-bold text-ink-on-dark"
+                          >
+                            {{ j + 1 }}
+                          </span>
+                          <span class="text-xs font-bold text-ink-on-dark">Toma {{ j + 1 }}</span>
+                          <span class="min-w-0 flex-1 truncate text-xs text-ink-muted-on-dark">
+                            {{ shot.description }}
+                          </span>
+                        </div>
+                        @for (prompt of shot.prompts ?? []; track $index; let p = $index) {
+                          <div class="mb-3 flex flex-col gap-2">
+                            <div class="flex flex-wrap items-center gap-2">
+                              <p-tag
+                                [value]="
+                                  'Video ' +
+                                  (p + 1) +
+                                  '/' +
+                                  (shot.prompts?.length ?? 0) +
+                                  ' · ' +
+                                  segmentDuration(p) +
+                                  's'
+                                "
+                                severity="info"
+                              />
+                              <p-button
+                                label="Generar video"
+                                icon="md md-movie"
+                                severity="secondary"
+                                size="small"
+                                [loading]="!!prompt.generating"
+                                [disabled]="!!prompt.generating"
+                                (onClick)="generatePromptVideo(scene.id, shot.id, p)"
+                              />
+                              @if (prompt.videoUrl) {
+                                <video
+                                  [src]="prompt.videoUrl"
+                                  class="w-48 rounded-lg border border-surface-border"
+                                  controls
+                                  muted
+                                  loading="lazy"
+                                ></video>
+                              }
+                            </div>
+                            <textarea
+                              pTextarea
+                              rows="3"
+                              class="w-full text-sm text-ink-muted-on-dark"
+                              [attr.aria-label]="
+                                'Prompt de video de la toma ' + (j + 1) + ' — ' + scene.title
+                              "
+                              [ngModel]="prompt.text"
+                              (ngModelChange)="updateShotPrompt(scene.id, shot.id, p, $event)"
+                              (change)="commitSceneEdit()"
+                              [ngModelOptions]="{ standalone: true }"
+                            ></textarea>
+                          </div>
+                        }
+                        @if ((shot.prompts ?? []).length === 0) {
+                          <p class="text-xs text-ink-muted-on-dark">
+                            Sin prompts — tocá "Generar prompts".
+                          </p>
+                        }
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
             </div>
           }
         </div>
@@ -562,4 +803,102 @@
       </div>
     </p-card>
   }
+  <!-- Modal: hoja de storyboard de una escena (varias viñetas) -->
+  <p-dialog
+    header="Hoja de storyboard de la escena"
+    [visible]="boardVisible()"
+    (onHide)="closeBoardDialog()"
+    [modal]="true"
+    [style]="{ width: 'min(760px, 95vw)' }"
+  >
+    @if (boardScene(); as scene) {
+      <div class="flex flex-col gap-4">
+        <p class="text-sm text-ink-muted-on-dark">{{ scene.title }}</p>
+        <div class="flex flex-wrap items-start gap-6">
+          <div class="flex flex-col gap-1">
+            <label for="boardShotCount" class="text-xs font-bold text-ink-on-dark">
+              Cantidad de tomas
+            </label>
+            <p-inputNumber
+              inputId="boardShotCount"
+              [min]="1"
+              [max]="12"
+              [showButtons]="true"
+              styleClass="w-36"
+              [ngModel]="boardShotCount()"
+              (ngModelChange)="onBoardShotCountChange($event)"
+              [ngModelOptions]="{ standalone: true }"
+            />
+            <small class="text-ink-muted-on-dark">
+              Sugerido: al menos una toma por imagen ({{ boardShotCount() }} viñeta(s)).
+            </small>
+          </div>
+          <div class="flex flex-col gap-1">
+            <label for="boardRatio" class="text-xs font-bold text-ink-on-dark">
+              Relación de aspecto
+            </label>
+            <p-select
+              inputId="boardRatio"
+              aria-label="Relación de aspecto de la hoja"
+              [options]="imageRatioOptions()"
+              optionLabel="label"
+              optionValue="value"
+              [ngModel]="boardRatio()"
+              (ngModelChange)="boardRatio.set($event)"
+              [ngModelOptions]="{ standalone: true }"
+              styleClass="w-56"
+              appendTo="body"
+            />
+          </div>
+        </div>
+        <div class="flex flex-col gap-1">
+          <label for="boardPrompt" class="text-xs font-bold text-ink-on-dark">
+            Prompt de la hoja de storyboard
+          </label>
+          <textarea
+            pTextarea
+            id="boardPrompt"
+            rows="7"
+            class="w-full"
+            [ngModel]="boardPrompt()"
+            (ngModelChange)="onBoardPromptChange($event)"
+            [ngModelOptions]="{ standalone: true }"
+          ></textarea>
+          <small class="text-ink-muted-on-dark">
+            Se arma con las tomas de la escena y el estilo de las viñetas; podés editarlo.
+          </small>
+        </div>
+        @if (scene.boardImageUrl) {
+          <div class="flex flex-col gap-1">
+            <span class="text-xs font-bold text-ink-on-dark">Imagen actual</span>
+            <img
+              [src]="scene.boardImageUrl"
+              alt="Storyboard actual"
+              loading="lazy"
+              decoding="async"
+              class="w-full rounded-xl border border-surface-border"
+            />
+          </div>
+        }
+      </div>
+    }
+    <ng-template #footer>
+      <div class="flex items-center justify-end gap-2">
+        <p-button
+          label="Cancelar"
+          severity="secondary"
+          text
+          [disabled]="!!boardScene()?.boardGenerating"
+          (onClick)="closeBoardDialog()"
+        />
+        <p-button
+          label="Generar storyboard"
+          icon="md md-image"
+          [loading]="!!boardScene()?.boardGenerating"
+          [disabled]="!!boardScene()?.boardGenerating"
+          (onClick)="submitBoardImage()"
+        />
+      </div>
+    </ng-template>
+  </p-dialog>
 </app-page-container>

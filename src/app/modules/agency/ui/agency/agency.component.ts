@@ -21,13 +21,22 @@ import { ProgressSpinner } from 'primeng/progressspinner';
 import { Select } from 'primeng/select';
 import { Tooltip } from 'primeng/tooltip';
 import { MenuItem } from 'primeng/api';
+import { Dialog } from 'primeng/dialog';
 
 import { AgencyService } from '../../services/agency.service';
-import { AiModel, Credential, Modality, GeneratedAsset, StatusResponse } from '../../interfaces';
+import {
+  AiModel,
+  ContentItem,
+  Credential,
+  Modality,
+  GeneratedAsset,
+  StatusResponse,
+} from '../../interfaces';
 import { EventsService } from '@modules/events/services';
 import { Event as Project, Piece } from '@modules/events/interfaces';
 import { PageContainerComponent, ValidatorErrors } from '@shared/components/index';
 import { UserSessionStore } from '@core/store/user.session';
+import { LibraryService } from '@modules/library/services';
 import { environment } from '@env/environment';
 
 type WorkflowPhase = 'input' | 'angles' | 'storyboard' | 'scenes';
@@ -39,12 +48,31 @@ interface SalesAngle {
   selected: boolean;
 }
 
+/** Un prompt de video del paso Escenas y su resultado (un video por prompt). */
+interface VideoPrompt {
+  text: string;
+  videoUrl?: string | null;
+  generating?: boolean;
+}
+
 interface StoryboardScene {
   id: string;
+  /** Ángulo de venta del que nace la escena (agrupación por ángulo). */
+  angleId?: string;
+  angleTitle?: string;
   title: string;
   description: string;
   shots: StoryboardShot[];
-  /** Video generado de la escena (queda en el avance guardado). */
+  /** Imagen-guía: hoja de storyboard con varias viñetas (generada en la modal). */
+  boardImageUrl?: string | null;
+  /** File id de la copia subida al store: imagen de referencia del video. */
+  boardFileId?: string | null;
+  boardGenerating?: boolean;
+  /** Aprobación del storyboard: obligatoria para avanzar al paso Escenas. */
+  approved?: boolean;
+  /** Prompts del video de la escena (uno por segmento de duración). */
+  prompts?: VideoPrompt[];
+  /** Legado (flujo anterior): video único de la escena. */
   videoUrl?: string | null;
   generatingVideo?: boolean;
 }
@@ -54,6 +82,8 @@ interface StoryboardShot {
   description: string;
   imageUrl: string | null;
   generating: boolean;
+  /** Prompts del video de esta toma (uno por segmento de duración). */
+  prompts?: VideoPrompt[];
 }
 
 /** Plantillas de ángulos de venta (se rotan si se piden más de las que hay). */
@@ -142,6 +172,7 @@ function buildAngles(count: number): SalesAngle[] {
     ProgressSpinner,
     Select,
     InputNumber,
+    Dialog,
   ],
   templateUrl: './agency.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -151,6 +182,8 @@ export class AgencyComponent {
   private readonly eventsService = inject(EventsService);
   private readonly formBuilder = inject(NonNullableFormBuilder);
   private readonly session = inject(UserSessionStore);
+  /** Copia la hoja de storyboard al store para usarla como referencia de video. */
+  private readonly libraryService = inject(LibraryService);
 
   protected readonly currentPhase = signal<WorkflowPhase>('input');
   protected readonly loading = signal(false);
@@ -211,6 +244,93 @@ export class AgencyComponent {
   );
 
   protected readonly storyboard = signal<StoryboardScene[]>([]);
+
+  // ─── Storyboard: modal de viñetas + aprobación ─────────────────────
+  /** Escena abierta en la modal de storyboard (null = cerrada). */
+  protected readonly boardSceneId = signal<string | null>(null);
+  protected readonly boardVisible = signal(false);
+  /** Cantidad de tomas sugerida en la modal (una toma por viñeta). */
+  protected readonly boardShotCount = signal(3);
+  /** Relación de aspecto de la hoja de storyboard ('' = default del modelo). */
+  protected readonly boardRatio = signal('');
+  /** Prompt editable de la hoja de storyboard. */
+  protected readonly boardPrompt = signal('');
+  /** El usuario editó el prompt a mano: no se pisa al cambiar la cantidad de tomas. */
+  protected readonly boardPromptEdited = signal(false);
+
+  // ─── Escenas: configuración de los videos ─────────────────────
+  /** Duración total pedida por video (s). Si supera la capacidad del modelo
+   *  se parte en varios videos → varios prompts por escena/toma. */
+  protected readonly videoDuration = signal(10);
+  /** Relación de aspecto elegida ('' = default del modelo). */
+  protected readonly videoRatio = signal('');
+  /** Tags de referencia que se inyectan en todos los prompts. */
+  protected readonly videoTags = signal('');
+
+  /** Escena actual de la modal. */
+  protected readonly boardScene = computed(() => {
+    const id = this.boardSceneId();
+    return id ? (this.storyboard().find((s) => s.id === id) ?? null) : null;
+  });
+
+  /** Escenas agrupadas por su ángulo de venta (Storyboard y Escenas). */
+  protected readonly scenesByAngle = computed(() => {
+    const groups: { angleId: string; angleTitle: string; scenes: StoryboardScene[] }[] = [];
+    for (const scene of this.storyboard()) {
+      const key = scene.angleId || 'sin-angle';
+      let group = groups.find((g) => g.angleId === key);
+      if (!group) {
+        group = { angleId: key, angleTitle: scene.angleTitle || 'Escenas', scenes: [] };
+        groups.push(group);
+      }
+      group.scenes.push(scene);
+    }
+    return groups;
+  });
+
+  /** Modelo de imagen elegido (o el primero disponible). */
+  protected readonly activeImageModel = computed(() => {
+    const list = this.models().filter((m) => m.modality === 'image');
+    return list.find((m) => m.name === this.modelImage()) ?? list[0] ?? null;
+  });
+
+  /** Relaciones de aspecto que soporta el modelo de imagen activo. */
+  protected readonly imageRatioOptions = computed(() => {
+    const ratios = this.activeImageModel()?.defaults?.ratios ?? [];
+    return [
+      { label: 'Automática (default del modelo)', value: '' },
+      ...ratios.map((r) => ({ label: r, value: r })),
+    ];
+  });
+
+  /** Modelo de video elegido (o el primero disponible). */
+  protected readonly activeVideoModel = computed(() => {
+    const list = this.models().filter((m) => m.modality === 'video');
+    return list.find((m) => m.name === this.modelVideo()) ?? list[0] ?? null;
+  });
+
+  /** Máxima duración (s) que soporta el modelo de video activo; 0 = desconocida. */
+  protected readonly videoMaxDuration = computed(() => {
+    const durations = this.activeVideoModel()?.defaults?.durations ?? [];
+    return durations.length ? Math.max(...durations) : 0;
+  });
+
+  /** Cantidad de videos en los que se parte la duración pedida. */
+  protected readonly videoSegmentCount = computed(() => {
+    const max = this.videoMaxDuration();
+    const total = this.videoDuration();
+    if (!max || total <= max) return 1;
+    return Math.ceil(total / max);
+  });
+
+  /** Relaciones de aspecto del modelo de video activo. */
+  protected readonly videoRatioOptions = computed(() => {
+    const ratios = this.activeVideoModel()?.defaults?.ratios ?? [];
+    return [
+      { label: 'Automática (default del modelo)', value: '' },
+      ...ratios.map((r) => ({ label: r, value: r })),
+    ];
+  });
 
   // ─── Proyecto (centralización de recursos) ────────────────────
   protected readonly projects = signal<Project[]>([]);
@@ -316,15 +436,39 @@ export class AgencyComponent {
     return this.selectedAnglesCount > 0;
   }
 
+  /** Todas las escenas tienen su hoja de storyboard cargada y aprobada:
+   *  es la condición para entrar al paso Escenas. */
+  protected get canProceedToScenes(): boolean {
+    const scenes = this.storyboard();
+    return scenes.length > 0 && scenes.every((s) => !!s.boardImageUrl && !!s.approved);
+  }
+
+  /** Escenas sin storyboard aprobado (o sin imagen cargada). */
+  protected get pendingApprovals(): number {
+    return this.storyboard().filter((s) => !s.boardImageUrl || !s.approved).length;
+  }
+
   protected goToPhase(phase: WorkflowPhase): void {
+    if (phase === 'scenes' && !this.canProceedToScenes) {
+      this.error.set('Aprobá el storyboard de todas las escenas para continuar.');
+      return;
+    }
+    this.error.set(null);
     this.currentPhase.set(phase);
+    if (phase === 'scenes') this.ensureVideoPrompts();
   }
 
   protected nextPhase(): void {
     const phases: WorkflowPhase[] = ['input', 'angles', 'storyboard', 'scenes'];
     const currentIndex = phases.indexOf(this.currentPhase());
     if (currentIndex < phases.length - 1) {
-      this.currentPhase.set(phases[currentIndex + 1]);
+      const next = phases[currentIndex + 1];
+      if (next === 'scenes' && !this.canProceedToScenes) {
+        this.error.set('Aprobá el storyboard de todas las escenas para continuar.');
+        return;
+      }
+      this.currentPhase.set(next);
+      if (next === 'scenes') this.ensureVideoPrompts();
       // Cada avance se guarda en el proyecto (evita reprocesos).
       this.persistWorkflow();
     }
@@ -450,6 +594,8 @@ export class AgencyComponent {
     const scenes: StoryboardScene[] = selectedAngles.flatMap((angle, i) => [
       {
         id: `scene-${i}-1`,
+        angleId: angle.id,
+        angleTitle: angle.title,
         title: `Escena ${i + 1}: ${angle.title}`,
         description: `Plano general del proyecto destacando ${angle.description.toLowerCase()}`,
         shots: [
@@ -469,6 +615,8 @@ export class AgencyComponent {
       },
       {
         id: `scene-${i}-2`,
+        angleId: angle.id,
+        angleTitle: angle.title,
         title: `Escena ${i + 2}: Detalle`,
         description: `Primer plano de acabados y acabados premium del ${angle.title}`,
         shots: [
@@ -486,32 +634,98 @@ export class AgencyComponent {
     this.nextPhase();
   }
 
-  protected generateScene(sceneId: string): void {
-    this.storyboard.update((scenes) =>
-      scenes.map((s) =>
-        s.id === sceneId
-          ? {
-              ...s,
-              shots: s.shots.map((shot) => ({ ...shot, generating: true })),
-            }
-          : s,
-      ),
-    );
+  // ─── Storyboard: modal de viñetas + aprobación ─────────────────────
 
+  /** Abre la modal de storyboard de una escena con la sugerencia de tomas
+   *  (por lo general una toma por viñeta) y el prompt armado. */
+  protected openBoardDialog(sceneId: string): void {
+    const scene = this.storyboard().find((s) => s.id === sceneId);
+    if (!scene || scene.boardGenerating) return;
+    const count = Math.min(Math.max(scene.shots.length || 3, 1), 12);
+    const options = this.imageRatioOptions();
+    this.boardSceneId.set(sceneId);
+    this.boardShotCount.set(count);
+    if (!options.some((o) => o.value === this.boardRatio())) {
+      this.boardRatio.set(options[0]?.value ?? '');
+    }
+    this.boardPromptEdited.set(false);
+    this.boardPrompt.set(this.buildBoardPrompt(scene, count));
+    this.error.set(null);
+    this.boardVisible.set(true);
+  }
+
+  protected closeBoardDialog(): void {
+    if (this.boardScene()?.boardGenerating) return;
+    this.boardVisible.set(false);
+    this.boardSceneId.set(null);
+  }
+
+  /** Cambia la cantidad de tomas sugerida; si el prompt no se editó a mano
+   *  se reconstruye para reflejarla. */
+  protected onBoardShotCountChange(value: number | null): void {
+    const count = Math.min(Math.max(Math.round(value ?? 1), 1), 12);
+    this.boardShotCount.set(count);
+    const scene = this.boardScene();
+    if (scene && !this.boardPromptEdited()) {
+      this.boardPrompt.set(this.buildBoardPrompt(scene, count));
+    }
+  }
+
+  protected onBoardPromptChange(value: string): void {
+    this.boardPrompt.set(value);
+    this.boardPromptEdited.set(true);
+  }
+
+  /** Prompt por defecto de la hoja: N viñetas tipo cómic, cada una con
+   *  TIPO DE TOMA / ENCUADRE y sonido o diálogo al pie (ver ejemplo). */
+  private buildBoardPrompt(scene: StoryboardScene, tomas: number): string {
+    const shots = Array.from({ length: tomas }, (_, i) => {
+      const shot = scene.shots[i];
+      return `${i + 1}) ${shot?.description?.trim() || `Toma ${i + 1} — ${scene.title}`}`;
+    }).join(' ');
+    return [
+      `Hoja de storyboard dibujada a lápiz en blanco y negro, con ${tomas} viñetas en cuadrícula para la escena "${scene.title}"${scene.angleTitle ? ` del ángulo "${scene.angleTitle}"` : ''}.`,
+      'Cada viñeta lleva encabezado con el título de la escena, "TIPO DE TOMA:" y "ENCUADRE:" en mayúsculas, el dibujo narrativo de la acción y al pie el sonido o diálogo correspondiente.',
+      `Acción de la escena: ${scene.description}`,
+      `Tomas: ${shots}`,
+      'Estilo storyboard de cine: líneas de entintado y sombreado a lápiz, sin color.',
+    ].join(' ');
+  }
+
+  /** Genera la imagen-guía (hoja con varias viñetas) de la escena abierta. */
+  protected submitBoardImage(): void {
+    const scene = this.boardScene();
+    const prompt = this.boardPrompt().trim();
+    if (!scene || scene.boardGenerating) return;
+    if (!prompt) {
+      this.error.set('Escribí el prompt del storyboard.');
+      return;
+    }
     const imageModels = this.models().filter((m) => m.modality === 'image');
     const model = imageModels.find((m) => m.name === this.modelImage()) ?? imageModels[0];
     if (!model) {
       this.error.set('No hay modelos de imagen disponibles.');
       return;
     }
+    const count = this.boardShotCount();
+    const ratio = this.boardRatio();
+    const setGenerating = (generating: boolean, patch: Partial<StoryboardScene> = {}) =>
+      this.storyboard.update((scenes) =>
+        scenes.map((s) => (s.id === scene.id ? { ...s, boardGenerating: generating, ...patch } : s)),
+      );
 
-    const scene = this.storyboard().find((s) => s.id === sceneId);
-    if (!scene) return;
+    // La cantidad de tomas de la modal manda sobre la lista de tomas.
+    this.storyboard.update((scenes) =>
+      scenes.map((s) => (s.id === scene.id ? { ...s, shots: this.resizeShots(s, count) } : s)),
+    );
+    setGenerating(true);
+    this.error.set(null);
 
     this.ensureSceneAnchor(scene)
       .pipe(
         catchError(() => {
           this.error.set('No se pudo preparar el proyecto de la Agencia.');
+          setGenerating(false);
           return EMPTY;
         }),
       )
@@ -519,15 +733,17 @@ export class AgencyComponent {
         this.agencyService
           .generate('image', {
             model: model.name,
-            content: [{ type: 'text', text: scene.description }],
+            content: [{ type: 'text', text: prompt }],
+            ...(ratio ? { ratio } : {}),
             event_id: project.id,
             piece_id: piece.id,
-            piece_code: piece.piece_code ?? `SCENE-${sceneId.toUpperCase()}`,
+            piece_code: piece.piece_code ?? `SCENE-${scene.id.toUpperCase()}`,
             generation_number: 1,
           })
           .pipe(
             catchError(() => {
-              this.error.set(`Error al generar la escena ${sceneId}.`);
+              this.error.set(`Error al generar el storyboard de ${scene.title}.`);
+              setGenerating(false);
               return EMPTY;
             }),
           )
@@ -536,44 +752,94 @@ export class AgencyComponent {
               .pollTaskUntilDone('image', response.taskId)
               .pipe(
                 catchError(() => {
-                  this.error.set(`Error al consultar estado de la escena ${sceneId}.`);
+                  this.error.set(`Error al consultar el storyboard de ${scene.title}.`);
+                  setGenerating(false);
                   return EMPTY;
                 }),
               )
               .subscribe((status: StatusResponse) => {
-                if (status.status === 'succeeded' && status.outputs?.[0]?.url) {
-                  const url = status.outputs[0].url;
-                  this.storyboard.update((scenes) =>
-                    scenes.map((s) =>
-                      s.id === sceneId
-                        ? {
-                            ...s,
-                            shots: s.shots.map((shot, idx) => ({
-                              ...shot,
-                              imageUrl: idx === 0 ? url : shot.imageUrl,
-                              generating: false,
-                            })),
-                          }
-                        : s,
-                    ),
-                  );
-                } else {
-                  this.storyboard.update((scenes) =>
-                    scenes.map((s) =>
-                      s.id === sceneId
-                        ? {
-                            ...s,
-                            shots: s.shots.map((shot) => ({ ...shot, generating: false })),
-                          }
-                        : s,
-                    ),
-                  );
+                const url =
+                  status.status === 'succeeded' && status.outputs?.[0]?.url
+                    ? status.outputs[0].url
+                    : null;
+                if (!url) {
+                  this.error.set('La generación no produjo imagen. Reintentá.');
+                  setGenerating(false);
+                  return;
                 }
-                // La imagen generada queda guardada en el avance del proyecto.
+                // Imagen nueva → la aprobación vuelve a pendiente.
+                setGenerating(false, { boardImageUrl: url, approved: false });
+                this.boardVisible.set(false);
+                this.boardSceneId.set(null);
                 this.persistWorkflow();
+                this.uploadBoardReference(scene.id, url);
               });
           });
       });
+  }
+
+  /** Ajusta la lista de tomas de la escena a la cantidad pedida en la modal. */
+  private resizeShots(scene: StoryboardScene, count: number): StoryboardShot[] {
+    const shots = scene.shots.slice(0, count);
+    for (let i = scene.shots.length; i < count; i++) {
+      shots.push({
+        id: `${scene.id}-shot-${i + 1}`,
+        description: `Toma ${i + 1} — ${scene.title}`,
+        imageUrl: null,
+        generating: false,
+      });
+    }
+    return shots;
+  }
+
+  /** Sube la hoja generada al store para adjuntarla como imagen de referencia
+   *  de los videos. Si falla (CORS/URL expirada) el flujo sigue: el prompt
+   *  queda igual, sólo se pierde la referencia adjunta. */
+  private uploadBoardReference(sceneId: string, url: string): void {
+    fetch(url)
+      .then((res) => (res.ok ? res.blob() : Promise.reject(new Error(`HTTP ${res.status}`))))
+      .then((blob) => {
+        const ext = blob.type.includes('png') ? 'png' : 'jpg';
+        const file = new File([blob], `storyboard-${sceneId}.${ext}`, {
+          type: blob.type || 'image/png',
+        });
+        this.libraryService
+          .uploadFile(file, 'images', this.selectedProjectId() ?? undefined)
+          .subscribe({
+            next: (asset) => {
+              if (!asset?.id) return;
+              this.storyboard.update((scenes) =>
+                scenes.map((s) => (s.id === sceneId ? { ...s, boardFileId: asset.id } : s)),
+              );
+              this.persistWorkflow();
+            },
+            error: () => undefined,
+          });
+      })
+      .catch(() => undefined);
+  }
+
+  /** Aprueba/desaprueba el storyboard de una escena (requiere imagen cargada). */
+  protected toggleApproveScene(sceneId: string): void {
+    const scene = this.storyboard().find((s) => s.id === sceneId);
+    if (!scene?.boardImageUrl) return;
+    this.storyboard.update((scenes) =>
+      scenes.map((s) => (s.id === sceneId ? { ...s, approved: !s.approved } : s)),
+    );
+    this.persistWorkflow();
+  }
+
+  protected updateShotDescription(sceneId: string, shotId: string, value: string): void {
+    this.storyboard.update((scenes) =>
+      scenes.map((s) =>
+        s.id === sceneId
+          ? {
+              ...s,
+              shots: s.shots.map((sh) => (sh.id === shotId ? { ...sh, description: value } : sh)),
+            }
+          : s,
+      ),
+    );
   }
 
   /**
@@ -742,6 +1008,11 @@ export class AgencyComponent {
       phase: this.currentPhase(),
       anglesCount: Number((this.form.getRawValue() as { anglesCount?: number }).anglesCount) || 3,
       models: { text: this.modelText(), image: this.modelImage(), video: this.modelVideo() },
+      videoSettings: {
+        duration: this.videoDuration(),
+        ratio: this.videoRatio(),
+        tags: this.videoTags(),
+      },
       angles: this.angles(),
       storyboard: this.storyboard(),
       projectDescription: this.projectDescription(),
@@ -779,6 +1050,9 @@ export class AgencyComponent {
       this.modelText.set('');
       this.modelImage.set('');
       this.modelVideo.set('');
+      this.videoDuration.set(10);
+      this.videoRatio.set('');
+      this.videoTags.set('');
       return;
     }
     let agency: Record<string, unknown> | null = null;
@@ -794,6 +1068,17 @@ export class AgencyComponent {
     this.modelText.set(models.text ?? '');
     this.modelImage.set(models.image ?? '');
     this.modelVideo.set(models.video ?? '');
+
+    const videoSettings = (agency['videoSettings'] ?? {}) as {
+      duration?: number;
+      ratio?: string;
+      tags?: string;
+    };
+    if (Number.isFinite(videoSettings.duration) && (videoSettings.duration ?? 0) > 0) {
+      this.videoDuration.set(Math.round(videoSettings.duration as number));
+    }
+    this.videoRatio.set(videoSettings.ratio ?? '');
+    this.videoTags.set(videoSettings.tags ?? '');
 
     const anglesCount = Number(agency['anglesCount']);
     if (Number.isFinite(anglesCount) && anglesCount > 0) {
@@ -815,14 +1100,37 @@ export class AgencyComponent {
     if (Array.isArray(agency['storyboard'])) {
       const scenes = agency['storyboard'] as Partial<StoryboardScene>[];
       this.storyboard.set(
-        scenes.map((sc, i) => ({
-          id: sc.id ?? `scene-${i}`,
-          title: sc.title ?? '',
-          description: sc.description ?? '',
-          videoUrl: sc.videoUrl ?? null,
-          generatingVideo: false,
-          shots: (sc.shots ?? []).map((sh) => ({ ...sh, generating: false })),
-        })),
+        scenes.map((sc, i) => {
+          const id = sc.id ?? `scene-${i}`;
+          const shots = (sc.shots ?? []).map((sh, j) => ({
+            ...sh,
+            id: sh.id ?? `${id}-shot-${j + 1}`,
+            generating: false,
+            prompts: Array.isArray(sh.prompts)
+              ? sh.prompts.map((p) => ({ ...p, generating: false }))
+              : [],
+          }));
+          // Proyecto guardado con el flujo anterior: el video único pasa a
+          // ser el primer prompt de la escena.
+          const prompts = Array.isArray(sc.prompts)
+            ? sc.prompts.map((p) => ({ ...p, generating: false }))
+            : sc.videoUrl
+              ? [{ text: sc.description ?? '', videoUrl: sc.videoUrl, generating: false }]
+              : [];
+          return {
+            id,
+            angleId: sc.angleId ?? '',
+            angleTitle: sc.angleTitle ?? '',
+            title: sc.title ?? '',
+            description: sc.description ?? '',
+            boardImageUrl: sc.boardImageUrl ?? null,
+            boardFileId: sc.boardFileId ?? null,
+            boardGenerating: false,
+            approved: sc.approved ?? false,
+            prompts,
+            shots,
+          };
+        }),
       );
     }
     if (typeof agency['projectDescription'] === 'string') {
@@ -856,48 +1164,233 @@ export class AgencyComponent {
     this.persistWorkflow();
   }
 
-  /** Video de una escena con el modelo elegido en el paso Storyboard. */
-  protected generateVideo(sceneId: string): void {
+  // ─── Escenas: prompts por segmento y videos ─────────────────────
+
+  /** Duración del segmento `index` (0-based) dentro de la duración pedida:
+   *  si supera la capacidad del modelo, el video se parte en segmentos. */
+  protected segmentDuration(index: number): number {
+    const max = this.videoMaxDuration();
+    const total = this.videoDuration();
+    if (!max || total <= max) return total;
+    return Math.max(Math.min(max, total - index * max), 1);
+  }
+
+  /** Al entrar al paso Escenas cada storyboard aprobado tiene sus prompts. */
+  private ensureVideoPrompts(): void {
+    const segments = this.videoSegmentCount();
+    const pending = this
+      .storyboard()
+      .some(
+        (s) =>
+          (s.prompts?.length ?? 0) !== segments ||
+          s.shots.some((sh) => (sh.prompts?.length ?? 0) !== segments),
+      );
+    if (pending) this.generatePrompts();
+  }
+
+  /** Rearma los prompts de cada escena y de cada toma según la configuración
+   *  actual (modelo, duración, ratio, tags). Los videos ya generados se
+   *  conservan por índice. */
+  protected generatePrompts(): void {
+    const segments = this.videoSegmentCount();
+    const tags = this.videoTags().trim();
+    const ratio = this.videoRatio();
+    this.storyboard.update((scenes) =>
+      scenes.map((scene) => ({
+        ...scene,
+        prompts: this.buildPrompts(scene, null, segments, tags, ratio),
+        shots: scene.shots.map((shot) => ({
+          ...shot,
+          prompts: this.buildPrompts(scene, shot, segments, tags, ratio),
+        })),
+      })),
+    );
+    this.persistWorkflow();
+  }
+
+  private buildPrompts(
+    scene: StoryboardScene,
+    shot: StoryboardShot | null,
+    segments: number,
+    tags: string,
+    ratio: string,
+  ): VideoPrompt[] {
+    const previous = (shot ? shot.prompts : scene.prompts) ?? [];
+    return Array.from({ length: segments }, (_, i) => ({
+      text: this.buildPromptText(scene, shot, i, segments, tags, ratio),
+      videoUrl: previous[i]?.videoUrl ?? null,
+      generating: false,
+    }));
+  }
+
+  /** Texto de un prompt: escena/toma + referencia al storyboard + tags de
+   *  referencia + segmento y duración. */
+  private buildPromptText(
+    scene: StoryboardScene,
+    shot: StoryboardShot | null,
+    index: number,
+    segments: number,
+    tags: string,
+    ratio: string,
+  ): string {
+    const shotIndex = shot ? scene.shots.indexOf(shot) : -1;
+    const lines: string[] =
+      shotIndex >= 0
+        ? [
+            `TOMA ${shotIndex + 1}/${scene.shots.length} — "${scene.title}": ${shot?.description ?? ''}`,
+            `Referencia visual: viñeta ${shotIndex + 1} del storyboard guía (imagen adjunta). Mantener encuadre, iluminación y estilo del dibujo.`,
+          ]
+        : [
+            `ESCENA "${scene.title}"${scene.angleTitle ? ` — ángulo "${scene.angleTitle}"` : ''}: ${scene.description}`,
+            'Referencia visual: hoja de storyboard guía (imagen adjunta). Animar la secuencia respetando encuadres, iluminación y estilo de las viñetas.',
+          ];
+    const allTags = [tags, this.slugTags([scene.angleTitle, scene.title])]
+      .filter((t) => t.trim() !== '')
+      .join(' ');
+    if (allTags) lines.push(`Tags de referencia: ${allTags}`);
+    if (segments > 1) {
+      lines.push(
+        `Segmento ${index + 1} de ${segments}: continuidad directa con el segmento anterior, mismo ritmo, encuadre y personajes.`,
+      );
+    }
+    lines.push(`Duración ${this.segmentDuration(index)}s${ratio ? ` · Relación de aspecto ${ratio}` : ''}.`);
+    return lines.join('\n');
+  }
+
+  /** 'Exclusividad y lujo' → '#exclusividad-y-lujo' */
+  private slugTags(values: (string | undefined)[]): string {
+    return values
+      .filter((v): v is string => !!v && v.trim() !== '')
+      .map(
+        (v) =>
+          '#' +
+          v
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^\w]+/g, '-')
+            .replace(/^-+|-+$/g, ''),
+      )
+      .join(' ');
+  }
+
+  /** Cambió la config de video: el ratio debe pertenecer al modelo activo y,
+   *  si cambió la cantidad de segmentos, se rearmán los prompts (los videos
+   *  ya generados se conservan por índice). */
+  protected onVideoConfigChange(): void {
+    const options = this.videoRatioOptions();
+    if (!options.some((o) => o.value === this.videoRatio())) {
+      this.videoRatio.set(options[0]?.value ?? '');
+    }
+    const segments = this.videoSegmentCount();
+    if (this.storyboard().some((s) => (s.prompts?.length ?? 0) !== segments)) {
+      this.generatePrompts();
+    }
+  }
+
+  protected updateScenePrompt(sceneId: string, index: number, value: string): void {
+    this.storyboard.update((scenes) =>
+      scenes.map((s) =>
+        s.id === sceneId
+          ? { ...s, prompts: (s.prompts ?? []).map((p, i) => (i === index ? { ...p, text: value } : p)) }
+          : s,
+      ),
+    );
+  }
+
+  protected updateShotPrompt(sceneId: string, shotId: string, index: number, value: string): void {
+    this.storyboard.update((scenes) =>
+      scenes.map((s) =>
+        s.id === sceneId
+          ? {
+              ...s,
+              shots: s.shots.map((sh) =>
+                sh.id === shotId
+                  ? {
+                      ...sh,
+                      prompts: (sh.prompts ?? []).map((p, i) =>
+                        i === index ? { ...p, text: value } : p,
+                      ),
+                    }
+                  : sh,
+              ),
+            }
+          : s,
+      ),
+    );
+  }
+
+  /** Patch de un prompt concreto (de la escena o de una toma). */
+  private patchPrompt(
+    sceneId: string,
+    shotId: string | null,
+    index: number,
+    patch: Partial<VideoPrompt>,
+  ): void {
+    this.storyboard.update((scenes) =>
+      scenes.map((s) => {
+        if (s.id !== sceneId) return s;
+        const applyPatch = (prompts?: VideoPrompt[]): VideoPrompt[] =>
+          (prompts ?? []).map((p, i) => (i === index ? { ...p, ...patch } : p));
+        if (!shotId) return { ...s, prompts: applyPatch(s.prompts) };
+        return {
+          ...s,
+          shots: s.shots.map((sh) => (sh.id === shotId ? { ...sh, prompts: applyPatch(sh.prompts) } : sh)),
+        };
+      }),
+    );
+  }
+
+  /** Genera el video de un prompt (de la escena o de una toma): texto del
+   *  prompt + hoja de storyboard como imagen de referencia, duración del
+   *  segmento y ratio del modelo. */
+  protected generatePromptVideo(sceneId: string, shotId: string | null, index: number): void {
     const scene = this.storyboard().find((s) => s.id === sceneId);
-    if (!scene || scene.generatingVideo) return;
-    const videoModels = this.models().filter((m) => m.modality === 'video');
-    const model = videoModels.find((m) => m.name === this.modelVideo()) ?? videoModels[0];
+    if (!scene) return;
+    const shotIndex = shotId ? scene.shots.findIndex((sh) => sh.id === shotId) : -1;
+    const target = shotId ? (shotIndex >= 0 ? scene.shots[shotIndex] : null) : scene;
+    const prompt = target?.prompts?.[index];
+    if (!target || !prompt || prompt.generating) return;
+    const model = this.activeVideoModel();
     if (!model) {
       this.error.set('No hay modelos de video disponibles.');
       return;
     }
-    const resetFlag = () =>
-      this.storyboard.update((scenes) =>
-        scenes.map((s) => (s.id === sceneId ? { ...s, generatingVideo: false } : s)),
-      );
-    this.storyboard.update((scenes) =>
-      scenes.map((s) => (s.id === sceneId ? { ...s, generatingVideo: true } : s)),
-    );
+    const ratio = this.videoRatio() || model.defaults?.ratios?.[0] || '';
+    // Slot único por prompt (escenas 1..N, tomas 101..N): así no se pisan
+    // entre sí al guardarse en la pieza (SaveGeneration desactiva el mismo nro).
+    const generationNumber = shotId ? (shotIndex + 1) * 100 + index + 1 : index + 1;
 
+    this.error.set(null);
+    this.patchPrompt(sceneId, shotId, index, { generating: true });
     this.ensureSceneAnchor(scene)
       .pipe(
         catchError(() => {
           this.error.set('No se pudo preparar el proyecto de la Agencia.');
-          resetFlag();
+          this.patchPrompt(sceneId, shotId, index, { generating: false });
           return EMPTY;
         }),
       )
       .subscribe(({ project, piece }) => {
+        const content: ContentItem[] = [{ type: 'text', text: prompt.text }];
+        if (scene.boardFileId) {
+          content.push({ type: 'image', id: scene.boardFileId, name: `storyboard-${scene.id}.png` });
+        }
         this.agencyService
           .generate('video', {
             model: model.name,
-            content: [{ type: 'text', text: scene.description }],
-            ...(model.defaults.ratios?.[0] ? { ratio: model.defaults.ratios[0] } : {}),
-            ...(model.defaults.durations?.[0] ? { duration: model.defaults.durations[0] } : {}),
+            content,
+            ...(ratio ? { ratio } : {}),
+            duration: this.segmentDuration(index),
             event_id: project.id,
             piece_id: piece.id,
             piece_code: piece.piece_code ?? `SCENE-${sceneId.toUpperCase()}`,
-            generation_number: 1,
+            generation_number: generationNumber,
           })
           .pipe(
             catchError(() => {
-              this.error.set(`Error al generar el video de ${sceneId}.`);
-              resetFlag();
+              this.error.set(`Error al generar el video de ${scene.title}.`);
+              this.patchPrompt(sceneId, shotId, index, { generating: false });
               return EMPTY;
             }),
           )
@@ -906,26 +1399,20 @@ export class AgencyComponent {
               .pollTaskUntilDone('video', response.taskId)
               .pipe(
                 catchError(() => {
-                  this.error.set(`Error al consultar el video ${sceneId}.`);
-                  resetFlag();
+                  this.error.set(`Error al consultar el video de ${scene.title}.`);
+                  this.patchPrompt(sceneId, shotId, index, { generating: false });
                   return EMPTY;
                 }),
               )
               .subscribe((status: StatusResponse) => {
-                this.storyboard.update((scenes) =>
-                  scenes.map((s) =>
-                    s.id === sceneId
-                      ? {
-                          ...s,
-                          generatingVideo: false,
-                          videoUrl:
-                            status.status === 'succeeded' && status.outputs?.[0]?.url
-                              ? status.outputs[0].url
-                              : s.videoUrl ?? null,
-                        }
-                      : s,
-                  ),
-                );
+                const url =
+                  status.status === 'succeeded' && status.outputs?.[0]?.url
+                    ? status.outputs[0].url
+                    : null;
+                this.patchPrompt(sceneId, shotId, index, {
+                  generating: false,
+                  videoUrl: url ?? prompt.videoUrl ?? null,
+                });
                 // El video queda guardado en el avance del proyecto.
                 this.persistWorkflow();
               });
@@ -940,6 +1427,13 @@ export class AgencyComponent {
     this.projectDescription.set('');
     this.angles.update((angles) => angles.map((a) => ({ ...a, selected: false })));
     this.storyboard.set([]);
+    this.boardVisible.set(false);
+    this.boardSceneId.set(null);
+    this.boardPrompt.set('');
+    this.boardPromptEdited.set(false);
+    this.videoDuration.set(10);
+    this.videoRatio.set('');
+    this.videoTags.set('');
     this.error.set(null);
   }
 }
