@@ -159,6 +159,31 @@
             "
             aria-describedby="agency-description-errors"
           ></textarea>
+          <div class="flex flex-wrap items-center gap-2">
+            <input
+              #briefInput
+              type="file"
+              accept=".pdf,.docx,.txt,.md"
+              multiple
+              class="hidden"
+              (change)="onBriefFiles($event)"
+            />
+            <p-button
+              label="Subir folleto"
+              icon="md md-upload"
+              severity="secondary"
+              size="small"
+              [loading]="extractingBrief()"
+              [disabled]="extractingBrief()"
+              (onClick)="briefInput.click()"
+            />
+            <span class="text-xs text-ink-muted-on-dark"
+              >PDF, DOCX, TXT o MD — el texto se agrega a la descripción</span
+            >
+          </div>
+          @if (briefNote(); as note) {
+            <p-message severity="success" [text]="note" styleClass="w-full" />
+          }
           <validator-errors
             id="agency-description-errors"
             [control]="form.get('description')"

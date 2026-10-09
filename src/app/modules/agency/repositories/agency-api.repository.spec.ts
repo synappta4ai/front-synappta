@@ -71,4 +71,19 @@ describe('AgencyApiRepository', () => {
       data: { status: 'succeeded', outputs: [{ url: 'https://cdn/video.mp4', type: 'video' }] },
     });
   });
+
+  it('uploads a brief file as multipart to the extract endpoint', () => {
+    repository.extractBrief(new File(['hola'], 'folleto.pdf')).subscribe((response) => {
+      expect(response.data?.text).toBe('hola');
+    });
+
+    const req = httpMock.expectOne(`${base}/agency/brief/extract`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body instanceof FormData).toBe(true);
+    req.flush({
+      success: true,
+      message: 'success',
+      data: { filename: 'folleto.pdf', text: 'hola', chars: 4, truncated: false },
+    });
+  });
 });

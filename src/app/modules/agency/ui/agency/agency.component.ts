@@ -511,6 +511,65 @@ export class AgencyComponent {
     return this.angles().filter((a) => a.selected).length;
   }
 
+  // ─── Folleto del proyecto (paso 1) ──────────────────────────
+
+  /** True mientras extrae texto de uno o más folletos subidos. */
+  protected readonly extractingBrief = signal(false);
+  /** Aviso del último folleto cargado (nombre + caracteres). */
+  protected readonly briefNote = signal<string | null>(null);
+
+  /** Sube folletos (PDF/DOCX/TXT/MD), extrae su texto y lo appendee a la
+   *  descripción: la información general del proyecto vive en el folleto. */
+  protected async onBriefFiles(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement | null;
+    const files = Array.from(input?.files ?? []);
+    if (input) input.value = '';
+    if (!files.length) return;
+
+    this.extractingBrief.set(true);
+    this.error.set(null);
+    this.briefNote.set(null);
+    try {
+      const added: string[] = [];
+      let truncated = false;
+      for (const file of files) {
+        const result = await firstValueFrom(this.agencyService.extractBrief(file));
+        if (!result?.text) {
+          this.error.set(
+            `No se pudo extraer texto de ${file.name} (¿PDF escaneado como imagen?).`,
+          );
+          return;
+        }
+        this.appendBriefText(result.text);
+        added.push(result.filename || file.name);
+        truncated = truncated || result.truncated;
+      }
+      this.briefNote.set(
+        `Texto de ${added.join(', ')} agregado a la descripción` +
+          (truncated ? ' (recortado a 8.000 caracteres)' : ''),
+      );
+    } catch (err) {
+      // HttpErrorResponse trae el mensaje del back en err.error.message.
+      const wrapped = err as { message?: string; error?: { message?: string } };
+      const message = wrapped?.error?.message || wrapped?.message || '';
+      this.error.set(message || 'No se pudo extraer el texto del folleto.');
+    } finally {
+      this.extractingBrief.set(false);
+    }
+  }
+
+  /** Concatena el texto extraído a la descripción (sin pisar lo escrito) y
+   *  deja el campo editable aunque viniera bloqueado, para poder revisarlo. */
+  private appendBriefText(text: string): void {
+    const control = this.form.get('description');
+    if (!control) return;
+    const current = String(control.value ?? '').trim();
+    control.setValue(current ? `${current}\n\n${text}` : text);
+    if (control.disabled) control.enable({ emitEvent: false });
+    control.markAsDirty();
+    control.markAsTouched();
+  }
+
   protected get canProceedToStoryboard(): boolean {
     return this.selectedAnglesCount > 0;
   }
@@ -621,11 +680,19 @@ export class AgencyComponent {
           this.projects.update((list) =>
             list.some((p) => p.id === project.id) ? list : [...list, project],
           );
-          // Ángulos: modelo LLM elegido en el paso 1 (fallback = plantillas).
+          // Ángulos: modelo LLM elegido en el paso 1 (sin plantillas:
+          // si falla, queda el error en el paso 1 y no se avanza).
           return this.generateAnglesWithAgent(count);
         }),
-        catchError(() => {
-          this.error.set('No se pudieron guardar los datos del proyecto.');
+        catchError((err: unknown) => {
+          // Sin ángulos falsos: se limpia lo que se hubiera pre-cargado y
+          // se muestra el motivo real (agente, LLM o credencial).
+          this.angles.set([]);
+          const why =
+            err instanceof Error && err.message
+              ? err.message
+              : 'No se pudieron guardar los datos del proyecto.';
+          this.error.set(why);
           return EMPTY;
         }),
         finalize(() => this.loading.set(false)),
@@ -1045,18 +1112,38 @@ export class AgencyComponent {
   }
 
   /** Ángulos de venta: los genera el LLM elegido (credencial del tenant) vía
-   *  el agente; sin credencial o sin respuesta → plantillas locales. */
+   *  el agente. Sin credencial o sin respuesta el observable falla: no se
+   *  rellena con plantillas, porque ángulos inventados no son producto. */
   private generateAnglesWithAgent(count: number): Observable<SalesAngle[]> {
     return this.agencyService.listCredentials().pipe(
-      map(
-        (creds) =>
-          creds.find(
-            (c) =>
-              !!c.api_key_mask && (c.provider === 'openrouter' || c.provider === 'anthropic'),
-          ) ?? null,
-      ),
-      mergeMap((cred) => (cred ? this.requestAgentAngles(cred, count) : of(buildAngles(count)))),
-      catchError(() => of(buildAngles(count))),
+      map((creds) => {
+        const usable = creds.filter(
+          (c) => !!c.api_key_mask && (c.provider === 'openrouter' || c.provider === 'anthropic'),
+        );
+        const model = this.modelText();
+        // 1) la credencial dueña del modelo elegido; 2) los slugs estilo
+        // "anthropic/claude…" solo existen en OpenRouter (preferido), y un
+        // modelo sin barra (id nativo) corresponde a Anthropic.
+        const byModel = model ? usable.find((c) => this.credentialModel(c) === model) : undefined;
+        const providerFor = !model || model.includes('/') ? 'openrouter' : 'anthropic';
+        return (
+          byModel ??
+          usable.find((c) => c.provider === providerFor) ??
+          usable[0] ??
+          null
+        );
+      }),
+      mergeMap((cred) => {
+        if (!cred) {
+          return throwError(
+            () =>
+              new Error(
+                'Sin credencial LLM (openrouter/anthropic) en Admin → Credenciales: no se generaron ángulos.',
+              ),
+          );
+        }
+        return this.requestAgentAngles(cred, count);
+      }),
     );
   }
 
@@ -1093,7 +1180,12 @@ export class AgencyComponent {
       })
         .then(async (res) => {
           if (!res.ok || !res.body) {
-            throw new Error(`agent chat HTTP ${res.status}`);
+            const detail = await res.text().catch(() => '');
+            throw new Error(
+              detail
+                ? `HTTP ${res.status}: ${detail.slice(0, 240)}`
+                : `agent chat HTTP ${res.status}`,
+            );
           }
           const reader = res.body.getReader();
           const decoder = new TextDecoder();
@@ -1110,8 +1202,9 @@ export class AgencyComponent {
                 controller.abort();
                 const mapped = anglesFromAgent(parsed.data, count);
                 if (mapped.length > 0) {
-                  const rest = buildAngles(count).slice(mapped.length);
-                  subscriber.next([...mapped, ...rest]);
+                  // Solo ángulos reales: si el LLM devolvió menos de los
+                  // pedidos se muestran esos, sin completar con plantillas.
+                  subscriber.next(mapped);
                   subscriber.complete();
                   return;
                 }
@@ -1120,9 +1213,9 @@ export class AgencyComponent {
           }
           throw new Error('sin sales_angles en la respuesta');
         })
-        .catch(() => {
-          subscriber.next(buildAngles(count));
-          subscriber.complete();
+        .catch((err: unknown) => {
+          const why = err instanceof Error && err.message ? err.message : 'sin respuesta del agente';
+          subscriber.error(new Error(`No se generaron los ángulos: ${why}`));
         })
         .finally(() => clearTimeout(timer));
     });

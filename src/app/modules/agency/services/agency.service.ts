@@ -4,6 +4,7 @@ import { exhaustMap, takeWhile } from 'rxjs/operators';
 
 import {
   AiModel,
+  BriefExtraction,
   CostSummary,
   Credential,
   GenerateRequest,
@@ -97,6 +98,11 @@ export class AgencyService {
 
   listGeneratedAssets(pieceId: string): Observable<GeneratedAsset[]> {
     return unwrap(this.agencyApiRepository.listGeneratedAssets(pieceId));
+  }
+
+  /** Extrae el texto de un folleto (PDF/DOCX/TXT/MD) para la descripción. */
+  extractBrief(file: File): Observable<BriefExtraction> {
+    return unwrap(this.agencyApiRepository.extractBrief(file));
   }
 
   /** Recent tasks of the authenticated user (take-reel hydration). */

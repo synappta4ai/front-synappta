@@ -230,6 +230,14 @@ export interface ModelAsset {
   created_at: string;
 }
 
+/** Resultado de POST /agency/brief/extract: texto plano del folleto subido. */
+export interface BriefExtraction {
+  filename: string;
+  text: string;
+  chars: number;
+  truncated: boolean;
+}
+
 export interface GeneratedAsset {
   id: string;
   task_id: string;
