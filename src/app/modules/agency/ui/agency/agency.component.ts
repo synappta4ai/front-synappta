@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  afterNextRender,
   computed,
   effect,
   inject,
@@ -211,8 +212,20 @@ const REFERENCE_SUGGESTIONS: { keywords: string[]; items: string[] }[] = [
     ],
   },
   {
-    keywords: ['seguridad', 'vigilanc', 'portón', 'porton', 'cámara', 'camara', 'control de acceso'],
-    items: ['el portón del edificio', 'el equipo de seguridad', 'el acceso controlado y las cámaras'],
+    keywords: [
+      'seguridad',
+      'vigilanc',
+      'portón',
+      'porton',
+      'cámara',
+      'camara',
+      'control de acceso',
+    ],
+    items: [
+      'el portón del edificio',
+      'el equipo de seguridad',
+      'el acceso controlado y las cámaras',
+    ],
   },
   {
     keywords: ['inversi', 'rentab', 'plusval', 'financ', 'oportunidad'],
@@ -421,7 +434,7 @@ export class AgencyComponent {
   /** Escena abierta en la modal de storyboard (null = cerrada). */
   protected readonly boardSceneId = signal<string | null>(null);
   protected readonly boardVisible = signal(false);
-  /** Cantidad de tomas sugerida en la modal (una toma por viñeta). */
+  /** Cantidad de viñetas sugerida en la modal (una toma por viñeta). */
   protected readonly boardShotCount = signal(3);
   /** Relación de aspecto de la hoja de storyboard ('' = default del modelo). */
   protected readonly boardRatio = signal('');
@@ -436,12 +449,14 @@ export class AgencyComponent {
   protected readonly videoDuration = signal(10);
   /** Relación de aspecto elegida ('' = default del modelo). */
   protected readonly videoRatio = signal('');
-  /** Tags de referencia que se inyectan en todos los prompts. */
-  protected readonly videoTags = signal('');
-  /** Calidad/resolución pedida al modelo ('' = default del modelo). */
+  /** Resolución elegida ('' = default del modelo). */
   protected readonly videoResolution = signal('');
-  /** Sonido de los videos (los modelos compatibles lo respetan). */
+  /** Si el video se genera con sonido (parámetro `generate_audio` del back). */
   protected readonly videoAudio = signal(true);
+  /** Tags de referencia que se inyectan en todos los prompts.
+   *  Sin input en la UI (se eliminó del panel): se conserva por compatibilidad
+   *  con avances guardados que todavía traen `videoSettings.tags`. */
+  protected readonly videoTags = signal('');
 
   /** Escena actual de la modal. */
   protected readonly boardScene = computed(() => {
@@ -560,7 +575,7 @@ export class AgencyComponent {
     // editables para completar lo que falte (campos obligatorios).
     effect(() => {
       const id = this.selectedProjectId();
-      const project = id ? this.projects().find((p) => p.id === id) ?? null : null;
+      const project = id ? (this.projects().find((p) => p.id === id) ?? null) : null;
       if (project) {
         this.form.patchValue(
           {
@@ -582,23 +597,23 @@ export class AgencyComponent {
         const disable = !!project && hasValue;
         disable ? control.disable({ emitEvent: false }) : control.enable({ emitEvent: false });
       }
-    // Recupera el avance guardado del proyecto (fase, modelos, ángulos,
-    // storyboard) para no reprocesar lo que ya está hecho.
-    //
-    // Se restaura SOLO cuando cambia el proyecto elegido: `projects()` se
-    // actualiza con cada persistencia y re-ejecutaría este effect, que con el
-    // estado viejo pisaba en vivo los tildes del usuario (el botón de
-    // "Generar Storyboard" nunca se habilitaba).
-    if (project) {
-      if (this.restoredProjectId !== id) {
-        this.restoredProjectId = id;
-        this.restoreWorkflow(project);
+      // Recupera el avance guardado del proyecto (fase, modelos, ángulos,
+      // storyboard) para no reprocesar lo que ya está hecho.
+      //
+      // Se restaura SOLO cuando cambia el proyecto elegido: `projects()` se
+      // actualiza con cada persistencia y re-ejecutaría este effect, que con el
+      // estado viejo pisaba en vivo los tildes del usuario (el botón de
+      // "Siguiente" nunca se habilitaba).
+      if (project) {
+        if (this.restoredProjectId !== id) {
+          this.restoredProjectId = id;
+          this.restoreWorkflow(project);
+        }
+      } else if (!id && this.restoredProjectId !== null) {
+        this.restoredProjectId = null;
+        this.restoreWorkflow(null);
       }
-    } else if (!id && this.restoredProjectId !== null) {
-      this.restoredProjectId = null;
-      this.restoreWorkflow(null);
-    }
-  });
+    });
   }
 
   /** Último proyecto cuyo avance se restauró (guard contra re-restores). */
@@ -641,9 +656,7 @@ export class AgencyComponent {
       for (const file of files) {
         const result = await firstValueFrom(this.agencyService.extractBrief(file));
         if (!result?.text) {
-          this.error.set(
-            `No se pudo extraer texto de ${file.name} (¿PDF escaneado como imagen?).`,
-          );
+          this.error.set(`No se pudo extraer texto de ${file.name} (¿PDF escaneado como imagen?).`);
           return;
         }
         this.appendBriefText(result.text);
@@ -693,13 +706,51 @@ export class AgencyComponent {
   }
 
   protected goToPhase(phase: WorkflowPhase): void {
-    if (phase === 'scenes' && !this.canProceedToScenes) {
-      this.error.set('Aprobá el storyboard de todas las escenas para continuar.');
+    if (!this.canEnterPhase(phase)) {
+      this.error.set(this.phaseBlockedMessage(phase));
       return;
     }
     this.error.set(null);
     this.currentPhase.set(phase);
     if (phase === 'scenes') this.ensureVideoPrompts();
+    this.focusPhaseHeading();
+  }
+
+  /** El stepper no salta gates: solo se entra a un paso si su condición
+   *  se cumple (vale para clicks en el stepper y para el avance lineal). */
+  private canEnterPhase(phase: WorkflowPhase): boolean {
+    switch (phase) {
+      case 'input':
+        return true;
+      case 'angles':
+        return this.canProceedToAngles;
+      case 'storyboard':
+        return this.canProceedToStoryboard;
+      case 'scenes':
+        return this.canProceedToScenes;
+    }
+  }
+
+  private phaseBlockedMessage(phase: WorkflowPhase): string {
+    switch (phase) {
+      case 'angles':
+        return 'Completá los datos del proyecto para ver los ángulos.';
+      case 'storyboard':
+        return 'Seleccioná al menos un ángulo para ver el storyboard.';
+      case 'scenes':
+        return 'Aprobá el storyboard de todas las escenas para continuar.';
+      default:
+        return '';
+    }
+  }
+
+  /** Tras cambiar de paso, lleva el foco al título: teclado y lector
+   *  arrancan en el contenido nuevo. Corre solo en browser (afterNextRender
+   *  no se ejecuta en SSR) y después del render, cuando el título ya existe. */
+  private focusPhaseHeading(): void {
+    afterNextRender(() => {
+      document.querySelector<HTMLElement>('#agency-phase-heading')?.focus();
+    });
   }
 
   protected nextPhase(): void {
@@ -713,6 +764,7 @@ export class AgencyComponent {
       }
       this.currentPhase.set(next);
       if (next === 'scenes') this.ensureVideoPrompts();
+      this.focusPhaseHeading();
       // Cada avance se guarda en el proyecto (evita reprocesos).
       this.persistWorkflow();
     }
@@ -723,6 +775,7 @@ export class AgencyComponent {
     const currentIndex = phases.indexOf(this.currentPhase());
     if (currentIndex > 0) {
       this.currentPhase.set(phases[currentIndex - 1]);
+      this.focusPhaseHeading();
     }
   }
 
@@ -735,14 +788,13 @@ export class AgencyComponent {
     this.persistWorkflow();
   }
 
-  /** Click o tecla sobre la card de un ángulo: alterna el tildado. Se ignora
-   *  cuando el evento nace en un campo editable (título/descripción), para
-   *  poder escribir sin tildar y tildar desde cualquier otra zona de la card
-   *  (el checkbox es decorativo: la card entera es el control). */
+  /** Click sobre la card de un ángulo (mouse/touch): alterna el tildado,
+   *  salvo que el evento nazca en un control real (checkbox, título,
+   *  descripción), que se maneja solo. El teclado usa el checkbox. */
   protected onAngleCardActivate(angleId: string, event: Event): void {
     const target = event.target as HTMLElement | null;
-    if (target?.closest?.('input, textarea, select, [contenteditable="true"]')) return;
-    if (event.type === 'keydown') event.preventDefault();
+    if (target?.closest?.('input, textarea, select, button, label, [contenteditable="true"]'))
+      return;
     this.toggleAngle(angleId);
   }
 
@@ -845,26 +897,75 @@ export class AgencyComponent {
     );
   }
 
+  /** Escena con borrado pendiente de confirmación (doble paso anti-clicks). */
+  protected readonly pendingDeleteSceneId = signal<string | null>(null);
+
+  protected armRemoveScene(sceneId: string): void {
+    this.pendingDeleteSceneId.set(sceneId);
+  }
+
+  protected cancelRemoveScene(): void {
+    this.pendingDeleteSceneId.set(null);
+  }
+
+  /** Elimina una escena y renumera las restantes. Si su modal de storyboard
+   *  estaba abierta, se cierra. */
+  protected removeScene(sceneId: string): void {
+    this.pendingDeleteSceneId.set(null);
+    this.storyboard.update((scenes) => this.renumberScenes(scenes.filter((s) => s.id !== sceneId)));
+    if (this.boardSceneId() === sceneId) this.closeBoardDialog();
+    this.persistWorkflow();
+  }
+
+  /** Renumera las escenas en orden (1..N): solo reescribe el prefijo
+   *  "Escena N:"; los títulos personalizados no se tocan. */
+  private renumberScenes(scenes: StoryboardScene[]): StoryboardScene[] {
+    return scenes.map((scene, n) => ({
+      ...scene,
+      title: scene.title.replace(/^Escena \d+:/, `Escena ${n + 1}:`),
+    }));
+  }
+
+  /** Avanza al paso Storyboard: conserva las escenas ya armadas (con sus
+   *  fotos, hojas y aprobaciones) y solo crea las dos escenas plantilla
+   *  para los ángulos nuevos. Así volver atrás y pulsar Siguiente no revive
+   *  escenas eliminadas ni pisa el avance. */
   protected generateStoryboard(): void {
     const selectedAngles = this.angles().filter((a) => a.selected);
-    const scenes: StoryboardScene[] = selectedAngles.flatMap((angle, i) => [
+    const previous = this.storyboard();
+    const scenes = selectedAngles.flatMap((angle) => this.scenesForAngle(angle, previous));
+    this.storyboard.set(this.renumberScenes(scenes));
+    this.nextPhase();
+  }
+
+  /** Escenas de un ángulo: las ya existentes se conservan (se actualiza el
+   *  título del ángulo por si se editó); los ángulos nuevos arrancan con
+   *  las dos escenas plantilla. */
+  private scenesForAngle(angle: SalesAngle, previous: StoryboardScene[]): StoryboardScene[] {
+    const kept = previous.filter((s) => s.angleId === angle.id);
+    if (kept.length > 0) {
+      return kept.map((s) =>
+        s.angleTitle === angle.title ? s : { ...s, angleTitle: angle.title },
+      );
+    }
+    return [
       {
-        id: `scene-${i}-1`,
+        id: `scene-${angle.id}-1`,
         angleId: angle.id,
         angleTitle: angle.title,
-        title: `Escena ${i + 1}: ${angle.title}`,
+        title: `Escena 0: ${angle.title}`,
         description: `Plano general del proyecto destacando ${angle.description.toLowerCase()}`,
         references: [],
         refsApproved: false,
         shots: [
           {
-            id: `shot-${i}-1-1`,
+            id: `shot-${angle.id}-1-1`,
             description: 'Plano general — fachada principal al atardecer',
             imageUrl: null,
             generating: false,
           },
           {
-            id: `shot-${i}-1-2`,
+            id: `shot-${angle.id}-1-2`,
             description: 'Plano medio — lobby y áreas comunes',
             imageUrl: null,
             generating: false,
@@ -872,26 +973,23 @@ export class AgencyComponent {
         ],
       },
       {
-        id: `scene-${i}-2`,
+        id: `scene-${angle.id}-2`,
         angleId: angle.id,
         angleTitle: angle.title,
-        title: `Escena ${i + 2}: Detalle`,
+        title: 'Escena 0: Detalle',
         description: `Primer plano de acabados y acabados premium del ${angle.title}`,
         references: [],
         refsApproved: false,
         shots: [
           {
-            id: `shot-${i}-2-1`,
+            id: `shot-${angle.id}-2-1`,
             description: 'Primer plano — acabados de cocina',
             imageUrl: null,
             generating: false,
           },
         ],
       },
-    ]);
-
-    this.storyboard.set(scenes);
-    this.nextPhase();
+    ];
   }
 
   // ─── Storyboard: modal de viñetas + aprobación ─────────────────────
@@ -924,7 +1022,7 @@ export class AgencyComponent {
     this.boardSceneId.set(null);
   }
 
-  /** Cambia la cantidad de tomas sugerida; si el prompt no se editó a mano
+  /** Cambia la cantidad de viñetas sugerida; si el prompt no se editó a mano
    *  se reconstruye para reflejarla. */
   protected onBoardShotCountChange(value: number | null): void {
     const count = Math.min(Math.max(Math.round(value ?? 1), 1), 12);
@@ -988,7 +1086,9 @@ export class AgencyComponent {
     const ratio = this.boardRatio();
     const setGenerating = (generating: boolean, patch: Partial<StoryboardScene> = {}) =>
       this.storyboard.update((scenes) =>
-        scenes.map((s) => (s.id === scene.id ? { ...s, boardGenerating: generating, ...patch } : s)),
+        scenes.map((s) =>
+          s.id === scene.id ? { ...s, boardGenerating: generating, ...patch } : s,
+        ),
       );
 
     // La cantidad de tomas de la modal manda sobre la lista de tomas.
@@ -1121,9 +1221,7 @@ export class AgencyComponent {
       .listFilesPaginated({ page: 1, pageSize: 10, q: nameQuery })
       .pipe(catchError(() => of(null)))
       .subscribe((res) => {
-        const found = (res?.items ?? []).find((f) =>
-          f.filename?.startsWith(`${nameQuery}.`),
-        );
+        const found = (res?.items ?? []).find((f) => f.filename?.startsWith(`${nameQuery}.`));
         if (found) {
           this.rememberBoardFile(scene.id, found.id);
           this.editorLoading.set(false);
@@ -1147,6 +1245,24 @@ export class AgencyComponent {
     if (!scene?.boardImageUrl) return;
     this.storyboard.update((scenes) =>
       scenes.map((s) => (s.id === sceneId ? { ...s, approved: !s.approved } : s)),
+    );
+    this.persistWorkflow();
+  }
+
+  /** Habilita "Aprobar todas": hay escenas, todas tienen hoja cargada y
+   *  al menos una sigue sin aprobar. */
+  protected get canApproveAll(): boolean {
+    const scenes = this.storyboard();
+    return (
+      scenes.length > 0 && scenes.every((s) => !!s.boardImageUrl) && scenes.some((s) => !s.approved)
+    );
+  }
+
+  /** Aprueba de una vez todas las escenas con hoja cargada. */
+  protected approveAllScenes(): void {
+    if (!this.canApproveAll) return;
+    this.storyboard.update((scenes) =>
+      scenes.map((s) => (s.boardImageUrl ? { ...s, approved: true } : s)),
     );
     this.persistWorkflow();
   }
@@ -1239,12 +1355,7 @@ export class AgencyComponent {
         // modelo sin barra (id nativo) corresponde a Anthropic.
         const byModel = model ? usable.find((c) => this.credentialModel(c) === model) : undefined;
         const providerFor = !model || model.includes('/') ? 'openrouter' : 'anthropic';
-        return (
-          byModel ??
-          usable.find((c) => c.provider === providerFor) ??
-          usable[0] ??
-          null
-        );
+        return byModel ?? usable.find((c) => c.provider === providerFor) ?? usable[0] ?? null;
       }),
       mergeMap((cred) => {
         if (!cred) {
@@ -1330,7 +1441,8 @@ export class AgencyComponent {
           throw new Error('sin sales_angles en la respuesta');
         })
         .catch((err: unknown) => {
-          const why = err instanceof Error && err.message ? err.message : 'sin respuesta del agente';
+          const why =
+            err instanceof Error && err.message ? err.message : 'sin respuesta del agente';
           subscriber.error(new Error(`No se generaron los ángulos: ${why}`));
         })
         .finally(() => clearTimeout(timer));
@@ -1363,9 +1475,9 @@ export class AgencyComponent {
       videoSettings: {
         duration: this.videoDuration(),
         ratio: this.videoRatio(),
-        tags: this.videoTags(),
         resolution: this.videoResolution(),
         audio: this.videoAudio(),
+        tags: this.videoTags(),
       },
       angles: this.angles(),
       storyboard: this.storyboard(),
@@ -1397,8 +1509,7 @@ export class AgencyComponent {
   private restoreWorkflow(project: Project | null): void {
     if (!project) {
       this.currentPhase.set('input');
-      const count =
-        Number((this.form.getRawValue() as { anglesCount?: number }).anglesCount) || 3;
+      const count = Number((this.form.getRawValue() as { anglesCount?: number }).anglesCount) || 3;
       this.angles.set(buildAngles(count));
       this.storyboard.set([]);
       this.modelText.set('');
@@ -1439,17 +1550,19 @@ export class AgencyComponent {
     const videoSettings = (agency['videoSettings'] ?? {}) as {
       duration?: number;
       ratio?: string;
-      tags?: string;
       resolution?: string;
       audio?: boolean;
+      tags?: string;
     };
     if (Number.isFinite(videoSettings.duration) && (videoSettings.duration ?? 0) > 0) {
       this.videoDuration.set(Math.round(videoSettings.duration as number));
     }
     this.videoRatio.set(videoSettings.ratio ?? '');
-    this.videoTags.set(videoSettings.tags ?? '');
     this.videoResolution.set(videoSettings.resolution ?? '');
-    this.videoAudio.set(videoSettings.audio ?? true);
+    if (typeof videoSettings.audio === 'boolean') {
+      this.videoAudio.set(videoSettings.audio);
+    }
+    this.videoTags.set(videoSettings.tags ?? '');
 
     const anglesCount = Number(agency['anglesCount']);
     if (Number.isFinite(anglesCount) && anglesCount > 0) {
@@ -1770,30 +1883,29 @@ export class AgencyComponent {
   /** Al entrar al paso Escenas cada storyboard aprobado tiene sus prompts. */
   private ensureVideoPrompts(): void {
     const segments = this.videoSegmentCount();
-    const pending = this
-      .storyboard()
-      .some(
-        (s) =>
-          (s.prompts?.length ?? 0) !== segments ||
-          s.shots.some((sh) => (sh.prompts?.length ?? 0) !== segments),
-      );
+    const pending = this.storyboard().some(
+      (s) =>
+        (s.prompts?.length ?? 0) !== segments ||
+        s.shots.some((sh) => (sh.prompts?.length ?? 0) !== segments),
+    );
     if (pending) this.generatePrompts();
   }
 
   /** Rearma los prompts de cada escena y de cada toma según la configuración
-   *  actual (modelo, duración, ratio, tags). Los videos ya generados se
+   *  actual (modelo, duración, ratio, resolución). Los videos ya generados se
    *  conservan por índice. */
   protected generatePrompts(): void {
     const segments = this.videoSegmentCount();
     const tags = this.videoTags().trim();
     const ratio = this.videoRatio();
+    const resolution = this.videoResolution();
     this.storyboard.update((scenes) =>
       scenes.map((scene) => ({
         ...scene,
-        prompts: this.buildPrompts(scene, null, segments, tags, ratio),
+        prompts: this.buildPrompts(scene, null, segments, tags, ratio, resolution),
         shots: scene.shots.map((shot) => ({
           ...shot,
-          prompts: this.buildPrompts(scene, shot, segments, tags, ratio),
+          prompts: this.buildPrompts(scene, shot, segments, tags, ratio, resolution),
         })),
       })),
     );
@@ -1806,10 +1918,11 @@ export class AgencyComponent {
     segments: number,
     tags: string,
     ratio: string,
+    resolution: string,
   ): VideoPrompt[] {
     const previous = (shot ? shot.prompts : scene.prompts) ?? [];
     return Array.from({ length: segments }, (_, i) => ({
-      text: this.buildPromptText(scene, shot, i, segments, tags, ratio),
+      text: this.buildPromptText(scene, shot, i, segments, tags, ratio, resolution),
       videoUrl: previous[i]?.videoUrl ?? null,
       // Conserva el estado si el prompt ya se está generando en este momento.
       generating: previous[i]?.generating ?? false,
@@ -1821,7 +1934,7 @@ export class AgencyComponent {
   }
 
   /** Texto de un prompt: escena/toma + referencia al storyboard + tags de
-   *  referencia + segmento y duración. */
+   *  referencia + segmento, duración, ratio y resolución. */
   private buildPromptText(
     scene: StoryboardScene,
     shot: StoryboardShot | null,
@@ -1829,6 +1942,7 @@ export class AgencyComponent {
     segments: number,
     tags: string,
     ratio: string,
+    resolution: string,
   ): string {
     const shotIndex = shot ? scene.shots.indexOf(shot) : -1;
     const lines: string[] =
@@ -1852,9 +1966,7 @@ export class AgencyComponent {
         `Segmento ${index + 1} de ${segments}: continuidad directa con el segmento anterior, mismo ritmo, encuadre y personajes.`,
       );
     }
-    lines.push(
-      this.specLine(this.segmentDuration(index), ratio),
-    );
+    lines.push(this.specLine(this.segmentDuration(index), ratio, resolution));
     return lines.join('\n');
   }
 
@@ -1879,17 +1991,11 @@ export class AgencyComponent {
 
   /** Reemplaza la línea "Duración …" del prompt (o la agrega al final). */
   private replaceSpecLine(text: string, line: string): string {
-    return /^Duración .+$/m.test(text)
-      ? text.replace(/^Duración .+$/m, line)
-      : `${text}\n${line}`;
+    return /^Duración .+$/m.test(text) ? text.replace(/^Duración .+$/m, line) : `${text}\n${line}`;
   }
 
   /** Prompt concreto (de la escena o de una toma) por posición. */
-  private promptAt(
-    sceneId: string,
-    shotId: string | null,
-    index: number,
-  ): VideoPrompt | null {
+  private promptAt(sceneId: string, shotId: string | null, index: number): VideoPrompt | null {
     const scene = this.storyboard().find((s) => s.id === sceneId);
     if (!scene) return null;
     const target = shotId ? scene.shots.find((sh) => sh.id === shotId) : scene;
@@ -1970,9 +2076,9 @@ export class AgencyComponent {
       .join(' ');
   }
 
-  /** Cambió la config de video: el ratio debe pertenecer al modelo activo y,
-   *  si cambió la cantidad de segmentos, se rearmán los prompts (los videos
-   *  ya generados se conservan por índice). */
+  /** Cambió la config de video: ratio y resolución deben pertenecer al
+   *  modelo activo y, si cambió la cantidad de segmentos, se rearmán los
+   *  prompts (los videos ya generados se conservan por índice). */
   protected onVideoConfigChange(): void {
     const options = this.videoRatioOptions();
     if (!options.some((o) => o.value === this.videoRatio())) {
@@ -1992,7 +2098,10 @@ export class AgencyComponent {
     this.storyboard.update((scenes) =>
       scenes.map((s) =>
         s.id === sceneId
-          ? { ...s, prompts: (s.prompts ?? []).map((p, i) => (i === index ? { ...p, text: value } : p)) }
+          ? {
+              ...s,
+              prompts: (s.prompts ?? []).map((p, i) => (i === index ? { ...p, text: value } : p)),
+            }
           : s,
       ),
     );
@@ -2035,7 +2144,9 @@ export class AgencyComponent {
         if (!shotId) return { ...s, prompts: applyPatch(s.prompts) };
         return {
           ...s,
-          shots: s.shots.map((sh) => (sh.id === shotId ? { ...sh, prompts: applyPatch(sh.prompts) } : sh)),
+          shots: s.shots.map((sh) =>
+            sh.id === shotId ? { ...sh, prompts: applyPatch(sh.prompts) } : sh,
+          ),
         };
       }),
     );
@@ -2069,9 +2180,8 @@ export class AgencyComponent {
 
   /** Recursos asignados a cualquier prompt de la escena: la hoja de
    *  storyboard (si su archivo se subió al store) más las fotos de referencia
-   *  de la escena. Las fotos SIEMPRE se listan acá y se describen en el
-   *  prompt; se adjuntan como imagen solo cuando el modelo expone ruta
-   *  multi-referencia (si no, su ruta i2v de imagen única se rompería). */
+   *  de la escena, que quedan como ingredientes del video.
+   *  Espeja el `content` que arma generatePromptVideo. */
   protected promptResources(scene: StoryboardScene): {
     id: string;
     name: string;
@@ -2095,7 +2205,7 @@ export class AgencyComponent {
 
   /** Genera el video de un prompt (de la escena o de una toma): texto del
    *  prompt + hoja de storyboard como imagen de referencia, duración del
-   *  segmento y ratio del modelo. */
+   *  segmento, ratio, resolución y sonido según la configuración. */
   protected generatePromptVideo(sceneId: string, shotId: string | null, index: number): void {
     const scene = this.storyboard().find((s) => s.id === sceneId);
     if (!scene) return;
@@ -2126,16 +2236,17 @@ export class AgencyComponent {
       .subscribe(({ project, piece }) => {
         const content: ContentItem[] = [{ type: 'text', text: prompt.text }];
         if (scene.boardFileId) {
-          content.push({ type: 'image', id: scene.boardFileId, name: `storyboard-${scene.id}.png` });
+          content.push({
+            type: 'image',
+            id: scene.boardFileId,
+            name: `storyboard-${scene.id}.png`,
+          });
         }
-        // Fotos reales del ángulo: solo cuando el modelo expone ruta
-        // multi-referencia verificada, para no sacarlo de su ruta i2v de
-        // imagen única (donde la hoja dejaría de adjuntarse).
-        if (model.reference_endpoint) {
-          for (const ref of this.referencesOfScene(sceneId)) {
-            if (ref.id !== scene.boardFileId) {
-              content.push({ type: 'image', id: ref.id, name: ref.filename });
-            }
+        // Fotos reales de la escena: quedan como ingredientes del video
+        // junto a la hoja de storyboard.
+        for (const ref of this.referencesOfScene(sceneId)) {
+          if (ref.id !== scene.boardFileId) {
+            content.push({ type: 'image', id: ref.id, name: ref.filename });
           }
         }
         const duration = prompt.duration ?? this.segmentDuration(index);
