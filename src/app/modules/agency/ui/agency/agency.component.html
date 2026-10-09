@@ -789,6 +789,63 @@
                           (change)="commitSceneEdit()"
                           [ngModelOptions]="{ standalone: true }"
                         ></textarea>
+
+                        <!-- Recursos que se adjuntan a este prompt (colapsados) -->
+                        <div class="border-t border-surface-border pt-2">
+                          <button
+                            type="button"
+                            class="flex w-full items-center gap-1.5 text-left text-xs font-bold text-ink-muted-on-dark transition-colors hover:text-ink-on-dark"
+                            [attr.aria-expanded]="isPromptResourcesOpen(scene.id, null, p)"
+                            (click)="togglePromptResources(scene.id, null, p)"
+                          >
+                            <i class="md md-attach_file"></i>
+                            <span class="flex-1">
+                              Recursos asignados ({{ promptResources(scene).length }})
+                            </span>
+                            <i
+                              class="md md-expand_more transition-transform"
+                              [class.rotate-180]="isPromptResourcesOpen(scene.id, null, p)"
+                            ></i>
+                          </button>
+                          @if (isPromptResourcesOpen(scene.id, null, p)) {
+                            <div class="mt-2 flex flex-wrap gap-2">
+                              @for (res of promptResources(scene); track res.id) {
+                                <button
+                                  type="button"
+                                  class="flex items-center gap-2 rounded-lg border border-surface-border bg-surface-2 px-2 py-1 text-xs text-ink-muted-on-dark transition hover:border-accent hover:text-ink-on-dark"
+                                  [attr.aria-label]="'Editar elemento ' + res.name"
+                                  [title]="'Editar elemento: ' + res.name"
+                                  (click)="openAssetEditor(res.id)"
+                                >
+                                  @if (res.url) {
+                                    <img
+                                      [src]="res.url | serverUrl"
+                                      [alt]="res.name"
+                                      class="h-8 w-8 rounded object-cover"
+                                      loading="lazy"
+                                      decoding="async"
+                                    />
+                                  } @else {
+                                    <i class="md md-image"></i>
+                                  }
+                                  <span class="max-w-40 truncate">{{ res.name }}</span>
+                                </button>
+                              }
+                              @if (promptResources(scene).length === 0) {
+                                <p class="text-xs text-ink-muted-on-dark">
+                                  Sin recursos adjuntos: el video se generará sólo con el texto.
+                                </p>
+                              }
+                              @if ((scene.references?.length ?? 0) > 0 &&
+                                  !activeVideoModel()?.reference_endpoint) {
+                                <p class="text-xs text-ink-muted-on-dark">
+                                  El modelo de video no expone ruta multi-referencia: las fotos
+                                  de referencia no se adjuntan.
+                                </p>
+                              }
+                            </div>
+                          }
+                        </div>
                       </div>
                     }
                     @if ((scene.prompts ?? []).length === 0) {
@@ -860,6 +917,64 @@
                               (change)="commitSceneEdit()"
                               [ngModelOptions]="{ standalone: true }"
                             ></textarea>
+
+                            <!-- Recursos que se adjuntan a este prompt (colapsados) -->
+                            <div class="border-t border-surface-border pt-2">
+                              <button
+                                type="button"
+                                class="flex w-full items-center gap-1.5 text-left text-xs font-bold text-ink-muted-on-dark transition-colors hover:text-ink-on-dark"
+                                [attr.aria-expanded]="isPromptResourcesOpen(scene.id, shot.id, p)"
+                                (click)="togglePromptResources(scene.id, shot.id, p)"
+                              >
+                                <i class="md md-attach_file"></i>
+                                <span class="flex-1">
+                                  Recursos asignados ({{ promptResources(scene).length }})
+                                </span>
+                                <i
+                                  class="md md-expand_more transition-transform"
+                                  [class.rotate-180]="isPromptResourcesOpen(scene.id, shot.id, p)"
+                                ></i>
+                              </button>
+                              @if (isPromptResourcesOpen(scene.id, shot.id, p)) {
+                                <div class="mt-2 flex flex-wrap gap-2">
+                                  @for (res of promptResources(scene); track res.id) {
+                                    <button
+                                      type="button"
+                                      class="flex items-center gap-2 rounded-lg border border-surface-border bg-surface-2 px-2 py-1 text-xs text-ink-muted-on-dark transition hover:border-accent hover:text-ink-on-dark"
+                                      [attr.aria-label]="'Editar elemento ' + res.name"
+                                      [title]="'Editar elemento: ' + res.name"
+                                      (click)="openAssetEditor(res.id)"
+                                    >
+                                      @if (res.url) {
+                                        <img
+                                          [src]="res.url | serverUrl"
+                                          [alt]="res.name"
+                                          class="h-8 w-8 rounded object-cover"
+                                          loading="lazy"
+                                          decoding="async"
+                                        />
+                                      } @else {
+                                        <i class="md md-image"></i>
+                                      }
+                                      <span class="max-w-40 truncate">{{ res.name }}</span>
+                                    </button>
+                                  }
+                                  @if (promptResources(scene).length === 0) {
+                                    <p class="text-xs text-ink-muted-on-dark">
+                                      Sin recursos adjuntos: el video se generará sólo con el
+                                      texto.
+                                    </p>
+                                  }
+                                  @if ((scene.references?.length ?? 0) > 0 &&
+                                      !activeVideoModel()?.reference_endpoint) {
+                                    <p class="text-xs text-ink-muted-on-dark">
+                                      El modelo de video no expone ruta multi-referencia: las
+                                      fotos de referencia no se adjuntan.
+                                    </p>
+                                  }
+                                </div>
+                              }
+                            </div>
                           </div>
                         }
                         @if ((shot.prompts ?? []).length === 0) {
