@@ -1107,15 +1107,34 @@ export class AgencyComponent {
    *  el agente; sin credencial o sin respuesta → plantillas locales. */
   private generateAnglesWithAgent(count: number): Observable<SalesAngle[]> {
     return this.agencyService.listCredentials().pipe(
-      map(
-        (creds) =>
-          creds.find(
-            (c) =>
-              !!c.api_key_mask && (c.provider === 'openrouter' || c.provider === 'anthropic'),
-          ) ?? null,
-      ),
-      mergeMap((cred) => (cred ? this.requestAgentAngles(cred, count) : of(buildAngles(count)))),
-      catchError(() => of(buildAngles(count))),
+      map((creds) => {
+        const usable = creds.filter(
+          (c) => !!c.api_key_mask && (c.provider === 'openrouter' || c.provider === 'anthropic'),
+        );
+        const model = this.modelText();
+        // 1) la credencial dueña del modelo elegido; 2) los slugs estilo
+        // "anthropic/claude…" solo existen en OpenRouter (preferido), y un
+        // modelo sin barra (id nativo) corresponde a Anthropic.
+        const byModel = model ? usable.find((c) => this.credentialModel(c) === model) : undefined;
+        const providerFor = !model || model.includes('/') ? 'openrouter' : 'anthropic';
+        return (
+          byModel ??
+          usable.find((c) => c.provider === providerFor) ??
+          usable[0] ??
+          null
+        );
+      }),
+      mergeMap((cred) => {
+        if (!cred) {
+          this.error.set('Sin credencial LLM (openrouter/anthropic); se cargaron ángulos sugeridos.');
+          return of(buildAngles(count));
+        }
+        return this.requestAgentAngles(cred, count);
+      }),
+      catchError(() => {
+        this.error.set('No se pudo consultar el LLM; se cargaron ángulos sugeridos.');
+        return of(buildAngles(count));
+      }),
     );
   }
 
@@ -1152,7 +1171,12 @@ export class AgencyComponent {
       })
         .then(async (res) => {
           if (!res.ok || !res.body) {
-            throw new Error(`agent chat HTTP ${res.status}`);
+            const detail = await res.text().catch(() => '');
+            throw new Error(
+              detail
+                ? `HTTP ${res.status}: ${detail.slice(0, 240)}`
+                : `agent chat HTTP ${res.status}`,
+            );
           }
           const reader = res.body.getReader();
           const decoder = new TextDecoder();
@@ -1179,7 +1203,9 @@ export class AgencyComponent {
           }
           throw new Error('sin sales_angles en la respuesta');
         })
-        .catch(() => {
+        .catch((err: unknown) => {
+          const why = err instanceof Error && err.message ? err.message : 'sin respuesta';
+          this.error.set(`El LLM no respondió (${why}); se cargaron ángulos sugeridos.`);
           subscriber.next(buildAngles(count));
           subscriber.complete();
         })
