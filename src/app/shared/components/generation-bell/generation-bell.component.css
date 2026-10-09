@@ -211,8 +211,12 @@
 .pop-fill {
   display: block;
   height: 100%;
+  width: 100%;
   background: var(--color-accent);
-  transition: width 0.4s ease;
+  /* scaleX en compositor (sin layout thrash): el progreso llega por --progress 0-1. */
+  transform: scaleX(var(--progress, 0));
+  transform-origin: left center;
+  transition: transform 0.4s ease;
 }
 
 .pop-footer {

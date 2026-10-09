@@ -18,7 +18,7 @@ interface EnvVar {
 const VARS: readonly EnvVar[] = [
   {
     key: 'API_URL',
-    fallback: 'http://localhost:8099/api/v1',
+    fallback: 'https://back-dev.synappta.cloud/api/v1',
     description: 'API base del backend (termina en /api/v1)',
   },
   {

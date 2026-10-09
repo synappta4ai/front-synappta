@@ -84,7 +84,7 @@
               <p class="card-prompt">{{ take.prompt }}</p>
               @if (take.status === 'running' || take.status === 'queued') {
                 <div class="progress-track">
-                  <div class="progress-fill" [style.width.%]="take.progress"></div>
+                  <div class="progress-fill" [style.--progress]="take.progress / 100 + ''"></div>
                 </div>
                 <div class="card-foot">
                   <span class="pct">{{ take.progress }}%</span>
@@ -148,7 +148,7 @@
             <i class="md md-autorenew md-spin text-3xl"></i>
             <p>{{ take.status === 'queued' ? 'En cola…' : 'Generando…' }}</p>
             <div class="progress-track">
-              <div class="progress-fill" [style.width.%]="take.progress"></div>
+              <div class="progress-fill" [style.--progress]="take.progress / 100 + ''"></div>
             </div>
             <span class="pct">{{ take.progress }}%</span>
           </div>

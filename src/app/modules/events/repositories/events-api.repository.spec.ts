@@ -3,12 +3,13 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 
 import { EventsApiRepository } from './events-api.repository';
+import { environment } from '@env/environment';
 
 describe('EventsApiRepository', () => {
   let repository: EventsApiRepository;
   let httpMock: HttpTestingController;
 
-  const base = 'http://localhost:9099/api/v1';
+  const base = environment.API_URL;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({

@@ -1552,8 +1552,12 @@ input {
 .gen-bell-popover .pop-fill {
   display: block;
   height: 100%;
+  width: 100%;
   background: var(--color-accent);
-  transition: width 0.4s ease;
+  /* scaleX en compositor (sin layout thrash): el progreso llega por --progress 0-1. */
+  transform: scaleX(var(--progress, 0));
+  transform-origin: left center;
+  transition: transform 0.4s ease;
 }
 
 .gen-bell-popover .pop-footer {
@@ -2002,17 +2006,23 @@ p-selectbutton:has(.section-toggle) {
 /* ── Lienzo: main estira al Studio ───────────────────────────── */
 /* Solo cuando aloja al studio, main se vuelve flex-column para que
    el host llene el área bajo la navbar hasta el borde inferior del
-   viewport, sin depender de la altura exacta de la navbar. */
+   viewport, sin depender de la altura exacta de la navbar. El min-height
+   garantiza que no quede una franja vacía cuando el contenido es más
+   bajo que la ventana (64px ≈ altura de la navbar). */
 main:has(> app-studio) {
   display: flex;
   flex-direction: column;
+  min-height: calc(100dvh - 64px);
 }
 
 /* Los hosts de p-dialog cuelgan del grid del shell; display:contents los
    saca del flujo para que no abran una segunda fila que le roba alto a
-   las columnas (su mask es position:fixed y no necesita caja propia). */
+   las columnas (su mask es position:fixed y no necesita caja propia).
+   Los p-popover NO van acá: viven dentro del aside y su panel se ancla
+   al host, así que sacarlos del flujo rompería su posición. */
 .studio-shell p-dialog,
-.studio-shell app-asset-picker-dialog {
+.studio-shell app-asset-picker-dialog,
+.studio-shell app-asset-edit-dialog {
   display: contents;
 }
 
@@ -2285,7 +2295,7 @@ main:has(> app-studio) {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
   min-height: 0;
   padding-right: 4px;
 }
@@ -2293,7 +2303,7 @@ main:has(> app-studio) {
 .studio-shell .studio-center {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
   min-width: 0;
   min-height: 0;
   overflow-y: auto;
@@ -2503,6 +2513,9 @@ main:has(> app-studio) {
   overflow: hidden;
   pointer-events: none;
   border-radius: 12px;
+  /* Reserva el gutter del scroll como el textarea: si aparece la barra,
+     el overlay no queda más ancho y el espejo no se desfasa. */
+  scrollbar-gutter: stable;
 }
 
 .studio-shell .prompt-wrap .prompt-input {
@@ -2510,6 +2523,7 @@ main:has(> app-studio) {
   background: transparent;
   color: transparent;
   caret-color: var(--st-text);
+  scrollbar-gutter: stable;
 }
 
 .studio-shell .prompt-wrap .prompt-input::selection {
@@ -2518,13 +2532,17 @@ main:has(> app-studio) {
 }
 
 /* Token del overlay espejado: el innerHTML no lleva el atributo de
-   encapsulación, por eso esta regla tiene que ser global. */
+   encapsulación, por eso esta regla tiene que ser global.
+   Sin padding horizontal: el pill no debe ocupar más que el texto del
+   textarea o el caret se desfasa (el overlay quedaría más ancho). */
 .studio-shell .mention-token {
   background: color-mix(in srgb, var(--st-accent) 22%, transparent);
   color: var(--st-accent);
   border-radius: 5px;
-  padding: 0 4px;
+  padding: 0;
   font-weight: inherit;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
 }
 
 .studio-shell .mention-menu {
@@ -2761,13 +2779,18 @@ main:has(> app-studio) {
   transition:
     background-color 0.15s ease,
     color 0.15s ease,
-    border-color 0.15s ease;
+    border-color 0.15s ease,
+    transform 0.12s ease;
 }
 
 .studio-shell .library-picker-btn:hover {
   background: var(--color-surface-hover);
   border-color: var(--color-accent);
   color: var(--color-accent);
+}
+
+.studio-shell .library-picker-btn:active {
+  transform: scale(0.98);
 }
 
 .studio-shell .library-picker-btn .md {
@@ -2815,7 +2838,8 @@ main:has(> app-studio) {
   overflow: hidden;
   transition:
     border-color 0.15s ease,
-    box-shadow 0.15s ease;
+    box-shadow 0.15s ease,
+    transform 0.12s ease;
 }
 
 .studio-shell .slot.filled {
@@ -2823,6 +2847,16 @@ main:has(> app-studio) {
 }
 
 .studio-shell .slot:hover {
+  border-color: var(--st-accent);
+}
+
+.studio-shell .slot:active {
+  transform: scale(0.97);
+}
+
+.studio-shell .slot:focus-visible {
+  outline: 2px solid var(--st-accent);
+  outline-offset: 2px;
   border-color: var(--st-accent);
 }
 
@@ -2861,7 +2895,8 @@ main:has(> app-studio) {
   pointer-events: none;
 }
 
-.studio-shell .slot:hover .slot-replace {
+.studio-shell .slot:hover .slot-replace,
+.studio-shell .slot:focus-within .slot-replace {
   opacity: 1;
 }
 
@@ -2870,8 +2905,8 @@ main:has(> app-studio) {
   position: absolute;
   top: 4px;
   right: 4px;
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2879,7 +2914,7 @@ main:has(> app-studio) {
   border-radius: 999px;
   background: color-mix(in srgb, var(--color-scrim) 80%, transparent);
   color: var(--color-ink-on-dark);
-  font-size: 9px;
+  font-size: 11px;
   cursor: pointer;
   opacity: 0;
   transition:
@@ -2888,8 +2923,15 @@ main:has(> app-studio) {
   z-index: 2;
 }
 
-.studio-shell .slot:hover .slot-clear {
+.studio-shell .slot:hover .slot-clear,
+.studio-shell .slot:focus-within .slot-clear {
   opacity: 1;
+}
+
+.studio-shell .slot-clear:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
 }
 
 .studio-shell .slot-clear:hover {
@@ -2947,6 +2989,13 @@ main:has(> app-studio) {
   cursor: pointer;
   background: var(--st-bg);
   min-width: 0;
+  transition:
+    border-color 0.15s ease,
+    transform 0.12s ease;
+}
+
+.studio-shell .asset-thumb:active {
+  transform: scale(0.96);
 }
 
 .studio-shell .asset-thumb:hover {
@@ -2964,23 +3013,50 @@ main:has(> app-studio) {
   border-color: var(--st-accent);
 }
 
-/* Botón ver (popover) sobre la miniatura */
+.studio-shell .asset-thumb:focus-visible {
+  outline: 2px solid var(--st-accent);
+  outline-offset: 1px;
+  border-color: var(--st-accent);
+}
+
+/* Botón ver (esquina inferior derecha de la miniatura): es un botón real
+   en esquina para no tapar el click de selección de la miniatura. */
 .studio-shell .asset-eye {
   position: absolute;
-  inset: 0;
+  right: 4px;
+  bottom: 4px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--color-scrim) 60%, transparent);
+  border: none;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-scrim) 80%, transparent);
   color: var(--color-ink-on-dark);
-  font-size: 12px;
+  font-size: 13px;
+  cursor: pointer;
   opacity: 0;
-  transition: opacity 0.12s ease;
+  transition:
+    opacity 0.12s ease,
+    background-color 0.12s ease;
+  z-index: 2;
 }
 
-.studio-shell .asset-thumb:hover .asset-eye {
+.studio-shell .asset-thumb:hover .asset-eye,
+.studio-shell .asset-thumb:focus-within .asset-eye {
   opacity: 1;
+}
+
+.studio-shell .asset-eye:hover {
+  background: var(--st-accent);
+  color: var(--color-on-accent);
+}
+
+.studio-shell .asset-eye:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
 }
 
 .studio-shell .asset-check {
@@ -3022,18 +3098,24 @@ main:has(> app-studio) {
   position: absolute;
   top: 2px;
   left: 2px;
-  width: 13px;
-  height: 13px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
+  border: none;
   border-radius: 999px;
   background: color-mix(in srgb, var(--color-scrim) 80%, transparent);
   color: var(--color-ink-on-dark);
-  font-size: 7px;
+  font-size: 11px;
   cursor: pointer;
   z-index: 2;
   transition: background-color 0.12s ease;
+}
+
+.studio-shell .asset-remove:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
 }
 
 .studio-shell .asset-remove:hover {
@@ -3265,8 +3347,12 @@ main:has(> app-studio) {
 
 .studio-shell .progress-fill {
   height: 100%;
+  width: 100%;
   background: var(--st-accent);
-  transition: width 0.4s ease;
+  /* scaleX en compositor (sin layout thrash): el progreso llega por --progress 0-1. */
+  transform: scaleX(var(--progress, 0));
+  transform-origin: left center;
+  transition: transform 0.4s ease;
 }
 
 /* ── Take reel ───────────────────────────────────────────────── */
@@ -3511,11 +3597,13 @@ main:has(> app-studio) {
 }
 
 .take-detail-dialog .take-detail-prompt {
-  border-left: 3px solid var(--st-accent, rgba(255, 255, 255, 0.2));
-  padding: 4px 12px;
+  padding: 8px 12px;
   display: flex;
   flex-direction: column;
   gap: 4px;
+  border: 1px solid var(--st-line, rgba(255, 255, 255, 0.1));
+  border-radius: 12px;
+  background: var(--st-panel-2, rgba(255, 255, 255, 0.06));
 }
 
 .take-detail-dialog .take-detail-prompt p {

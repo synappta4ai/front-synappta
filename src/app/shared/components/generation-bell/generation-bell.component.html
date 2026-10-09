@@ -68,7 +68,7 @@
           <span class="pop-prompt">{{ shortPrompt(take.prompt) }}</span>
           @if (take.status === 'running' || take.status === 'queued') {
             <span class="pop-track">
-              <span class="pop-fill" [style.width.%]="take.progress"></span>
+              <span class="pop-fill" [style.--progress]="take.progress / 100 + ''"></span>
             </span>
           }
           @if (store.isUnread(take.id)) {

@@ -44,6 +44,7 @@ import { environment } from '@env/environment';
 import { StudioService } from '../../services/studio.service';
 import { StudioModel, StudioModelType, StudioTake } from '../../interfaces';
 import { AssetPickerDialogComponent } from '@shared/components/index';
+import { AssetEditDialogComponent } from '@shared/components/asset-edit-dialog/asset-edit-dialog';
 import { SlidePillDirective } from '@shared/components/slide-pill/slide-pill.directive';
 import { TiltDirective } from '@shared/components/tilt/tilt.directive';
 import { ImgFadeDirective } from '@shared/components/img-fade/img-fade.directive';
@@ -92,6 +93,7 @@ interface MentionRow {
     Message,
     ServerUrlPipe,
     AssetPickerDialogComponent,
+    AssetEditDialogComponent,
     SlidePillDirective,
     TiltDirective,
     ImgFadeDirective,
@@ -1096,6 +1098,10 @@ export class StudioComponent {
   /** Modal de la biblioteca para elegir referencias ya subidas. */
   protected readonly libraryPickerVisible = signal(false);
 
+  /** Modal "Editar elemento": se abre tras subir una referencia para detallarla. */
+  protected readonly editorVisible = signal(false);
+  protected readonly editorAsset = signal<FileAsset | null>(null);
+
   /** Abre la modal de asignación de proyecto. */
   protected projectAlert(): void {
     this.projectDialogVisible.set(true);
@@ -1566,6 +1572,35 @@ export class StudioComponent {
     this.refSlots.set(slots);
   }
 
+  /** Refleja el asset guardado en la grilla local (nombre/chip al instante). */
+  protected onEditorSaved(saved: FileAsset): void {
+    this.assets.update((list) => list.map((item) => (item.id === saved.id ? saved : item)));
+    this.editorAsset.set(saved);
+  }
+
+  /** Tras un cambio de fondo en el editor, refresca el asset abierto. */
+  protected onEditorChanged(): void {
+    const asset = this.editorAsset();
+    if (!asset) {
+      return;
+    }
+    this.libraryService
+      .getFile(asset.id)
+      .pipe(catchError(() => EMPTY))
+      .subscribe((fresh) => {
+        if (fresh) {
+          this.assets.update((list) =>
+            list.map((item) => (item.id === fresh.id ? fresh : item)),
+          );
+          this.editorAsset.set(fresh);
+        } else {
+          this.removeAsset(asset.id);
+          this.editorVisible.set(false);
+          this.editorAsset.set(null);
+        }
+      });
+  }
+
   /** Muestra el aviso de límite solo en el momento de la violación; se auto-oculta. */
   private flashRefError(message: string): void {
     this.refError.set(message);
@@ -1626,6 +1661,9 @@ export class StudioComponent {
         if (!this.selectedAssetIds().has(asset.id)) {
           this.toggleAsset(asset.id);
         }
+        // Abrir el editor para nombrar y detallar la referencia recién subida.
+        this.editorAsset.set(asset);
+        this.editorVisible.set(true);
       });
   }
 

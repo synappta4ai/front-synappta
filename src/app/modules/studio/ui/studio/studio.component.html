@@ -87,18 +87,30 @@
             <div class="slot-grid">
               @for (slot of refSlotDefs; track slot.key) {
                 <!-- label nativo: el click activa el input file oculto -->
-                <label class="slot" [class.filled]="!!refSlots()[slot.key]">
+                <label
+                  class="slot"
+                  [class.filled]="!!refSlots()[slot.key]"
+                  tabindex="0"
+                  (keydown.enter)="slotInput.click()"
+                  (keydown.space)="$event.preventDefault(); slotInput.click()"
+                >
                   @if (uploadingSlot() === slot.key) {
                     <span class="slot-uploading"><i class="md md-autorenew md-spin"></i></span>
                   } @else if (refSlots()[slot.key]; as assetId) {
-                    <img
-                      class="slot-img"
-                      [src]="assetThumbUrl(assetId)"
-                      [alt]="slot.label"
-                      loading="lazy"
-                      decoding="async"
-                      (error)="onThumbError($event)"
-                    />
+                    @if (assetThumbUrl(assetId); as thumb) {
+                      <img
+                        class="slot-img"
+                        [src]="thumb"
+                        [alt]="slot.label"
+                        loading="lazy"
+                        decoding="async"
+                        (error)="onThumbError($event)"
+                      />
+                    } @else {
+                      <i class="md md-image slot-plus mb-3"></i>
+                      <span class="slot-label">{{ slot.label }}</span>
+                      <span class="slot-hint">{{ slot.hint }}</span>
+                    }
                     <span class="slot-replace"><i class="md md-refresh"></i></span>
                     <button
                       type="button"
@@ -118,6 +130,7 @@
                     <span class="slot-hint">{{ slot.hint }}</span>
                   }
                   <input
+                    #slotInput
                     type="file"
                     accept="image/png,image/jpeg"
                     hidden
@@ -147,6 +160,7 @@
                     tabindex="0"
                     (click)="toggleAsset(asset.id)"
                     (keydown.enter)="toggleAsset(asset.id)"
+                    (keydown.space)="$event.preventDefault(); toggleAsset(asset.id)"
                     [title]="asset.filename"
                   >
                     <img
@@ -168,13 +182,15 @@
                     >
                       <i class="md md-close"></i>
                     </button>
-                    <span
+                    <button
+                      type="button"
                       class="asset-eye"
                       title="Ver"
+                      [attr.aria-label]="'Ver ' + asset.filename"
                       (click)="$event.stopPropagation(); openPreview(asset, $event)"
                     >
                       <i class="md md-visibility"></i>
-                    </span>
+                    </button>
                   </div>
                 }
                 @if (assets().length > 4) {
@@ -620,7 +636,7 @@
                 <i class="md md-autorenew md-spin text-3xl"></i>
                 <p>{{ take.status === 'queued' ? 'En cola…' : 'Generando…' }}</p>
                 <div class="progress-track">
-                  <div class="progress-fill" [style.width.%]="take.progress"></div>
+                  <div class="progress-fill" [style.--progress]="take.progress / 100 + ''"></div>
                 </div>
                 <p class="muted small">{{ take.progress }}%</p>
               </div>
@@ -1004,7 +1020,7 @@
               </p>
             }
             <div class="progress-track slim">
-              <div class="progress-fill" [style.width.%]="take.progress"></div>
+              <div class="progress-fill" [style.--progress]="take.progress / 100 + ''"></div>
             </div>
             @if (take.refImages?.length) {
               <div class="ref-strip">
@@ -1177,7 +1193,7 @@
                 <i class="md md-autorenew md-spin text-3xl"></i>
                 <p>{{ dt.status === 'queued' ? 'En cola…' : 'Generando…' }}</p>
                 <div class="progress-track">
-                  <div class="progress-fill" [style.width.%]="dt.progress"></div>
+                  <div class="progress-fill" [style.--progress]="dt.progress / 100 + ''"></div>
                 </div>
                 <p class="muted small">{{ dt.progress }}%</p>
               </div>
@@ -1302,5 +1318,14 @@
     (confirmed)="onLibraryPicked($event)"
     title="Elegir referencias de la biblioteca"
     [max]="maxSelectedRefs"
+  />
+
+  <!-- Editar elemento: se abre tras subir una referencia para detallarla -->
+  <app-asset-edit-dialog
+    [visible]="editorVisible()"
+    [asset]="editorAsset()"
+    (closed)="editorVisible.set(false)"
+    (changed)="onEditorChanged()"
+    (assetSaved)="onEditorSaved($event)"
   />
 </div>

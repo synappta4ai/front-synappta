@@ -6,6 +6,7 @@ import { provideRouter } from '@angular/router';
 import { AuthService } from './auth.service';
 import { AuthApiRepository } from '../repositories';
 import { UserSessionStore } from '../../../core/store/user.session';
+import { environment } from '@env/environment';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -16,6 +17,27 @@ describe('AuthService', () => {
     await TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
     }).compileComponents();
+
+    // jsdom no expone un localStorage funcional: mock mínimo (patrón de
+    // storage.service.spec) para aislar la sesión entre tests.
+    const store: Record<string, string> = {};
+    Object.defineProperty(window, 'localStorage', {
+      value: {
+        getItem: (key: string) => store[key] ?? null,
+        setItem: (key: string, value: string) => {
+          store[key] = value;
+        },
+        removeItem: (key: string) => {
+          delete store[key];
+        },
+        clear: () => {
+          for (const key of Object.keys(store)) {
+            delete store[key];
+          }
+        },
+      },
+      writable: true,
+    });
 
     localStorage.clear();
 
@@ -47,7 +69,7 @@ describe('AuthService', () => {
       expect(sessionStore.currentUser()?.username).toBe('drako');
     });
 
-    httpMock.expectOne('http://localhost:9099/api/v1/auth/login').flush(response);
+    httpMock.expectOne(`${environment.API_URL}/auth/login`).flush(response);
   });
 
   it('errors on failed login without storing the session', () => {
@@ -62,7 +84,7 @@ describe('AuthService', () => {
     });
 
     httpMock
-      .expectOne('http://localhost:9099/api/v1/auth/login')
+      .expectOne(`${environment.API_URL}/auth/login`)
       .flush(
         { success: false, message: 'invalid credentials', data: null },
         { status: 401, statusText: 'Unauthorized' },
