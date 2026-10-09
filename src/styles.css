@@ -300,12 +300,14 @@
       on-accent #0F0F0F / accent ....... 17.1:1
       accent / background .............. 1.2:1 (solo relleno con on-accent, nunca texto)
       ink-on-dark #141414 / surface .... 7.9:1 · / surface-2 7.3:1
-      ink-muted-on-dark #3D3D3D / surface 4.7:1 (texto secundario sobre gris)
+      ink-muted-on-dark #333333 / surface 5.6:1 · / surface-2 4.9:1
       ink-on-scrim #F5F5F5 / scrim ..... 15.5:1 · muted #C6C6C6 11.9:1
       accent / surface ................. ~2:1 (solo bordes/rellenos y acentos, nunca texto;
                                            el texto sobre acento usa on-accent)
      surface-border-strong / surface .. 4.3:1 · / surface-2 3.6:1 (bordes de inputs)
-     success · warning · danger · info / surface-2 ≥ 4.9:1
+      tags en claro: pastilla teñida oscura + #F5F5F5 →
+        info 5.2:1 · warn 4.9:1 · danger 5.7:1 · success (accent) 17.1:1
+        (en .dark, tinte suave sobre superficie negra, idem ≥ 4.5:1)
      danger-strong #A33A3A / background 4.9:1
    ============================================ */
 @theme {
@@ -337,7 +339,7 @@
      sobre ellas va en negro (los nombres *-on-dark se conservan para no
      renombrar cientos de usos; en .dark recuperan sus valores claros). */
   --color-ink-on-dark: #141414;
-  --color-ink-muted-on-dark: #3d3d3d;
+  --color-ink-muted-on-dark: #333333;
   /* Texto sobre scrim/velos oscuros (constantes en ambos temas): siempre claro. */
   --color-ink-on-scrim: #f5f5f5;
   --color-ink-muted-on-scrim: #c6c6c6;
@@ -978,18 +980,42 @@ input {
 }
 
 .p-tag.p-tag-info {
+  /* En claro: el tinte lavado no lee sobre el gris (1.1:1) — pastilla
+     teñida oscura con texto claro (5.2:1). En .dark se restaura abajo. */
+  background: color-mix(in srgb, var(--color-info) 55%, #1e1e1e);
+  color: #f5f5f5;
+  border-color: color-mix(in srgb, var(--color-info) 55%, #1e1e1e);
+}
+
+.dark .p-tag.p-tag-info {
   background: color-mix(in srgb, var(--color-info) 14%, var(--color-surface));
   color: var(--color-info-ink);
   border-color: color-mix(in srgb, var(--color-info) 40%, transparent);
 }
 
 .p-tag.p-tag-danger {
+  /* En claro: pastilla teñida oscura con texto claro (5.7:1).
+     En .dark se restaura abajo. */
+  background: color-mix(in srgb, var(--color-danger) 55%, #1e1e1e);
+  color: #f5f5f5;
+  border-color: color-mix(in srgb, var(--color-danger) 55%, #1e1e1e);
+}
+
+.dark .p-tag.p-tag-danger {
   background: color-mix(in srgb, var(--color-danger) 14%, var(--color-surface));
   color: var(--color-danger);
   border-color: color-mix(in srgb, var(--color-danger) 40%, transparent);
 }
 
 .p-tag.p-tag-warn {
+  /* En claro: pastilla teñida oscura con texto claro (4.9:1).
+     En .dark se restaura abajo. */
+  background: color-mix(in srgb, var(--color-warning) 50%, #1e1e1e);
+  color: #f5f5f5;
+  border-color: color-mix(in srgb, var(--color-warning) 50%, #1e1e1e);
+}
+
+.dark .p-tag.p-tag-warn {
   background: color-mix(in srgb, var(--color-warning) 14%, var(--color-surface));
   color: var(--color-warning);
   border-color: color-mix(in srgb, var(--color-warning) 40%, transparent);

@@ -1,7 +1,7 @@
 <!-- /agency = detectives y redactores por experto: Documentación → Ángulos → Storyboard → Escenas -->
 <app-page-container [title]="'Agencia · ' + agentLabel()" animate.enter="anim-page">
   @if (error(); as message) {
-    <div class="mb-6">
+    <div class="mb-6" aria-live="assertive">
       <p-message severity="error" [text]="message" [escape]="false" styleClass="w-full" />
     </div>
   }
@@ -25,7 +25,9 @@
             <i class="md md-edit_note text-lg text-accent"></i>
           </div>
           <div>
-            <h2 class="text-lg font-bold text-ink-on-dark">Información del Proyecto</h2>
+            <h2 id="agency-phase-heading" tabindex="-1" class="text-lg font-bold text-ink-on-dark">
+              Información del Proyecto
+            </h2>
             <p class="text-sm text-ink-muted-on-dark">Documentación para análisis IA</p>
           </div>
           <!-- Select de proyecto existente en el header de la card -->
@@ -186,6 +188,8 @@
               accept=".pdf,.docx,.txt,.md"
               multiple
               class="hidden"
+              tabindex="-1"
+              aria-label="Subir folleto del proyecto"
               (change)="onBriefFiles($event)"
             />
             <p-button
@@ -216,7 +220,7 @@
           >
         </div>
 
-        <div class="flex items-center justify-between border-t border-surface-border pt-4">
+        <div class="flex items-center justify-between gap-3 border-t border-surface-border pt-4">
           <p class="text-sm text-ink-muted-on-dark">
             <i class="md md-info mr-1"></i>
             @if (inputsLocked()) {
@@ -225,20 +229,24 @@
               El sistema creará tu proyecto y generará {{ anglesNoun() }}
             }
           </p>
-          <span
-            pTooltip="Completá los campos requeridos para analizar"
-            showDelay="400"
-            class="inline-flex"
-          >
+          <div class="flex shrink-0 flex-col items-end gap-1">
             <p-button
               type="button"
-              label="Generar"
+              label="Generar ángulos"
+              [attr.aria-describedby]="
+                !canProceedToAngles && !loading() ? 'angles-gate-hint' : null
+              "
               [loading]="loading()"
               [disabled]="!canProceedToAngles || loading()"
               (onClick)="generateAngles()"
               styleClass="px-6 active:scale-[0.98]"
             />
-          </span>
+            @if (!canProceedToAngles && !loading()) {
+              <small id="angles-gate-hint" class="text-ink-muted-on-dark">
+                Completá los campos requeridos para analizar
+              </small>
+            }
+          </div>
         </div>
       </form>
     </p-card>
@@ -253,20 +261,24 @@
             <i class="md md-explore text-lg text-accent"></i>
           </div>
           <div>
-            <h2 class="text-lg font-bold text-ink-on-dark">
+            <h2 id="agency-phase-heading" tabindex="-1" class="text-lg font-bold text-ink-on-dark">
               {{ agent() === 'real_estate' ? 'Ángulos de Venta' : 'Prompts' }}
             </h2>
-            <p class="text-sm text-ink-muted-on-dark">Selecciona uno o más para continuar</p>
+            <p class="text-sm text-ink-muted-on-dark">Seleccioná uno o más para continuar</p>
           </div>
         </div>
       </ng-template>
 
       <div class="flex flex-col gap-4">
         @if (selectedAnglesCount > 0) {
-          <div class="flex items-center gap-2">
-            <p-tag [value]="selectedAnglesCount + ' seleccionados'" severity="info" />
+          <div class="flex items-center gap-2" aria-live="polite">
+            <span
+              class="inline-flex items-center rounded-full border border-surface-border-strong bg-surface px-2.5 py-1 text-xs font-semibold text-ink-on-dark"
+            >
+              {{ selectedAnglesCount }} seleccionados
+            </span>
             <span class="text-sm text-ink-muted-on-dark"
-              >Selecciona los {{ anglesNoun() }} que mejor se adapten a tu proyecto</span
+              >Seleccioná los {{ anglesNoun() }} que mejor se adapten a tu proyecto</span
             >
           </div>
         }
@@ -281,17 +293,20 @@
                   : 'border-surface-border bg-surface hover:border-surface-border-strong'
               "
               (click)="onAngleCardActivate(angle.id, $event)"
-              (keydown.enter)="onAngleCardActivate(angle.id, $event)"
-              (keydown.space)="onAngleCardActivate(angle.id, $event)"
-              tabindex="0"
-              role="checkbox"
-              [attr.aria-checked]="angle.selected"
-              [attr.aria-label]="'Ángulo ' + (i + 1) + ': ' + angle.title"
             >
-              <!-- Checkbox decorativo: el control real es la card (role=checkbox).
-                   Pointer-events:none evita el doble disparo (click + ngModelChange). -->
-              <div class="pointer-events-none pt-0.5" aria-hidden="true">
-                <p-checkbox [binary]="true" [ngModel]="angle.selected" />
+              <!-- Checkbox real: el único control de tildado (teclado + lector).
+                   La card solo replica el click de mouse/touch fuera de controles. -->
+              <div class="pt-0.5">
+                <p-checkbox
+                  [binary]="true"
+                  [inputId]="'angle-check-' + angle.id"
+                  [ngModel]="angle.selected"
+                  (ngModelChange)="toggleAngle(angle.id)"
+                  [ngModelOptions]="{ standalone: true }"
+                />
+                <label class="sr-only" [attr.for]="'angle-check-' + angle.id"
+                  >Seleccionar ángulo: {{ angle.title }}</label
+                >
               </div>
               <div class="flex-1">
                 <div class="flex items-center gap-2">
@@ -326,23 +341,27 @@
           }
         </div>
 
-        <div class="flex items-center justify-between border-t border-surface-border pt-4 mt-2">
+        <div
+          class="flex items-center justify-between gap-3 border-t border-surface-border pt-4 mt-2"
+        >
           <p-button label="← Volver" severity="secondary" text (onClick)="prevPhase()" />
-          <span
-            pTooltip="Seleccioná al menos un ángulo para continuar"
-            showDelay="400"
-            class="inline-flex"
-          >
+          <div class="flex shrink-0 flex-col items-end gap-1">
             <p-button
-              label="Generar Storyboard"
+              label="Siguiente"
               icon="md md-arrow_forward"
               iconPos="right"
+              [attr.aria-describedby]="!canProceedToStoryboard ? 'storyboard-gate-hint' : null"
               [loading]="loading()"
               [disabled]="!canProceedToStoryboard"
               (onClick)="generateStoryboard()"
               styleClass="px-6 active:scale-[0.98]"
             />
-          </span>
+            @if (!canProceedToStoryboard) {
+              <small id="storyboard-gate-hint" class="text-ink-muted-on-dark">
+                Seleccioná al menos un ángulo para continuar
+              </small>
+            }
+          </div>
         </div>
       </div>
     </p-card>
@@ -357,16 +376,24 @@
             <i class="md md-photo_library text-lg text-accent"></i>
           </div>
           <div class="flex-1">
-            <h2 class="text-lg font-bold text-ink-on-dark">Storyboard</h2>
+            <h2 id="agency-phase-heading" tabindex="-1" class="text-lg font-bold text-ink-on-dark">
+              Storyboard
+            </h2>
             <p class="text-sm text-ink-muted-on-dark">
               Subí fotos de referencia de cada ángulo, generá la hoja de storyboard y aprobala para
               continuar
             </p>
           </div>
-          <p-tag [value]="storyboard().length + ' escenas'" severity="info" />
+          <span
+            class="inline-flex items-center rounded-full border border-surface-border-strong bg-surface px-2.5 py-1 text-xs font-semibold text-ink-on-dark"
+          >
+            {{ storyboard().length }} escenas
+          </span>
           <p-button
             id="boardReelTrigger"
-            [label]="boardQueue().length ? 'Generando ' + boardQueue().length + '…' : 'Generaciones'"
+            [label]="
+              boardQueue().length ? 'Generando ' + boardQueue().length + '…' : 'Generaciones'
+            "
             icon="md md-photo_library"
             severity="secondary"
             size="small"
@@ -408,7 +435,11 @@
             <div class="flex items-center gap-2 border-b border-surface-border pb-2">
               <i class="md md-gps_fixed text-accent"></i>
               <h3 class="font-bold text-ink-on-dark">{{ group.angleTitle }}</h3>
-              <p-tag [value]="group.scenes.length + ' escenas'" severity="info" />
+              <span
+                class="inline-flex items-center rounded-full border border-surface-border-strong bg-surface px-2.5 py-1 text-xs font-semibold text-ink-on-dark"
+              >
+                {{ group.scenes.length }} escenas
+              </span>
             </div>
 
             @for (scene of group.scenes; track scene.id; let i = $index) {
@@ -417,7 +448,7 @@
                 [style.animation-delay.ms]="i < 8 ? i * 35 : 280"
                 class="rounded-2xl border border-surface-border bg-surface-2 p-5"
               >
-                <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <div class="mb-2 flex flex-wrap items-start justify-between gap-3">
                   <div class="flex min-w-0 flex-1 items-start gap-3">
                     <div
                       class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-accent text-on-accent text-sm font-bold"
@@ -459,15 +490,47 @@
                     />
                     <p-button
                       [label]="scene.approved ? 'Aprobado ✓' : 'Aprobar'"
-                      [icon]="
-                        scene.approved ? 'md md-check_circle' : 'md md-radio_button_unchecked'
-                      "
+                      [icon]="scene.approved ? 'md md-check_circle' : ''"
                       [severity]="scene.approved ? 'success' : 'contrast'"
                       size="small"
                       [disabled]="!scene.boardImageUrl || !!scene.boardGenerating"
                       (onClick)="toggleApproveScene(scene.id)"
                     />
                   </div>
+                </div>
+                <div class="mb-4 flex justify-end">
+                  @if (pendingDeleteSceneId() === scene.id) {
+                    <span
+                      class="flex items-center gap-1"
+                      role="group"
+                      [attr.aria-label]="'Confirmar eliminación de ' + scene.title"
+                    >
+                      <p-button
+                        label="Eliminar"
+                        icon="md md-delete"
+                        severity="danger"
+                        size="small"
+                        (onClick)="removeScene(scene.id)"
+                      />
+                      <p-button
+                        label="Cancelar"
+                        severity="secondary"
+                        text
+                        size="small"
+                        (onClick)="cancelRemoveScene()"
+                      />
+                    </span>
+                  } @else {
+                    <p-button
+                      label="Eliminar"
+                      icon="md md-close"
+                      severity="danger"
+                      text
+                      size="small"
+                      [ariaLabel]="'Eliminar ' + scene.title"
+                      (onClick)="armRemoveScene(scene.id)"
+                    />
+                  }
                 </div>
 
                 <!-- Fotos de referencia de la escena: al aprobarse habilitan "Generar Storyboard" -->
@@ -478,7 +541,11 @@
                       >Fotos de referencia de la escena</span
                     >
                     @if (scene.references?.length) {
-                      <p-tag [value]="(scene.references?.length ?? 0) + ' fotos'" severity="info" />
+                      <span
+                        class="inline-flex items-center rounded-full border border-surface-border-strong bg-surface px-2.5 py-1 text-xs font-semibold text-ink-on-dark"
+                      >
+                        {{ scene.references?.length ?? 0 }} fotos
+                      </span>
                     }
                     @if (scene.refsApproved) {
                       <p-tag value="Referencias aprobadas ✓" severity="success" />
@@ -490,6 +557,8 @@
                         accept="image/*"
                         multiple
                         class="hidden"
+                        tabindex="-1"
+                        [attr.aria-label]="'Subir fotos de referencia de ' + scene.title"
                         (change)="onSceneReferenceFiles(scene.id, $event)"
                       />
                       <p-button
@@ -505,9 +574,7 @@
                         [label]="
                           scene.refsApproved ? 'Referencias aprobadas' : 'Aprobar referencias'
                         "
-                        [icon]="
-                          scene.refsApproved ? 'md md-check_circle' : 'md md-radio_button_unchecked'
-                        "
+                        [icon]="scene.refsApproved ? 'md md-check_circle' : ''"
                         [severity]="scene.refsApproved ? 'success' : 'contrast'"
                         size="small"
                         [disabled]="!scene.references?.length || scene.refsApproved"
@@ -555,8 +622,8 @@
                   }
                   @if (!scene.refsApproved) {
                     <p class="mt-2 text-xs text-ink-muted-on-dark">
-                      Subí al menos una foto y aprobá las referencias para habilitar
-                      "Generar Storyboard".
+                      Subí al menos una foto y aprobá las referencias para habilitar "Generar
+                      Storyboard".
                     </p>
                   }
                 </div>
@@ -619,28 +686,35 @@
         }
       </div>
 
-      <div class="flex items-center justify-between border-t border-surface-border pt-4 mt-6">
+      <div class="flex items-center justify-between gap-3 border-t border-surface-border pt-4 mt-6">
         <p-button label="← Volver" severity="secondary" text (onClick)="prevPhase()" />
-        <div class="flex items-center gap-3">
+        <div class="flex shrink-0 flex-col items-end gap-1">
           @if (storyboard().length > 0 && !canProceedToScenes) {
-            <span class="text-sm text-ink-muted-on-dark">
+            <span id="scenes-gate-hint" class="text-sm text-ink-muted-on-dark">
               {{ pendingApprovals }} escena(s) sin storyboard aprobado
             </span>
           }
-          <span
-            pTooltip="Generá y aprobá el storyboard de todas las escenas para continuar"
-            showDelay="400"
-            class="inline-flex"
-          >
+          <div class="flex flex-wrap justify-end gap-2">
+            @if (canApproveAll) {
+              <p-button
+                label="Aprobar todas"
+                icon="md md-check_circle"
+                severity="secondary"
+                (onClick)="approveAllScenes()"
+              />
+            }
             <p-button
-              label="Continuar a Escenas →"
+              label="Siguiente: Escenas"
               icon="md md-arrow_forward"
               iconPos="right"
+              [attr.aria-describedby]="
+                storyboard().length > 0 && !canProceedToScenes ? 'scenes-gate-hint' : null
+              "
               [disabled]="!canProceedToScenes"
               (onClick)="nextPhase()"
               styleClass="px-6 active:scale-[0.98]"
             />
-          </span>
+          </div>
         </div>
       </div>
     </p-card>
@@ -655,7 +729,9 @@
             <i class="md md-movie text-lg text-accent"></i>
           </div>
           <div>
-            <h2 class="text-lg font-bold text-ink-on-dark">Escenas y Prompts Finales</h2>
+            <h2 id="agency-phase-heading" tabindex="-1" class="text-lg font-bold text-ink-on-dark">
+              Escenas y Prompts Finales
+            </h2>
             <p class="text-sm text-ink-muted-on-dark">
               Cada storyboard aprobado, emparentado con su prompt de video
             </p>
@@ -665,125 +741,153 @@
 
       @if (storyboard().length > 0) {
         <div class="flex flex-col gap-6">
-          <!-- Configuración de los videos: modelo, duración, ratio y tags -->
-          <div
-            class="flex flex-wrap items-start gap-4 rounded-xl border border-surface-border bg-surface-2 px-4 py-3"
-          >
-            <div class="flex flex-col gap-1">
-              <span class="text-xs font-bold text-ink-muted-on-dark">Modelo de video</span>
-              <p-select
-                inputId="agencyVideoModel"
-                aria-label="Modelo de videos"
-                [options]="modelVideoOptions()"
-                optionLabel="label"
-                optionValue="value"
-                [ngModel]="modelVideo()"
-                (ngModelChange)="modelVideo.set($event); onVideoConfigChange()"
-                [ngModelOptions]="{ standalone: true }"
-                styleClass="w-72"
-                appendTo="body"
-              />
-            </div>
-            <div class="flex flex-col gap-1">
-              <span class="text-xs font-bold text-ink-muted-on-dark">Duración por video (s)</span>
-              <p-inputNumber
-                inputId="agencyVideoDuration"
-                [min]="1"
-                [max]="600"
-                [showButtons]="true"
-                styleClass="w-36"
-                [ngModel]="videoDuration()"
-                (ngModelChange)="videoDuration.set($event || 10); onVideoConfigChange()"
-                [ngModelOptions]="{ standalone: true }"
-              />
-              <small class="text-ink-muted-on-dark">
-                @if (videoMaxDuration() > 0) {
-                  El modelo admite hasta {{ videoMaxDuration() }}s.
-                } @else {
-                  Duración pedida al modelo.
-                }
-              </small>
-            </div>
-            <div class="flex flex-col gap-1">
-              <span class="text-xs font-bold text-ink-muted-on-dark">Relación de aspecto</span>
-              <p-select
-                aria-label="Relación de aspecto"
-                [options]="videoRatioOptions()"
-                optionLabel="label"
-                optionValue="value"
-                [ngModel]="videoRatio()"
-                (ngModelChange)="videoRatio.set($event); onVideoConfigChange()"
-                [ngModelOptions]="{ standalone: true }"
-                styleClass="w-56"
-                appendTo="body"
-              />
-            </div>
-            <div class="flex flex-col gap-1">
-              <span class="text-xs font-bold text-ink-muted-on-dark">Tags de referencia</span>
-              <input
-                pInputText
-                aria-label="Tags de referencia"
-                placeholder="Ej: lujo familia cdmx"
-                class="w-56"
-                [ngModel]="videoTags()"
-                (ngModelChange)="videoTags.set($event)"
-                (change)="onVideoConfigChange()"
-                [ngModelOptions]="{ standalone: true }"
-              />
-            </div>
-            <div class="flex flex-col gap-1">
-              <span class="text-xs font-bold text-ink-muted-on-dark">Calidad del video</span>
-              <p-select
-                aria-label="Calidad del video"
-                [options]="videoResolutionOptions()"
-                optionLabel="label"
-                optionValue="value"
-                [ngModel]="videoResolution()"
-                (ngModelChange)="videoResolution.set($event); onVideoConfigChange()"
-                [ngModelOptions]="{ standalone: true }"
-                styleClass="w-56"
-                appendTo="body"
-              />
-              <small class="text-ink-muted-on-dark">Vacío = default del modelo.</small>
-            </div>
-            <div class="flex flex-col gap-1">
-              <span class="text-xs font-bold text-ink-muted-on-dark">Sonido</span>
-              <div class="flex h-8 items-center gap-2">
-                <p-toggleswitch
-                  ariaLabel="Sonido del video"
-                  [ngModel]="videoAudio()"
-                  (ngModelChange)="videoAudio.set($event)"
+          <!-- Configuración de los videos: modelo, duración, ratio, resolución y sonido -->
+          <div class="rounded-xl border border-surface-border bg-surface-2 px-4 py-3">
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              <div class="flex flex-col gap-1">
+                <label for="agencyVideoModel" class="text-xs font-bold text-ink-muted-on-dark"
+                  >Modelo de video</label
+                >
+                <p-select
+                  inputId="agencyVideoModel"
+                  aria-label="Modelo de videos"
+                  [options]="modelVideoOptions()"
+                  optionLabel="label"
+                  optionValue="value"
+                  [ngModel]="modelVideo()"
+                  (ngModelChange)="modelVideo.set($event); onVideoConfigChange()"
+                  [ngModelOptions]="{ standalone: true }"
+                  styleClass="w-full"
+                  appendTo="body"
+                />
+              </div>
+              <div class="flex flex-col gap-1">
+                <label for="agencyVideoDuration" class="text-xs font-bold text-ink-muted-on-dark"
+                  >Duración por video (s)</label
+                >
+                <p-inputNumber
+                  inputId="agencyVideoDuration"
+                  [min]="1"
+                  [max]="600"
+                  [showButtons]="true"
+                  styleClass="w-full"
+                  [ngModel]="videoDuration()"
+                  (ngModelChange)="videoDuration.set($event || 10); onVideoConfigChange()"
                   [ngModelOptions]="{ standalone: true }"
                 />
-                <span class="text-xs text-ink-muted-on-dark">
-                  {{ videoAudio() ? 'Con audio' : 'Sin audio' }}
-                </span>
+                <small class="text-ink-muted-on-dark">
+                  @if (videoMaxDuration() > 0) {
+                    El modelo admite hasta {{ videoMaxDuration() }}s.
+                  } @else {
+                    Duración pedida al modelo.
+                  }
+                </small>
+              </div>
+              <div class="flex flex-col gap-1">
+                <label for="agencyVideoRatio" class="text-xs font-bold text-ink-muted-on-dark"
+                  >Relación de aspecto</label
+                >
+                <p-select
+                  inputId="agencyVideoRatio"
+                  aria-label="Relación de aspecto"
+                  [options]="videoRatioOptions()"
+                  optionLabel="label"
+                  optionValue="value"
+                  [ngModel]="videoRatio()"
+                  (ngModelChange)="videoRatio.set($event); onVideoConfigChange()"
+                  [ngModelOptions]="{ standalone: true }"
+                  styleClass="w-full"
+                  appendTo="body"
+                />
+              </div>
+              <div class="flex flex-col gap-1">
+                <label for="agencyVideoResolution" class="text-xs font-bold text-ink-muted-on-dark"
+                  >Resolución</label
+                >
+                <p-select
+                  inputId="agencyVideoResolution"
+                  aria-label="Resolución del video"
+                  [options]="videoResolutionOptions()"
+                  optionLabel="label"
+                  optionValue="value"
+                  [ngModel]="videoResolution()"
+                  (ngModelChange)="videoResolution.set($event); onVideoConfigChange()"
+                  [ngModelOptions]="{ standalone: true }"
+                  styleClass="w-full"
+                  appendTo="body"
+                />
+                <small class="text-ink-muted-on-dark">Calidad pedida al modelo.</small>
+              </div>
+              <div class="flex flex-col gap-1">
+                <span id="agencyVideoAudioTitle" class="text-xs font-bold text-ink-muted-on-dark"
+                  >Sonido</span
+                >
+                <div
+                  class="flex min-h-10 items-center gap-2"
+                  role="group"
+                  aria-labelledby="agencyVideoAudioTitle"
+                >
+                  <p-checkbox
+                    inputId="agencyVideoAudio"
+                    [binary]="true"
+                    [ngModel]="videoAudio()"
+                    (ngModelChange)="videoAudio.set($event); onVideoConfigChange()"
+                    [ngModelOptions]="{ standalone: true }"
+                  />
+                  <label for="agencyVideoAudio" class="text-sm text-ink-on-dark">Con sonido</label>
+                </div>
+                <small id="agencyVideoAudioHint" class="text-ink-muted-on-dark">
+                  @if (videoAudio()) {
+                    El video se generará con audio.
+                  } @else {
+                    El video se generará sin audio.
+                  }
+                </small>
+              </div>
+              <div class="flex flex-col gap-1">
+                <span class="text-xs font-bold text-ink-muted-on-dark" aria-hidden="true"
+                  >&nbsp;</span
+                >
+                <div class="flex min-h-10 items-center">
+                  <p-button
+                    label="Generar prompts"
+                    icon="md md-refresh"
+                    severity="secondary"
+                    (onClick)="generatePrompts()"
+                  />
+                </div>
               </div>
             </div>
-            <p-button
-              label="Generar prompts"
-              class="mt-5"
-              icon="md md-auto_fix_high"
-              severity="secondary"
-              (onClick)="generatePrompts()"
-            />
-            <p-button
-              id="videoReelTrigger"
-              [label]="videoQueue().length ? 'Generando ' + videoQueue().length + '…' : 'Generaciones'"
-              icon="md md-movie"
-              severity="secondary"
-              class="mt-5"
-              [loading]="videoQueue().length > 0"
-              (onClick)="toggleVideoReel($event)"
-            />
-            @if (videoSegmentCount() > 1) {
-              <p-tag
-                [value]="'Se parte en ' + videoSegmentCount() + ' videos por toma'"
-                severity="warn"
-              />
-            }
-            @if (activeVideoModel(); as videoModel) {
-              <p-tag [value]="videoModel.display_name || videoModel.name" severity="info" />
+            @if (videoSegmentCount() > 1 || activeVideoModel()) {
+              <div
+                class="mt-4 flex flex-wrap items-center gap-2 border-t border-surface-border pt-3"
+              >
+                @if (videoSegmentCount() > 1) {
+                  <p-tag
+                    [value]="'Se parte en ' + videoSegmentCount() + ' videos por toma'"
+                    severity="warn"
+                  />
+                }
+                @if (activeVideoModel(); as videoModel) {
+                  <span
+                    class="inline-flex items-center gap-1.5 rounded-full border border-surface-border-strong bg-surface px-2.5 py-1 text-xs font-semibold text-ink-on-dark"
+                  >
+                    <i class="md md-movie text-accent" aria-hidden="true"></i>
+                    {{ videoModel.display_name || videoModel.name }}
+                  </span>
+                }
+                <p-button
+                  id="videoReelTrigger"
+                  [label]="
+                    videoQueue().length ? 'Generando ' + videoQueue().length + '…' : 'Generaciones'
+                  "
+                  icon="md md-movie"
+                  severity="secondary"
+                  size="small"
+                  [loading]="videoQueue().length > 0"
+                  (onClick)="toggleVideoReel($event)"
+                />
+              </div>
             }
           </div>
 
@@ -797,7 +901,11 @@
               <div class="flex items-center gap-2 border-b border-surface-border pb-2">
                 <i class="md md-gps_fixed text-accent"></i>
                 <h3 class="font-bold text-ink-on-dark">{{ group.angleTitle }}</h3>
-                <p-tag [value]="group.scenes.length + ' escenas'" severity="info" />
+                <span
+                  class="inline-flex items-center rounded-full border border-surface-border-strong bg-surface px-2.5 py-1 text-xs font-semibold text-ink-on-dark"
+                >
+                  {{ group.scenes.length }} {{ group.scenes.length === 1 ? 'escena' : 'escenas' }}
+                </span>
               </div>
 
               @for (scene of group.scenes; track scene.id; let i = $index) {
@@ -816,16 +924,24 @@
                     </h3>
                     @if (scene.boardImageUrl) {
                       <div class="flex shrink-0 items-center gap-2">
-                        <span class="text-xs text-ink-muted-on-dark">Storyboard base</span>
-                        <img
-                          [src]="scene.boardImageUrl"
-                          [alt]="'Storyboard base — ' + scene.title"
-                          loading="lazy"
-                          decoding="async"
-                          class="h-16 w-28 cursor-pointer rounded-lg border border-surface-border object-cover transition hover:border-accent"
-                          title="Editar elemento"
+                        <span class="text-xs text-ink-muted-on-dark" [id]="'boardLabel-' + scene.id"
+                          >Storyboard base</span
+                        >
+                        <button
+                          type="button"
+                          class="cursor-pointer rounded-lg border border-surface-border transition hover:border-accent"
+                          [attr.aria-label]="'Editar storyboard base de ' + scene.title"
+                          [attr.aria-describedby]="'boardLabel-' + scene.id"
                           (click)="openBoardAssetEditor(scene)"
-                        />
+                        >
+                          <img
+                            [src]="scene.boardImageUrl"
+                            [alt]="'Storyboard base — ' + scene.title"
+                            loading="lazy"
+                            decoding="async"
+                            class="block h-16 w-28 rounded-lg object-cover"
+                          />
+                        </button>
                       </div>
                     }
                   </div>
@@ -841,18 +957,19 @@
                     @for (prompt of scene.prompts ?? []; track $index; let p = $index) {
                       <div class="mb-3 flex flex-col gap-2">
                         <div class="flex flex-wrap items-center gap-2">
-                          <p-tag
-                            [value]="
+                          <span
+                            class="inline-flex items-center rounded-full border border-surface-border-strong bg-surface px-2.5 py-1 text-xs font-semibold text-ink-on-dark"
+                          >
+                            {{
                               'Video ' +
-                              (p + 1) +
-                              '/' +
-                              (scene.prompts?.length ?? 0) +
-                              ' · ' +
-                              (prompt.duration ?? segmentDuration(p)) +
-                              's'
-                            "
-                            severity="info"
-                          />
+                                (p + 1) +
+                                '/' +
+                                (scene.prompts?.length ?? 0) +
+                                ' · ' +
+                                (prompt.duration ?? segmentDuration(p)) +
+                                's'
+                            }}
+                          </span>
                           <p-button
                             label="Generar video"
                             icon="md md-movie"
@@ -869,6 +986,7 @@
                               controls
                               muted
                               loading="lazy"
+                              [attr.aria-label]="'Video generado ' + (p + 1) + ' de ' + scene.title"
                             ></video>
                           }
                         </div>
@@ -914,10 +1032,14 @@
                             />
                           </label>
                         </div>
+                        <label class="sr-only" [attr.for]="'scene-prompt-' + scene.id + '-' + p">
+                          Prompt de video {{ p + 1 }} de {{ scene.title }}
+                        </label>
                         <textarea
                           pTextarea
                           rows="3"
-                          class="w-full text-sm text-ink-muted-on-dark"
+                          [attr.id]="'scene-prompt-' + scene.id + '-' + p"
+                          class="w-full text-sm text-ink-on-dark"
                           [attr.aria-label]="'Prompt de video de ' + scene.title"
                           [ngModel]="prompt.text"
                           (ngModelChange)="updateScenePrompt(scene.id, p, $event)"
@@ -971,13 +1093,6 @@
                                   Sin recursos adjuntos: el video se generará sólo con el texto.
                                 </p>
                               }
-                              @if ((scene.references?.length ?? 0) > 0 &&
-                                  !activeVideoModel()?.reference_endpoint) {
-                                <p class="text-xs text-ink-muted-on-dark">
-                                  Las fotos de referencia se describen en el prompt: el modelo
-                                  no expone ruta multi-referencia para adjuntarlas como imagen.
-                                </p>
-                              }
                             </div>
                           }
                         </div>
@@ -1009,18 +1124,19 @@
                         @for (prompt of shot.prompts ?? []; track $index; let p = $index) {
                           <div class="mb-3 flex flex-col gap-2">
                             <div class="flex flex-wrap items-center gap-2">
-                              <p-tag
-                                [value]="
+                              <span
+                                class="inline-flex items-center rounded-full border border-surface-border-strong bg-surface px-2.5 py-1 text-xs font-semibold text-ink-on-dark"
+                              >
+                                {{
                                   'Video ' +
-                                  (p + 1) +
-                                  '/' +
-                                  (shot.prompts?.length ?? 0) +
-                                  ' · ' +
-                                  (prompt.duration ?? segmentDuration(p)) +
-                                  's'
-                                "
-                                severity="info"
-                              />
+                                    (p + 1) +
+                                    '/' +
+                                    (shot.prompts?.length ?? 0) +
+                                    ' · ' +
+                                    (prompt.duration ?? segmentDuration(p)) +
+                                    's'
+                                }}
+                              </span>
                               <p-button
                                 label="Generar video"
                                 icon="md md-movie"
@@ -1037,6 +1153,9 @@
                                   controls
                                   muted
                                   loading="lazy"
+                                  [attr.aria-label]="
+                                    'Video generado de la toma ' + (j + 1) + ' — ' + scene.title
+                                  "
                                 ></video>
                               }
                             </div>
@@ -1066,7 +1185,9 @@
                                   optionLabel="label"
                                   optionValue="value"
                                   [ngModel]="prompt.resolution ?? videoResolution()"
-                                  (ngModelChange)="setPromptResolution(scene.id, shot.id, p, $event)"
+                                  (ngModelChange)="
+                                    setPromptResolution(scene.id, shot.id, p, $event)
+                                  "
                                   [ngModelOptions]="{ standalone: true }"
                                   styleClass="w-52"
                                   appendTo="body"
@@ -1082,10 +1203,17 @@
                                 />
                               </label>
                             </div>
+                            <label
+                              class="sr-only"
+                              [attr.for]="'shot-prompt-' + scene.id + '-' + shot.id + '-' + p"
+                            >
+                              Prompt de video de la toma {{ j + 1 }} — {{ scene.title }}
+                            </label>
                             <textarea
                               pTextarea
                               rows="3"
-                              class="w-full text-sm text-ink-muted-on-dark"
+                              [attr.id]="'shot-prompt-' + scene.id + '-' + shot.id + '-' + p"
+                              class="w-full text-sm text-ink-on-dark"
                               [attr.aria-label]="
                                 'Prompt de video de la toma ' + (j + 1) + ' — ' + scene.title
                               "
@@ -1138,16 +1266,7 @@
                                   }
                                   @if (promptResources(scene).length === 0) {
                                     <p class="text-xs text-ink-muted-on-dark">
-                                      Sin recursos adjuntos: el video se generará sólo con el
-                                      texto.
-                                    </p>
-                                  }
-                                  @if ((scene.references?.length ?? 0) > 0 &&
-                                      !activeVideoModel()?.reference_endpoint) {
-                                    <p class="text-xs text-ink-muted-on-dark">
-                                      Las fotos de referencia se describen en el prompt: el
-                                      modelo no expone ruta multi-referencia para adjuntarlas
-                                      como imagen.
+                                      Sin recursos adjuntos: el video se generará sólo con el texto.
                                     </p>
                                   }
                                 </div>
@@ -1178,22 +1297,18 @@
           <div>
             <p class="font-bold text-ink-on-dark">No hay escenas generadas</p>
             <p class="mt-1 text-sm text-ink-muted-on-dark">
-              Vuelve al storyboard para generar imágenes
+              Volvé al storyboard para generar el storyboard
             </p>
           </div>
         </div>
       }
 
-      <div class="flex items-center justify-between border-t border-surface-border pt-4 mt-6">
-        <p-button
-          label="← Volver al Storyboard"
-          severity="secondary"
-          text
-          (onClick)="prevPhase()"
-        />
+      <div class="flex items-center justify-between gap-3 border-t border-surface-border pt-4 mt-6">
+        <p-button label="← Volver" severity="secondary" text (onClick)="prevPhase()" />
         <p-button
           label="Nuevo Proyecto"
           icon="md md-add"
+          severity="secondary"
           (onClick)="resetWorkflow()"
           styleClass="px-6 active:scale-[0.98]"
         />
@@ -1214,7 +1329,7 @@
         <div class="flex flex-wrap items-start gap-6">
           <div class="flex flex-col gap-1">
             <label for="boardShotCount" class="text-xs font-bold text-ink-on-dark">
-              Cantidad de tomas
+              Cantidad de viñetas
             </label>
             <p-inputNumber
               inputId="boardShotCount"
@@ -1295,8 +1410,8 @@
               <small class="text-ink-muted-on-dark">Referencias aprobadas ✓</small>
             } @else {
               <small class="text-ink-muted-on-dark">
-                Tocá una miniatura para editar el elemento asociado. Para habilitar
-                "Generar Storyboard", aprobá las referencias en la tarjeta de la escena.
+                Tocá una miniatura para editar el elemento asociado. Para habilitar "Generar
+                Storyboard", aprobá las referencias en la tarjeta de la escena.
               </small>
             }
           </div>
@@ -1413,7 +1528,9 @@
             <span class="reel-info">
               <span class="reel-title">{{ take.modelDisplayName || take.modelName }}</span>
               <span class="reel-sub">{{ shortPrompt(take.prompt) }}</span>
-              <span class="reel-track"><span class="reel-fill" [style.width.%]="take.progress"></span></span>
+              <span class="reel-track"
+                ><span class="reel-fill" [style.width.%]="take.progress"></span
+              ></span>
             </span>
             <p-tag
               [value]="take.progress + '%'"
