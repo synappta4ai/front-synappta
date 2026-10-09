@@ -680,11 +680,19 @@ export class AgencyComponent {
           this.projects.update((list) =>
             list.some((p) => p.id === project.id) ? list : [...list, project],
           );
-          // Ángulos: modelo LLM elegido en el paso 1 (fallback = plantillas).
+          // Ángulos: modelo LLM elegido en el paso 1 (sin plantillas:
+          // si falla, queda el error en el paso 1 y no se avanza).
           return this.generateAnglesWithAgent(count);
         }),
-        catchError(() => {
-          this.error.set('No se pudieron guardar los datos del proyecto.');
+        catchError((err: unknown) => {
+          // Sin ángulos falsos: se limpia lo que se hubiera pre-cargado y
+          // se muestra el motivo real (agente, LLM o credencial).
+          this.angles.set([]);
+          const why =
+            err instanceof Error && err.message
+              ? err.message
+              : 'No se pudieron guardar los datos del proyecto.';
+          this.error.set(why);
           return EMPTY;
         }),
         finalize(() => this.loading.set(false)),
@@ -1104,7 +1112,8 @@ export class AgencyComponent {
   }
 
   /** Ángulos de venta: los genera el LLM elegido (credencial del tenant) vía
-   *  el agente; sin credencial o sin respuesta → plantillas locales. */
+   *  el agente. Sin credencial o sin respuesta el observable falla: no se
+   *  rellena con plantillas, porque ángulos inventados no son producto. */
   private generateAnglesWithAgent(count: number): Observable<SalesAngle[]> {
     return this.agencyService.listCredentials().pipe(
       map((creds) => {
@@ -1126,14 +1135,14 @@ export class AgencyComponent {
       }),
       mergeMap((cred) => {
         if (!cred) {
-          this.error.set('Sin credencial LLM (openrouter/anthropic); se cargaron ángulos sugeridos.');
-          return of(buildAngles(count));
+          return throwError(
+            () =>
+              new Error(
+                'Sin credencial LLM (openrouter/anthropic) en Admin → Credenciales: no se generaron ángulos.',
+              ),
+          );
         }
         return this.requestAgentAngles(cred, count);
-      }),
-      catchError(() => {
-        this.error.set('No se pudo consultar el LLM; se cargaron ángulos sugeridos.');
-        return of(buildAngles(count));
       }),
     );
   }
@@ -1193,8 +1202,9 @@ export class AgencyComponent {
                 controller.abort();
                 const mapped = anglesFromAgent(parsed.data, count);
                 if (mapped.length > 0) {
-                  const rest = buildAngles(count).slice(mapped.length);
-                  subscriber.next([...mapped, ...rest]);
+                  // Solo ángulos reales: si el LLM devolvió menos de los
+                  // pedidos se muestran esos, sin completar con plantillas.
+                  subscriber.next(mapped);
                   subscriber.complete();
                   return;
                 }
@@ -1204,10 +1214,8 @@ export class AgencyComponent {
           throw new Error('sin sales_angles en la respuesta');
         })
         .catch((err: unknown) => {
-          const why = err instanceof Error && err.message ? err.message : 'sin respuesta';
-          this.error.set(`El LLM no respondió (${why}); se cargaron ángulos sugeridos.`);
-          subscriber.next(buildAngles(count));
-          subscriber.complete();
+          const why = err instanceof Error && err.message ? err.message : 'sin respuesta del agente';
+          subscriber.error(new Error(`No se generaron los ángulos: ${why}`));
         })
         .finally(() => clearTimeout(timer));
     });
