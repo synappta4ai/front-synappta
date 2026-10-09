@@ -8,7 +8,12 @@
 
   <!-- Phase Indicator -->
   <div class="mb-8">
-    <p-steps [model]="stepItems()" [activeIndex]="phaseIndex()" styleClass="custom-steps" />
+    <p-steps
+      [model]="stepItems()"
+      [activeIndex]="phaseIndex()"
+      [readonly]="false"
+      styleClass="custom-steps"
+    />
   </div>
 
   <!-- Phase 1: Input / Documentation -->
@@ -308,7 +313,8 @@
           <div class="flex-1">
             <h2 class="text-lg font-bold text-ink-on-dark">Storyboard</h2>
             <p class="text-sm text-ink-muted-on-dark">
-              Generá la hoja de storyboard de cada escena y aprobala para continuar
+              Subí fotos de referencia de cada ángulo, generá la hoja de storyboard y aprobala para
+              continuar
             </p>
           </div>
           <p-tag [value]="storyboard().length + ' escenas'" severity="info" />
@@ -393,18 +399,111 @@
                       severity="secondary"
                       size="small"
                       [loading]="!!scene.boardGenerating"
-                      [disabled]="!!scene.boardGenerating"
+                      [disabled]="!canGenerateBoard(scene)"
                       (onClick)="openBoardDialog(scene.id)"
                     />
                     <p-button
                       [label]="scene.approved ? 'Aprobado ✓' : 'Aprobar'"
-                      [icon]="scene.approved ? 'md md-check_circle' : 'md md-radio_button_unchecked'"
+                      [icon]="
+                        scene.approved ? 'md md-check_circle' : 'md md-radio_button_unchecked'
+                      "
                       [severity]="scene.approved ? 'success' : 'contrast'"
                       size="small"
                       [disabled]="!scene.boardImageUrl || !!scene.boardGenerating"
                       (onClick)="toggleApproveScene(scene.id)"
                     />
                   </div>
+                </div>
+
+                <!-- Fotos de referencia de la escena: al aprobarse habilitan "Generar imágenes" -->
+                <div class="mb-4 rounded-xl border border-surface-border bg-surface-2 px-4 py-3">
+                  <div class="flex flex-wrap items-center gap-3">
+                    <i class="md md-photo_camera text-accent"></i>
+                    <span class="text-xs font-bold text-ink-on-dark"
+                      >Fotos de referencia de la escena</span
+                    >
+                    @if (scene.references?.length) {
+                      <p-tag [value]="(scene.references?.length ?? 0) + ' fotos'" severity="info" />
+                    }
+                    @if (scene.refsApproved) {
+                      <p-tag value="Referencias aprobadas ✓" severity="success" />
+                    }
+                    <div class="ml-auto flex items-center gap-2">
+                      <input
+                        #sceneRefInput
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        class="hidden"
+                        (change)="onSceneReferenceFiles(scene.id, $event)"
+                      />
+                      <p-button
+                        label="Subir fotos"
+                        icon="md md-upload"
+                        severity="secondary"
+                        size="small"
+                        [loading]="isUploadingRefs(scene.id)"
+                        [disabled]="isUploadingRefs(scene.id)"
+                        (onClick)="sceneRefInput.click()"
+                      />
+                      <p-button
+                        [label]="
+                          scene.refsApproved ? 'Referencias aprobadas' : 'Aprobar referencias'
+                        "
+                        [icon]="
+                          scene.refsApproved ? 'md md-check_circle' : 'md md-radio_button_unchecked'
+                        "
+                        [severity]="scene.refsApproved ? 'success' : 'contrast'"
+                        size="small"
+                        [disabled]="!scene.references?.length || scene.refsApproved"
+                        (onClick)="toggleApproveReferences(scene.id)"
+                      />
+                    </div>
+                  </div>
+                  <p class="mt-2 text-xs text-ink-muted-on-dark">
+                    Sugerido para esta escena: {{ sceneSuggestions(scene.id).join(' · ') }}
+                  </p>
+                  @if (scene.references?.length) {
+                    <div class="mt-3 flex flex-wrap gap-3">
+                      @for (ref of scene.references ?? []; track ref.id) {
+                        <div
+                          class="relative h-20 w-28 cursor-pointer overflow-hidden rounded-lg border border-surface-border bg-surface transition hover:border-accent"
+                          role="button"
+                          tabindex="0"
+                          [attr.aria-label]="'Editar elemento ' + ref.filename"
+                          [title]="'Editar elemento: ' + ref.filename"
+                          (click)="openAssetEditor(ref.id)"
+                          (keydown.enter)="openAssetEditor(ref.id)"
+                        >
+                          @if (ref.url) {
+                            <img
+                              [src]="ref.url | serverUrl"
+                              [alt]="ref.filename"
+                              loading="lazy"
+                              decoding="async"
+                              class="h-full w-full object-cover"
+                            />
+                          }
+                          <button
+                            type="button"
+                            class="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full border border-surface-border bg-surface-2 text-ink-on-dark"
+                            [attr.aria-label]="'Quitar ' + ref.filename"
+                            (click)="
+                              $event.stopPropagation(); removeSceneReference(scene.id, ref.id)
+                            "
+                          >
+                            <i class="md md-close text-sm"></i>
+                          </button>
+                        </div>
+                      }
+                    </div>
+                  }
+                  @if (!scene.refsApproved) {
+                    <p class="mt-2 text-xs text-ink-muted-on-dark">
+                      Subí al menos una foto y aprobá las referencias para habilitar "Generar
+                      imágenes".
+                    </p>
+                  }
                 </div>
 
                 <!-- Hoja de storyboard: la guía visual del escenario -->
@@ -414,7 +513,9 @@
                     [alt]="'Storyboard guía — ' + scene.title"
                     loading="lazy"
                     decoding="async"
-                    class="mb-4 w-full rounded-xl border border-surface-border bg-surface"
+                    class="mb-4 w-full cursor-pointer rounded-xl border border-surface-border bg-surface transition hover:border-accent"
+                    title="Editar elemento"
+                    (click)="openBoardAssetEditor(scene)"
                   />
                 } @else if (scene.boardGenerating) {
                   <div
@@ -511,7 +612,7 @@
         <div class="flex flex-col gap-6">
           <!-- Configuración de los videos: modelo, duración, ratio y tags -->
           <div
-            class="flex flex-wrap items-end gap-4 rounded-xl border border-surface-border bg-surface-2 px-4 py-3"
+            class="flex flex-wrap items-start gap-4 rounded-xl border border-surface-border bg-surface-2 px-4 py-3"
           >
             <div class="flex flex-col gap-1">
               <span class="text-xs font-bold text-ink-muted-on-dark">Modelo de video</span>
@@ -577,6 +678,7 @@
             </div>
             <p-button
               label="Generar prompts"
+              class="mt-5"
               icon="md md-auto_fix_high"
               severity="secondary"
               (onClick)="generatePrompts()"
@@ -627,7 +729,9 @@
                           [alt]="'Storyboard base — ' + scene.title"
                           loading="lazy"
                           decoding="async"
-                          class="h-16 w-28 rounded-lg border border-surface-border object-cover"
+                          class="h-16 w-28 cursor-pointer rounded-lg border border-surface-border object-cover transition hover:border-accent"
+                          title="Editar elemento"
+                          (click)="openBoardAssetEditor(scene)"
                         />
                       </div>
                     }
@@ -868,6 +972,42 @@
             Se arma con las tomas de la escena y el estilo de las viñetas; podés editarlo.
           </small>
         </div>
+        @if (scene.references?.length) {
+          <div class="flex flex-col gap-1">
+            <span class="text-xs font-bold text-ink-on-dark">Imágenes de referencia</span>
+            <div class="flex flex-wrap gap-3">
+              @for (ref of scene.references ?? []; track ref.id) {
+                <div
+                  class="relative h-20 w-28 cursor-pointer overflow-hidden rounded-lg border border-surface-border bg-surface transition hover:border-accent"
+                  role="button"
+                  tabindex="0"
+                  [attr.aria-label]="'Editar elemento ' + ref.filename"
+                  [title]="'Editar elemento: ' + ref.filename"
+                  (click)="openAssetEditor(ref.id)"
+                  (keydown.enter)="openAssetEditor(ref.id)"
+                >
+                  @if (ref.url) {
+                    <img
+                      [src]="ref.url | serverUrl"
+                      [alt]="ref.filename"
+                      loading="lazy"
+                      decoding="async"
+                      class="h-full w-full object-cover"
+                    />
+                  }
+                </div>
+              }
+            </div>
+            @if (scene.refsApproved) {
+              <small class="text-ink-muted-on-dark">Referencias aprobadas ✓</small>
+            } @else {
+              <small class="text-ink-muted-on-dark">
+                Tocá una miniatura para editar el elemento asociado. Para habilitar "Generar
+                imágenes", aprobá las referencias en la tarjeta de la escena.
+              </small>
+            }
+          </div>
+        }
         @if (scene.boardImageUrl) {
           <div class="flex flex-col gap-1">
             <span class="text-xs font-bold text-ink-on-dark">Imagen actual</span>
@@ -876,7 +1016,9 @@
               alt="Storyboard actual"
               loading="lazy"
               decoding="async"
-              class="w-full rounded-xl border border-surface-border"
+              class="w-full cursor-pointer rounded-xl border border-surface-border transition hover:border-accent"
+              title="Editar elemento"
+              (click)="openBoardAssetEditor(scene)"
             />
           </div>
         }
@@ -901,4 +1043,13 @@
       </div>
     </ng-template>
   </p-dialog>
+
+  <!-- Modal "Editar elemento" (compartida con Recursos) -->
+  <app-asset-edit-dialog
+    [visible]="editorVisible()"
+    [asset]="editorAsset()"
+    (closed)="editorVisible.set(false)"
+    (changed)="onAssetEditorChanged()"
+    (assetSaved)="onAssetEditorSaved($event)"
+  />
 </app-page-container>

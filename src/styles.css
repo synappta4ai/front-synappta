@@ -977,7 +977,17 @@ input {
 
 .p-steps .p-steps-list {
   width: 100%;
-  max-width: 800px;
+  max-width: none;
+}
+
+/* Pasos en slots iguales: el stepper queda alineado a todo el ancho del
+   header (mismo borde izquierdo que el título y derecho que el card). */
+.p-steps .p-steps-item {
+  flex: 1 1 0;
+}
+
+.p-steps .p-steps-item .p-steps-item-link {
+  cursor: pointer;
 }
 
 .p-steps .p-steps-item .p-steps-item-number {
@@ -1065,7 +1075,7 @@ input {
 }
 
 .p-select .p-select-label {
-  padding: var(--space-2) var(--space-4);
+  padding: var(--space-3) var(--space-4);
   font-size: 0.75rem;
   color: var(--color-ink-on-dark);
 }
@@ -4400,5 +4410,6 @@ main:has(> app-studio) {
 }
 
 .p-iconfield p-inputicon {
-  margin-top: -6px !important;
+  margin-top: -7px !important;
+  margin-right: 16px !important;
 }

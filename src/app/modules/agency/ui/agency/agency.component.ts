@@ -35,8 +35,11 @@ import {
 import { EventsService } from '@modules/events/services';
 import { Event as Project, Piece } from '@modules/events/interfaces';
 import { PageContainerComponent, ValidatorErrors } from '@shared/components/index';
+import { AssetEditDialogComponent } from '@shared/components/asset-edit-dialog/asset-edit-dialog';
 import { UserSessionStore } from '@core/store/user.session';
+import { ServerUrlPipe } from '@core/pipes';
 import { LibraryService } from '@modules/library/services';
+import { FileAsset } from '@modules/library/interfaces';
 import { environment } from '@env/environment';
 
 type WorkflowPhase = 'input' | 'angles' | 'storyboard' | 'scenes';
@@ -46,6 +49,13 @@ interface SalesAngle {
   title: string;
   description: string;
   selected: boolean;
+}
+
+/** Foto de referencia subida al store: su file id se adjunta a la generación. */
+interface ReferenceImage {
+  id: string;
+  filename: string;
+  url: string | null;
 }
 
 /** Un prompt de video del paso Escenas y su resultado (un video por prompt). */
@@ -70,6 +80,10 @@ interface StoryboardScene {
   boardGenerating?: boolean;
   /** Aprobación del storyboard: obligatoria para avanzar al paso Escenas. */
   approved?: boolean;
+  /** Fotos de referencia de ESTA escena: sugieren qué subir y, recién
+   *  aprobadas, habilitan "Generar imágenes". */
+  references?: ReferenceImage[];
+  refsApproved?: boolean;
   /** Prompts del video de la escena (uno por segmento de duración). */
   prompts?: VideoPrompt[];
   /** Legado (flujo anterior): video único de la escena. */
@@ -112,6 +126,69 @@ const ANGLE_TEMPLATES: { title: string; description: string }[] = [
     description:
       'Resaltar eficiencia energética, materiales sustentables, espacios verdes y diseño contemporáneo.',
   },
+];
+
+/** Fotos sugeridas por tipo de ángulo: keywords sobre título + descripción.
+ *  Ej.: "lujo" → acabados, salón de reuniones, alcoba; "seguridad" → portón,
+ *  equipo de seguridad. Primera coincidencia que matchea manda. */
+const REFERENCE_SUGGESTIONS: { keywords: string[]; items: string[] }[] = [
+  // Especialización por escena: elementos concretos de los planos y tomas.
+  {
+    keywords: ['fachada', 'entrada', 'exterior', 'atardecer', 'torre'],
+    items: ['la fachada al atardecer', 'la entrada principal', 'la vista de la torre'],
+  },
+  {
+    keywords: ['cocina', 'comedor'],
+    items: ['la cocina terminada', 'los detalles de la isla de cocina'],
+  },
+  {
+    keywords: ['lobby', 'recepci', 'reuniones', 'salón', 'salon'],
+    items: ['el lobby de acceso', 'el salón de reuniones'],
+  },
+  {
+    keywords: ['alcoba', 'dormitorio', 'habitaci'],
+    items: ['la alcoba principal', 'el detalle de la ventana'],
+  },
+  {
+    keywords: ['piscina', 'gimnasio', 'jardín', 'jardin', 'terraza', 'deck'],
+    items: ['la piscina', 'la terraza y el jardín'],
+  },
+  // Marco del ángulo: el contexto general del que nace la escena.
+  {
+    keywords: ['lujo', 'premium', 'exclusiv', 'acabado', 'amenit'],
+    items: [
+      'los acabados premium',
+      'el salón de reuniones',
+      'la alcoba principal',
+      'las amenidades exclusivas',
+    ],
+  },
+  {
+    keywords: ['seguridad', 'vigilanc', 'portón', 'porton', 'cámara', 'camara', 'control de acceso'],
+    items: ['el portón del edificio', 'el equipo de seguridad', 'el acceso controlado y las cámaras'],
+  },
+  {
+    keywords: ['inversi', 'rentab', 'plusval', 'financ', 'oportunidad'],
+    items: ['la fachada del edificio', 'las vistas panorámicas', 'la zona en desarrollo'],
+  },
+  {
+    keywords: ['estilo de vida', 'comunidad', 'entorno', 'familiar', 'barrio', 'vecin'],
+    items: ['las áreas comunes', 'la vida en la comunidad', 'el entorno del barrio'],
+  },
+  {
+    keywords: ['ubicaci', 'conectiv', 'transporte', 'accesibil'],
+    items: ['la vista de la zona', 'los transportes cercanos', 'los puntos de interés'],
+  },
+  {
+    keywords: ['sosten', 'diseñ', 'disen', 'energ', 'verde', 'natural', 'ecol'],
+    items: ['los espacios verdes', 'los materiales sustentables', 'el diseño contemporáneo'],
+  },
+];
+
+const DEFAULT_REFERENCE_SUGGESTIONS = [
+  'la fachada del edificio',
+  'las áreas comunes',
+  'la vista general del proyecto',
 ];
 
 /** Parsea un evento SSE del agente ({event, data}), o null. */
@@ -173,6 +250,8 @@ function buildAngles(count: number): SalesAngle[] {
     Select,
     InputNumber,
     Dialog,
+    ServerUrlPipe,
+    AssetEditDialogComponent,
   ],
   templateUrl: './agency.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -598,6 +677,8 @@ export class AgencyComponent {
         angleTitle: angle.title,
         title: `Escena ${i + 1}: ${angle.title}`,
         description: `Plano general del proyecto destacando ${angle.description.toLowerCase()}`,
+        references: [],
+        refsApproved: false,
         shots: [
           {
             id: `shot-${i}-1-1`,
@@ -619,6 +700,8 @@ export class AgencyComponent {
         angleTitle: angle.title,
         title: `Escena ${i + 2}: Detalle`,
         description: `Primer plano de acabados y acabados premium del ${angle.title}`,
+        references: [],
+        refsApproved: false,
         shots: [
           {
             id: `shot-${i}-2-1`,
@@ -641,6 +724,10 @@ export class AgencyComponent {
   protected openBoardDialog(sceneId: string): void {
     const scene = this.storyboard().find((s) => s.id === sceneId);
     if (!scene || scene.boardGenerating) return;
+    if (!scene.refsApproved) {
+      this.error.set('Aprobá las fotos de referencia de la escena para generar imágenes.');
+      return;
+    }
     const count = Math.min(Math.max(scene.shots.length || 3, 1), 12);
     const options = this.imageRatioOptions();
     this.boardSceneId.set(sceneId);
@@ -676,6 +763,15 @@ export class AgencyComponent {
     this.boardPromptEdited.set(true);
   }
 
+  /** Narrativa de las fotos reales subidas para el ángulo de la escena:
+   *  con esos datos se describe qué elementos reales debe integrar el dibujo
+   *  del storyboard y cada toma del video. */
+  private referenceNarrative(scene: StoryboardScene): string | null {
+    if (!scene.references?.length) return null;
+    const items = this.sceneSuggestions(scene.id);
+    return `Fotos reales de referencia de la escena: ${items.join(', ')}. Integrar esos elementos en la acción y respetar su apariencia.`;
+  }
+
   /** Prompt por defecto de la hoja: N viñetas tipo cómic, cada una con
    *  TIPO DE TOMA / ENCUADRE y sonido o diálogo al pie (ver ejemplo). */
   private buildBoardPrompt(scene: StoryboardScene, tomas: number): string {
@@ -683,13 +779,16 @@ export class AgencyComponent {
       const shot = scene.shots[i];
       return `${i + 1}) ${shot?.description?.trim() || `Toma ${i + 1} — ${scene.title}`}`;
     }).join(' ');
-    return [
+    const lines = [
       `Hoja de storyboard dibujada a lápiz en blanco y negro, con ${tomas} viñetas en cuadrícula para la escena "${scene.title}"${scene.angleTitle ? ` del ángulo "${scene.angleTitle}"` : ''}.`,
       'Cada viñeta lleva encabezado con el título de la escena, "TIPO DE TOMA:" y "ENCUADRE:" en mayúsculas, el dibujo narrativo de la acción y al pie el sonido o diálogo correspondiente.',
       `Acción de la escena: ${scene.description}`,
       `Tomas: ${shots}`,
-      'Estilo storyboard de cine: líneas de entintado y sombreado a lápiz, sin color.',
-    ].join(' ');
+    ];
+    const references = this.referenceNarrative(scene);
+    if (references) lines.push(references);
+    lines.push('Estilo storyboard de cine: líneas de entintado y sombreado a lápiz, sin color.');
+    return lines.join(' ');
   }
 
   /** Genera la imagen-guía (hoja con varias viñetas) de la escena abierta. */
@@ -772,7 +871,7 @@ export class AgencyComponent {
                 this.boardVisible.set(false);
                 this.boardSceneId.set(null);
                 this.persistWorkflow();
-                this.uploadBoardReference(scene.id, url);
+                void this.uploadBoardReference(scene.id, url);
               });
           });
       });
@@ -794,29 +893,72 @@ export class AgencyComponent {
 
   /** Sube la hoja generada al store para adjuntarla como imagen de referencia
    *  de los videos. Si falla (CORS/URL expirada) el flujo sigue: el prompt
-   *  queda igual, sólo se pierde la referencia adjunta. */
-  private uploadBoardReference(sceneId: string, url: string): void {
-    fetch(url)
-      .then((res) => (res.ok ? res.blob() : Promise.reject(new Error(`HTTP ${res.status}`))))
-      .then((blob) => {
-        const ext = blob.type.includes('png') ? 'png' : 'jpg';
-        const file = new File([blob], `storyboard-${sceneId}.${ext}`, {
-          type: blob.type || 'image/png',
+   *  queda igual, sólo se pierde la referencia adjunta.
+   *  Devuelve el file id subido (o null si falló). */
+  private async uploadBoardReference(sceneId: string, url: string): Promise<string | null> {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      const blob = await res.blob();
+      const ext = blob.type.includes('png') ? 'png' : 'jpg';
+      const file = new File([blob], `storyboard-${sceneId}.${ext}`, {
+        type: blob.type || 'image/png',
+      });
+      const asset = await firstValueFrom(
+        this.libraryService.uploadFile(file, 'images', this.selectedProjectId() ?? undefined),
+      );
+      if (!asset?.id) return null;
+      this.rememberBoardFile(sceneId, asset.id);
+      return asset.id;
+    } catch {
+      return null;
+    }
+  }
+
+  /** Guarda el file id de la hoja de storyboard en la escena y persiste. */
+  private rememberBoardFile(sceneId: string, fileId: string): void {
+    this.storyboard.update((scenes) =>
+      scenes.map((s) => (s.id === sceneId ? { ...s, boardFileId: fileId } : s)),
+    );
+    this.persistWorkflow();
+  }
+
+  /** Abre la modal "Editar elemento" para la HOJA de storyboard: usa el file
+   *  id guardado o, si el workflow no lo tiene (datos viejos / upload
+   *  fallido), resuelve el archivo en la biblioteca por nombre y, si no
+   *  existe, lo sube desde la URL renderizada antes de abrir la modal. */
+  protected openBoardAssetEditor(scene: StoryboardScene): void {
+    if (scene.boardFileId) {
+      this.openAssetEditor(scene.boardFileId);
+      return;
+    }
+    if (!scene.boardImageUrl || this.editorLoading() || this.editorVisible()) {
+      return;
+    }
+    this.editorLoading.set(true);
+    const nameQuery = `storyboard-${scene.id}`;
+    this.libraryService
+      .listFilesPaginated({ page: 1, pageSize: 10, q: nameQuery })
+      .pipe(catchError(() => of(null)))
+      .subscribe((res) => {
+        const found = (res?.items ?? []).find((f) =>
+          f.filename?.startsWith(`${nameQuery}.`),
+        );
+        if (found) {
+          this.rememberBoardFile(scene.id, found.id);
+          this.editorLoading.set(false);
+          this.openAssetEditor(found.id);
+          return;
+        }
+        void this.uploadBoardReference(scene.id, scene.boardImageUrl!).then((fileId) => {
+          this.editorLoading.set(false);
+          if (!fileId) {
+            this.error.set('No se pudo cargar la hoja de storyboard para editar.');
+            return;
+          }
+          this.openAssetEditor(fileId);
         });
-        this.libraryService
-          .uploadFile(file, 'images', this.selectedProjectId() ?? undefined)
-          .subscribe({
-            next: (asset) => {
-              if (!asset?.id) return;
-              this.storyboard.update((scenes) =>
-                scenes.map((s) => (s.id === sceneId ? { ...s, boardFileId: asset.id } : s)),
-              );
-              this.persistWorkflow();
-            },
-            error: () => undefined,
-          });
-      })
-      .catch(() => undefined);
+      });
   }
 
   /** Aprueba/desaprueba el storyboard de una escena (requiere imagen cargada). */
@@ -1127,6 +1269,8 @@ export class AgencyComponent {
             boardFileId: sc.boardFileId ?? null,
             boardGenerating: false,
             approved: sc.approved ?? false,
+            references: Array.isArray(sc.references) ? sc.references : [],
+            refsApproved: sc.refsApproved ?? false,
             prompts,
             shots,
           };
@@ -1151,6 +1295,225 @@ export class AgencyComponent {
   }
 
   protected commitAngleEdits(): void {
+    this.persistWorkflow();
+  }
+
+  // ─── Fotos de referencia por escena ─────────────────────────────
+
+  /** Escenas con uploads en curso (spinner del botón "Subir fotos"). */
+  protected readonly uploadingRefScenes = signal<string[]>([]);
+
+  /** Fotos sugeridas para ESTA escena: keywords sobre título+descripción de
+   *  la escena, sus tomas y su ángulo (especialización por escena). */
+  protected sceneSuggestions(sceneId: string): string[] {
+    const scene = this.storyboard().find((s) => s.id === sceneId);
+    if (!scene) return DEFAULT_REFERENCE_SUGGESTIONS;
+    const angle = this.angles().find((a) => a.id === scene.angleId);
+    const text = [
+      scene.title,
+      scene.description,
+      ...scene.shots.map((sh) => sh.description ?? ''),
+      angle?.title ?? '',
+      angle?.description ?? '',
+    ]
+      .join(' ')
+      .toLowerCase();
+    const items: string[] = [];
+    for (const group of REFERENCE_SUGGESTIONS) {
+      if (!group.keywords.some((k) => text.includes(k))) continue;
+      for (const item of group.items) {
+        if (!items.includes(item)) items.push(item);
+      }
+    }
+    return items.length ? items.slice(0, 5) : DEFAULT_REFERENCE_SUGGESTIONS;
+  }
+
+  /** Fotos ya subidas de la escena (miniaturas + narrativa). */
+  private referencesOfScene(sceneId: string): ReferenceImage[] {
+    return this.storyboard().find((s) => s.id === sceneId)?.references ?? [];
+  }
+
+  // ─── Modal "Editar elemento" (compartida con Recursos) ──────────────
+  protected readonly editorVisible = signal(false);
+  protected readonly editorAsset = signal<FileAsset | null>(null);
+  protected readonly editorLoading = signal(false);
+
+  /** Abre la modal "Editar elemento" desde cualquier miniatura de imagen
+   *  (referencias de escena, hoja de storyboard, etc.). */
+  protected openAssetEditor(fileId: string | null | undefined): void {
+    if (!fileId || this.editorLoading() || this.editorVisible()) {
+      return;
+    }
+    this.editorLoading.set(true);
+    this.libraryService
+      .getFile(fileId)
+      .pipe(
+        catchError(() => {
+          this.error.set('No se pudo cargar el recurso para editar.');
+          return EMPTY;
+        }),
+        finalize(() => this.editorLoading.set(false)),
+      )
+      .subscribe((asset) => {
+        if (!asset) {
+          this.error.set('No se pudo cargar el recurso para editar.');
+          return;
+        }
+        this.editorAsset.set(asset);
+        this.editorVisible.set(true);
+      });
+  }
+
+  /** Tras un cambio en la modal (asignar/subir/quitar): si el recurso fue
+   *  eliminado, se cae de las referencias de las escenas (y se des aprueba)
+   *  y/o del slot de hoja de storyboard. */
+  protected onAssetEditorChanged(): void {
+    const asset = this.editorAsset();
+    if (!asset) {
+      return;
+    }
+    this.libraryService
+      .getFile(asset.id)
+      .pipe(catchError(() => of(null)))
+      .subscribe((fresh) => {
+        if (fresh) {
+          this.editorAsset.set(fresh);
+          return;
+        }
+        let touched = false;
+        this.storyboard.update((scenes) =>
+          scenes.map((scene) => {
+            const refs = scene.references ?? [];
+            const inRefs = refs.some((ref) => ref.id === asset.id);
+            const isBoard = scene.boardFileId === asset.id;
+            if (!inRefs && !isBoard) {
+              return scene;
+            }
+            touched = true;
+            return {
+              ...scene,
+              references: inRefs ? refs.filter((ref) => ref.id !== asset.id) : refs,
+              refsApproved: inRefs ? false : scene.refsApproved,
+              boardFileId: isBoard ? null : scene.boardFileId,
+            };
+          }),
+        );
+        if (touched) {
+          this.persistWorkflow();
+        }
+        this.editorVisible.set(false);
+        this.editorAsset.set(null);
+      });
+  }
+
+  /** Refleja el nombre/URL guardados en las referencias que apunten al asset. */
+  protected onAssetEditorSaved(saved: FileAsset): void {
+    let touched = false;
+    this.storyboard.update((scenes) =>
+      scenes.map((scene) => {
+        const refs = scene.references ?? [];
+        if (!refs.some((ref) => ref.id === saved.id)) {
+          return scene;
+        }
+        touched = true;
+        return {
+          ...scene,
+          references: refs.map((ref) =>
+            ref.id === saved.id ? { ...ref, filename: saved.filename, url: saved.url } : ref,
+          ),
+        };
+      }),
+    );
+    if (touched) {
+      this.persistWorkflow();
+    }
+  }
+
+  protected isUploadingRefs(sceneId: string): boolean {
+    return this.uploadingRefScenes().includes(sceneId);
+  }
+
+  /** Gate: sin referencias aprobadas no se habilita "Generar imágenes". */
+  protected canGenerateBoard(scene: StoryboardScene): boolean {
+    return !!scene.refsApproved && !scene.boardGenerating;
+  }
+
+  /** Sube las fotos elegidas al store y las acumula como referencia de la
+   *  escena. Al cerrar el lote se rearma la narrativa de escenas y tomas. */
+  protected onSceneReferenceFiles(sceneId: string, event: Event): void {
+    const input = event.target as HTMLInputElement | null;
+    const files = Array.from(input?.files ?? []);
+    if (input) input.value = '';
+    if (!files.length) return;
+    if (!this.storyboard().some((s) => s.id === sceneId)) {
+      this.error.set('No se encontró la escena para guardar las fotos de referencia.');
+      return;
+    }
+    this.uploadingRefScenes.update((list) => (list.includes(sceneId) ? list : [...list, sceneId]));
+    let pending = files.length;
+    const done = () => {
+      pending -= 1;
+      if (pending > 0) return;
+      this.uploadingRefScenes.update((list) => list.filter((id) => id !== sceneId));
+      if (this.storyboard().length) this.generatePrompts();
+    };
+    for (const file of files) {
+      this.libraryService
+        .uploadFile(file, 'images', this.selectedProjectId() ?? undefined)
+        .subscribe({
+          next: (asset) => {
+            if (asset?.id) {
+              this.storyboard.update((scenes) =>
+                scenes.map((s) =>
+                  s.id === sceneId
+                    ? {
+                        ...s,
+                        references: [
+                          ...(s.references ?? []),
+                          { id: asset.id, filename: asset.filename, url: asset.url },
+                        ],
+                      }
+                    : s,
+                ),
+              );
+              this.persistWorkflow();
+            }
+            done();
+          },
+          error: () => {
+            this.error.set(`No se pudo subir ${file.name}.`);
+            done();
+          },
+        });
+    }
+  }
+
+  /** Quita una foto de referencia: vuelve a dejar las referencias sin aprobar
+   *  (el gate de "Generar imágenes" se cierra) y rearma la narrativa. */
+  protected removeSceneReference(sceneId: string, referenceId: string): void {
+    this.storyboard.update((scenes) =>
+      scenes.map((s) =>
+        s.id === sceneId
+          ? {
+              ...s,
+              references: (s.references ?? []).filter((r) => r.id !== referenceId),
+              refsApproved: false,
+            }
+          : s,
+      ),
+    );
+    this.persistWorkflow();
+    if (this.storyboard().length) this.generatePrompts();
+  }
+
+  /** Aprueba las referencias de la escena (requiere ≥1 foto): habilita
+   *  "Generar imágenes". */
+  protected toggleApproveReferences(sceneId: string): void {
+    const scene = this.storyboard().find((s) => s.id === sceneId);
+    if (!scene?.references?.length || scene.refsApproved) return;
+    this.storyboard.update((scenes) =>
+      scenes.map((s) => (s.id === sceneId ? { ...s, refsApproved: true } : s)),
+    );
     this.persistWorkflow();
   }
 
@@ -1244,6 +1607,8 @@ export class AgencyComponent {
             `ESCENA "${scene.title}"${scene.angleTitle ? ` — ángulo "${scene.angleTitle}"` : ''}: ${scene.description}`,
             'Referencia visual: hoja de storyboard guía (imagen adjunta). Animar la secuencia respetando encuadres, iluminación y estilo de las viñetas.',
           ];
+    const references = this.referenceNarrative(scene);
+    if (references) lines.push(references);
     const allTags = [tags, this.slugTags([scene.angleTitle, scene.title])]
       .filter((t) => t.trim() !== '')
       .join(' ');
@@ -1375,6 +1740,16 @@ export class AgencyComponent {
         const content: ContentItem[] = [{ type: 'text', text: prompt.text }];
         if (scene.boardFileId) {
           content.push({ type: 'image', id: scene.boardFileId, name: `storyboard-${scene.id}.png` });
+        }
+        // Fotos reales del ángulo: solo cuando el modelo expone ruta
+        // multi-referencia verificada, para no sacarlo de su ruta i2v de
+        // imagen única (donde la hoja dejaría de adjuntarse).
+        if (model.reference_endpoint) {
+          for (const ref of this.referencesOfScene(sceneId)) {
+            if (ref.id !== scene.boardFileId) {
+              content.push({ type: 'image', id: ref.id, name: ref.filename });
+            }
+          }
         }
         this.agencyService
           .generate('video', {

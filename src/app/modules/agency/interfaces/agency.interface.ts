@@ -12,6 +12,11 @@ export interface AiModel {
   base_url: string;
   endpoint: string;
   gallery_sync: boolean;
+  /** Ruta i2v gemela del modelo (back: image_endpoint). */
+  image_endpoint?: string;
+  /** Ruta multi-referencia (back: reference_endpoint): habilita adjuntar
+   *  varias fotos reales a la generación de video. */
+  reference_endpoint?: string;
   defaults: {
     ratios?: string[];
     resolutions?: string[];
