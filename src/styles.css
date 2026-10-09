@@ -350,6 +350,9 @@
   --color-danger: #e07a7a;
   --color-danger-strong: #a33a3a;
   --color-info: #7fa8cc;
+  /* Variante legible del azul como TEXTO sobre superficies claras: en el
+     tema blanco #7fa8cc no alcanza contraste (grises brillantes). */
+  --color-info-ink: #0a3a66;
 
   --color-disabled: var(--color-secondary);
   --color-disabled-ink: var(--color-choice);
@@ -416,6 +419,8 @@
   --color-secondary-hover: #3a3a3a;
   --color-secondary-active: #242424;
   --color-choice: #9a9a9a;
+  /* En oscuro el azul brillante ya lee bien como texto. */
+  --color-info-ink: #7fa8cc;
   --color-danger-strong: #e07a7a;
 }
 
@@ -974,7 +979,7 @@ input {
 
 .p-tag.p-tag-info {
   background: color-mix(in srgb, var(--color-info) 14%, var(--color-surface));
-  color: var(--color-info);
+  color: var(--color-info-ink);
   border-color: color-mix(in srgb, var(--color-info) 40%, transparent);
 }
 
@@ -1261,7 +1266,7 @@ input {
 }
 
 .p-message.p-message-info .p-message-icon {
-  color: var(--color-info);
+  color: var(--color-info-ink);
 }
 
 .p-message.p-message-success {
@@ -2689,7 +2694,7 @@ main:has(> app-studio) {
 }
 
 .studio-shell .mention-ing-icon[data-type='character'] {
-  color: var(--color-info);
+  color: var(--color-info-ink);
   background: color-mix(in srgb, var(--color-info) 14%, var(--color-surface));
   border-color: color-mix(in srgb, var(--color-info) 40%, transparent);
 }
@@ -4551,7 +4556,8 @@ main:has(> app-studio) {
 /* ── Popover de generación de la Agencia (paso 3 storyboard / paso 4 videos):
      cola de generación en curso + take reel con calificaciones ─────────── */
 .agency-reel-popover {
-  width: 380px;
+  /* En móvil no puede exceder el viewport. */
+  width: min(380px, calc(100vw - 24px));
   padding: 0 !important;
   background: var(--color-surface) !important;
   border: 1px solid var(--color-surface-border) !important;

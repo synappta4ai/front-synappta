@@ -31,6 +31,7 @@ import { Tooltip } from 'primeng/tooltip';
 import { MenuItem } from 'primeng/api';
 import { Dialog } from 'primeng/dialog';
 import { Popover } from 'primeng/popover';
+import { ToggleSwitch } from 'primeng/toggleswitch';
 
 import { Router } from '@angular/router';
 
@@ -105,6 +106,10 @@ interface VideoPrompt {
   text: string;
   videoUrl?: string | null;
   generating?: boolean;
+  /** Overrides por prompt (null = usar la config global del paso 4). */
+  duration?: number | null;
+  resolution?: string | null;
+  audio?: boolean | null;
 }
 
 interface StoryboardScene {
@@ -123,7 +128,7 @@ interface StoryboardScene {
   /** Aprobación del storyboard: obligatoria para avanzar al paso Escenas. */
   approved?: boolean;
   /** Fotos de referencia de ESTA escena: sugieren qué subir y, recién
-   *  aprobadas, habilitan "Generar imágenes". */
+   *  aprobadas, habilitan "Generar Storyboard". */
   references?: ReferenceImage[];
   refsApproved?: boolean;
   /** Prompts del video de la escena (uno por segmento de duración). */
@@ -293,6 +298,7 @@ function buildAngles(count: number): SalesAngle[] {
     InputNumber,
     Dialog,
     Popover,
+    ToggleSwitch,
     ServerUrlPipe,
     AssetEditDialogComponent,
   ],
@@ -432,6 +438,10 @@ export class AgencyComponent {
   protected readonly videoRatio = signal('');
   /** Tags de referencia que se inyectan en todos los prompts. */
   protected readonly videoTags = signal('');
+  /** Calidad/resolución pedida al modelo ('' = default del modelo). */
+  protected readonly videoResolution = signal('');
+  /** Sonido de los videos (los modelos compatibles lo respetan). */
+  protected readonly videoAudio = signal(true);
 
   /** Escena actual de la modal. */
   protected readonly boardScene = computed(() => {
@@ -495,6 +505,15 @@ export class AgencyComponent {
     return [
       { label: 'Automática (default del modelo)', value: '' },
       ...ratios.map((r) => ({ label: r, value: r })),
+    ];
+  });
+
+  /** Calidades (resoluciones) que soporta el modelo de video activo. */
+  protected readonly videoResolutionOptions = computed(() => {
+    const resolutions = this.activeVideoModel()?.defaults?.resolutions ?? [];
+    return [
+      { label: 'Automática (default del modelo)', value: '' },
+      ...resolutions.map((r) => ({ label: r, value: r })),
     ];
   });
 
@@ -927,7 +946,8 @@ export class AgencyComponent {
   private referenceNarrative(scene: StoryboardScene): string | null {
     if (!scene.references?.length) return null;
     const items = this.sceneSuggestions(scene.id);
-    return `Fotos reales de referencia de la escena: ${items.join(', ')}. Integrar esos elementos en la acción y respetar su apariencia.`;
+    const files = scene.references.map((r) => r.filename).join(', ');
+    return `Fotos reales asignadas a la escena (${files}): ${items.join(', ')}. Integrar esos elementos en la acción y respetar su apariencia.`;
   }
 
   /** Prompt por defecto de la hoja: N viñetas tipo cómic, cada una con
@@ -1344,6 +1364,8 @@ export class AgencyComponent {
         duration: this.videoDuration(),
         ratio: this.videoRatio(),
         tags: this.videoTags(),
+        resolution: this.videoResolution(),
+        audio: this.videoAudio(),
       },
       angles: this.angles(),
       storyboard: this.storyboard(),
@@ -1385,6 +1407,8 @@ export class AgencyComponent {
       this.videoDuration.set(10);
       this.videoRatio.set('');
       this.videoTags.set('');
+      this.videoResolution.set('');
+      this.videoAudio.set(true);
       this.agent.set('commercial');
       return;
     }
@@ -1416,12 +1440,16 @@ export class AgencyComponent {
       duration?: number;
       ratio?: string;
       tags?: string;
+      resolution?: string;
+      audio?: boolean;
     };
     if (Number.isFinite(videoSettings.duration) && (videoSettings.duration ?? 0) > 0) {
       this.videoDuration.set(Math.round(videoSettings.duration as number));
     }
     this.videoRatio.set(videoSettings.ratio ?? '');
     this.videoTags.set(videoSettings.tags ?? '');
+    this.videoResolution.set(videoSettings.resolution ?? '');
+    this.videoAudio.set(videoSettings.audio ?? true);
 
     const anglesCount = Number(agency['anglesCount']);
     if (Number.isFinite(anglesCount) && anglesCount > 0) {
@@ -1634,7 +1662,7 @@ export class AgencyComponent {
     return this.uploadingRefScenes().includes(sceneId);
   }
 
-  /** Gate: sin referencias aprobadas no se habilita "Generar imágenes". */
+  /** Gate: sin referencias aprobadas no se habilita "Generar Storyboard". */
   protected canGenerateBoard(scene: StoryboardScene): boolean {
     return !!scene.refsApproved && !scene.boardGenerating;
   }
@@ -1690,7 +1718,7 @@ export class AgencyComponent {
   }
 
   /** Quita una foto de referencia: vuelve a dejar las referencias sin aprobar
-   *  (el gate de "Generar imágenes" se cierra) y rearma la narrativa. */
+   *  (el gate de "Generar Storyboard" se cierra) y rearma la narrativa. */
   protected removeSceneReference(sceneId: string, referenceId: string): void {
     this.storyboard.update((scenes) =>
       scenes.map((s) =>
@@ -1708,7 +1736,7 @@ export class AgencyComponent {
   }
 
   /** Aprueba las referencias de la escena (requiere ≥1 foto): habilita
-   *  "Generar imágenes". */
+   *  "Generar Storyboard". */
   protected toggleApproveReferences(sceneId: string): void {
     const scene = this.storyboard().find((s) => s.id === sceneId);
     if (!scene?.references?.length || scene.refsApproved) return;
@@ -1785,6 +1813,10 @@ export class AgencyComponent {
       videoUrl: previous[i]?.videoUrl ?? null,
       // Conserva el estado si el prompt ya se está generando en este momento.
       generating: previous[i]?.generating ?? false,
+      // Overrides por prompt: sobreviven al rearmado de la config global.
+      duration: previous[i]?.duration ?? null,
+      resolution: previous[i]?.resolution ?? null,
+      audio: previous[i]?.audio ?? null,
     }));
   }
 
@@ -1820,8 +1852,105 @@ export class AgencyComponent {
         `Segmento ${index + 1} de ${segments}: continuidad directa con el segmento anterior, mismo ritmo, encuadre y personajes.`,
       );
     }
-    lines.push(`Duración ${this.segmentDuration(index)}s${ratio ? ` · Relación de aspecto ${ratio}` : ''}.`);
+    lines.push(
+      this.specLine(this.segmentDuration(index), ratio),
+    );
     return lines.join('\n');
+  }
+
+  /** Última línea del prompt: duración/ratio + calidad y sonido según la
+   *  config global del paso (o el override puntual del prompt). */
+  private specLine(
+    duration: number,
+    ratio: string,
+    resolution?: string | null,
+    audio?: boolean | null,
+  ): string {
+    const res = resolution === undefined ? this.videoResolution() : (resolution ?? '');
+    const sound = audio ?? this.videoAudio();
+    return (
+      `Duración ${duration}s` +
+      (ratio ? ` · Relación de aspecto ${ratio}` : '') +
+      (res ? ` · Calidad ${res}` : '') +
+      ` · Sonido ${sound ? 'activado' : 'desactivado'}` +
+      '.'
+    );
+  }
+
+  /** Reemplaza la línea "Duración …" del prompt (o la agrega al final). */
+  private replaceSpecLine(text: string, line: string): string {
+    return /^Duración .+$/m.test(text)
+      ? text.replace(/^Duración .+$/m, line)
+      : `${text}\n${line}`;
+  }
+
+  /** Prompt concreto (de la escena o de una toma) por posición. */
+  private promptAt(
+    sceneId: string,
+    shotId: string | null,
+    index: number,
+  ): VideoPrompt | null {
+    const scene = this.storyboard().find((s) => s.id === sceneId);
+    if (!scene) return null;
+    const target = shotId ? scene.shots.find((sh) => sh.id === shotId) : scene;
+    return target?.prompts?.[index] ?? null;
+  }
+
+  /** Override de duración/calidad/sonido de un prompt: guarda el dato y
+   *  reescribe la línea de especificación del texto (el resto del prompt
+   *  escrito a mano queda intacto). */
+  private patchPromptSpec(
+    sceneId: string,
+    shotId: string | null,
+    index: number,
+    patch: { duration?: number; resolution?: string; audio?: boolean },
+  ): void {
+    const prompt = this.promptAt(sceneId, shotId, index);
+    if (!prompt) return;
+    const duration = patch.duration ?? prompt.duration ?? null;
+    const resolution =
+      patch.resolution !== undefined ? patch.resolution : (prompt.resolution ?? null);
+    const audio = patch.audio ?? prompt.audio ?? null;
+    const text = this.replaceSpecLine(
+      prompt.text,
+      // null/undefined → manda la config global; '' explícito = Automática.
+      this.specLine(
+        duration ?? this.segmentDuration(index),
+        this.videoRatio(),
+        resolution ?? undefined,
+        audio,
+      ),
+    );
+    this.patchPrompt(sceneId, shotId, index, { duration, resolution, audio, text });
+    this.commitSceneEdit();
+  }
+
+  protected setPromptDuration(
+    sceneId: string,
+    shotId: string | null,
+    index: number,
+    value: number | null,
+  ): void {
+    if (!value || value < 1) return;
+    this.patchPromptSpec(sceneId, shotId, index, { duration: Math.round(value) });
+  }
+
+  protected setPromptResolution(
+    sceneId: string,
+    shotId: string | null,
+    index: number,
+    value: string,
+  ): void {
+    this.patchPromptSpec(sceneId, shotId, index, { resolution: value });
+  }
+
+  protected setPromptAudio(
+    sceneId: string,
+    shotId: string | null,
+    index: number,
+    value: boolean,
+  ): void {
+    this.patchPromptSpec(sceneId, shotId, index, { audio: value });
   }
 
   /** 'Exclusividad y lujo' → '#exclusividad-y-lujo' */
@@ -1848,6 +1977,10 @@ export class AgencyComponent {
     const options = this.videoRatioOptions();
     if (!options.some((o) => o.value === this.videoRatio())) {
       this.videoRatio.set(options[0]?.value ?? '');
+    }
+    const qualityOptions = this.videoResolutionOptions();
+    if (!qualityOptions.some((o) => o.value === this.videoResolution())) {
+      this.videoResolution.set(qualityOptions[0]?.value ?? '');
     }
     const segments = this.videoSegmentCount();
     if (this.storyboard().some((s) => (s.prompts?.length ?? 0) !== segments)) {
@@ -1934,10 +2067,11 @@ export class AgencyComponent {
     return this.openPromptResources().has(this.promptResourcesKey(sceneId, shotId, index));
   }
 
-  /** Recursos que se adjuntan a la generación de cualquier prompt de la
-   *  escena: la hoja de storyboard (si su archivo se subió al store) más
-   *  las fotos de referencia cuando el modelo expone ruta multi-referencia.
-   *  Espeja el `content` que arma generatePromptVideo. */
+  /** Recursos asignados a cualquier prompt de la escena: la hoja de
+   *  storyboard (si su archivo se subió al store) más las fotos de referencia
+   *  de la escena. Las fotos SIEMPRE se listan acá y se describen en el
+   *  prompt; se adjuntan como imagen solo cuando el modelo expone ruta
+   *  multi-referencia (si no, su ruta i2v de imagen única se rompería). */
   protected promptResources(scene: StoryboardScene): {
     id: string;
     name: string;
@@ -1951,11 +2085,9 @@ export class AgencyComponent {
         url: scene.boardImageUrl ?? null,
       });
     }
-    if (this.activeVideoModel()?.reference_endpoint) {
-      for (const ref of this.referencesOfScene(scene.id)) {
-        if (ref.id !== scene.boardFileId) {
-          items.push({ id: ref.id, name: ref.filename, url: ref.url });
-        }
+    for (const ref of this.referencesOfScene(scene.id)) {
+      if (ref.id !== scene.boardFileId) {
+        items.push({ id: ref.id, name: ref.filename, url: ref.url });
       }
     }
     return items;
@@ -2006,11 +2138,16 @@ export class AgencyComponent {
             }
           }
         }
+        const duration = prompt.duration ?? this.segmentDuration(index);
+        const resolution = prompt.resolution ?? this.videoResolution();
+        const audio = prompt.audio ?? this.videoAudio();
         const payload: GenerateRequest = {
           model: model.name,
           content,
           ...(ratio ? { ratio } : {}),
-          duration: this.segmentDuration(index),
+          duration,
+          ...(resolution ? { resolution } : {}),
+          generate_audio: audio,
           event_id: project.id,
           piece_id: piece.id,
           piece_code: piece.piece_code ?? `SCENE-${sceneId.toUpperCase()}`,
@@ -2026,7 +2163,7 @@ export class AgencyComponent {
           modelDisplayName: model.display_name || model.name,
           modelType: 'api',
           ratio,
-          resolution: model.defaults?.resolutions?.[0] ?? '',
+          resolution: resolution || model.defaults?.resolutions?.[0] || '',
           duration: payload.duration ?? 0,
           status: 'queued',
           progress: 0,
@@ -2208,6 +2345,8 @@ export class AgencyComponent {
     this.videoDuration.set(10);
     this.videoRatio.set('');
     this.videoTags.set('');
+    this.videoResolution.set('');
+    this.videoAudio.set(true);
     this.error.set(null);
   }
 }

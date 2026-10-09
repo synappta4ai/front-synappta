@@ -20,7 +20,7 @@
   @if (currentPhase() === 'input') {
     <p-card styleClass="phase-card">
       <ng-template #header>
-        <div class="flex items-center gap-3 border-b border-surface-border px-6 py-4">
+        <div class="flex flex-wrap items-center gap-3 border-b border-surface-border px-6 py-4">
           <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
             <i class="md md-edit_note text-lg text-accent"></i>
           </div>
@@ -248,7 +248,7 @@
   @if (currentPhase() === 'angles') {
     <p-card styleClass="phase-card">
       <ng-template #header>
-        <div class="flex items-center gap-3 border-b border-surface-border px-6 py-4">
+        <div class="flex flex-wrap items-center gap-3 border-b border-surface-border px-6 py-4">
           <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
             <i class="md md-explore text-lg text-accent"></i>
           </div>
@@ -352,7 +352,7 @@
   @if (currentPhase() === 'storyboard') {
     <p-card styleClass="phase-card">
       <ng-template #header>
-        <div class="flex items-center gap-3 border-b border-surface-border px-6 py-4">
+        <div class="flex flex-wrap items-center gap-3 border-b border-surface-border px-6 py-4">
           <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
             <i class="md md-photo_library text-lg text-accent"></i>
           </div>
@@ -417,7 +417,7 @@
                 [style.animation-delay.ms]="i < 8 ? i * 35 : 280"
                 class="rounded-2xl border border-surface-border bg-surface-2 p-5"
               >
-                <div class="mb-4 flex items-center justify-between gap-3">
+                <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
                   <div class="flex min-w-0 flex-1 items-start gap-3">
                     <div
                       class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-accent text-on-accent text-sm font-bold"
@@ -449,7 +449,7 @@
                   </div>
                   <div class="flex shrink-0 items-center gap-2">
                     <p-button
-                      label="Generar imágenes"
+                      label="Generar Storyboard"
                       icon="md md-image"
                       severity="secondary"
                       size="small"
@@ -470,7 +470,7 @@
                   </div>
                 </div>
 
-                <!-- Fotos de referencia de la escena: al aprobarse habilitan "Generar imágenes" -->
+                <!-- Fotos de referencia de la escena: al aprobarse habilitan "Generar Storyboard" -->
                 <div class="mb-4 rounded-xl border border-surface-border bg-surface-2 px-4 py-3">
                   <div class="flex flex-wrap items-center gap-3">
                     <i class="md md-photo_camera text-accent"></i>
@@ -555,8 +555,8 @@
                   }
                   @if (!scene.refsApproved) {
                     <p class="mt-2 text-xs text-ink-muted-on-dark">
-                      Subí al menos una foto y aprobá las referencias para habilitar "Generar
-                      imágenes".
+                      Subí al menos una foto y aprobá las referencias para habilitar
+                      "Generar Storyboard".
                     </p>
                   }
                 </div>
@@ -650,7 +650,7 @@
   @if (currentPhase() === 'scenes') {
     <p-card styleClass="phase-card">
       <ng-template #header>
-        <div class="flex items-center gap-3 border-b border-surface-border px-6 py-4">
+        <div class="flex flex-wrap items-center gap-3 border-b border-surface-border px-6 py-4">
           <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
             <i class="md md-movie text-lg text-accent"></i>
           </div>
@@ -731,6 +731,35 @@
                 [ngModelOptions]="{ standalone: true }"
               />
             </div>
+            <div class="flex flex-col gap-1">
+              <span class="text-xs font-bold text-ink-muted-on-dark">Calidad del video</span>
+              <p-select
+                aria-label="Calidad del video"
+                [options]="videoResolutionOptions()"
+                optionLabel="label"
+                optionValue="value"
+                [ngModel]="videoResolution()"
+                (ngModelChange)="videoResolution.set($event); onVideoConfigChange()"
+                [ngModelOptions]="{ standalone: true }"
+                styleClass="w-56"
+                appendTo="body"
+              />
+              <small class="text-ink-muted-on-dark">Vacío = default del modelo.</small>
+            </div>
+            <div class="flex flex-col gap-1">
+              <span class="text-xs font-bold text-ink-muted-on-dark">Sonido</span>
+              <div class="flex h-8 items-center gap-2">
+                <p-toggleswitch
+                  ariaLabel="Sonido del video"
+                  [ngModel]="videoAudio()"
+                  (ngModelChange)="videoAudio.set($event)"
+                  [ngModelOptions]="{ standalone: true }"
+                />
+                <span class="text-xs text-ink-muted-on-dark">
+                  {{ videoAudio() ? 'Con audio' : 'Sin audio' }}
+                </span>
+              </div>
+            </div>
             <p-button
               label="Generar prompts"
               class="mt-5"
@@ -777,7 +806,7 @@
                   [style.animation-delay.ms]="i < 8 ? i * 35 : 280"
                   class="rounded-2xl border border-surface-border bg-surface-2 p-5"
                 >
-                  <div class="mb-4 flex items-center justify-between gap-3">
+                  <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
                     <h3 class="flex min-w-0 flex-1 items-center gap-2 font-bold text-ink-on-dark">
                       <i class="md md-play_circle"></i>
                       {{ scene.title }}
@@ -819,7 +848,7 @@
                               '/' +
                               (scene.prompts?.length ?? 0) +
                               ' · ' +
-                              segmentDuration(p) +
+                              (prompt.duration ?? segmentDuration(p)) +
                               's'
                             "
                             severity="info"
@@ -842,6 +871,48 @@
                               loading="lazy"
                             ></video>
                           }
+                        </div>
+
+                        <!-- Ajustes por prompt: duración, calidad y sonido -->
+                        <div
+                          class="flex flex-wrap items-center gap-3 text-xs text-ink-muted-on-dark"
+                        >
+                          <label class="flex items-center gap-1.5">
+                            Duración
+                            <p-inputNumber
+                              [min]="1"
+                              [max]="600"
+                              [showButtons]="true"
+                              styleClass="w-28"
+                              aria-label="Duración del video"
+                              [ngModel]="prompt.duration ?? segmentDuration(p)"
+                              (ngModelChange)="setPromptDuration(scene.id, null, p, $event)"
+                              [ngModelOptions]="{ standalone: true }"
+                            />
+                          </label>
+                          <label class="flex items-center gap-1.5">
+                            Calidad
+                            <p-select
+                              aria-label="Calidad del video"
+                              [options]="videoResolutionOptions()"
+                              optionLabel="label"
+                              optionValue="value"
+                              [ngModel]="prompt.resolution ?? videoResolution()"
+                              (ngModelChange)="setPromptResolution(scene.id, null, p, $event)"
+                              [ngModelOptions]="{ standalone: true }"
+                              styleClass="w-52"
+                              appendTo="body"
+                            />
+                          </label>
+                          <label class="flex items-center gap-1.5">
+                            Sonido
+                            <p-toggleswitch
+                              ariaLabel="Sonido del video"
+                              [ngModel]="prompt.audio ?? videoAudio()"
+                              (ngModelChange)="setPromptAudio(scene.id, null, p, $event)"
+                              [ngModelOptions]="{ standalone: true }"
+                            />
+                          </label>
                         </div>
                         <textarea
                           pTextarea
@@ -903,8 +974,8 @@
                               @if ((scene.references?.length ?? 0) > 0 &&
                                   !activeVideoModel()?.reference_endpoint) {
                                 <p class="text-xs text-ink-muted-on-dark">
-                                  El modelo de video no expone ruta multi-referencia: las fotos
-                                  de referencia no se adjuntan.
+                                  Las fotos de referencia se describen en el prompt: el modelo
+                                  no expone ruta multi-referencia para adjuntarlas como imagen.
                                 </p>
                               }
                             </div>
@@ -945,7 +1016,7 @@
                                   '/' +
                                   (shot.prompts?.length ?? 0) +
                                   ' · ' +
-                                  segmentDuration(p) +
+                                  (prompt.duration ?? segmentDuration(p)) +
                                   's'
                                 "
                                 severity="info"
@@ -968,6 +1039,48 @@
                                   loading="lazy"
                                 ></video>
                               }
+                            </div>
+
+                            <!-- Ajustes por prompt: duración, calidad y sonido -->
+                            <div
+                              class="flex flex-wrap items-center gap-3 text-xs text-ink-muted-on-dark"
+                            >
+                              <label class="flex items-center gap-1.5">
+                                Duración
+                                <p-inputNumber
+                                  [min]="1"
+                                  [max]="600"
+                                  [showButtons]="true"
+                                  styleClass="w-28"
+                                  aria-label="Duración del video"
+                                  [ngModel]="prompt.duration ?? segmentDuration(p)"
+                                  (ngModelChange)="setPromptDuration(scene.id, shot.id, p, $event)"
+                                  [ngModelOptions]="{ standalone: true }"
+                                />
+                              </label>
+                              <label class="flex items-center gap-1.5">
+                                Calidad
+                                <p-select
+                                  aria-label="Calidad del video"
+                                  [options]="videoResolutionOptions()"
+                                  optionLabel="label"
+                                  optionValue="value"
+                                  [ngModel]="prompt.resolution ?? videoResolution()"
+                                  (ngModelChange)="setPromptResolution(scene.id, shot.id, p, $event)"
+                                  [ngModelOptions]="{ standalone: true }"
+                                  styleClass="w-52"
+                                  appendTo="body"
+                                />
+                              </label>
+                              <label class="flex items-center gap-1.5">
+                                Sonido
+                                <p-toggleswitch
+                                  ariaLabel="Sonido del video"
+                                  [ngModel]="prompt.audio ?? videoAudio()"
+                                  (ngModelChange)="setPromptAudio(scene.id, shot.id, p, $event)"
+                                  [ngModelOptions]="{ standalone: true }"
+                                />
+                              </label>
                             </div>
                             <textarea
                               pTextarea
@@ -1032,8 +1145,9 @@
                                   @if ((scene.references?.length ?? 0) > 0 &&
                                       !activeVideoModel()?.reference_endpoint) {
                                     <p class="text-xs text-ink-muted-on-dark">
-                                      El modelo de video no expone ruta multi-referencia: las
-                                      fotos de referencia no se adjuntan.
+                                      Las fotos de referencia se describen en el prompt: el
+                                      modelo no expone ruta multi-referencia para adjuntarlas
+                                      como imagen.
                                     </p>
                                   }
                                 </div>
@@ -1181,8 +1295,8 @@
               <small class="text-ink-muted-on-dark">Referencias aprobadas ✓</small>
             } @else {
               <small class="text-ink-muted-on-dark">
-                Tocá una miniatura para editar el elemento asociado. Para habilitar "Generar
-                imágenes", aprobá las referencias en la tarjeta de la escena.
+                Tocá una miniatura para editar el elemento asociado. Para habilitar
+                "Generar Storyboard", aprobá las referencias en la tarjeta de la escena.
               </small>
             }
           </div>
