@@ -12,7 +12,7 @@
   flex-direction: column;
   flex: 1 1 auto;
   min-height: 480px;
-  padding: 12px 16px;
+  padding: 16px 20px;
 }
 
 /* Studio workspace: 3 columnas (params | viewer | takes).
@@ -32,7 +32,11 @@
 
   display: grid;
   grid-template-columns: var(--col-left, 340px) 10px minmax(0, 1fr) 10px var(--col-right, 320px);
-  gap: 12px;
+  /* La fila única absorbe el alto libre: sin esto la fila implícita se
+     queda del alto del contenido y las columnas nunca se estiran,
+     dejando la franja vacía al final de la página. */
+  grid-template-rows: minmax(0, 1fr);
+  gap: 16px;
   /* Llena el host por flex (height:100% no resuelve con host flex). */
   flex: 1 1 auto;
   min-height: 0;

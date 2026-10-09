@@ -3,12 +3,13 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 
 import { AgencyApiRepository } from './agency-api.repository';
+import { environment } from '@env/environment';
 
 describe('AgencyApiRepository', () => {
   let repository: AgencyApiRepository;
   let httpMock: HttpTestingController;
 
-  const base = 'http://localhost:9099/api/v1';
+  const base = environment.API_URL;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
