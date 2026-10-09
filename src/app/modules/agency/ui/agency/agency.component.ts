@@ -44,6 +44,34 @@ import { environment } from '@env/environment';
 
 type WorkflowPhase = 'input' | 'angles' | 'storyboard' | 'scenes';
 
+/** Experto que analiza el proyecto (valor = workflow del agente en el back). */
+type AgencyAgent = 'commercial' | 'real_estate' | 'cinema';
+
+const AGENT_OPTIONS: { value: AgencyAgent; label: string; hint: string }[] = [
+  {
+    value: 'commercial',
+    label: 'Comercial publicitario',
+    hint: 'Estratega comercial: propone ángulos de venta para productos y servicios.',
+  },
+  {
+    value: 'real_estate',
+    label: 'Inmobiliaria',
+    hint: 'Especialista inmobiliario: ángulos para propiedades, amenidades y target.',
+  },
+  {
+    value: 'cinema',
+    label: 'Cine',
+    hint: 'Director de cine: propuestas cinematográficas con luz, planos y cámara.',
+  },
+];
+
+/** Encuadre del proyecto en el mensaje al agente, según el experto elegido. */
+const AGENT_KIND_LABEL: Record<AgencyAgent, string> = {
+  commercial: 'Proyecto comercial',
+  real_estate: 'Proyecto inmobiliario',
+  cinema: 'Proyecto audiovisual',
+};
+
 interface SalesAngle {
   id: string;
   title: string;
@@ -269,19 +297,60 @@ export class AgencyComponent {
   protected readonly error = signal<string | null>(null);
   protected readonly submitted = signal(0);
 
-  protected readonly phases = [
-    { key: 'input' as WorkflowPhase, name: 'Documentación' },
-    { key: 'angles' as WorkflowPhase, name: 'Ángulos' },
-    { key: 'storyboard' as WorkflowPhase, name: 'Storyboard' },
-    { key: 'scenes' as WorkflowPhase, name: 'Escenas' },
-  ];
+  /** Experto elegido para analizar el proyecto (default: comercial). */
+  protected readonly agent = signal<AgencyAgent>('commercial');
+  protected readonly agentOptions = AGENT_OPTIONS;
+  protected readonly agentLabel = computed(
+    () => AGENT_OPTIONS.find((o) => o.value === this.agent())?.label ?? 'Comercial publicitario',
+  );
+  protected readonly agentHint = computed(
+    () => AGENT_OPTIONS.find((o) => o.value === this.agent())?.hint ?? '',
+  );
+  /** Placeholder del contexto, adaptado al experto elegido. */
+  protected readonly descriptionPlaceholder = computed(() => {
+    const tail =
+      'Esta descripción, junto a los insumos que cargues, me dará el contexto necesario para darte una mejor respuesta.';
+    switch (this.agent()) {
+      case 'real_estate':
+        return (
+          'Describe brevemente tu proyecto (puntos fuertes del proyecto inmobiliario, ' +
+          `amenidades, precio promedio, target del cliente, etc). ${tail}`
+        );
+      case 'cinema':
+        return (
+          'Describe brevemente tu proyecto (temática, idea escueta del video, guion, ' +
+          `tono, referencias visuales, etc). ${tail}`
+        );
+      default:
+        return (
+          'Describe brevemente tu proyecto (de qué va el comercial, target del cliente, ' +
+          `puntos fuertes del producto o servicio, guion del comercial, etc). ${tail}`
+        );
+    }
+  });
+
+  /** Nombre del paso 2 según el experto: ángulos (inmobiliaria) o prompts. */
+  protected readonly anglesStepName = computed(() =>
+    this.agent() === 'real_estate' ? 'Ángulos' : 'Prompts',
+  );
+  /** Sustantivo en minúscula para las frases del flujo. */
+  protected readonly anglesNoun = computed(() =>
+    this.agent() === 'real_estate' ? 'ángulos de venta' : 'prompts',
+  );
+
+  protected readonly phases = computed<{ key: WorkflowPhase; name: string }[]>(() => [
+    { key: 'input', name: 'Documentación' },
+    { key: 'angles', name: this.anglesStepName() },
+    { key: 'storyboard', name: 'Storyboard' },
+    { key: 'scenes', name: 'Escenas' },
+  ]);
 
   protected readonly phaseIndex = computed(() =>
-    this.phases.findIndex((p) => p.key === this.currentPhase()),
+    this.phases().findIndex((p) => p.key === this.currentPhase()),
   );
 
   protected readonly stepItems = computed<MenuItem[]>(() =>
-    this.phases.map((phase, i) => ({
+    this.phases().map((phase, i) => ({
       label: phase.name,
       command: () => this.goToPhase(phase.key),
     })),
@@ -659,8 +728,12 @@ export class AgencyComponent {
       description: raw.description.trim(),
     };
     this.projectDescription.set(`${values.name} en ${values.venue}. ${values.description}`);
-    // Los ángulos a crear salen del input numérico (por defecto 3).
-    const count = Number((this.form.getRawValue() as { anglesCount?: number }).anglesCount) || 3;
+    // Inmobiliaria pide un número fijo; con los otros agentes el experto
+    // define cuántos necesita (tope 10 para no recortar su respuesta).
+    const fixed = this.agent() === 'real_estate';
+    const count = fixed
+      ? Number((this.form.getRawValue() as { anglesCount?: number }).anglesCount) || 3
+      : 10;
     this.angles.set(buildAngles(count));
 
     this.loading.set(true);
@@ -1153,10 +1226,13 @@ export class AgencyComponent {
       location: string;
       description: string;
     };
+    const agent = this.agent();
     const message = [
-      `Proyecto inmobiliario: ${raw.propertyName} (${raw.location}).`,
+      `${AGENT_KIND_LABEL[agent]}: ${raw.propertyName} (${raw.location}).`,
       raw.description,
-      `Generá ${count} ángulos de venta y detené el flujo ahí.`,
+      agent === 'real_estate'
+        ? `Generá ${count} ángulos de venta y detené el flujo ahí.`
+        : 'Generá los ángulos necesarios para comunicar el guion y detené el flujo ahí.',
     ].join(' ');
     const token = this.session.token();
     const controller = new AbortController();
@@ -1173,7 +1249,7 @@ export class AgencyComponent {
           conversation_id: '',
           message,
           provider: cred.provider,
-          workflow: 'real_estate',
+          workflow: this.agent(),
           ...(this.modelText() ? { model: this.modelText() } : {}),
         }),
         signal: controller.signal,
@@ -1241,6 +1317,7 @@ export class AgencyComponent {
   private async sendWorkflow(id: string): Promise<void> {
     const state = {
       phase: this.currentPhase(),
+      agent: this.agent(),
       anglesCount: Number((this.form.getRawValue() as { anglesCount?: number }).anglesCount) || 3,
       models: { text: this.modelText(), image: this.modelImage(), video: this.modelVideo() },
       videoSettings: {
@@ -1288,6 +1365,7 @@ export class AgencyComponent {
       this.videoDuration.set(10);
       this.videoRatio.set('');
       this.videoTags.set('');
+      this.agent.set('commercial');
       return;
     }
     let agency: Record<string, unknown> | null = null;
@@ -1298,6 +1376,16 @@ export class AgencyComponent {
       agency = null;
     }
     if (!agency) return;
+
+    const savedAgent = agency['agent'];
+    // Proyectos legacy (sin agente guardado) nacieron con el flujo inmobiliario.
+    this.agent.set(
+      savedAgent === undefined
+        ? 'real_estate'
+        : savedAgent === 'real_estate' || savedAgent === 'cinema' || savedAgent === 'commercial'
+          ? savedAgent
+          : 'commercial',
+    );
 
     const models = (agency['models'] ?? {}) as { text?: string; image?: string; video?: string };
     this.modelText.set(models.text ?? '');
@@ -1374,7 +1462,7 @@ export class AgencyComponent {
       this.projectDescription.set(String(agency['projectDescription']));
     }
     const phase = agency['phase'];
-    if (typeof phase === 'string' && this.phases.some((p) => p.key === phase)) {
+    if (typeof phase === 'string' && this.phases().some((p) => p.key === phase)) {
       this.currentPhase.set(phase as WorkflowPhase);
     }
   }

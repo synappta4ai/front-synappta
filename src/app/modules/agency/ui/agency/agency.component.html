@@ -1,5 +1,5 @@
-<!-- /agency = flujo Inmobiliaria: Documentación → Ángulos → Storyboard → Escenas -->
-<app-page-container title="Agencia · Flujo de Inmobiliaria" animate.enter="anim-page">
+<!-- /agency = detectives y redactores por experto: Documentación → Ángulos → Storyboard → Escenas -->
+<app-page-container [title]="'Agencia · ' + agentLabel()" animate.enter="anim-page">
   @if (error(); as message) {
     <div class="mb-6">
       <p-message severity="error" [text]="message" [escape]="false" styleClass="w-full" />
@@ -107,26 +107,30 @@
             />
           </div>
           <div class="flex flex-col gap-2">
-            <label for="anglesCount" class="text-xs font-bold text-ink-on-dark">
-              Ángulos de venta a crear <span class="text-danger">*</span>
-            </label>
-            <p-inputNumber
-              inputId="anglesCount"
-              formControlName="anglesCount"
-              [min]="1"
-              [max]="10"
-              [showButtons]="true"
-              styleClass="w-40"
+            <label for="agencyAgent" class="text-xs font-bold text-ink-on-dark"> Agente </label>
+            <p-select
+              inputId="agencyAgent"
+              [attr.aria-label]="'Agente experto que analiza el proyecto. ' + agentHint()"
+              [options]="agentOptions"
+              optionLabel="label"
+              optionValue="value"
+              [ngModel]="agent()"
+              (ngModelChange)="agent.set($event)"
+              [ngModelOptions]="{ standalone: true }"
+              styleClass="w-full"
+              appendTo="body"
+              [pTooltip]="agentHint()"
+              showDelay="400"
+              tooltipPosition="top"
             />
-            <small class="text-ink-muted-on-dark">Entre 1 y 10; por defecto 3.</small>
           </div>
           <div class="flex flex-col gap-2">
             <label for="agencyTextModel" class="text-xs font-bold text-ink-on-dark">
-              Modelo · Ángulos de venta
+              Cerebro
             </label>
             <p-select
               inputId="agencyTextModel"
-              aria-label="Modelo de ángulos de venta"
+              aria-label="Cerebro: modelo de lenguaje que usarás para analizar tu proyecto"
               [options]="modelTextOptions()"
               optionLabel="label"
               optionValue="value"
@@ -135,23 +139,39 @@
               [ngModelOptions]="{ standalone: true }"
               styleClass="w-full"
               appendTo="body"
+              pTooltip="Modelo LLM que usarás para analizar tu proyecto"
+              showDelay="400"
+              tooltipPosition="top"
             />
-            <small class="text-ink-muted-on-dark"
-              >Modelo LLM que redacta los ángulos. Automático = el de Admin → Modelos.</small
-            >
           </div>
+          @if (agent() === 'real_estate') {
+            <div class="flex flex-col gap-2">
+              <label for="anglesCount" class="text-xs font-bold text-ink-on-dark">
+                Ángulos de venta a crear <span class="text-danger">*</span>
+              </label>
+              <p-inputNumber
+                inputId="anglesCount"
+                formControlName="anglesCount"
+                [min]="1"
+                [max]="10"
+                [showButtons]="true"
+                styleClass="w-40"
+              />
+              <small class="text-ink-muted-on-dark">Entre 1 y 10; por defecto 3.</small>
+            </div>
+          }
         </div>
 
         <div class="flex flex-col gap-2">
           <label for="description" class="text-xs font-bold text-ink-on-dark">
-            Descripción y puntos fuertes <span class="text-danger">*</span>
+            Contexto del proyecto <span class="text-danger">*</span>
           </label>
           <textarea
             pTextarea
             id="description"
             formControlName="description"
             rows="4"
-            placeholder="Describe las características principales del proyecto inmobiliario, target de clientes, precio promedio, amenidades..."
+            [placeholder]="descriptionPlaceholder()"
             class="w-full"
             [attr.aria-invalid]="
               form.get('description')?.invalid &&
@@ -169,7 +189,7 @@
               (change)="onBriefFiles($event)"
             />
             <p-button
-              label="Subir folleto"
+              label="Subir insumo"
               icon="md md-upload"
               severity="secondary"
               size="small"
@@ -187,7 +207,7 @@
           <validator-errors
             id="agency-description-errors"
             [control]="form.get('description')"
-            [label]="'Descripción del proyecto'"
+            [label]="'Contexto del proyecto'"
             [submitTick]="submitted()"
           />
           <small class="text-ink-muted-on-dark"
@@ -200,9 +220,9 @@
           <p class="text-sm text-ink-muted-on-dark">
             <i class="md md-info mr-1"></i>
             @if (inputsLocked()) {
-              Con el proyecto elegido ya podés pasar directo a los ángulos de venta
+              Con el proyecto elegido ya podés pasar directo a los {{ anglesNoun() }}
             } @else {
-              El sistema creará tu proyecto y generará ángulos de venta
+              El sistema creará tu proyecto y generará {{ anglesNoun() }}
             }
           </p>
           <span
@@ -212,8 +232,7 @@
           >
             <p-button
               type="button"
-              label="Analizar y generar ángulos"
-              icon="md md-bolt"
+              label="Generar"
               [loading]="loading()"
               [disabled]="!canProceedToAngles || loading()"
               (onClick)="generateAngles()"
@@ -234,7 +253,9 @@
             <i class="md md-explore text-lg text-accent"></i>
           </div>
           <div>
-            <h2 class="text-lg font-bold text-ink-on-dark">Ángulos de Venta</h2>
+            <h2 class="text-lg font-bold text-ink-on-dark">
+              {{ agent() === 'real_estate' ? 'Ángulos de Venta' : 'Prompts' }}
+            </h2>
             <p class="text-sm text-ink-muted-on-dark">Selecciona uno o más para continuar</p>
           </div>
         </div>
@@ -245,7 +266,7 @@
           <div class="flex items-center gap-2">
             <p-tag [value]="selectedAnglesCount + ' seleccionados'" severity="info" />
             <span class="text-sm text-ink-muted-on-dark"
-              >Selecciona los ángulos que mejor se adapten a tu proyecto</span
+              >Selecciona los {{ anglesNoun() }} que mejor se adapten a tu proyecto</span
             >
           </div>
         }

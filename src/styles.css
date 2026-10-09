@@ -292,16 +292,18 @@
    Paleta Figma (no modificar):
      background #DFDFDF · accent #E7FE64 · choice #656565 · secondary #ACACAC
 
-   Contraste (WCAG 2.x):
-     ink #111 / background ............ 14.2:1
-     ink-muted #595959 / background ... 5.3:1
-     choice #656565 / background ...... 4.4:1 (solo iconos/estados; texto usa ink-muted)
-     ink #111 / secondary ............. 8.3:1
-     on-accent #0F0F0F / accent ....... 17.1:1
-     accent / surface ................. 15.2:1 (texto/iconos/líneas solo sobre surface)
-     accent / background .............. 1.2:1 (solo relleno con on-accent, nunca texto)
-     ink-on-dark #F2F2F2 / surface .... 15.2:1 · / surface-2 12.8:1
-     ink-muted-on-dark #A8A8A8 / surface 7.2:1 · / surface-2 6.0:1 · / surface-hover 5.3:1
+    Contraste (WCAG 2.x), tema claro (superficies grises):
+      ink #111 / background ............ 14.2:1
+      ink-muted #595959 / background ... 5.3:1
+      choice #656565 / background ...... 4.4:1 (solo iconos/estados; texto usa ink-muted)
+      ink #111 / secondary ............. 8.3:1
+      on-accent #0F0F0F / accent ....... 17.1:1
+      accent / background .............. 1.2:1 (solo relleno con on-accent, nunca texto)
+      ink-on-dark #141414 / surface .... 7.9:1 · / surface-2 7.3:1
+      ink-muted-on-dark #3D3D3D / surface 4.7:1 (texto secundario sobre gris)
+      ink-on-scrim #F5F5F5 / scrim ..... 15.5:1 · muted #C6C6C6 11.9:1
+      accent / surface ................. ~2:1 (solo bordes/rellenos y acentos, nunca texto;
+                                           el texto sobre acento usa on-accent)
      surface-border-strong / surface .. 4.3:1 · / surface-2 3.6:1 (bordes de inputs)
      success · warning · danger · info / surface-2 ≥ 4.9:1
      danger-strong #A33A3A / background 4.9:1
@@ -322,17 +324,23 @@
   --color-secondary-hover: #bababa;
   --color-secondary-active: #a0a0a0;
 
-  --color-surface: #1c1c1c;
-  --color-surface-2: #2a2a2a;
-  --color-surface-hover: #333333;
-  --color-surface-active: #3d3d3d;
-  --color-surface-border: #3a3a3a;
-  --color-surface-border-strong: #808080;
+  --color-surface: #acacac;
+  --color-surface-2: #a1a1a1;
+  --color-surface-hover: #bcbcbc;
+  --color-surface-active: #c9c9c9;
+  --color-surface-border: #8b8b8b;
+  --color-surface-border-strong: #6b6b6b;
 
   --color-ink: #111111;
   --color-ink-muted: #595959;
-  --color-ink-on-dark: #f2f2f2;
-  --color-ink-muted-on-dark: #a8a8a8;
+  /* En el tema claro las superficies son grises, así que el texto que vive
+     sobre ellas va en negro (los nombres *-on-dark se conservan para no
+     renombrar cientos de usos; en .dark recuperan sus valores claros). */
+  --color-ink-on-dark: #141414;
+  --color-ink-muted-on-dark: #3d3d3d;
+  /* Texto sobre scrim/velos oscuros (constantes en ambos temas): siempre claro. */
+  --color-ink-on-scrim: #f5f5f5;
+  --color-ink-muted-on-scrim: #c6c6c6;
   --color-on-accent: #0f0f0f;
 
   --color-scrim: #0f0f0f;
@@ -381,8 +389,9 @@
 
 /* ============================================
    Tema oscuro: se activa con la clase .dark en <html>
-   (ThemeService.setMode). Solo se remapean los tokens que
-   dependen del canvas; surface/scrim/accent son constantes.
+   (ThemeService.setMode). Remapea canvas, tintas y la rampa de
+   superficies (en claro son grises, acá vuelven a negro);
+   scrim/accent son constantes.
    Contraste verificado:
      ink #F2F2F2 / background #121212 ....... 16.7:1
      ink-muted #A8A8A8 / background ......... 7.9:1
@@ -394,6 +403,15 @@
   --color-background: #121212;
   --color-ink: #f2f2f2;
   --color-ink-muted: #a8a8a8;
+  --color-ink-on-dark: #f2f2f2;
+  --color-ink-muted-on-dark: #a8a8a8;
+  /* En oscuro las superficies vuelven a ser negras (el tema claro las usa grises). */
+  --color-surface: #1c1c1c;
+  --color-surface-2: #2a2a2a;
+  --color-surface-hover: #333333;
+  --color-surface-active: #3d3d3d;
+  --color-surface-border: #3a3a3a;
+  --color-surface-border-strong: #808080;
   --color-secondary: #2e2e2e;
   --color-secondary-hover: #3a3a3a;
   --color-secondary-active: #242424;
@@ -623,6 +641,13 @@ input {
 
 /* Contrast: acciones neutras claras (p. ej. cerrar visores) */
 .p-button.p-button-contrast:not(:disabled) {
+  /* En claro: pastilla oscura con texto claro (en .dark se restaura abajo). */
+  background: #1e1e1e;
+  border-color: #1e1e1e;
+  color: #f5f5f5;
+}
+
+.dark .p-button.p-button-contrast:not(:disabled) {
   background: var(--color-ink-on-dark);
   border-color: var(--color-ink-on-dark);
   color: var(--color-ink);
@@ -934,6 +959,14 @@ input {
 }
 
 .p-tag.p-tag-success {
+  /* En claro: el verde de éxito es el acento sólido con texto negro
+     (el tinte lavado no lee sobre el gris). En .dark se restaura abajo. */
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  border-color: var(--color-accent);
+}
+
+.dark .p-tag.p-tag-success {
   background: color-mix(in srgb, var(--color-success) 14%, var(--color-surface));
   color: var(--color-success);
   border-color: color-mix(in srgb, var(--color-success) 40%, transparent);
@@ -958,6 +991,13 @@ input {
 }
 
 .p-tag.p-tag-contrast {
+  /* En claro: pastilla oscura con texto claro (en .dark se restaura abajo). */
+  background: #1e1e1e;
+  color: #f5f5f5;
+  border-color: #1e1e1e;
+}
+
+.dark .p-tag.p-tag-contrast {
   background: var(--color-ink-on-dark);
   color: var(--color-ink);
   border-color: var(--color-ink-on-dark);
@@ -1502,7 +1542,7 @@ input {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-ink-muted-on-dark);
+  color: var(--color-ink-muted-on-scrim);
 }
 
 .gen-bell-popover .pop-thumb.icon.spin {
@@ -2143,7 +2183,7 @@ main:has(> app-studio) {
   border-radius: 999px;
   background: color-mix(in srgb, var(--color-scrim) 62%, transparent);
   backdrop-filter: blur(4px);
-  color: var(--color-ink-on-dark);
+  color: var(--color-ink-on-scrim);
   font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
@@ -2536,13 +2576,19 @@ main:has(> app-studio) {
    Sin padding horizontal: el pill no debe ocupar más que el texto del
    textarea o el caret se desfasa (el overlay quedaría más ancho). */
 .studio-shell .mention-token {
-  background: color-mix(in srgb, var(--st-accent) 22%, transparent);
-  color: var(--st-accent);
+  background: color-mix(in srgb, var(--st-accent) 38%, var(--color-surface-2));
+  color: #141414;
   border-radius: 5px;
   padding: 0;
   font-weight: inherit;
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
+}
+
+/* En oscuro el token vuelve a texto acento sobre tinte (texto negro no lee). */
+.dark .studio-shell .mention-token {
+  background: color-mix(in srgb, var(--st-accent) 22%, transparent);
+  color: var(--st-accent);
 }
 
 .studio-shell .mention-menu {
@@ -2889,7 +2935,7 @@ main:has(> app-studio) {
   align-items: center;
   justify-content: center;
   background: color-mix(in srgb, var(--color-scrim) 55%, transparent);
-  color: var(--color-ink-on-dark);
+  color: var(--color-ink-on-scrim);
   opacity: 0;
   transition: opacity 0.15s ease;
   pointer-events: none;
@@ -2913,7 +2959,7 @@ main:has(> app-studio) {
   border: none;
   border-radius: 999px;
   background: color-mix(in srgb, var(--color-scrim) 80%, transparent);
-  color: var(--color-ink-on-dark);
+  color: var(--color-ink-on-scrim);
   font-size: 11px;
   cursor: pointer;
   opacity: 0;
@@ -3033,7 +3079,7 @@ main:has(> app-studio) {
   border: none;
   border-radius: 999px;
   background: color-mix(in srgb, var(--color-scrim) 80%, transparent);
-  color: var(--color-ink-on-dark);
+  color: var(--color-ink-on-scrim);
   font-size: 13px;
   cursor: pointer;
   opacity: 0;
@@ -3106,7 +3152,7 @@ main:has(> app-studio) {
   border: none;
   border-radius: 999px;
   background: color-mix(in srgb, var(--color-scrim) 80%, transparent);
-  color: var(--color-ink-on-dark);
+  color: var(--color-ink-on-scrim);
   font-size: 11px;
   cursor: pointer;
   z-index: 2;
@@ -3294,7 +3340,7 @@ main:has(> app-studio) {
   flex-direction: column;
   align-items: center;
   gap: 10px;
-  color: var(--st-muted);
+  color: var(--color-ink-muted-on-scrim);
   padding: 24px;
   text-align: center;
 }
