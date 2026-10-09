@@ -1706,6 +1706,59 @@ export class AgencyComponent {
     );
   }
 
+  // ─── Recursos asignados a cada prompt (paso Escenas) ─────────────
+
+  /** Bloques de recursos expandidos en el paso Escenas (colapsados por defecto). */
+  protected readonly openPromptResources = signal<ReadonlySet<string>>(new Set());
+
+  private promptResourcesKey(sceneId: string, shotId: string | null, index: number): string {
+    return `${sceneId}|${shotId ?? 'scene'}|${index}`;
+  }
+
+  protected togglePromptResources(sceneId: string, shotId: string | null, index: number): void {
+    const key = this.promptResourcesKey(sceneId, shotId, index);
+    this.openPromptResources.update((set) => {
+      const next = new Set(set);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  }
+
+  protected isPromptResourcesOpen(sceneId: string, shotId: string | null, index: number): boolean {
+    return this.openPromptResources().has(this.promptResourcesKey(sceneId, shotId, index));
+  }
+
+  /** Recursos que se adjuntan a la generación de cualquier prompt de la
+   *  escena: la hoja de storyboard (si su archivo se subió al store) más
+   *  las fotos de referencia cuando el modelo expone ruta multi-referencia.
+   *  Espeja el `content` que arma generatePromptVideo. */
+  protected promptResources(scene: StoryboardScene): {
+    id: string;
+    name: string;
+    url: string | null;
+  }[] {
+    const items: { id: string; name: string; url: string | null }[] = [];
+    if (scene.boardFileId) {
+      items.push({
+        id: scene.boardFileId,
+        name: `storyboard-${scene.id}.png`,
+        url: scene.boardImageUrl ?? null,
+      });
+    }
+    if (this.activeVideoModel()?.reference_endpoint) {
+      for (const ref of this.referencesOfScene(scene.id)) {
+        if (ref.id !== scene.boardFileId) {
+          items.push({ id: ref.id, name: ref.filename, url: ref.url });
+        }
+      }
+    }
+    return items;
+  }
+
   /** Genera el video de un prompt (de la escena o de una toma): texto del
    *  prompt + hoja de storyboard como imagen de referencia, duración del
    *  segmento y ratio del modelo. */
