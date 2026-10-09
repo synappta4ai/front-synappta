@@ -511,6 +511,65 @@ export class AgencyComponent {
     return this.angles().filter((a) => a.selected).length;
   }
 
+  // ─── Folleto del proyecto (paso 1) ──────────────────────────
+
+  /** True mientras extrae texto de uno o más folletos subidos. */
+  protected readonly extractingBrief = signal(false);
+  /** Aviso del último folleto cargado (nombre + caracteres). */
+  protected readonly briefNote = signal<string | null>(null);
+
+  /** Sube folletos (PDF/DOCX/TXT/MD), extrae su texto y lo appendee a la
+   *  descripción: la información general del proyecto vive en el folleto. */
+  protected async onBriefFiles(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement | null;
+    const files = Array.from(input?.files ?? []);
+    if (input) input.value = '';
+    if (!files.length) return;
+
+    this.extractingBrief.set(true);
+    this.error.set(null);
+    this.briefNote.set(null);
+    try {
+      const added: string[] = [];
+      let truncated = false;
+      for (const file of files) {
+        const result = await firstValueFrom(this.agencyService.extractBrief(file));
+        if (!result?.text) {
+          this.error.set(
+            `No se pudo extraer texto de ${file.name} (¿PDF escaneado como imagen?).`,
+          );
+          return;
+        }
+        this.appendBriefText(result.text);
+        added.push(result.filename || file.name);
+        truncated = truncated || result.truncated;
+      }
+      this.briefNote.set(
+        `Texto de ${added.join(', ')} agregado a la descripción` +
+          (truncated ? ' (recortado a 8.000 caracteres)' : ''),
+      );
+    } catch (err) {
+      // HttpErrorResponse trae el mensaje del back en err.error.message.
+      const wrapped = err as { message?: string; error?: { message?: string } };
+      const message = wrapped?.error?.message || wrapped?.message || '';
+      this.error.set(message || 'No se pudo extraer el texto del folleto.');
+    } finally {
+      this.extractingBrief.set(false);
+    }
+  }
+
+  /** Concatena el texto extraído a la descripción (sin pisar lo escrito) y
+   *  deja el campo editable aunque viniera bloqueado, para poder revisarlo. */
+  private appendBriefText(text: string): void {
+    const control = this.form.get('description');
+    if (!control) return;
+    const current = String(control.value ?? '').trim();
+    control.setValue(current ? `${current}\n\n${text}` : text);
+    if (control.disabled) control.enable({ emitEvent: false });
+    control.markAsDirty();
+    control.markAsTouched();
+  }
+
   protected get canProceedToStoryboard(): boolean {
     return this.selectedAnglesCount > 0;
   }

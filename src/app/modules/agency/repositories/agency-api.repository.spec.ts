@@ -3,12 +3,13 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 
 import { AgencyApiRepository } from './agency-api.repository';
+import { environment } from '@env/environment';
 
 describe('AgencyApiRepository', () => {
   let repository: AgencyApiRepository;
   let httpMock: HttpTestingController;
 
-  const base = 'http://localhost:9099/api/v1';
+  const base = environment.API_URL;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -68,6 +69,21 @@ describe('AgencyApiRepository', () => {
       success: true,
       message: 'success',
       data: { status: 'succeeded', outputs: [{ url: 'https://cdn/video.mp4', type: 'video' }] },
+    });
+  });
+
+  it('uploads a brief file as multipart to the extract endpoint', () => {
+    repository.extractBrief(new File(['hola'], 'folleto.pdf')).subscribe((response) => {
+      expect(response.data?.text).toBe('hola');
+    });
+
+    const req = httpMock.expectOne(`${base}/agency/brief/extract`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body instanceof FormData).toBe(true);
+    req.flush({
+      success: true,
+      message: 'success',
+      data: { filename: 'folleto.pdf', text: 'hola', chars: 4, truncated: false },
     });
   });
 });
