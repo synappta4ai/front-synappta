@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import {
   FormsModule,
   NonNullableFormBuilder,
@@ -22,12 +30,16 @@ import { Select } from 'primeng/select';
 import { Tooltip } from 'primeng/tooltip';
 import { MenuItem } from 'primeng/api';
 import { Dialog } from 'primeng/dialog';
+import { Popover } from 'primeng/popover';
+
+import { Router } from '@angular/router';
 
 import { AgencyService } from '../../services/agency.service';
 import {
   AiModel,
   ContentItem,
   Credential,
+  GenerateRequest,
   Modality,
   GeneratedAsset,
   StatusResponse,
@@ -37,6 +49,8 @@ import { Event as Project, Piece } from '@modules/events/interfaces';
 import { PageContainerComponent, ValidatorErrors } from '@shared/components/index';
 import { AssetEditDialogComponent } from '@shared/components/asset-edit-dialog/asset-edit-dialog';
 import { UserSessionStore } from '@core/store/user.session';
+import { GenerationEventsStore } from '@core/store/generation.events';
+import { StudioTake } from '@modules/studio/interfaces';
 import { ServerUrlPipe } from '@core/pipes';
 import { LibraryService } from '@modules/library/services';
 import { FileAsset } from '@modules/library/interfaces';
@@ -278,6 +292,7 @@ function buildAngles(count: number): SalesAngle[] {
     Select,
     InputNumber,
     Dialog,
+    Popover,
     ServerUrlPipe,
     AssetEditDialogComponent,
   ],
@@ -291,6 +306,9 @@ export class AgencyComponent {
   private readonly session = inject(UserSessionStore);
   /** Copia la hoja de storyboard al store para usarla como referencia de video. */
   private readonly libraryService = inject(LibraryService);
+  /** Cola global y take reel de generaciones (compartido con el studio). */
+  private readonly eventsStore = inject(GenerationEventsStore);
+  private readonly router = inject(Router);
 
   protected readonly currentPhase = signal<WorkflowPhase>('input');
   protected readonly loading = signal(false);
@@ -959,6 +977,8 @@ export class AgencyComponent {
     );
     setGenerating(true);
     this.error.set(null);
+    // Auto-abre el popover del paso 3 con la cola de generación en curso.
+    this.showBoardReel();
 
     this.ensureSceneAnchor(scene)
       .pipe(
@@ -1763,7 +1783,8 @@ export class AgencyComponent {
     return Array.from({ length: segments }, (_, i) => ({
       text: this.buildPromptText(scene, shot, i, segments, tags, ratio),
       videoUrl: previous[i]?.videoUrl ?? null,
-      generating: false,
+      // Conserva el estado si el prompt ya se está generando en este momento.
+      generating: previous[i]?.generating ?? false,
     }));
   }
 
@@ -1985,25 +2006,60 @@ export class AgencyComponent {
             }
           }
         }
+        const payload: GenerateRequest = {
+          model: model.name,
+          content,
+          ...(ratio ? { ratio } : {}),
+          duration: this.segmentDuration(index),
+          event_id: project.id,
+          piece_id: piece.id,
+          piece_code: piece.piece_code ?? `SCENE-${sceneId.toUpperCase()}`,
+          generation_number: generationNumber,
+        };
+        // Take en la cola/take reel (paso 4): el popover lo sigue en vivo aunque
+        // este botón se resetee, y su estado manda hasta que la tarea resuelva.
+        const takeId = `pending_${Date.now()}`;
+        this.eventsStore.upsert({
+          id: takeId,
+          prompt: prompt.text,
+          modelName: model.name,
+          modelDisplayName: model.display_name || model.name,
+          modelType: 'api',
+          ratio,
+          resolution: model.defaults?.resolutions?.[0] ?? '',
+          duration: payload.duration ?? 0,
+          status: 'queued',
+          progress: 0,
+          videoUrl: null,
+          error: null,
+          createdAt: Date.now(),
+          ratingGood: false,
+          ratingFinal: false,
+          eventName: null,
+          refImages: [],
+          request: payload,
+        });
+        // Auto-abre el popover del paso 4 con la cola de generación en curso.
+        this.showVideoReel();
         this.agencyService
-          .generate('video', {
-            model: model.name,
-            content,
-            ...(ratio ? { ratio } : {}),
-            duration: this.segmentDuration(index),
-            event_id: project.id,
-            piece_id: piece.id,
-            piece_code: piece.piece_code ?? `SCENE-${sceneId.toUpperCase()}`,
-            generation_number: generationNumber,
-          })
+          .generate('video', payload)
           .pipe(
             catchError(() => {
               this.error.set(`Error al generar el video de ${scene.title}.`);
+              this.eventsStore.remove(takeId);
               this.patchPrompt(sceneId, shotId, index, { generating: false });
               return EMPTY;
             }),
           )
           .subscribe((response) => {
+            // El take pasa a usar el id real de la tarea y empieza a seguirse.
+            this.eventsStore.patch(takeId, {
+              id: response.taskId,
+              costCredits: response.cost_credits ?? 0,
+              costUsd: response.cost_usd ?? 0,
+              transactionId: response.provider_transaction_id || null,
+            });
+            this.eventsStore.track(response.taskId);
             this.agencyService
               .pollTaskUntilDone('video', response.taskId)
               .pipe(
@@ -2018,6 +2074,13 @@ export class AgencyComponent {
                   status.status === 'succeeded' && status.outputs?.[0]?.url
                     ? status.outputs[0].url
                     : null;
+                if (status.status === 'failed' || status.status === 'cancelled') {
+                  this.error.set(
+                    status.status === 'failed'
+                      ? `El video de ${scene.title} falló: ${status.error ?? 'reintentá.'}`
+                      : `La generación del video de ${scene.title} fue cancelada.`,
+                  );
+                }
                 this.patchPrompt(sceneId, shotId, index, {
                   generating: false,
                   videoUrl: url ?? prompt.videoUrl ?? null,
@@ -2027,6 +2090,108 @@ export class AgencyComponent {
               });
           });
       });
+  }
+
+  // ─── Popovers de generación: cola + take reel (paso 3 y paso 4) ──
+
+  private readonly boardReelPopover = viewChild<Popover>('boardReelPopover');
+  private readonly videoReelPopover = viewChild<Popover>('videoReelPopover');
+
+  /** Cola de hojas de storyboard en curso (paso 3, sencilla). */
+  protected readonly boardQueue = computed(() =>
+    this.storyboard().filter((s) => s.boardGenerating),
+  );
+
+  /** Take reel simple del paso 3: hojas ya generadas con su aprobación. */
+  protected readonly boardTakes = computed(() =>
+    this.storyboard()
+      .filter((s) => !!s.boardImageUrl)
+      .map((s) => ({
+        id: s.id,
+        title: s.title,
+        url: s.boardImageUrl ?? null,
+        approved: !!s.approved,
+      })),
+  );
+
+  /** Videos en cola (globales, con progreso en vivo). */
+  protected readonly videoQueue = computed(() => this.eventsStore.active());
+
+  /** Take reel del paso 4: videos ya resueltos (con calificaciones). */
+  protected readonly videoTakes = computed(() =>
+    this.eventsStore
+      .events()
+      .filter((e) => e.status !== 'queued' && e.status !== 'running')
+      .slice(0, 12),
+  );
+
+  protected toggleBoardReel(event: Event): void {
+    this.boardReelPopover()?.toggle(event);
+  }
+
+  protected toggleVideoReel(event: Event): void {
+    this.videoReelPopover()?.toggle(event);
+  }
+
+  /** Abre el popover del paso 3 anclado a su botón (al empezar a generar). */
+  private showBoardReel(): void {
+    const anchor = document.getElementById('boardReelTrigger');
+    if (anchor) {
+      this.boardReelPopover()?.show(new MouseEvent('click'), anchor);
+    }
+  }
+
+  /** Abre el popover del paso 4 anclado a su botón (al empezar a generar). */
+  private showVideoReel(): void {
+    const anchor = document.getElementById('videoReelTrigger');
+    if (anchor) {
+      this.videoReelPopover()?.show(new MouseEvent('click'), anchor);
+    }
+  }
+
+  /** Califica una toma del reel ("Buena toma" / "Elegida final"). */
+  protected rateTake(take: StudioTake, kind: 'good' | 'final'): void {
+    const good = kind === 'good' ? !take.ratingGood : !!take.ratingGood;
+    const final = kind === 'final' ? !take.ratingFinal : !!take.ratingFinal;
+    this.eventsStore.setRating(take.id, good, final);
+  }
+
+  protected clearRating(take: StudioTake): void {
+    if (!take.ratingGood && !take.ratingFinal) return;
+    this.eventsStore.setRating(take.id, false, false);
+  }
+
+  /** Lleva la toma al Studio para retocarla: el request original viaja por
+   *  sessionStorage y el studio carga proyecto, modelo y formato. */
+  protected goToStudio(take: StudioTake): void {
+    if (!take.request) {
+      this.error.set('Esta generación no tiene payload de origen para retocar en el Studio.');
+      return;
+    }
+    sessionStorage.setItem('studio:reuse', JSON.stringify(take.request));
+    void this.router.navigate(['/studio']);
+  }
+
+  /** Breve para el reel: una línea con el inicio del prompt. */
+  protected shortPrompt(prompt: string): string {
+    return prompt.length > 48 ? `${prompt.slice(0, 48)}…` : prompt;
+  }
+
+  protected takeSeverity(
+    status: StudioTake['status'],
+  ): 'success' | 'danger' | 'info' | 'warn' | 'secondary' {
+    switch (status) {
+      case 'succeeded':
+        return 'success';
+      case 'failed':
+        return 'danger';
+      case 'running':
+        return 'info';
+      case 'cancelled':
+        return 'warn';
+      default:
+        return 'secondary';
+    }
   }
 
   protected resetWorkflow(): void {

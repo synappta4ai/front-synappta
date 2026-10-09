@@ -117,24 +117,42 @@ export class GenerationEventsStore {
     this.agencyService
       .listRecentTasks(limit)
       .pipe(catchError(() => EMPTY))
-      .subscribe((logs) => {
-        for (const log of logs ?? []) {
-          if (!log.task_id || log.task_id === '<no-task>' || this._events().some((e) => e.id === log.task_id)) {
-            continue;
-          }
-          const take = this.takeFromLog(log);
-          this.upsert(take);
-          if (!TERMINAL_BACKEND_STATUSES.includes(log.status)) {
-            this.track(log.task_id);
-          } else if (take.status === 'succeeded' || take.status === 'failed') {
-            // Finished while the user was away (recent only): badge it so the
-            // reload does not swallow the result.
-            if (Date.now() - take.createdAt < RECENT_FINISHED_MS) {
-              this.notify(take.id);
-            }
-          }
+      .subscribe((logs) => this.mergeLogs(logs ?? []));
+  }
+
+  /**
+   * Loads the video generations of ONE project into the reel: used when the
+   * studio opens a project (e.g. "Ir a estudio" from the agency flow) so its
+   * takes are already visible without waiting for the global hydration.
+   */
+  hydrateProject(eventId: string, limit = 50): void {
+    if (!eventId) {
+      return;
+    }
+    this.agencyService
+      .taskHistory({ event_id: eventId, resource_type: 'video', limit })
+      .pipe(catchError(() => EMPTY))
+      .subscribe((logs) => this.mergeLogs(logs ?? []));
+  }
+
+  /** Merges backend logs into the reel (newest first) and resumes polling. */
+  private mergeLogs(logs: GenerationLog[]): void {
+    for (const log of logs) {
+      if (!log.task_id || log.task_id === '<no-task>' || this._events().some((e) => e.id === log.task_id)) {
+        continue;
+      }
+      const take = this.takeFromLog(log);
+      this.upsert(take);
+      if (!TERMINAL_BACKEND_STATUSES.includes(log.status)) {
+        this.track(log.task_id);
+      } else if (take.status === 'succeeded' || take.status === 'failed') {
+        // Finished while the user was away (recent only): badge it so the
+        // reload does not swallow the result.
+        if (Date.now() - take.createdAt < RECENT_FINISHED_MS) {
+          this.notify(take.id);
         }
-      });
+      }
+    }
   }
 
   /**

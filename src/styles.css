@@ -4547,3 +4547,224 @@ main:has(> app-studio) {
   margin-top: -7px !important;
   margin-right: 16px !important;
 }
+
+/* ── Popover de generación de la Agencia (paso 3 storyboard / paso 4 videos):
+     cola de generación en curso + take reel con calificaciones ─────────── */
+.agency-reel-popover {
+  width: 380px;
+  padding: 0 !important;
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-surface-border) !important;
+  color: var(--color-ink-on-dark) !important;
+  box-shadow: none !important;
+  border-radius: 16px !important;
+}
+
+.agency-reel-popover .p-popover-content {
+  padding: 0;
+}
+
+.agency-reel-popover .p-popover-arrow::before {
+  border-bottom-color: var(--color-surface-border) !important;
+  border-top-color: transparent !important;
+}
+
+.agency-reel-popover .reel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--color-surface-border);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-ink-muted-on-dark);
+}
+
+.agency-reel-popover .reel-head i {
+  color: var(--color-accent);
+  margin-right: 6px;
+}
+
+.agency-reel-popover .reel-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-accent);
+}
+
+.agency-reel-popover .reel-live .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--color-accent);
+  animation: agency-reel-pulse 1.6s ease-in-out infinite;
+}
+
+.agency-reel-popover .reel-empty {
+  padding: 22px 14px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--color-ink-muted-on-dark);
+}
+
+.agency-reel-popover .reel-section {
+  padding: 10px 14px 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted-on-dark);
+}
+
+.agency-reel-popover .reel-list {
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+.agency-reel-popover .reel-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--color-surface-border);
+}
+
+.agency-reel-popover .reel-item:last-child {
+  border-bottom: 0;
+}
+
+.agency-reel-popover .reel-thumb {
+  width: 74px;
+  height: 42px;
+  border-radius: 12px;
+  object-fit: cover;
+  background: var(--color-scrim);
+  flex-shrink: 0;
+}
+
+.agency-reel-popover .reel-thumb.icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-ink-muted-on-dark);
+}
+
+.agency-reel-popover .reel-thumb.icon.spin {
+  color: var(--color-accent);
+}
+
+.agency-reel-popover .reel-thumb.icon.danger {
+  color: var(--color-danger);
+}
+
+.agency-reel-popover .reel-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.agency-reel-popover .reel-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.agency-reel-popover .reel-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-ink-on-dark);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agency-reel-popover .reel-sub {
+  font-size: 12px;
+  color: var(--color-ink-muted-on-dark);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agency-reel-popover .reel-error {
+  font-size: 12px;
+  color: var(--color-danger);
+}
+
+.agency-reel-popover .reel-track {
+  display: block;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--color-surface-border);
+  overflow: hidden;
+}
+
+.agency-reel-popover .reel-fill {
+  display: block;
+  height: 100%;
+  background: var(--color-accent);
+}
+
+.agency-reel-popover .reel-fill.indeterminate {
+  width: 40%;
+  animation: agency-reel-indeterminate 1.4s ease-in-out infinite;
+}
+
+.agency-reel-popover .reel-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.agency-reel-popover .reel-studio {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--color-surface-border);
+  background: var(--color-surface-2);
+  color: var(--color-ink-on-dark);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.agency-reel-popover .reel-studio:hover {
+  border-color: var(--color-accent);
+  background: var(--color-surface-hover);
+}
+
+.agency-reel-popover .reel-studio:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+@keyframes agency-reel-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@keyframes agency-reel-indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(250%);
+  }
+}

@@ -364,6 +364,15 @@
             </p>
           </div>
           <p-tag [value]="storyboard().length + ' escenas'" severity="info" />
+          <p-button
+            id="boardReelTrigger"
+            [label]="boardQueue().length ? 'Generando ' + boardQueue().length + '…' : 'Generaciones'"
+            icon="md md-photo_library"
+            severity="secondary"
+            size="small"
+            [loading]="boardQueue().length > 0"
+            (onClick)="toggleBoardReel($event)"
+          />
         </div>
       </ng-template>
 
@@ -728,6 +737,15 @@
               icon="md md-auto_fix_high"
               severity="secondary"
               (onClick)="generatePrompts()"
+            />
+            <p-button
+              id="videoReelTrigger"
+              [label]="videoQueue().length ? 'Generando ' + videoQueue().length + '…' : 'Generaciones'"
+              icon="md md-movie"
+              severity="secondary"
+              class="mt-5"
+              [loading]="videoQueue().length > 0"
+              (onClick)="toggleVideoReel($event)"
             />
             @if (videoSegmentCount() > 1) {
               <p-tag
@@ -1204,6 +1222,183 @@
       </div>
     </ng-template>
   </p-dialog>
+
+  <!-- Popover del paso 3: cola sencilla de hojas de storyboard + take reel -->
+  <p-popover #boardReelPopover styleClass="agency-reel-popover">
+    <div class="reel-head">
+      <span><i class="md md-photo_library"></i> Storyboards</span>
+      @if (boardQueue().length) {
+        <span class="reel-live"><span class="dot"></span> {{ boardQueue().length }} en curso</span>
+      }
+    </div>
+    @if (boardQueue().length === 0 && boardTakes().length === 0) {
+      <p class="reel-empty">Todavía no generaste hojas de storyboard.</p>
+    }
+    @if (boardQueue().length) {
+      <div class="reel-section">Cola de generación</div>
+      <div class="reel-list">
+        @for (scene of boardQueue(); track scene.id) {
+          <div class="reel-item">
+            <span class="reel-thumb icon spin"><i class="md md-autorenew md-spin"></i></span>
+            <span class="reel-info">
+              <span class="reel-title">{{ scene.title }}</span>
+              <span class="reel-sub">Generando hoja de storyboard…</span>
+              <span class="reel-track"><span class="reel-fill indeterminate"></span></span>
+            </span>
+          </div>
+        }
+      </div>
+    }
+    @if (boardTakes().length) {
+      <div class="reel-section">Take reel</div>
+      <div class="reel-list">
+        @for (take of boardTakes(); track take.id) {
+          <div class="reel-item">
+            @if (take.url) {
+              <img
+                class="reel-thumb"
+                [src]="take.url | serverUrl"
+                [alt]="take.title"
+                loading="lazy"
+                decoding="async"
+              />
+            } @else {
+              <span class="reel-thumb icon"><i class="md md-image"></i></span>
+            }
+            <span class="reel-info">
+              <span class="reel-title">{{ take.title }}</span>
+              <span class="reel-sub">Hoja lista</span>
+            </span>
+            @if (take.approved) {
+              <p-tag value="Aprobada" severity="success" />
+            }
+          </div>
+        }
+      </div>
+    }
+  </p-popover>
+
+  <!-- Popover del paso 4: cola de videos en curso + take reel con
+       calificaciones e "Ir a estudio" -->
+  <p-popover #videoReelPopover styleClass="agency-reel-popover">
+    <div class="reel-head">
+      <span><i class="md md-movie"></i> Videos</span>
+      @if (videoQueue().length) {
+        <span class="reel-live"><span class="dot"></span> {{ videoQueue().length }} en curso</span>
+      }
+    </div>
+    @if (videoQueue().length === 0 && videoTakes().length === 0) {
+      <p class="reel-empty">Todavía no generaste videos en este flujo.</p>
+    }
+    @if (videoQueue().length) {
+      <div class="reel-section">Cola de generación</div>
+      <div class="reel-list">
+        @for (take of videoQueue(); track take.id) {
+          <div class="reel-item">
+            <span class="reel-thumb icon spin"><i class="md md-autorenew md-spin"></i></span>
+            <span class="reel-info">
+              <span class="reel-title">{{ take.modelDisplayName || take.modelName }}</span>
+              <span class="reel-sub">{{ shortPrompt(take.prompt) }}</span>
+              <span class="reel-track"><span class="reel-fill" [style.width.%]="take.progress"></span></span>
+            </span>
+            <p-tag
+              [value]="take.progress + '%'"
+              [severity]="takeSeverity(take.status)"
+              styleClass="text-xs"
+            />
+          </div>
+        }
+      </div>
+    }
+    @if (videoTakes().length) {
+      <div class="reel-section">Take reel</div>
+      <div class="reel-list">
+        @for (take of videoTakes(); track take.id) {
+          <div class="reel-item reel-item-video">
+            @if (take.status === 'succeeded' && take.videoUrl) {
+              <video
+                class="reel-thumb"
+                [src]="take.videoUrl | serverUrl"
+                preload="metadata"
+                muted
+                controls
+              ></video>
+            } @else {
+              <span class="reel-thumb icon" [class.danger]="take.status === 'failed'">
+                <i
+                  class="md"
+                  [class.md-error]="take.status === 'failed'"
+                  [class.md-link_off]="take.status === 'cancelled'"
+                ></i>
+              </span>
+            }
+            <span class="reel-info">
+              <span class="reel-title-row">
+                <span class="reel-title">{{ take.modelDisplayName || take.modelName }}</span>
+                <p-tag
+                  [value]="
+                    take.status === 'succeeded'
+                      ? 'Lista'
+                      : take.status === 'failed'
+                        ? 'Falló'
+                        : 'Cancelada'
+                  "
+                  [severity]="takeSeverity(take.status)"
+                  styleClass="text-xs"
+                />
+              </span>
+              <span class="reel-sub">{{ shortPrompt(take.prompt) }}</span>
+              @if (take.status === 'failed' && take.error) {
+                <span class="reel-error">{{ take.error }}</span>
+              }
+              <span class="reel-actions">
+                <span class="log-rating-group" role="group" aria-label="Calificación de la toma">
+                  <button
+                    type="button"
+                    class="log-rating-check"
+                    [class.active]="take.ratingGood"
+                    [title]="take.ratingGood ? 'Quitar Buena toma' : 'Buena toma'"
+                    (click)="rateTake(take, 'good')"
+                  >
+                    <i class="md md-check"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="log-rating-check"
+                    [class.active]="take.ratingFinal"
+                    [title]="take.ratingFinal ? 'Quitar Elegida final' : 'Elegida final'"
+                    (click)="rateTake(take, 'final')"
+                  >
+                    <i class="md md-check md-double"></i>
+                  </button>
+                  @if (take.ratingGood || take.ratingFinal) {
+                    <button
+                      type="button"
+                      class="log-rating-clear"
+                      title="Limpiar calificación"
+                      (click)="clearRating(take)"
+                    >
+                      CLEAR
+                    </button>
+                  }
+                </span>
+                @if (take.status === 'succeeded' && take.request) {
+                  <button
+                    type="button"
+                    class="reel-studio"
+                    title="Cargar esta generación en el Studio para retocarla"
+                    (click)="goToStudio(take)"
+                  >
+                    <i class="md md-auto_fix_high"></i> Ir a estudio
+                  </button>
+                }
+              </span>
+            </span>
+          </div>
+        }
+      </div>
+    }
+  </p-popover>
 
   <!-- Modal "Editar elemento" (compartida con Recursos) -->
   <app-asset-edit-dialog

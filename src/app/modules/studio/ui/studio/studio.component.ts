@@ -1165,7 +1165,9 @@ export class StudioComponent {
     }
     effect(() => {
       const pending = this.pendingReuse();
-      if (!pending || !this.models().length) {
+      // Espera el catálogo Y la lista de proyectos: así el proyecto de la
+      // generación original (Agencia) se selecciona y su take reel carga.
+      if (!pending || !this.models().length || this.loadingProjects()) {
         return;
       }
       this.pendingReuse.set(null);
@@ -1356,6 +1358,11 @@ export class StudioComponent {
     this.selectedAssetIds.set(new Set());
     this.refSlots.update((slots) => ({ ...slots, character: null, location: null, props: null }));
     this.eventsStore.clearSession();
+    if (projectId) {
+      // Take reel del proyecto: sus generaciones de video entran al historial
+      // del studio (las hechas en la Agencia incluidas).
+      this.eventsStore.hydrateProject(projectId);
+    }
     this.loadAssets();
   }
 
