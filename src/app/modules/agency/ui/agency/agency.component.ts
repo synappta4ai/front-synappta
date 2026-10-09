@@ -50,6 +50,7 @@ import { EventsService } from '@modules/events/services';
 import { Event as Project, Piece } from '@modules/events/interfaces';
 import { PageContainerComponent, ValidatorErrors } from '@shared/components/index';
 import { AssetEditDialogComponent } from '@shared/components/asset-edit-dialog/asset-edit-dialog';
+import { AutogrowDirective } from '@shared/components/autogrow/autogrow.directive';
 import { UserSessionStore } from '@core/store/user.session';
 import { GenerationEventsStore } from '@core/store/generation.events';
 import { StudioTake } from '@modules/studio/interfaces';
@@ -111,6 +112,8 @@ interface VideoPrompt {
   duration?: number | null;
   resolution?: string | null;
   audio?: boolean | null;
+  /** Task id de la generación: habilita calificar e "Ir a estudio" desde la card. */
+  taskId?: string | null;
 }
 
 interface StoryboardScene {
@@ -312,6 +315,7 @@ function buildAngles(count: number): SalesAngle[] {
     Dialog,
     Popover,
     ToggleSwitch,
+    AutogrowDirective,
     ServerUrlPipe,
     AssetEditDialogComponent,
   ],
@@ -1626,6 +1630,9 @@ export class AgencyComponent {
     if (typeof phase === 'string' && this.phases().some((p) => p.key === phase)) {
       this.currentPhase.set(phase as WorkflowPhase);
     }
+    // Los prompts restaurados montan sus textareas en este ciclo: recalcula
+    // las alturas para que el texto cargado se vea completo (sin scroll).
+    this.autogrowAll();
   }
 
   // ─── Ajustes sobre cada generación ─────────────────────────────────
@@ -1910,6 +1917,8 @@ export class AgencyComponent {
       })),
     );
     this.persistWorkflow();
+    // El texto cambió: recalcula la altura de los textareas auto-crecibles.
+    this.autogrowAll();
   }
 
   private buildPrompts(
@@ -2218,11 +2227,6 @@ export class AgencyComponent {
       this.error.set('No hay modelos de video disponibles.');
       return;
     }
-    const ratio = this.videoRatio() || model.defaults?.ratios?.[0] || '';
-    // Slot único por prompt (escenas 1..N, tomas 101..N): así no se pisan
-    // entre sí al guardarse en la pieza (SaveGeneration desactiva el mismo nro).
-    const generationNumber = shotId ? (shotIndex + 1) * 100 + index + 1 : index + 1;
-
     this.error.set(null);
     this.patchPrompt(sceneId, shotId, index, { generating: true });
     this.ensureSceneAnchor(scene)
@@ -2234,36 +2238,13 @@ export class AgencyComponent {
         }),
       )
       .subscribe(({ project, piece }) => {
-        const content: ContentItem[] = [{ type: 'text', text: prompt.text }];
-        if (scene.boardFileId) {
-          content.push({
-            type: 'image',
-            id: scene.boardFileId,
-            name: `storyboard-${scene.id}.png`,
-          });
+        const payload = this.videoPayloadFor(scene, shotId, index, model, project, piece);
+        if (!payload) {
+          this.patchPrompt(sceneId, shotId, index, { generating: false });
+          return;
         }
-        // Fotos reales de la escena: quedan como ingredientes del video
-        // junto a la hoja de storyboard.
-        for (const ref of this.referencesOfScene(sceneId)) {
-          if (ref.id !== scene.boardFileId) {
-            content.push({ type: 'image', id: ref.id, name: ref.filename });
-          }
-        }
-        const duration = prompt.duration ?? this.segmentDuration(index);
-        const resolution = prompt.resolution ?? this.videoResolution();
-        const audio = prompt.audio ?? this.videoAudio();
-        const payload: GenerateRequest = {
-          model: model.name,
-          content,
-          ...(ratio ? { ratio } : {}),
-          duration,
-          ...(resolution ? { resolution } : {}),
-          generate_audio: audio,
-          event_id: project.id,
-          piece_id: piece.id,
-          piece_code: piece.piece_code ?? `SCENE-${sceneId.toUpperCase()}`,
-          generation_number: generationNumber,
-        };
+        const ratio = payload.ratio ?? '';
+        const resolution = payload.resolution ?? '';
         // Take en la cola/take reel (paso 4): el popover lo sigue en vivo aunque
         // este botón se resetee, y su estado manda hasta que la tarea resuelva.
         const takeId = `pending_${Date.now()}`;
@@ -2308,6 +2289,9 @@ export class AgencyComponent {
               transactionId: response.provider_transaction_id || null,
             });
             this.eventsStore.track(response.taskId);
+            // El prompt guarda el task: habilita calificar e "Ir a estudio"
+            // desde la card sin depender del reel.
+            this.patchPrompt(sceneId, shotId, index, { taskId: response.taskId });
             this.agencyService
               .pollTaskUntilDone('video', response.taskId)
               .pipe(
@@ -2338,6 +2322,135 @@ export class AgencyComponent {
               });
           });
       });
+  }
+
+  /** Payload de generación de un prompt (compartido por "Generar video" y
+   *  por "Ir a estudio"): texto + storyboard + refs, con los overrides del
+   *  prompt (duración/calidad/sonido) y la config global del paso 4. */
+  private videoPayloadFor(
+    scene: StoryboardScene,
+    shotId: string | null,
+    index: number,
+    model: AiModel,
+    project: Project,
+    piece: Piece,
+  ): GenerateRequest | null {
+    const shotIndex = shotId ? scene.shots.findIndex((sh) => sh.id === shotId) : -1;
+    const target = shotId ? (shotIndex >= 0 ? scene.shots[shotIndex] : null) : scene;
+    const prompt = target?.prompts?.[index];
+    if (!target || !prompt) return null;
+    const ratio = this.videoRatio() || model.defaults?.ratios?.[0] || '';
+    const content: ContentItem[] = [{ type: 'text', text: prompt.text }];
+    if (scene.boardFileId) {
+      content.push({ type: 'image', id: scene.boardFileId, name: `storyboard-${scene.id}.png` });
+    }
+    // Fotos reales del ángulo: solo cuando el modelo expone ruta
+    // multi-referencia verificada, para no sacarlo de su ruta i2v de
+    // imagen única (donde la hoja dejaría de adjuntarse).
+    if (model.reference_endpoint) {
+      for (const ref of this.referencesOfScene(scene.id)) {
+        if (ref.id !== scene.boardFileId) {
+          content.push({ type: 'image', id: ref.id, name: ref.filename });
+        }
+      }
+    }
+    // Slot único por prompt (escenas 1..N, tomas 101..N): así no se pisan
+    // entre sí al guardarse en la pieza (SaveGeneration desactiva el mismo nro).
+    const generationNumber = shotId ? (shotIndex + 1) * 100 + index + 1 : index + 1;
+    const resolution = prompt.resolution ?? this.videoResolution();
+    return {
+      model: model.name,
+      content,
+      ...(ratio ? { ratio } : {}),
+      duration: prompt.duration ?? this.segmentDuration(index),
+      ...(resolution ? { resolution } : {}),
+      generate_audio: prompt.audio ?? this.videoAudio(),
+      event_id: project.id,
+      piece_id: piece.id,
+      piece_code: piece.piece_code ?? `SCENE-${scene.id.toUpperCase()}`,
+      generation_number: generationNumber,
+    };
+  }
+
+  /** Take del reel correspondiente a un prompt (por task id o, para prompts
+   *  antiguos sin id, por la URL del video generado). */
+  protected takeForPrompt(
+    sceneId: string,
+    shotId: string | null,
+    index: number,
+  ): StudioTake | null {
+    const prompt = this.promptAt(sceneId, shotId, index);
+    if (!prompt) return null;
+    const takes = this.eventsStore.events();
+    if (prompt.taskId) {
+      const byId = takes.find((t) => t.id === prompt.taskId);
+      if (byId) return byId;
+    }
+    if (!prompt.videoUrl) return null;
+    return takes.find((t) => t.videoUrl === prompt.videoUrl) ?? null;
+  }
+
+  /** Lleva el prompt al Studio con su proyecto cargado: si la generación está
+   *  en el reel reutiliza su payload original; si no, lo arma con la config
+   *  actual (modelo, overrides, storyboard y ancla del proyecto). */
+  protected goToStudioFromPrompt(
+    scene: StoryboardScene,
+    shotId: string | null,
+    index: number,
+  ): void {
+    const prompt = this.promptAt(scene.id, shotId, index);
+    if (!prompt || !prompt.text.trim()) {
+      this.error.set('Este prompt no tiene contenido para llevar al Studio.');
+      return;
+    }
+    const take = this.takeForPrompt(scene.id, shotId, index);
+    if (take?.request) {
+      sessionStorage.setItem('studio:reuse', JSON.stringify(take.request));
+      void this.router.navigate(['/studio']);
+      return;
+    }
+    const model = this.activeVideoModel();
+    if (!model) {
+      this.error.set('No hay modelos de video disponibles.');
+      return;
+    }
+    this.error.set(null);
+    this.ensureSceneAnchor(scene)
+      .pipe(
+        catchError(() => {
+          this.error.set('No se pudo preparar el proyecto de la Agencia.');
+          return EMPTY;
+        }),
+      )
+      .subscribe(({ project, piece }) => {
+        const payload = this.videoPayloadFor(scene, shotId, index, model, project, piece);
+        if (!payload) return;
+        sessionStorage.setItem('studio:reuse', JSON.stringify(payload));
+        void this.router.navigate(['/studio']);
+      });
+  }
+
+  // ─── Modal de visualización del video generado ──────────────────
+
+  protected readonly videoPreview = signal<{ url: string; title: string } | null>(null);
+
+  protected openVideoPreview(url: string, title: string): void {
+    this.videoPreview.set({ url, title });
+  }
+
+  protected closeVideoPreview(): void {
+    this.videoPreview.set(null);
+  }
+
+  /** Recalcula la altura de los textareas auto-crecibles (tras rearmarlos). */
+  private autogrowAll(): void {
+    if (typeof document === 'undefined') return;
+    requestAnimationFrame(() => {
+      document.querySelectorAll<HTMLTextAreaElement>('textarea[appAutogrow]').forEach((el) => {
+        el.style.height = 'auto';
+        el.style.height = `${Math.min(el.scrollHeight + 2, 320)}px`;
+      });
+    });
   }
 
   // ─── Popovers de generación: cola + take reel (paso 3 y paso 4) ──

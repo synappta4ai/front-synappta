@@ -741,38 +741,83 @@
 
       @if (storyboard().length > 0) {
         <div class="flex flex-col gap-6">
-          <!-- Configuración de los videos: modelo, duración, ratio, resolución y sonido -->
-          <div class="rounded-xl border border-surface-border bg-surface-2 px-4 py-3">
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              <div class="flex flex-col gap-1">
-                <label for="agencyVideoModel" class="text-xs font-bold text-ink-muted-on-dark"
-                  >Modelo de video</label
-                >
-                <p-select
-                  inputId="agencyVideoModel"
-                  aria-label="Modelo de videos"
-                  [options]="modelVideoOptions()"
-                  optionLabel="label"
-                  optionValue="value"
-                  [ngModel]="modelVideo()"
-                  (ngModelChange)="modelVideo.set($event); onVideoConfigChange()"
-                  [ngModelOptions]="{ standalone: true }"
-                  styleClass="w-full"
-                  appendTo="body"
-                />
-              </div>
-              <div class="flex flex-col gap-1">
-                <label for="agencyVideoDuration" class="text-xs font-bold text-ink-muted-on-dark"
-                  >Duración por video (s)</label
-                >
-                <p-inputNumber
-                  inputId="agencyVideoDuration"
-                  [min]="1"
-                  [max]="600"
-                  [showButtons]="true"
-                  styleClass="w-full"
-                  [ngModel]="videoDuration()"
-                  (ngModelChange)="videoDuration.set($event || 10); onVideoConfigChange()"
+          <!-- Configuración de los videos: modelo, duración, ratio y tags -->
+          <div
+            class="flex flex-wrap items-start gap-4 rounded-xl border border-surface-border bg-surface-2 px-4 py-3"
+          >
+            <div class="flex flex-col gap-1">
+              <span class="text-xs font-bold text-ink-muted-on-dark">Modelo de video</span>
+              <p-select
+                inputId="agencyVideoModel"
+                aria-label="Modelo de videos"
+                [options]="modelVideoOptions()"
+                optionLabel="label"
+                optionValue="value"
+                [ngModel]="modelVideo()"
+                (ngModelChange)="modelVideo.set($event); onVideoConfigChange()"
+                [ngModelOptions]="{ standalone: true }"
+                styleClass="w-72"
+                appendTo="body"
+              />
+            </div>
+            <div class="flex flex-col gap-1">
+              <span class="text-xs font-bold text-ink-muted-on-dark">Duración por video (s)</span>
+              <p-inputNumber
+                inputId="agencyVideoDuration"
+                [min]="1"
+                [max]="600"
+                [showButtons]="true"
+                styleClass="w-36"
+                [ngModel]="videoDuration()"
+                (ngModelChange)="videoDuration.set($event || 10); onVideoConfigChange()"
+                [ngModelOptions]="{ standalone: true }"
+              />
+              <small class="text-ink-muted-on-dark">
+                @if (videoMaxDuration() > 0) {
+                  El modelo admite hasta {{ videoMaxDuration() }}s.
+                } @else {
+                  Duración pedida al modelo.
+                }
+              </small>
+            </div>
+            <div class="flex flex-col gap-1">
+              <span class="text-xs font-bold text-ink-muted-on-dark">Relación de aspecto</span>
+              <p-select
+                aria-label="Relación de aspecto"
+                [options]="videoRatioOptions()"
+                optionLabel="label"
+                optionValue="value"
+                [ngModel]="videoRatio()"
+                (ngModelChange)="videoRatio.set($event); onVideoConfigChange()"
+                [ngModelOptions]="{ standalone: true }"
+                styleClass="w-56"
+                appendTo="body"
+              />
+            </div>
+            <!-- Tags de referencia: oculto temporalmente (el valor guardado
+                 de proyectos viejos sigue aplicándose al texto de los prompts). -->
+            <div class="flex flex-col gap-1">
+              <span class="text-xs font-bold text-ink-muted-on-dark">Calidad del video</span>
+              <p-select
+                aria-label="Calidad del video"
+                [options]="videoResolutionOptions()"
+                optionLabel="label"
+                optionValue="value"
+                [ngModel]="videoResolution()"
+                (ngModelChange)="videoResolution.set($event); onVideoConfigChange()"
+                [ngModelOptions]="{ standalone: true }"
+                styleClass="w-56"
+                appendTo="body"
+              />
+              <small class="text-ink-muted-on-dark">Vacío = default del modelo.</small>
+            </div>
+            <div class="flex flex-col gap-1">
+              <span class="text-xs font-bold text-ink-muted-on-dark">Sonido</span>
+              <div class="flex h-8 items-center gap-2">
+                <p-toggleswitch
+                  ariaLabel="Sonido del video"
+                  [ngModel]="videoAudio()"
+                  (ngModelChange)="videoAudio.set($event)"
                   [ngModelOptions]="{ standalone: true }"
                 />
                 <small class="text-ink-muted-on-dark">
@@ -858,36 +903,29 @@
                 </div>
               </div>
             </div>
-            @if (videoSegmentCount() > 1 || activeVideoModel()) {
-              <div
-                class="mt-4 flex flex-wrap items-center gap-2 border-t border-surface-border pt-3"
-              >
-                @if (videoSegmentCount() > 1) {
-                  <p-tag
-                    [value]="'Se parte en ' + videoSegmentCount() + ' videos por toma'"
-                    severity="warn"
-                  />
-                }
-                @if (activeVideoModel(); as videoModel) {
-                  <span
-                    class="inline-flex items-center gap-1.5 rounded-full border border-surface-border-strong bg-surface px-2.5 py-1 text-xs font-semibold text-ink-on-dark"
-                  >
-                    <i class="md md-movie text-accent" aria-hidden="true"></i>
-                    {{ videoModel.display_name || videoModel.name }}
-                  </span>
-                }
-                <p-button
-                  id="videoReelTrigger"
-                  [label]="
-                    videoQueue().length ? 'Generando ' + videoQueue().length + '…' : 'Generaciones'
-                  "
-                  icon="md md-movie"
-                  severity="secondary"
-                  size="small"
-                  [loading]="videoQueue().length > 0"
-                  (onClick)="toggleVideoReel($event)"
-                />
-              </div>
+            <p-button
+              label="Generar prompts"
+              class="self-end"
+              icon="md md-auto_fix_high"
+              severity="secondary"
+              (onClick)="generatePrompts()"
+            />
+            <p-button
+              id="videoReelTrigger"
+              [label]="
+                videoQueue().length ? 'Generando ' + videoQueue().length + '…' : 'Generaciones'
+              "
+              icon="md md-movie"
+              severity="secondary"
+              class="self-end"
+              [loading]="videoQueue().length > 0"
+              (onClick)="toggleVideoReel($event)"
+            />
+            @if (videoSegmentCount() > 1) {
+              <p-tag
+                [value]="'Se parte en ' + videoSegmentCount() + ' videos por toma'"
+                severity="warn"
+              />
             }
           </div>
 
@@ -955,99 +993,179 @@
                       </span>
                     </div>
                     @for (prompt of scene.prompts ?? []; track $index; let p = $index) {
-                      <div class="mb-3 flex flex-col gap-2">
+                      <div
+                        class="flex flex-col gap-3 rounded-2xl border border-surface-border bg-surface p-4"
+                      >
+                        <!-- Cabecera: estado del video + acciones -->
                         <div class="flex flex-wrap items-center gap-2">
-                          <span
-                            class="inline-flex items-center rounded-full border border-surface-border-strong bg-surface px-2.5 py-1 text-xs font-semibold text-ink-on-dark"
-                          >
-                            {{
+                          <p-tag
+                            [value]="
                               'Video ' +
-                                (p + 1) +
-                                '/' +
-                                (scene.prompts?.length ?? 0) +
-                                ' · ' +
-                                (prompt.duration ?? segmentDuration(p)) +
-                                's'
-                            }}
-                          </span>
-                          <p-button
-                            label="Generar video"
-                            icon="md md-movie"
-                            severity="secondary"
-                            size="small"
-                            [loading]="!!prompt.generating"
-                            [disabled]="!!prompt.generating"
-                            (onClick)="generatePromptVideo(scene.id, null, p)"
+                              (p + 1) +
+                              '/' +
+                              (scene.prompts?.length ?? 0) +
+                              ' · ' +
+                              (prompt.duration ?? segmentDuration(p)) +
+                              's'
+                            "
+                            severity="info"
                           />
-                          @if (prompt.videoUrl) {
-                            <video
-                              [src]="prompt.videoUrl"
-                              class="w-48 rounded-lg border border-surface-border"
-                              controls
-                              muted
-                              loading="lazy"
-                              [attr.aria-label]="'Video generado ' + (p + 1) + ' de ' + scene.title"
-                            ></video>
+                          <div class="ml-auto flex flex-wrap items-center gap-2">
+                            <p-button
+                              [label]="prompt.videoUrl ? 'Regenerar' : 'Generar video'"
+                              icon="md md-movie"
+                              severity="secondary"
+                              size="small"
+                              [loading]="!!prompt.generating"
+                              [disabled]="!!prompt.generating"
+                              (onClick)="generatePromptVideo(scene.id, null, p)"
+                            />
+                            @if (prompt.videoUrl) {
+                              @if (takeForPrompt(scene.id, null, p); as take) {
+                                <span
+                                  class="log-rating-group"
+                                  role="group"
+                                  aria-label="Calificación de la toma"
+                                >
+                                  <button
+                                    type="button"
+                                    class="log-rating-check"
+                                    [class.active]="take.ratingGood"
+                                    [title]="take.ratingGood ? 'Quitar Buena toma' : 'Buena toma'"
+                                    (click)="rateTake(take, 'good')"
+                                  >
+                                    <i class="md md-check"></i>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    class="log-rating-check"
+                                    [class.active]="take.ratingFinal"
+                                    [title]="
+                                      take.ratingFinal ? 'Quitar Elegida final' : 'Elegida final'
+                                    "
+                                    (click)="rateTake(take, 'final')"
+                                  >
+                                    <i class="md md-check md-double"></i>
+                                  </button>
+                                  @if (take.ratingGood || take.ratingFinal) {
+                                    <button
+                                      type="button"
+                                      class="log-rating-clear"
+                                      title="Limpiar calificación"
+                                      (click)="clearRating(take)"
+                                    >
+                                      CLEAR
+                                    </button>
+                                  }
+                                </span>
+                              }
+                              <p-button
+                                label="Ir a estudio"
+                                icon="md md-auto_fix_high"
+                                severity="secondary"
+                                size="small"
+                                (onClick)="goToStudioFromPrompt(scene, null, p)"
+                              />
+                            }
+                          </div>
+                        </div>
+
+                        <!-- Cuerpo: video generado (si hay) + prompt editable + ajustes -->
+                        <div class="flex flex-col gap-3 sm:flex-row">
+                          @if (prompt.videoUrl; as url) {
+                            <button
+                              type="button"
+                              class="group relative h-28 w-full shrink-0 self-start overflow-hidden rounded-xl border border-surface-border transition hover:border-accent focus-visible:outline-2 focus-visible:outline-accent sm:w-48"
+                              [attr.aria-label]="'Ver video de la escena'"
+                              (click)="
+                                openVideoPreview(
+                                  url,
+                                  'Video ' +
+                                    (p + 1) +
+                                    '/' +
+                                    (scene.prompts?.length ?? 0) +
+                                    ' — ' +
+                                    scene.title
+                                )
+                              "
+                            >
+                              <!-- Placeholder detrás del video: si el medio no carga (404), se ve el icono y no un cuadro negro -->
+                              <span
+                                class="pointer-events-none absolute inset-0 flex items-center justify-center bg-surface-2 text-ink-muted-on-dark"
+                              >
+                                <i class="md md-movie text-2xl"></i>
+                              </span>
+                              <video
+                                [src]="url | serverUrl"
+                                muted
+                                playsinline
+                                preload="metadata"
+                                class="pointer-events-none relative h-full w-full object-cover"
+                              ></video>
+                              <span
+                                class="absolute inset-0 flex items-center justify-center bg-scrim/45 opacity-0 transition-opacity group-hover:opacity-100"
+                              >
+                                <i class="md md-play_arrow text-2xl text-white"></i>
+                              </span>
+                            </button>
                           }
+                          <div class="flex min-w-0 flex-1 flex-col gap-3">
+                            <textarea
+                              pTextarea
+                              appAutogrow
+                              rows="2"
+                              class="w-full rounded-lg border border-surface-border bg-surface-2 px-3 py-2 text-sm leading-relaxed text-ink-on-dark"
+                              [attr.aria-label]="'Prompt de video de ' + scene.title"
+                              [ngModel]="prompt.text"
+                              (ngModelChange)="updateScenePrompt(scene.id, p, $event)"
+                              (change)="commitSceneEdit()"
+                              [ngModelOptions]="{ standalone: true }"
+                            ></textarea>
+
+                            <!-- Ajustes por prompt: duración, calidad y sonido -->
+                            <div
+                              class="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-ink-muted-on-dark"
+                            >
+                              <label class="flex items-center gap-1.5">
+                                Duración
+                                <p-inputNumber
+                                  [min]="1"
+                                  [max]="600"
+                                  [showButtons]="true"
+                                  styleClass="w-28"
+                                  aria-label="Duración del video"
+                                  [ngModel]="prompt.duration ?? segmentDuration(p)"
+                                  (ngModelChange)="setPromptDuration(scene.id, null, p, $event)"
+                                  [ngModelOptions]="{ standalone: true }"
+                                />
+                              </label>
+                              <label class="flex items-center gap-1.5">
+                                Calidad
+                                <p-select
+                                  aria-label="Calidad del video"
+                                  [options]="videoResolutionOptions()"
+                                  optionLabel="label"
+                                  optionValue="value"
+                                  [ngModel]="prompt.resolution ?? videoResolution()"
+                                  (ngModelChange)="setPromptResolution(scene.id, null, p, $event)"
+                                  [ngModelOptions]="{ standalone: true }"
+                                  styleClass="w-52"
+                                  appendTo="body"
+                                />
+                              </label>
+                              <label class="flex items-center gap-1.5">
+                                Sonido
+                                <p-toggleswitch
+                                  ariaLabel="Sonido del video"
+                                  [ngModel]="prompt.audio ?? videoAudio()"
+                                  (ngModelChange)="setPromptAudio(scene.id, null, p, $event)"
+                                  [ngModelOptions]="{ standalone: true }"
+                                />
+                              </label>
+                            </div>
+                          </div>
                         </div>
 
-                        <!-- Ajustes por prompt: duración, calidad y sonido -->
-                        <div
-                          class="flex flex-wrap items-center gap-3 text-xs text-ink-muted-on-dark"
-                        >
-                          <label class="flex items-center gap-1.5">
-                            Duración
-                            <p-inputNumber
-                              [min]="1"
-                              [max]="600"
-                              [showButtons]="true"
-                              styleClass="w-28"
-                              aria-label="Duración del video"
-                              [ngModel]="prompt.duration ?? segmentDuration(p)"
-                              (ngModelChange)="setPromptDuration(scene.id, null, p, $event)"
-                              [ngModelOptions]="{ standalone: true }"
-                            />
-                          </label>
-                          <label class="flex items-center gap-1.5">
-                            Calidad
-                            <p-select
-                              aria-label="Calidad del video"
-                              [options]="videoResolutionOptions()"
-                              optionLabel="label"
-                              optionValue="value"
-                              [ngModel]="prompt.resolution ?? videoResolution()"
-                              (ngModelChange)="setPromptResolution(scene.id, null, p, $event)"
-                              [ngModelOptions]="{ standalone: true }"
-                              styleClass="w-52"
-                              appendTo="body"
-                            />
-                          </label>
-                          <label class="flex items-center gap-1.5">
-                            Sonido
-                            <p-toggleswitch
-                              ariaLabel="Sonido del video"
-                              [ngModel]="prompt.audio ?? videoAudio()"
-                              (ngModelChange)="setPromptAudio(scene.id, null, p, $event)"
-                              [ngModelOptions]="{ standalone: true }"
-                            />
-                          </label>
-                        </div>
-                        <label class="sr-only" [attr.for]="'scene-prompt-' + scene.id + '-' + p">
-                          Prompt de video {{ p + 1 }} de {{ scene.title }}
-                        </label>
-                        <textarea
-                          pTextarea
-                          rows="3"
-                          [attr.id]="'scene-prompt-' + scene.id + '-' + p"
-                          class="w-full text-sm text-ink-on-dark"
-                          [attr.aria-label]="'Prompt de video de ' + scene.title"
-                          [ngModel]="prompt.text"
-                          (ngModelChange)="updateScenePrompt(scene.id, p, $event)"
-                          (change)="commitSceneEdit()"
-                          [ngModelOptions]="{ standalone: true }"
-                        ></textarea>
-
-                        <!-- Recursos que se adjuntan a este prompt (colapsados) -->
                         <div class="border-t border-surface-border pt-2">
                           <button
                             type="button"
@@ -1093,11 +1211,21 @@
                                   Sin recursos adjuntos: el video se generará sólo con el texto.
                                 </p>
                               }
+                              @if (
+                                (scene.references?.length ?? 0) > 0 &&
+                                !activeVideoModel()?.reference_endpoint
+                              ) {
+                                <p class="text-xs text-ink-muted-on-dark">
+                                  Las fotos de referencia se describen en el prompt: el modelo no
+                                  expone ruta multi-referencia para adjuntarlas como imagen.
+                                </p>
+                              }
                             </div>
                           }
                         </div>
                       </div>
                     }
+
                     @if ((scene.prompts ?? []).length === 0) {
                       <p class="text-xs text-ink-muted-on-dark">
                         Sin prompts: tocá "Generar prompts" para armarlos desde el storyboard.
@@ -1122,108 +1250,181 @@
                           </span>
                         </div>
                         @for (prompt of shot.prompts ?? []; track $index; let p = $index) {
-                          <div class="mb-3 flex flex-col gap-2">
+                          <div
+                            class="flex flex-col gap-3 rounded-2xl border border-surface-border bg-surface p-4"
+                          >
+                            <!-- Cabecera: estado del video + acciones -->
                             <div class="flex flex-wrap items-center gap-2">
-                              <span
-                                class="inline-flex items-center rounded-full border border-surface-border-strong bg-surface px-2.5 py-1 text-xs font-semibold text-ink-on-dark"
-                              >
-                                {{
+                              <p-tag
+                                [value]="
                                   'Video ' +
-                                    (p + 1) +
-                                    '/' +
-                                    (shot.prompts?.length ?? 0) +
-                                    ' · ' +
-                                    (prompt.duration ?? segmentDuration(p)) +
-                                    's'
-                                }}
-                              </span>
-                              <p-button
-                                label="Generar video"
-                                icon="md md-movie"
-                                severity="secondary"
-                                size="small"
-                                [loading]="!!prompt.generating"
-                                [disabled]="!!prompt.generating"
-                                (onClick)="generatePromptVideo(scene.id, shot.id, p)"
+                                  (p + 1) +
+                                  '/' +
+                                  (shot.prompts?.length ?? 0) +
+                                  ' · ' +
+                                  (prompt.duration ?? segmentDuration(p)) +
+                                  's'
+                                "
+                                severity="info"
                               />
-                              @if (prompt.videoUrl) {
-                                <video
-                                  [src]="prompt.videoUrl"
-                                  class="w-48 rounded-lg border border-surface-border"
-                                  controls
-                                  muted
-                                  loading="lazy"
-                                  [attr.aria-label]="
-                                    'Video generado de la toma ' + (j + 1) + ' — ' + scene.title
+                              <div class="ml-auto flex flex-wrap items-center gap-2">
+                                <p-button
+                                  [label]="prompt.videoUrl ? 'Regenerar' : 'Generar video'"
+                                  icon="md md-movie"
+                                  severity="secondary"
+                                  size="small"
+                                  [loading]="!!prompt.generating"
+                                  [disabled]="!!prompt.generating"
+                                  (onClick)="generatePromptVideo(scene.id, shot.id, p)"
+                                />
+                                @if (prompt.videoUrl) {
+                                  @if (takeForPrompt(scene.id, shot.id, p); as take) {
+                                    <span
+                                      class="log-rating-group"
+                                      role="group"
+                                      aria-label="Calificación de la toma"
+                                    >
+                                      <button
+                                        type="button"
+                                        class="log-rating-check"
+                                        [class.active]="take.ratingGood"
+                                        [title]="
+                                          take.ratingGood ? 'Quitar Buena toma' : 'Buena toma'
+                                        "
+                                        (click)="rateTake(take, 'good')"
+                                      >
+                                        <i class="md md-check"></i>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        class="log-rating-check"
+                                        [class.active]="take.ratingFinal"
+                                        [title]="
+                                          take.ratingFinal
+                                            ? 'Quitar Elegida final'
+                                            : 'Elegida final'
+                                        "
+                                        (click)="rateTake(take, 'final')"
+                                      >
+                                        <i class="md md-check md-double"></i>
+                                      </button>
+                                      @if (take.ratingGood || take.ratingFinal) {
+                                        <button
+                                          type="button"
+                                          class="log-rating-clear"
+                                          title="Limpiar calificación"
+                                          (click)="clearRating(take)"
+                                        >
+                                          CLEAR
+                                        </button>
+                                      }
+                                    </span>
+                                  }
+                                  <p-button
+                                    label="Ir a estudio"
+                                    icon="md md-auto_fix_high"
+                                    severity="secondary"
+                                    size="small"
+                                    (onClick)="goToStudioFromPrompt(scene, shot.id, p)"
+                                  />
+                                }
+                              </div>
+                            </div>
+
+                            <!-- Cuerpo: video generado (si hay) + prompt editable + ajustes -->
+                            <div class="flex flex-col gap-3 sm:flex-row">
+                              @if (prompt.videoUrl; as url) {
+                                <button
+                                  type="button"
+                                  class="group relative h-28 w-full shrink-0 self-start overflow-hidden rounded-xl border border-surface-border transition hover:border-accent focus-visible:outline-2 focus-visible:outline-accent sm:w-48"
+                                  [attr.aria-label]="'Ver video de la toma ' + (j + 1)"
+                                  (click)="
+                                    openVideoPreview(url, 'Toma ' + (j + 1) + ' — ' + scene.title)
                                   "
-                                ></video>
+                                >
+                                  <!-- Placeholder detrás del video: si el medio no carga (404), se ve el icono y no un cuadro negro -->
+                                  <span
+                                    class="pointer-events-none absolute inset-0 flex items-center justify-center bg-surface-2 text-ink-muted-on-dark"
+                                  >
+                                    <i class="md md-movie text-2xl"></i>
+                                  </span>
+                                  <video
+                                    [src]="url | serverUrl"
+                                    muted
+                                    playsinline
+                                    preload="metadata"
+                                    class="pointer-events-none relative h-full w-full object-cover"
+                                  ></video>
+                                  <span
+                                    class="absolute inset-0 flex items-center justify-center bg-scrim/45 opacity-0 transition-opacity group-hover:opacity-100"
+                                  >
+                                    <i class="md md-play_arrow text-2xl text-white"></i>
+                                  </span>
+                                </button>
                               }
-                            </div>
-
-                            <!-- Ajustes por prompt: duración, calidad y sonido -->
-                            <div
-                              class="flex flex-wrap items-center gap-3 text-xs text-ink-muted-on-dark"
-                            >
-                              <label class="flex items-center gap-1.5">
-                                Duración
-                                <p-inputNumber
-                                  [min]="1"
-                                  [max]="600"
-                                  [showButtons]="true"
-                                  styleClass="w-28"
-                                  aria-label="Duración del video"
-                                  [ngModel]="prompt.duration ?? segmentDuration(p)"
-                                  (ngModelChange)="setPromptDuration(scene.id, shot.id, p, $event)"
-                                  [ngModelOptions]="{ standalone: true }"
-                                />
-                              </label>
-                              <label class="flex items-center gap-1.5">
-                                Calidad
-                                <p-select
-                                  aria-label="Calidad del video"
-                                  [options]="videoResolutionOptions()"
-                                  optionLabel="label"
-                                  optionValue="value"
-                                  [ngModel]="prompt.resolution ?? videoResolution()"
-                                  (ngModelChange)="
-                                    setPromptResolution(scene.id, shot.id, p, $event)
+                              <div class="flex min-w-0 flex-1 flex-col gap-3">
+                                <textarea
+                                  pTextarea
+                                  appAutogrow
+                                  rows="2"
+                                  class="w-full rounded-lg border border-surface-border bg-surface-2 px-3 py-2 text-sm leading-relaxed text-ink-on-dark"
+                                  [attr.aria-label]="
+                                    'Prompt de video de la toma ' + (j + 1) + ' — ' + scene.title
                                   "
+                                  [ngModel]="prompt.text"
+                                  (ngModelChange)="updateShotPrompt(scene.id, shot.id, p, $event)"
+                                  (change)="commitSceneEdit()"
                                   [ngModelOptions]="{ standalone: true }"
-                                  styleClass="w-52"
-                                  appendTo="body"
-                                />
-                              </label>
-                              <label class="flex items-center gap-1.5">
-                                Sonido
-                                <p-toggleswitch
-                                  ariaLabel="Sonido del video"
-                                  [ngModel]="prompt.audio ?? videoAudio()"
-                                  (ngModelChange)="setPromptAudio(scene.id, shot.id, p, $event)"
-                                  [ngModelOptions]="{ standalone: true }"
-                                />
-                              </label>
-                            </div>
-                            <label
-                              class="sr-only"
-                              [attr.for]="'shot-prompt-' + scene.id + '-' + shot.id + '-' + p"
-                            >
-                              Prompt de video de la toma {{ j + 1 }} — {{ scene.title }}
-                            </label>
-                            <textarea
-                              pTextarea
-                              rows="3"
-                              [attr.id]="'shot-prompt-' + scene.id + '-' + shot.id + '-' + p"
-                              class="w-full text-sm text-ink-on-dark"
-                              [attr.aria-label]="
-                                'Prompt de video de la toma ' + (j + 1) + ' — ' + scene.title
-                              "
-                              [ngModel]="prompt.text"
-                              (ngModelChange)="updateShotPrompt(scene.id, shot.id, p, $event)"
-                              (change)="commitSceneEdit()"
-                              [ngModelOptions]="{ standalone: true }"
-                            ></textarea>
+                                ></textarea>
 
-                            <!-- Recursos que se adjuntan a este prompt (colapsados) -->
+                                <!-- Ajustes por prompt: duración, calidad y sonido -->
+                                <div
+                                  class="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-ink-muted-on-dark"
+                                >
+                                  <label class="flex items-center gap-1.5">
+                                    Duración
+                                    <p-inputNumber
+                                      [min]="1"
+                                      [max]="600"
+                                      [showButtons]="true"
+                                      styleClass="w-28"
+                                      aria-label="Duración del video"
+                                      [ngModel]="prompt.duration ?? segmentDuration(p)"
+                                      (ngModelChange)="
+                                        setPromptDuration(scene.id, shot.id, p, $event)
+                                      "
+                                      [ngModelOptions]="{ standalone: true }"
+                                    />
+                                  </label>
+                                  <label class="flex items-center gap-1.5">
+                                    Calidad
+                                    <p-select
+                                      aria-label="Calidad del video"
+                                      [options]="videoResolutionOptions()"
+                                      optionLabel="label"
+                                      optionValue="value"
+                                      [ngModel]="prompt.resolution ?? videoResolution()"
+                                      (ngModelChange)="
+                                        setPromptResolution(scene.id, shot.id, p, $event)
+                                      "
+                                      [ngModelOptions]="{ standalone: true }"
+                                      styleClass="w-52"
+                                      appendTo="body"
+                                    />
+                                  </label>
+                                  <label class="flex items-center gap-1.5">
+                                    Sonido
+                                    <p-toggleswitch
+                                      ariaLabel="Sonido del video"
+                                      [ngModel]="prompt.audio ?? videoAudio()"
+                                      (ngModelChange)="setPromptAudio(scene.id, shot.id, p, $event)"
+                                      [ngModelOptions]="{ standalone: true }"
+                                    />
+                                  </label>
+                                </div>
+                              </div>
+                            </div>
+
                             <div class="border-t border-surface-border pt-2">
                               <button
                                 type="button"
@@ -1269,11 +1470,21 @@
                                       Sin recursos adjuntos: el video se generará sólo con el texto.
                                     </p>
                                   }
+                                  @if (
+                                    (scene.references?.length ?? 0) > 0 &&
+                                    !activeVideoModel()?.reference_endpoint
+                                  ) {
+                                    <p class="text-xs text-ink-muted-on-dark">
+                                      Las fotos de referencia se describen en el prompt: el modelo
+                                      no expone ruta multi-referencia para adjuntarlas como imagen.
+                                    </p>
+                                  }
                                 </div>
                               }
                             </div>
                           </div>
                         }
+
                         @if ((shot.prompts ?? []).length === 0) {
                           <p class="text-xs text-ink-muted-on-dark">
                             Sin prompts — tocá "Generar prompts".
@@ -1630,6 +1841,30 @@
       </div>
     }
   </p-popover>
+
+  <!-- Modal de visualización del video generado -->
+  <p-dialog
+    header="Vista previa del video"
+    [visible]="!!videoPreview()"
+    (onHide)="closeVideoPreview()"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [style]="{ width: 'min(880px, 95vw)' }"
+  >
+    @if (videoPreview(); as vp) {
+      <div class="flex flex-col gap-3">
+        <p class="text-sm text-ink-muted-on-dark">{{ vp.title }}</p>
+        <video
+          [src]="vp.url | serverUrl"
+          controls
+          autoplay
+          playsinline
+          class="w-full rounded-xl border border-surface-border bg-black"
+        ></video>
+      </div>
+    }
+  </p-dialog>
 
   <!-- Modal "Editar elemento" (compartida con Recursos) -->
   <app-asset-edit-dialog
