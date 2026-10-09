@@ -4774,3 +4774,7 @@ main:has(> app-studio) {
     transform: translateX(250%);
   }
 }
+
+.p-toggleswitch-handle {
+  top: 15% !important;
+}
