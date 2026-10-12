@@ -22,9 +22,12 @@
           (error)="onAvatarLoadError()"
         />
       </div>
-      <div class="user-info">
+      <div class="user-info w-full">
         <h4 class="user-name">{{ currentUser()?.name }} {{ currentUser()?.surname }}</h4>
-        <span class="user-role">{{ currentUser()?.role_name }}</span>
+        <div class="flex justify-between w-full align-center">
+          <div class="user-role">{{ currentUser()?.role_name }}</div>
+          <div class="app-version">v{{ VERSION }}</div>
+        </div>
       </div>
     </div>
 
