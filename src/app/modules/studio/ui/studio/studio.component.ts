@@ -24,6 +24,7 @@ import { PrimeTemplate } from 'primeng/api';
 import { Tag } from 'primeng/tag';
 import { Tooltip } from 'primeng/tooltip';
 import { Message } from 'primeng/message';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import type { GenerateRequest, Modality } from '@modules/agency/interfaces';
 import { AgencyService } from '@modules/agency/services';
@@ -63,9 +64,9 @@ interface RefSlotDef {
 }
 
 const REF_SLOT_DEFS: RefSlotDef[] = [
-  { key: 'character', label: 'Personaje', hint: 'png, jpeg' },
-  { key: 'location', label: 'Localización', hint: 'png, jpeg' },
-  { key: 'props', label: 'Props', hint: 'png, jpeg' },
+  { key: 'character', label: 'STUDIO.SLOT_CHARACTER', hint: 'png, jpeg' },
+  { key: 'location', label: 'STUDIO.SLOT_LOCATION', hint: 'png, jpeg' },
+  { key: 'props', label: 'STUDIO.SLOT_PROPS', hint: 'png, jpeg' },
 ];
 
 /** Fila del menú @: recurso (filename) o ingrediente (id de elemento o nombre). */
@@ -91,6 +92,7 @@ interface MentionRow {
     Tag,
     Tooltip,
     Message,
+    TranslatePipe,
     ServerUrlPipe,
     AssetPickerDialogComponent,
     AssetEditDialogComponent,
@@ -114,6 +116,7 @@ export class StudioComponent {
   private readonly eventsService = inject(EventsService);
   private readonly sessionStore = inject(UserSessionStore);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly translate = inject(TranslateService);
 
   // ─── Workspace layout (solo UI): anchos de columnas redimensionables ──
   private static readonly COLS_KEY = 'studio:colW';
@@ -234,7 +237,9 @@ export class StudioComponent {
     const { min, max } = this.durationRange();
     const fmt = (s: number) =>
       s >= 60 ? `${Math.floor(s / 60)}m${s % 60 ? ' ' + (s % 60) + 's' : ''}` : `${s}s`;
-    return min === max ? `Solo ${fmt(min)}` : `${fmt(min)} – ${fmt(max)}`;
+    return min === max
+      ? this.translate.instant('STUDIO.DURATION_ONLY', { range: fmt(min) })
+      : `${fmt(min)} – ${fmt(max)}`;
   });
 
   // ─── Reference assets ──────────────────────────────────────────
@@ -739,9 +744,7 @@ export class StudioComponent {
     const labels = isAsset
       ? [target.filename]
       : [...new Set([this.mentionLabelOf(target), target.ingredient.name])];
-    const body = labels
-      .map((label) => label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-      .join('|');
+    const body = labels.map((label) => label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
     const re = new RegExp(`@(${body})\\s?`, 'g');
     this.prompt.update((text) => text.replace(re, ''));
     // Quitar la mención también libera sus recursos: selección y slots.
@@ -786,11 +789,11 @@ export class StudioComponent {
   protected ingredientTypeLabel(type: string): string {
     switch (type) {
       case 'character':
-        return 'Personaje';
+        return this.translate.instant('STUDIO.ING_CHARACTER');
       case 'location':
-        return 'Locación';
+        return this.translate.instant('STUDIO.ING_LOCATION');
       case 'prop':
-        return 'Prop';
+        return this.translate.instant('STUDIO.ING_PROP');
       default:
         return type;
     }
@@ -833,7 +836,7 @@ export class StudioComponent {
   /** Toma mostrada en el modal (null mientras está cerrado). */
   protected readonly detailTake = computed(() =>
     this.takeDetailVisible()
-      ? this.takes().find((t) => t.id === this.takeDetailId()) ?? null
+      ? (this.takes().find((t) => t.id === this.takeDetailId()) ?? null)
       : null,
   );
   /** Nombre del usuario en sesión (las tomas del reel son propias). */
@@ -1073,10 +1076,10 @@ export class StudioComponent {
   /** Etiqueta del día: Hoy / Ayer / fecha corta local. */
   protected dayLabel(key: string): string {
     if (key === this.dayKey(Date.now())) {
-      return 'Hoy';
+      return this.translate.instant('STUDIO.TODAY');
     }
     if (key === this.dayKey(Date.now() - 24 * 60 * 60 * 1000)) {
-      return 'Ayer';
+      return this.translate.instant('STUDIO.YESTERDAY');
     }
     return new Date(`${key}T00:00:00`).toLocaleDateString(undefined, {
       weekday: 'short',
@@ -1316,7 +1319,7 @@ export class StudioComponent {
       .listModels()
       .pipe(
         catchError(() => {
-          this.error.set('No se pudieron cargar los modelos. ¿Está el backend corriendo?');
+          this.error.set(this.translate.instant('STUDIO.ERR_LOAD_MODELS'));
           return EMPTY;
         }),
         finalize(() => this.loadingModels.set(false)),
@@ -1343,7 +1346,7 @@ export class StudioComponent {
       .listEvents()
       .pipe(
         catchError(() => {
-          this.error.set('No se pudieron cargar los proyectos.');
+          this.error.set(this.translate.instant('STUDIO.ERR_LOAD_PROJECTS'));
           return EMPTY;
         }),
         finalize(() => this.loadingProjects.set(false)),
@@ -1383,7 +1386,7 @@ export class StudioComponent {
       .createEvent({ name })
       .pipe(
         catchError(() => {
-          this.error.set('No se pudo crear el proyecto.');
+          this.error.set(this.translate.instant('STUDIO.ERR_CREATE_PROJECT'));
           return EMPTY;
         }),
         finalize(() => this.creatingProject.set(false)),
@@ -1535,7 +1538,7 @@ export class StudioComponent {
     } else {
       if (next.size >= this.maxSelectedRefs) {
         this.flashRefError(
-          `Podés seleccionar hasta ${this.maxSelectedRefs} referencias por generación.`,
+          this.translate.instant('STUDIO.REF_ERR_MAX', { max: this.maxSelectedRefs }),
         );
         return;
       }
@@ -1596,9 +1599,7 @@ export class StudioComponent {
       .pipe(catchError(() => EMPTY))
       .subscribe((fresh) => {
         if (fresh) {
-          this.assets.update((list) =>
-            list.map((item) => (item.id === fresh.id ? fresh : item)),
-          );
+          this.assets.update((list) => list.map((item) => (item.id === fresh.id ? fresh : item)));
           this.editorAsset.set(fresh);
         } else {
           this.removeAsset(asset.id);
@@ -1637,12 +1638,17 @@ export class StudioComponent {
       return;
     }
     if (!/^image\/(png|jpeg)$/.test(file.type)) {
-      this.flashRefError(`"${file.name}" no es una imagen PNG o JPEG.`);
+      this.flashRefError(this.translate.instant('STUDIO.REF_ERR_NOT_IMAGE', { name: file.name }));
       input.value = '';
       return;
     }
     if (file.size > this.maxRefBytes) {
-      this.flashRefError(`"${file.name}" supera el máximo de ${this.maxRefLabel} por referencia.`);
+      this.flashRefError(
+        this.translate.instant('STUDIO.REF_ERR_TOO_BIG', {
+          name: file.name,
+          max: this.maxRefLabel,
+        }),
+      );
       input.value = '';
       return;
     }
@@ -1654,7 +1660,7 @@ export class StudioComponent {
       .uploadFile(file, slot, this.selectedProjectId() ?? undefined)
       .pipe(
         catchError(() => {
-          this.flashRefError(`No se pudo subir "${file.name}". Intentá de nuevo.`);
+          this.flashRefError(this.translate.instant('STUDIO.REF_ERR_UPLOAD', { name: file.name }));
           return EMPTY;
         }),
         finalize(() => {
@@ -1820,7 +1826,7 @@ export class StudioComponent {
       )
       .pipe(
         catchError(() => {
-          this.error.set('No se pudo preparar el proyecto Studio.');
+          this.error.set(this.translate.instant('STUDIO.ERR_PREPARE_PROJECT'));
           this.submitting.set(false);
           // Nada se creó en el server: se descarta la take pendiente
           // (en rehacer, la toma original queda intacta para reintentar).
@@ -1843,7 +1849,7 @@ export class StudioComponent {
           .generate(modality, finalPayload)
           .pipe(
             catchError(() => {
-              this.error.set('No se pudo iniciar la generación.');
+              this.error.set(this.translate.instant('STUDIO.ERR_START_GENERATION'));
               this.submitting.set(false);
               // Nada se creó en el server: se descarta la take pendiente
               // (en rehacer, la toma original queda intacta para reintentar).
@@ -1902,7 +1908,11 @@ export class StudioComponent {
 
   /** Formato de la toma: "16:9 · 720p · 5s" o "—". */
   protected takeFormatLabel(take: StudioTake): string {
-    const parts = [take.ratio ?? '', take.resolution ?? '', take.duration ? `${take.duration}s` : ''];
+    const parts = [
+      take.ratio ?? '',
+      take.resolution ?? '',
+      take.duration ? `${take.duration}s` : '',
+    ];
     return parts.filter((p) => p !== '').join(' · ') || '—';
   }
 
@@ -1954,14 +1964,22 @@ export class StudioComponent {
   protected costTooltip(take: StudioTake): string {
     const bits: string[] = [];
     if ((take.costCredits ?? 0) > 0) {
-      bits.push(`${this.formatCredits(take.costCredits!)} = créditos del proveedor (Higgsfield)`);
+      bits.push(
+        this.translate.instant('STUDIO.COST_CREDITS_MEANING', {
+          value: this.formatCredits(take.costCredits!),
+        }),
+      );
     }
     if ((take.costUsd ?? 0) > 0) {
-      bits.push(`${this.formatCostUsd(take.costUsd!)} = equivalente en dólares (USD)`);
+      bits.push(
+        this.translate.instant('STUDIO.COST_USD_MEANING', {
+          value: this.formatCostUsd(take.costUsd!),
+        }),
+      );
     }
-    let text = `Gasto estimado por Higgsfield: ${bits.join(', ')}. Las generaciones fallidas o canceladas se reembolsan.`;
+    let text = this.translate.instant('STUDIO.COST_TOOLTIP', { bits: bits.join(', ') });
     if (take.transactionId) {
-      text += ` Transaction ID: ${take.transactionId}`;
+      text += this.translate.instant('STUDIO.COST_TOOLTIP_TX', { id: take.transactionId });
     }
     return text;
   }
@@ -2039,11 +2057,11 @@ export class StudioComponent {
 
   protected takeStatusLabel(status: StudioTake['status']): string {
     const labels: Record<StudioTake['status'], string> = {
-      queued: 'En cola',
-      running: 'Generando',
-      succeeded: 'Listo',
-      failed: 'Error',
-      cancelled: 'Cancelado',
+      queued: this.translate.instant('STUDIO.STATUS_QUEUED'),
+      running: this.translate.instant('STUDIO.STATUS_RUNNING'),
+      succeeded: this.translate.instant('STUDIO.STATUS_SUCCEEDED'),
+      failed: this.translate.instant('STUDIO.STATUS_FAILED'),
+      cancelled: this.translate.instant('STUDIO.STATUS_CANCELLED'),
     };
     return labels[status];
   }

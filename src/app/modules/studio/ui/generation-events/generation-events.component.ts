@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+
 import { Button } from 'primeng/button';
 import { Tag } from 'primeng/tag';
 
@@ -15,13 +17,22 @@ type Filter = 'all' | 'active' | 'done';
 
 @Component({
   selector: 'app-generation-events',
-  imports: [RouterLink, Button, Tag, ServerUrlPipe, SlidePillDirective, TiltDirective],
+  imports: [
+    RouterLink,
+    Button,
+    Tag,
+    ServerUrlPipe,
+    SlidePillDirective,
+    TiltDirective,
+    TranslatePipe,
+  ],
   templateUrl: './generation-events.component.html',
   styleUrl: './generation-events.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GenerationEventsComponent {
   protected readonly store = inject(GenerationEventsStore);
+  private readonly translate = inject(TranslateService);
 
   protected readonly filter = signal<Filter>('all');
   protected readonly selectedId = signal<string | null>(null);
@@ -77,11 +88,11 @@ export class GenerationEventsComponent {
 
   protected label(status: StudioTake['status']): string {
     const labels: Record<StudioTake['status'], string> = {
-      queued: 'En cola',
-      running: 'Generando',
-      succeeded: 'Listo',
-      failed: 'Error',
-      cancelled: 'Cancelado',
+      queued: this.translate.instant('STUDIO.STATUS_QUEUED'),
+      running: this.translate.instant('STUDIO.STATUS_RUNNING'),
+      succeeded: this.translate.instant('STUDIO.STATUS_SUCCEEDED'),
+      failed: this.translate.instant('STUDIO.STATUS_FAILED'),
+      cancelled: this.translate.instant('STUDIO.STATUS_CANCELLED'),
     };
     return labels[status];
   }
