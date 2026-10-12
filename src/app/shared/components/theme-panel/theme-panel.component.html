@@ -254,6 +254,9 @@
     </ul>
   </div>
   <ng-template #footer>
-    <p-button label="Cerrar" size="small" [text]="true" (onClick)="settingsVisible.set(false)" />
+    <div class="flex w-full items-center justify-between">
+      <div class="text-xs text-gray-500">v{{ VERSION }}</div>
+      <p-button label="Cerrar" size="small" [text]="true" (onClick)="settingsVisible.set(false)" />
+    </div>
   </ng-template>
 </p-dialog>

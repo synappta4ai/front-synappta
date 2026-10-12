@@ -22,6 +22,7 @@ import { LibraryService } from '@modules/library/services';
 import { ThemeService } from '@services/theme.service';
 import { ThemeMode, AccentId, ACCENTS } from '@interfaces/theme.interface';
 import { AUTH } from '@constants/routes';
+import { environment } from '@env/environment';
 
 /** Tamaño máximo de la foto de perfil: 5 MB. */
 const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
@@ -57,6 +58,8 @@ export class ThemePanelComponent implements OnInit {
   protected readonly avatarUploading = signal(false);
   protected readonly avatarError = signal('');
   private readonly avatarLoadFailed = signal(false);
+
+  readonly VERSION = environment.APP_VERSION;
 
   /** URL del avatar: foto del usuario si la hay; iniciales como fallback. */
   readonly userAvatarUrl = computed(() => {

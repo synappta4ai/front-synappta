@@ -1,8 +1,9 @@
 export const environment = {
   PRODUCTION: true,
-  API_URL: 'https://back-prod.synappta.cloud/api/v1',
-  SOCKET_URL: 'wss://socket-prod.synappta.net',
-  ATMOSPHERE: 'production',
+  APP_VERSION: '1.0.1',
+  API_URL: 'https://back-dev.synappta.cloud/api/v1',
+  SOCKET_URL: 'ws://localhost:3000',
+  ATMOSPHERE: 'development',
   DEFAULT_LANGUAGE: 'es',
   DEFAULT_THEME: 'dark',
   DEFAULT_CURRENCY: 'COP',

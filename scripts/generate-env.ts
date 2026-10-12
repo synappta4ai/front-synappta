@@ -5,6 +5,11 @@ import { config } from 'dotenv';
 const rootDir = path.join(import.meta.dirname, '..');
 const envDir = path.join(rootDir, 'src/environments');
 
+const pkg = JSON.parse(fs.readFileSync(path.join(rootDir, 'package.json'), 'utf-8')) as {
+  version?: string;
+};
+const APP_VERSION = pkg.version ?? '0.0.0';
+
 for (const file of ['.env', '.env.local', '.env.production']) {
   config({ path: path.join(rootDir, file), override: false, quiet: true });
 }
@@ -79,7 +84,7 @@ function readVar({ key, fallback }: EnvVar): string {
 }
 
 function buildConfig(production: boolean): string {
-  const lines = [`  PRODUCTION: ${production},`];
+  const lines = [`  PRODUCTION: ${production},`, `  APP_VERSION: '${APP_VERSION}',`];
 
   for (const variable of VARS) {
     lines.push(`  ${variable.key}: '${readVar(variable).replace(/'/g, "\\'")}',`);
