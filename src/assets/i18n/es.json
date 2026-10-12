@@ -31,6 +31,7 @@
     },
     "FOOTER": {
       "CONTACT_ARIA": "Contacto y redes",
+      "LANG_ARIA": "Cambiar idioma",
       "EMAIL": "Email"
     },
     "BELL": {
@@ -77,6 +78,8 @@
       "STATUS_INACTIVE": "Inactivo",
       "CLOSE": "Cerrar",
       "SECTION_LANGUAGE": "Idioma",
+      "LANG_ES": "Español",
+      "LANG_EN": "English",
       "SECTION_SHORTCUTS": "Atajos de teclado",
       "SHORTCUT_GENERATE": "Generar",
       "SHORTCUT_FOCUS_PROMPT": "Enfocar el prompt",

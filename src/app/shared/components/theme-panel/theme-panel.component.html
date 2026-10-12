@@ -35,10 +35,10 @@
         <span>{{ 'SHARED.THEME_PANEL.MENU_PROFILE' | translate }}</span>
       </button>
 
-      <button class="menu-item" (click)="openSettings()">
+      <!-- <button class="menu-item" (click)="openSettings()">
         <i class="md md-settings menu-icon"></i>
         <span>{{ 'SHARED.THEME_PANEL.MENU_SETTINGS' | translate }}</span>
-      </button>
+      </button> -->
 
       <button class="menu-item logout" (click)="onLogout()">
         <i class="md md-logout menu-icon"></i>
@@ -50,6 +50,18 @@
     <div class="divider"></div>
 
     <!-- Mode Section -->
+
+    <div class="section">
+      <h5 class="section-title">{{ 'SHARED.THEME_PANEL.SECTION_LANGUAGE' | translate }}</h5>
+      <div class="mode-toggle">
+        <button class="mode-btn" [class.active]="currentLang() !== 'en'" (click)="setLang('es')">
+          <span>{{ 'SHARED.THEME_PANEL.LANG_ES' | translate }}</span>
+        </button>
+        <button class="mode-btn" [class.active]="currentLang() === 'en'" (click)="setLang('en')">
+          <span>{{ 'SHARED.THEME_PANEL.LANG_EN' | translate }}</span>
+        </button>
+      </div>
+    </div>
     <div class="section">
       <h5 class="section-title">{{ 'SHARED.THEME_PANEL.SECTION_APPEARANCE' | translate }}</h5>
       <div class="mode-toggle seg-slide">
@@ -212,10 +224,10 @@
     <h5 class="section-title">{{ 'SHARED.THEME_PANEL.SECTION_LANGUAGE' | translate }}</h5>
     <div class="mode-toggle">
       <button class="mode-btn" [class.active]="currentLang() !== 'en'" (click)="setLang('es')">
-        <span>Español</span>
+        <span>{{ 'SHARED.THEME_PANEL.LANG_ES' | translate }}</span>
       </button>
       <button class="mode-btn" [class.active]="currentLang() === 'en'" (click)="setLang('en')">
-        <span>English</span>
+        <span>{{ 'SHARED.THEME_PANEL.LANG_EN' | translate }}</span>
       </button>
     </div>
   </div>

@@ -6,7 +6,34 @@
     <div
       class="mx-auto flex max-w-6xl flex-col gap-3 px-4 sm:flex-row sm:items-center sm:justify-between sm:px-6"
     >
-      <p class="text-sm font-bold text-ink">Synapta</p>
+      <div class="flex items-center gap-4">
+        <p class="text-sm font-bold text-ink">Synapta</p>
+        <div
+          class="flex items-center gap-1 text-sm"
+          role="group"
+          [attr.aria-label]="'SHARED.FOOTER.LANG_ARIA' | translate"
+        >
+          <button
+            type="button"
+            class="rounded-full px-2 py-0.5 font-bold text-ink-muted transition-colors hover:text-ink"
+            [class.text-accent]="currentLang() !== 'en'"
+            [attr.aria-pressed]="currentLang() !== 'en'"
+            (click)="setLang('es')"
+          >
+            {{ 'SHARED.THEME_PANEL.LANG_ES' | translate }}
+          </button>
+          <span class="text-secondary" aria-hidden="true">/</span>
+          <button
+            type="button"
+            class="rounded-full px-2 py-0.5 font-bold text-ink-muted transition-colors hover:text-ink"
+            [class.text-accent]="currentLang() === 'en'"
+            [attr.aria-pressed]="currentLang() === 'en'"
+            (click)="setLang('en')"
+          >
+            {{ 'SHARED.THEME_PANEL.LANG_EN' | translate }}
+          </button>
+        </div>
+      </div>
       <nav
         class="flex flex-wrap items-center gap-x-5 gap-y-1"
         [attr.aria-label]="'SHARED.FOOTER.CONTACT_ARIA' | translate"

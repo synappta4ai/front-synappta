@@ -10,6 +10,7 @@ import { provideAnimationsAsync } from '@angular/platform-browser/animations/asy
 import { TitleStrategy, provideRouter } from '@angular/router';
 
 import { routes } from './app.routes';
+import { LanguageService } from '@services/language.service';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 
 import { AppTitleStrategy } from '@services/app-title.strategy';
@@ -51,6 +52,11 @@ export const appConfig: ApplicationConfig = {
     provideTranslateHttpLoader({
       prefix: './assets/i18n/',
       suffix: '.json',
+    }),
+    provideAppInitializer(() => {
+      // Idiomas: restaura el idioma persistido en cualquier ruta (incluidas las
+      // páginas públicas, que no montan el theme-panel).
+      inject(LanguageService).init();
     }),
     provideAppInitializer(async () => {
       // All inject() calls stay synchronous: after the first await the
