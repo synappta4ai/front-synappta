@@ -24,7 +24,7 @@ import {
   UpsertCredentialRequest,
 } from '../interfaces';
 import { AgencyApiRepository } from '../repositories';
-import { ApiResponse } from '@interfaces/api.interface';
+import { unwrap } from '@utils/unwrap-api-response';
 
 const TERMINAL_STATUSES: readonly string[] = ['succeeded', 'failed', 'cancelled'];
 
@@ -140,28 +140,4 @@ export class AgencyService {
       takeWhile((status) => !TERMINAL_STATUSES.includes(status.status), true),
     );
   }
-}
-
-function unwrap<T>(source: Observable<ApiResponse<T>>): Observable<T> {
-  return new Observable<T>((subscriber) => {
-    const subscription = source.subscribe({
-      next: (response) => {
-        // success:false es error real; success:true con data:null es una
-        // respuesta de solo-mensaje.
-        if (response.success === false) {
-          subscriber.error(new Error(response.message || 'Request failed'));
-          return;
-        }
-        if (response.data === null) {
-          subscriber.next(null as T);
-          subscriber.complete();
-          return;
-        }
-        subscriber.next(response.data);
-        subscriber.complete();
-      },
-      error: (err: unknown) => subscriber.error(err),
-    });
-    return () => subscription.unsubscribe();
-  });
 }

@@ -1,7 +1,8 @@
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
-import { ApiResponse, Paginated } from '@interfaces/api.interface';
+import { Paginated } from '@interfaces/api.interface';
+import { unwrap } from '@utils/unwrap-api-response';
 
 import {
   AddIngredientFileRequest,
@@ -141,28 +142,4 @@ export class LibraryService {
   deleteSkill(id: string): Observable<null> {
     return unwrap(this.libraryApiRepository.deleteSkill(id));
   }
-}
-
-function unwrap<T>(source: Observable<ApiResponse<T>>): Observable<T> {
-  return new Observable<T>((subscriber) => {
-    const subscription = source.subscribe({
-      next: (response) => {
-        // success:false es error real; success:true con data:null es una
-        // respuesta de solo-mensaje (p.ej. "file added to ingredient").
-        if (response.success === false) {
-          subscriber.error(new Error(response.message || 'Request failed'));
-          return;
-        }
-        if (response.data === null) {
-          subscriber.next(null as T);
-          subscriber.complete();
-          return;
-        }
-        subscriber.next(response.data);
-        subscriber.complete();
-      },
-      error: (err: unknown) => subscriber.error(err),
-    });
-    return () => subscription.unsubscribe();
-  });
 }
