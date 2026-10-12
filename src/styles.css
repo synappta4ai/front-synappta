@@ -3521,7 +3521,34 @@ main:has(> app-studio) {
 .studio-shell .take-foot {
   display: flex;
   align-items: center;
+  /* Con varias imágenes de referencia la fila no cabe en una sola línea:
+     wrap lleva los controls a otra fila en vez de desbordar la card. */
+  flex-wrap: wrap;
   gap: 6px;
+}
+
+/* Los controles (tag, calificación, REUSAR, costo) nunca se comprimen:
+   el flex-shrink por defecto colapsaba el rating-group (con overflow
+  :hidden recortaba los checks) cuando la tira de thumbs empujaba. */
+.studio-shell .take-foot > .p-tag,
+.studio-shell .take-foot .rating-group,
+.studio-shell .take-foot .rating-redo,
+.studio-shell .take-foot .take-cost,
+.studio-shell .take-foot .rating-expand {
+  flex-shrink: 0;
+}
+
+/* Tira de referencias: ocupa lo que queda, se alinea a la derecha y
+   recorta en vez de desbordar; si no cabe, wrap la baja de fila. */
+.studio-shell .take-foot .ref-strip {
+  min-width: 0;
+  margin-top: 0;
+  justify-content: flex-end;
+  overflow: hidden;
+}
+
+.studio-shell .take-foot .ref-strip .ref-thumb {
+  flex-shrink: 0;
 }
 
 .studio-shell .take-foot .time {
