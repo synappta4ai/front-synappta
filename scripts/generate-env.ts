@@ -10,7 +10,7 @@ const pkg = JSON.parse(fs.readFileSync(path.join(rootDir, 'package.json'), 'utf-
 };
 const APP_VERSION = pkg.version ?? '0.0.0';
 
-for (const file of ['.env', '.env.local', '.env.production']) {
+for (const file of ['.env', '.env.production']) {
   config({ path: path.join(rootDir, file), override: false, quiet: true });
 }
 
@@ -83,45 +83,43 @@ function readVar({ key, fallback }: EnvVar): string {
   return raw === undefined || raw.trim() === '' ? fallback : raw.trim();
 }
 
-function buildConfig(production: boolean): string {
+function buildConfig(
+  production: boolean,
+  overrides: Readonly<Record<string, string>> = {},
+): string {
   const lines = [`  PRODUCTION: ${production},`, `  APP_VERSION: '${APP_VERSION}',`];
 
   for (const variable of VARS) {
-    lines.push(`  ${variable.key}: '${readVar(variable).replace(/'/g, "\\'")}',`);
+    const value = overrides[variable.key] ?? readVar(variable);
+    lines.push(`  ${variable.key}: '${value.replace(/'/g, "\\'")}',`);
   }
 
   return `export const environment = {\n${lines.join('\n')}\n};\n`;
 }
 
-function buildExample(): string {
-  const lines = [
-    '# Variables de entorno disponibles en tiempo de build.',
-    '# Copiar a `.env` (gitignored) y ajustar. `scripts/generate-env.ts` las inyecta',
-    '# en src/environments/*.ts antes de cada build, watch y test.',
-    '',
-  ];
-
-  for (const variable of VARS) {
-    lines.push(`# ${variable.description}`, `${variable.key}=${variable.fallback}`, '');
-  }
-
-  return lines.join('\n');
+interface Target {
+  readonly file: string;
+  readonly production: boolean;
+  readonly overrides?: Readonly<Record<string, string>>;
 }
 
-const TARGETS = [
+const TARGETS: readonly Target[] = [
   { file: 'environment.ts', production: false },
   { file: 'environment.dev.ts', production: false },
+  {
+    file: 'environment.local.ts',
+    production: false,
+    overrides: {
+      API_URL: 'http://localhost:8099/api/v1',
+    },
+  },
   { file: 'environment.prod.ts', production: true },
-] as const;
+];
 
 fs.mkdirSync(envDir, { recursive: true });
 
-for (const { file, production } of TARGETS) {
-  fs.writeFileSync(path.join(envDir, file), buildConfig(production), 'utf-8');
+for (const { file, production, overrides } of TARGETS) {
+  fs.writeFileSync(path.join(envDir, file), buildConfig(production, overrides), 'utf-8');
 }
 
-fs.writeFileSync(path.join(rootDir, '.env.example'), buildExample(), 'utf-8');
-
-console.log(
-  `Generated: ${TARGETS.map((t) => t.file).join(', ')} and .env.example (${VARS.length} vars)`,
-);
+console.log(`Generated: ${TARGETS.map((t) => t.file).join(', ')} (${VARS.length} vars)`);
