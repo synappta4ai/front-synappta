@@ -1,7 +1,7 @@
 export const environment = {
   PRODUCTION: false,
-  API_URL: 'http://localhost:8099/api/v1',
-  SOCKET_URL: 'ws://localhost:3000',
+  API_URL: 'https://back-dev.synappta.cloud/api/v1',
+  SOCKET_URL: 'wss://socket-dev.synappta.cloud/',
   ATMOSPHERE: 'development',
   DEFAULT_LANGUAGE: 'es',
   DEFAULT_THEME: 'dark',
