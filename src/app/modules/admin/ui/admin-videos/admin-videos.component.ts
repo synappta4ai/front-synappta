@@ -1,6 +1,7 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { catchError, EMPTY, finalize } from 'rxjs';
 
 import { Button } from 'primeng/button';
@@ -32,6 +33,7 @@ import { TiltDirective } from '@shared/components/tilt/tilt.directive';
     Tooltip,
     ServerUrlPipe,
     TiltDirective,
+    TranslatePipe,
   ],
   templateUrl: './admin-videos.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -39,6 +41,7 @@ import { TiltDirective } from '@shared/components/tilt/tilt.directive';
 export class AdminVideosComponent {
   private readonly adminService = inject(AdminService);
   private readonly sessionStore = inject(UserSessionStore);
+  private readonly translate = inject(TranslateService);
 
   protected readonly isSuperadmin = computed(
     () => this.sessionStore.currentUser()?.role_level === 0,
@@ -66,7 +69,7 @@ export class AdminVideosComponent {
       .listGeneratedVideos(this.page(), this.limit)
       .pipe(
         catchError(() => {
-          this.error.set('No se pudieron cargar los videos generados.');
+          this.error.set(this.translate.instant('ADMIN.VIDEOS.ERRORS.LOAD'));
           return EMPTY;
         }),
         finalize(() => this.loading.set(false)),

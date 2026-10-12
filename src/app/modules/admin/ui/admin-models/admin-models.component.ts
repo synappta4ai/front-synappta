@@ -5,6 +5,7 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { catchError, EMPTY, finalize, forkJoin, switchMap, tap } from 'rxjs';
 import { HttpResponse } from '@angular/common/http';
 
@@ -54,6 +55,7 @@ interface TenantOption {
     Select,
     Password,
     Tooltip,
+    TranslatePipe,
   ],
   providers: [ConfirmationService],
   templateUrl: './admin-models.component.html',
@@ -64,6 +66,7 @@ export class AdminModelsComponent {
   private readonly formBuilder = inject(NonNullableFormBuilder);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly sessionStore = inject(UserSessionStore);
+  private readonly translate = inject(TranslateService);
 
   protected readonly isSuperadmin = computed(
     () => this.sessionStore.currentUser()?.role_level === 0,
@@ -139,7 +142,7 @@ export class AdminModelsComponent {
       .listTenants()
       .pipe(
         catchError(() => {
-          this.error.set('No se pudieron cargar los tenants.');
+          this.error.set(this.translate.instant('ADMIN.MODELS.ERRORS.LOAD_TENANTS'));
           return EMPTY;
         }),
         finalize(() => this.loadingTenants.set(false)),
@@ -164,13 +167,13 @@ export class AdminModelsComponent {
     forkJoin({
       models: this.adminService.listTenantModels(tenantId).pipe(
         catchError(() => {
-          this.error.set('No se pudieron cargar los modelos del tenant.');
+          this.error.set(this.translate.instant('ADMIN.MODELS.ERRORS.LOAD_MODELS'));
           return EMPTY;
         }),
       ),
       credentials: this.adminService.listTenantCredentials(tenantId).pipe(
         catchError(() => {
-          this.error.set('No se pudieron cargar las credenciales del tenant.');
+          this.error.set(this.translate.instant('ADMIN.MODELS.ERRORS.LOAD_CREDENTIALS'));
           return EMPTY;
         }),
       ),
@@ -230,11 +233,11 @@ export class AdminModelsComponent {
     // (el back preserva los secretos vacíos).
     if (provider === 'higgsfield') {
       if (!access_key_id.trim() || !secret_access_key.trim()) {
-        this.error.set('Higgsfield necesita Key ID y Key Secret.');
+        this.error.set(this.translate.instant('ADMIN.MODELS.ERRORS.HIGGSFIELD_KEYS'));
         return;
       }
     } else if (!api_key.trim() && !this.credentialForProvider(provider)) {
-      this.error.set('La API Key es obligatoria para este proveedor.');
+      this.error.set(this.translate.instant('ADMIN.MODELS.ERRORS.API_KEY_REQUIRED'));
       return;
     }
 
@@ -267,7 +270,7 @@ export class AdminModelsComponent {
             err && typeof err === 'object' && 'message' in err
               ? String((err as { message?: unknown }).message)
               : null;
-          this.error.set(msg || 'No se pudo guardar la credencial.');
+          this.error.set(msg || this.translate.instant('ADMIN.MODELS.ERRORS.SAVE_CREDENTIAL'));
           return EMPTY;
         }),
         finalize(() => this.savingCredential.set(false)),
@@ -290,11 +293,13 @@ export class AdminModelsComponent {
     if (!tenantId) return;
 
     this.confirmationService.confirm({
-      message: `¿Eliminar la credencial de "${cred.provider}"? Los modelos que la usen dejarán de funcionar.`,
-      header: 'Confirmar eliminación',
+      message: this.translate.instant('ADMIN.MODELS.CONFIRM_DELETE_MESSAGE', {
+        provider: cred.provider,
+      }),
+      header: this.translate.instant('ADMIN.MODELS.CONFIRM_DELETE_TITLE'),
       icon: 'md md-warning',
-      acceptLabel: 'Eliminar',
-      rejectLabel: 'Cancelar',
+      acceptLabel: this.translate.instant('ADMIN.MODELS.CONFIRM_DELETE_ACCEPT'),
+      rejectLabel: this.translate.instant('ADMIN.MODELS.CONFIRM_DELETE_REJECT'),
       acceptButtonStyleClass: 'p-button-danger',
       accept: () => {
         this.adminService
@@ -302,7 +307,7 @@ export class AdminModelsComponent {
           .pipe(
             switchMap(() => this.adminService.listTenantCredentials(tenantId)),
             catchError(() => {
-              this.error.set('No se pudo eliminar la credencial.');
+              this.error.set(this.translate.instant('ADMIN.MODELS.ERRORS.DELETE_CREDENTIAL'));
               return EMPTY;
             }),
           )
@@ -332,7 +337,7 @@ export class AdminModelsComponent {
         next: (response: HttpResponse<Blob>) => {
           const body = response.body;
           if (!body) {
-            this.error.set('La exportación vino vacía.');
+            this.error.set(this.translate.instant('ADMIN.MODELS.ERRORS.EXPORT_EMPTY'));
             return;
           }
           const url = URL.createObjectURL(body);
@@ -342,7 +347,7 @@ export class AdminModelsComponent {
           a.click();
           URL.revokeObjectURL(url);
         },
-        error: () => this.error.set('No se pudieron exportar las credenciales.'),
+        error: () => this.error.set(this.translate.instant('ADMIN.MODELS.ERRORS.EXPORT')),
       });
   }
 
@@ -367,10 +372,16 @@ export class AdminModelsComponent {
           forkJoin({
             models: this.adminService.listTenantModels(tenantId).pipe(catchError(() => EMPTY)),
             credentials: this.adminService.listTenantCredentials(tenantId),
-          }).pipe(tap(() => this.savedMessage.set(`Se importaron ${imported} credencial(es).`))),
+          }).pipe(
+            tap(() =>
+              this.savedMessage.set(
+                this.translate.instant('ADMIN.MODELS.IMPORTED_MESSAGE', { count: imported }),
+              ),
+            ),
+          ),
         ),
         catchError(() => {
-          this.error.set('No se pudo importar el archivo de credenciales.');
+          this.error.set(this.translate.instant('ADMIN.MODELS.ERRORS.IMPORT'));
           return EMPTY;
         }),
         finalize(() => this.importing.set(false)),

@@ -9,7 +9,7 @@
         [text]="true"
         [rounded]="true"
         severity="secondary"
-        pTooltip="Cerrar"
+        [pTooltip]="'ADMIN.IMAGES.CLOSE' | translate"
         showDelay="400"
         (onClick)="error.set(null)"
       />
@@ -24,14 +24,14 @@
         [ngModel]="section()"
         (ngModelChange)="onSectionChange($event)"
         [options]="sectionOptions"
-        optionLabel="label"
+        optionLabel="labelKey"
         optionValue="value"
         [allowEmpty]="false"
       >
         <ng-template let-option>
           <span class="flex items-center gap-2">
             <i class="{{ option.icon }}"></i>
-            <span>{{ option.label }}</span>
+            <span>{{ option.labelKey | translate }}</span>
           </span>
         </ng-template>
       </p-selectButton>
@@ -41,11 +41,13 @@
         <input
           pInputText
           type="text"
-          aria-label="Buscar imágenes y recursos"
+          [attr.aria-label]="'ADMIN.IMAGES.SEARCH_ARIA' | translate"
           [ngModel]="search()"
           (ngModelChange)="search.set($event)"
           [placeholder]="
-            section() === 'generated' ? 'Proyecto, pieza o task…' : 'Buscar por nombre…'
+            section() === 'generated'
+              ? ('ADMIN.IMAGES.SEARCH_GENERATED_PLACEHOLDER' | translate)
+              : ('ADMIN.IMAGES.SEARCH_UPLOADS_PLACEHOLDER' | translate)
           "
         />
       </p-iconfield>
@@ -53,7 +55,10 @@
 
     <div class="images-toolbar__group">
       @if (isSuperadmin() && tenantSlug()) {
-        <span class="tenant-chip" [title]="'Recursos del tenant «' + tenantSlug() + '»'">
+        <span
+          class="tenant-chip"
+          [title]="'ADMIN.IMAGES.TENANT_TITLE' | translate: { slug: tenantSlug() }"
+        >
           <i class="md md-business"></i>
           {{ tenantSlug() }}
         </span>
@@ -65,17 +70,20 @@
         [options]="projectOptions()"
         optionLabel="label"
         optionValue="value"
-        placeholder="Todos los proyectos"
+        [placeholder]="'ADMIN.IMAGES.ALL_PROJECTS_PLACEHOLDER' | translate"
         [showClear]="true"
         [filter]="true"
-        filterPlaceholder="Buscar proyecto..."
+        [filterPlaceholder]="'ADMIN.IMAGES.SEARCH_PROJECT_PLACEHOLDER' | translate"
         appendTo="body"
         styleClass="toolbar-select"
       />
 
       <span class="total-chip">
         <strong>{{ totalLabel() }}</strong>
-        <small>{{ section() === 'generated' ? 'imágenes' : 'recursos' }}</small>
+        <small>{{
+          (section() === 'generated' ? 'ADMIN.IMAGES.LABEL_IMAGES' : 'ADMIN.IMAGES.LABEL_RESOURCES')
+            | translate
+        }}</small>
       </span>
     </div>
   </div>
@@ -83,7 +91,10 @@
   @if (loading()) {
     <div class="empty-state" aria-busy="true">
       <span class="sr-only">{{
-        section() === 'generated' ? 'Cargando imágenes…' : 'Cargando recursos…'
+        (section() === 'generated'
+          ? 'ADMIN.IMAGES.LOADING_IMAGES'
+          : 'ADMIN.IMAGES.LOADING_RESOURCES'
+        ) | translate
       }}</span>
       <div class="skel skel-title" aria-hidden="true"></div>
       <div class="skel skel-text" aria-hidden="true"></div>
@@ -94,8 +105,8 @@
     @if (filtered().length === 0) {
       <div class="empty-state">
         <div class="empty-icon"><i class="md md-image"></i></div>
-        <h3>No hay imágenes generadas</h3>
-        <p>Las imágenes completadas aparecerán aquí con su proyecto e información</p>
+        <h3>{{ 'ADMIN.IMAGES.EMPTY_GENERATED_TITLE' | translate }}</h3>
+        <p>{{ 'ADMIN.IMAGES.EMPTY_GENERATED_HINT' | translate }}</p>
       </div>
     } @else {
       <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
@@ -132,7 +143,7 @@
             </div>
             <div class="flex flex-col gap-1 p-3">
               <p class="truncate text-sm font-bold text-ink-on-dark">
-                {{ img.event_name || 'Sin proyecto' }}
+                {{ img.event_name || ('ADMIN.IMAGES.NO_PROJECT' | translate) }}
               </p>
               <div class="flex items-center justify-between text-xs text-ink-muted-on-dark">
                 <span class="truncate">{{ img.piece_code }}</span>
@@ -152,7 +163,7 @@
           [class.solid]="btn.type === 'all'"
           [class.tinted]="btn.type !== 'all'"
           [class.opacity-60]="uploadingType() !== null"
-          [title]="btn.hint"
+          [title]="btn.hintKey | translate"
           tabindex="0"
           role="button"
           (keydown.enter)="typedInput.click()"
@@ -165,8 +176,9 @@
           ></i>
           {{
             uploadingType() === btn.type && uploadProgress()
-              ? 'Subiendo ' + uploadProgress()!.done + '/' + uploadProgress()!.total
-              : btn.label
+              ? ('ADMIN.IMAGES.UPLOADING'
+                | translate: { done: uploadProgress()!.done, total: uploadProgress()!.total })
+              : (btn.labelKey | translate)
           }}
           <input
             #typedInput
@@ -191,7 +203,7 @@
           (click)="ingFilter.set(opt.value)"
         >
           <i class="md {{ opt.icon }}"></i>
-          {{ opt.label }}
+          {{ opt.labelKey | translate }}
           <span class="count" [class.badge]="ingFilter() === opt.value">{{
             ingCounts()[opt.value]
           }}</span>
@@ -204,10 +216,15 @@
         class="mb-4 flex flex-wrap items-center gap-2 rounded-2xl border border-surface-border bg-surface-2 px-4 py-2"
       >
         <span class="text-sm font-bold text-ink-on-dark">
-          {{ selectedAssetIds().size }} seleccionado(s)
+          {{
+            (selectedAssetIds().size === 1
+              ? 'ADMIN.IMAGES.SELECTED_ONE'
+              : 'ADMIN.IMAGES.SELECTED_MANY'
+            ) | translate: { count: selectedAssetIds().size }
+          }}
         </span>
         <p-button
-          label="Asignar a proyecto"
+          [label]="'ADMIN.IMAGES.ASSIGN_TO_PROJECT' | translate"
           icon="md md-work"
           size="small"
           (onClick)="openAssign()"
@@ -215,7 +232,7 @@
         />
         @if (filterProjectId(); as filteredProject) {
           <p-button
-            label="Quitar de «{{ filterProjectName() }}»"
+            [label]="'ADMIN.IMAGES.UNASSIGN_FROM' | translate: { name: filterProjectName() }"
             icon="md md-remove"
             severity="warn"
             size="small"
@@ -224,7 +241,7 @@
           />
         }
         <p-button
-          label="Cancelar"
+          [label]="'ADMIN.IMAGES.CANCEL' | translate"
           icon="md md-close"
           severity="secondary"
           size="small"
@@ -236,94 +253,103 @@
     @if (filteredAssets().length === 0) {
       <div class="empty-state">
         <div class="empty-icon"><i class="md md-upload"></i></div>
-        <h3>No hay recursos subidos</h3>
-        <p>Los archivos que subas (referencias del Studio, etc.) aparecerán aquí</p>
+        <h3>{{ 'ADMIN.IMAGES.EMPTY_UPLOADS_TITLE' | translate }}</h3>
+        <p>{{ 'ADMIN.IMAGES.EMPTY_UPLOADS_HINT' | translate }}</p>
       </div>
     } @else {
-      @for (section of assetSections(); track section.label) {
+      @for (section of assetSections(); track section.labelKey) {
         <h3 class="asset-section-head">
-          {{ section.label }}
+          {{ section.labelKey | translate }}
           <span class="asset-section-count">{{ section.assets.length }}</span>
         </h3>
         <div class="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-6">
-        @for (asset of section.assets; track asset.id; let i = $index) {
-          <div
-            animate.enter="anim-item"
-            [style.animation-delay.ms]="i < 8 ? i * 35 : 280"
-            class="resource-card group cursor-pointer"
-            appTilt
-            (click)="openViewer(asset)"
-            (keydown.enter)="openViewer(asset)"
-            tabindex="0"
-            role="button"
-            [attr.aria-label]="asset.filename"
-          >
-            <div class="relative aspect-square overflow-hidden bg-surface-2">
-              @if (asset.mime_type?.startsWith('image/')) {
-                <img
-                  appImgFade
-                  [src]="assetThumb(asset) | serverUrl"
-                  [alt]="asset.filename"
-                  loading="lazy"
-                  decoding="async"
-                  class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.05]"
-                />
-              } @else if (asset.mime_type?.startsWith('video/')) {
-                <video
-                  [src]="asset.url | serverUrl"
-                  preload="metadata"
-                  class="h-full w-full object-cover"
-                ></video>
-              } @else {
-                <div class="flex h-full w-full items-center justify-center">
-                  <i class="md md-description text-2xl text-ink-muted-on-dark"></i>
-                </div>
-              }
-              @if (asset.trashed) {
-                <span class="overlay-badge" style="top: 8px; left: 8px">PAPELERA</span>
-              }
-              <button
-                type="button"
-                class="select-chip"
-                [class.checked]="selectedAssetIds().has(asset.id)"
-                [attr.title]="
-                  selectedAssetIds().has(asset.id)
-                    ? 'Quitar de la selección'
-                    : 'Seleccionar para asignar'
-                "
-                [attr.aria-label]="
-                  selectedAssetIds().has(asset.id)
-                    ? 'Quitar de la selección'
-                    : 'Seleccionar para asignar'
-                "
-                (click)="$event.stopPropagation(); toggleAssetSel(asset.id)"
-                (keydown.enter)="$event.stopPropagation()"
-              >
-                <i class="md text-xs" [class.md-check]="selectedAssetIds().has(asset.id)"></i>
-              </button>
-              @if (!filterProjectId() && (asset.project_ids?.length ?? 0) > 0) {
-                <span class="overlay-badge" style="bottom: 8px; left: 8px">
-                  <i class="md md-work" style="font-size: 12px"></i>
-                  {{ asset.project_ids!.length }}
-                </span>
-              }
-            </div>
-            <div class="card-body">
-              <p class="filename" [title]="asset.filename">{{ asset.filename }}</p>
-              @if (asset.ingredients?.length) {
-                @for (ing of asset.ingredients; track ing.id) {
-                  <span class="ing-chip" [title]="ingTypeLabel(ing.type) + ': ' + ing.name">
-                    {{ ingTypeLabel(ing.type) }}: {{ ing.name }}
+          @for (asset of section.assets; track asset.id; let i = $index) {
+            <div
+              animate.enter="anim-item"
+              [style.animation-delay.ms]="i < 8 ? i * 35 : 280"
+              class="resource-card group cursor-pointer"
+              appTilt
+              (click)="openViewer(asset)"
+              (keydown.enter)="openViewer(asset)"
+              tabindex="0"
+              role="button"
+              [attr.aria-label]="asset.filename"
+            >
+              <div class="relative aspect-square overflow-hidden bg-surface-2">
+                @if (asset.mime_type?.startsWith('image/')) {
+                  <img
+                    appImgFade
+                    [src]="assetThumb(asset) | serverUrl"
+                    [alt]="asset.filename"
+                    loading="lazy"
+                    decoding="async"
+                    class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.05]"
+                  />
+                } @else if (asset.mime_type?.startsWith('video/')) {
+                  <video
+                    [src]="asset.url | serverUrl"
+                    preload="metadata"
+                    class="h-full w-full object-cover"
+                  ></video>
+                } @else {
+                  <div class="flex h-full w-full items-center justify-center">
+                    <i class="md md-description text-2xl text-ink-muted-on-dark"></i>
+                  </div>
+                }
+                @if (asset.trashed) {
+                  <span class="overlay-badge" style="top: 8px; left: 8px">{{
+                    'ADMIN.IMAGES.TRASHED' | translate
+                  }}</span>
+                }
+                <button
+                  type="button"
+                  class="select-chip"
+                  [class.checked]="selectedAssetIds().has(asset.id)"
+                  [attr.title]="
+                    (selectedAssetIds().has(asset.id)
+                      ? 'ADMIN.IMAGES.DESELECT'
+                      : 'ADMIN.IMAGES.SELECT'
+                    ) | translate
+                  "
+                  [attr.aria-label]="
+                    (selectedAssetIds().has(asset.id)
+                      ? 'ADMIN.IMAGES.DESELECT'
+                      : 'ADMIN.IMAGES.SELECT'
+                    ) | translate
+                  "
+                  (click)="$event.stopPropagation(); toggleAssetSel(asset.id)"
+                  (keydown.enter)="$event.stopPropagation()"
+                >
+                  <i class="md text-xs" [class.md-check]="selectedAssetIds().has(asset.id)"></i>
+                </button>
+                @if (!filterProjectId() && (asset.project_ids?.length ?? 0) > 0) {
+                  <span class="overlay-badge" style="bottom: 8px; left: 8px">
+                    <i class="md md-work" style="font-size: 12px"></i>
+                    {{ asset.project_ids!.length }}
                   </span>
                 }
-              }
-              <div class="meta-row">
-                <span>{{ asset.size ? (asset.size / 1024 | number: '1.0-0') + ' KB' : '—' }}</span>
-                <span>{{ asset.created_at | date: 'shortDate' }}</span>
+              </div>
+              <div class="card-body">
+                <p class="filename" [title]="asset.filename">{{ asset.filename }}</p>
+                @if (asset.ingredients?.length) {
+                  @for (ing of asset.ingredients; track ing.id) {
+                    <span
+                      class="ing-chip"
+                      [title]="(ingTypeLabelKey(ing.type) | translate) + ': ' + ing.name"
+                    >
+                      {{ ingTypeLabelKey(ing.type) | translate }}: {{ ing.name }}
+                    </span>
+                  }
+                }
+                <div class="meta-row">
+                  <span>{{
+                    asset.size ? (asset.size / 1024 | number: '1.0-0') + ' KB' : '—'
+                  }}</span>
+                  <span>{{ asset.created_at | date: 'shortDate' }}</span>
+                </div>
               </div>
             </div>
-          </div>
-        }
+          }
         </div>
       }
     }
@@ -333,16 +359,23 @@
   @if (!loading() && totalLabel() > 0) {
     <div class="pagination-bar mt-4 flex items-center justify-between px-5 py-3">
       <span class="text-sm text-ink-muted-on-dark">
-        Página
-        {{ section() === 'generated' ? page() : assetsPage() }}
-        — {{ totalLabel() }} {{ section() === 'generated' ? 'imágenes' : 'recursos' }}
+        {{
+          'ADMIN.IMAGES.PAGE'
+            | translate: { page: section() === 'generated' ? page() : assetsPage() }
+        }}
+        —
+        {{ totalLabel() }}
+        {{
+          (section() === 'generated' ? 'ADMIN.IMAGES.LABEL_IMAGES' : 'ADMIN.IMAGES.LABEL_RESOURCES')
+            | translate
+        }}
       </span>
       <div class="flex gap-2">
         <p-button
           icon="md md-chevron_left"
           size="small"
           severity="secondary"
-          pTooltip="Página anterior"
+          [pTooltip]="'ADMIN.IMAGES.PREV_PAGE' | translate"
           showDelay="400"
           [disabled]="!hasPrev()"
           (onClick)="prevPage()"
@@ -351,7 +384,7 @@
           icon="md md-chevron_right"
           size="small"
           severity="secondary"
-          pTooltip="Página siguiente"
+          [pTooltip]="'ADMIN.IMAGES.NEXT_PAGE' | translate"
           showDelay="400"
           [disabled]="!hasNext()"
           (onClick)="nextPage()"
@@ -370,7 +403,7 @@
     [resizable]="false"
     [closeOnEscape]="true"
   >
-    @if (selected(); as item) {
+    @if (selected(); as sel) {
       <ng-template #header>
         <div class="flex items-center gap-3">
           <div
@@ -383,16 +416,21 @@
               {{ selectedName() }}
             </h3>
             <p class="text-xs text-ink-muted-on-dark">
-              {{ section() === 'generated' ? 'Imagen generada' : 'Recurso subido' }}
+              {{
+                (section() === 'generated'
+                  ? 'ADMIN.IMAGES.VIEWER_GENERATED'
+                  : 'ADMIN.IMAGES.VIEWER_UPLOADED'
+                ) | translate
+              }}
             </p>
           </div>
         </div>
       </ng-template>
 
-      @if (isGenerated(item)) {
+      @if (isGenerated(sel)) {
         <img
           appImgFade
-          [src]="outputUrl(item) | serverUrl"
+          [src]="outputUrl(sel) | serverUrl"
           [alt]="selectedName()"
           decoding="async"
           class="max-h-[70vh] w-full rounded-xl object-contain"
@@ -401,44 +439,56 @@
           class="mt-4 grid gap-3 rounded-2xl border border-surface-border bg-surface-2 p-4 text-sm sm:grid-cols-3"
         >
           <div>
-            <p class="text-xs text-ink-muted-on-dark">Modelo</p>
-            <p class="font-bold text-ink-on-dark">{{ item.model_name }}</p>
+            <p class="text-xs text-ink-muted-on-dark">
+              {{ 'ADMIN.IMAGES.FIELD_MODEL' | translate }}
+            </p>
+            <p class="font-bold text-ink-on-dark">{{ sel.model_name }}</p>
           </div>
           <div>
-            <p class="text-xs text-ink-muted-on-dark">Proyecto</p>
-            <p class="font-bold text-ink-on-dark">{{ item.event_name || '—' }}</p>
+            <p class="text-xs text-ink-muted-on-dark">
+              {{ 'ADMIN.IMAGES.FIELD_PROJECT' | translate }}
+            </p>
+            <p class="font-bold text-ink-on-dark">{{ sel.event_name || '—' }}</p>
           </div>
           <div>
-            <p class="text-xs text-ink-muted-on-dark">Pieza</p>
-            <p class="font-bold text-ink-on-dark">{{ item.piece_code }} {{ item.piece_name }}</p>
+            <p class="text-xs text-ink-muted-on-dark">
+              {{ 'ADMIN.IMAGES.FIELD_PIECE' | translate }}
+            </p>
+            <p class="font-bold text-ink-on-dark">{{ sel.piece_code }} {{ sel.piece_name }}</p>
           </div>
           <div>
-            <p class="text-xs text-ink-muted-on-dark">Generado por</p>
+            <p class="text-xs text-ink-muted-on-dark">
+              {{ 'ADMIN.IMAGES.FIELD_GENERATED_BY' | translate }}
+            </p>
             <p class="font-bold text-ink-on-dark">
-              {{ item.user_display_name || 'u' + (item.user_id ?? '—') }}
+              {{ sel.user_display_name || 'u' + (sel.user_id ?? '—') }}
             </p>
           </div>
           <div>
-            <p class="text-xs text-ink-muted-on-dark">Fecha</p>
-            <p class="font-bold text-ink-on-dark">{{ item.created_at | date: 'medium' }}</p>
+            <p class="text-xs text-ink-muted-on-dark">
+              {{ 'ADMIN.IMAGES.FIELD_DATE' | translate }}
+            </p>
+            <p class="font-bold text-ink-on-dark">{{ sel.created_at | date: 'medium' }}</p>
           </div>
           <div>
-            <p class="text-xs text-ink-muted-on-dark">Task ID</p>
-            <code class="text-xs text-ink-on-dark">{{ item.task_id }}</code>
+            <p class="text-xs text-ink-muted-on-dark">
+              {{ 'ADMIN.IMAGES.FIELD_TASK_ID' | translate }}
+            </p>
+            <code class="text-xs text-ink-on-dark">{{ sel.task_id }}</code>
           </div>
         </div>
       } @else {
-        @if (item.mime_type?.startsWith('image/')) {
+        @if (sel.mime_type?.startsWith('image/')) {
           <img
             appImgFade
-            [src]="item.url | serverUrl"
-            [alt]="item.filename"
+            [src]="sel.url | serverUrl"
+            [alt]="sel.filename"
             decoding="async"
             class="max-h-[70vh] w-full rounded-xl object-contain"
           />
-        } @else if (item.mime_type?.startsWith('video/')) {
+        } @else if (sel.mime_type?.startsWith('video/')) {
           <video
-            [src]="item.url | serverUrl"
+            [src]="sel.url | serverUrl"
             controls
             class="max-h-[70vh] w-full rounded-xl bg-scrim"
           ></video>
@@ -447,39 +497,49 @@
           class="mt-4 grid gap-3 rounded-2xl border border-surface-border bg-surface-2 p-4 text-sm sm:grid-cols-4"
         >
           <div>
-            <p class="text-xs text-ink-muted-on-dark">Archivo</p>
-            <p class="truncate font-bold text-ink-on-dark" [title]="item.filename">
-              {{ item.filename }}
+            <p class="text-xs text-ink-muted-on-dark">
+              {{ 'ADMIN.IMAGES.FIELD_FILE' | translate }}
+            </p>
+            <p class="truncate font-bold text-ink-on-dark" [title]="sel.filename">
+              {{ sel.filename }}
             </p>
           </div>
           <div>
-            <p class="text-xs text-ink-muted-on-dark">Tamaño</p>
+            <p class="text-xs text-ink-muted-on-dark">
+              {{ 'ADMIN.IMAGES.FIELD_SIZE' | translate }}
+            </p>
             <p class="font-bold text-ink-on-dark">
-              {{ item.size ? (item.size / 1024 | number: '1.0-0') + ' KB' : '—' }}
+              {{ sel.size ? (sel.size / 1024 | number: '1.0-0') + ' KB' : '—' }}
             </p>
           </div>
           <div>
-            <p class="text-xs text-ink-muted-on-dark">Tipo</p>
-            <p class="font-bold text-ink-on-dark">{{ item.mime_type || '—' }}</p>
+            <p class="text-xs text-ink-muted-on-dark">
+              {{ 'ADMIN.IMAGES.FIELD_TYPE' | translate }}
+            </p>
+            <p class="font-bold text-ink-on-dark">{{ sel.mime_type || '—' }}</p>
           </div>
           <div>
-            <p class="text-xs text-ink-muted-on-dark">Subido</p>
-            <p class="font-bold text-ink-on-dark">{{ item.created_at | date: 'medium' }}</p>
+            <p class="text-xs text-ink-muted-on-dark">
+              {{ 'ADMIN.IMAGES.FIELD_UPLOADED' | translate }}
+            </p>
+            <p class="font-bold text-ink-on-dark">{{ sel.created_at | date: 'medium' }}</p>
           </div>
-          @if (item.ingredients?.length) {
+          @if (sel.ingredients?.length) {
             <div class="sm:col-span-4">
-              <p class="mb-1 text-xs text-ink-muted-on-dark">Ingredientes</p>
+              <p class="mb-1 text-xs text-ink-muted-on-dark">
+                {{ 'ADMIN.IMAGES.FIELD_INGREDIENTS' | translate }}
+              </p>
               <div class="flex flex-wrap gap-1">
-                @for (ing of item.ingredients; track ing.id) {
+                @for (ing of sel.ingredients; track ing.id) {
                   <button
                     type="button"
                     class="rounded-full border border-surface-border-strong px-2 py-0.5 text-xs font-bold"
                     [style.background]="'var(--color-surface)'"
                     [style.color]="'var(--color-ink-on-dark)'"
-                    [title]="'Clic para editar'"
+                    [title]="'ADMIN.IMAGES.CLICK_TO_EDIT' | translate"
                     (click)="startIngEdit(ing)"
                   >
-                    {{ ingTypeLabel(ing.type) }}: {{ ing.name }}
+                    {{ ingTypeLabelKey(ing.type) | translate }}: {{ ing.name }}
                   </button>
                 }
               </div>
@@ -488,7 +548,10 @@
           <!-- Crear/editar ingrediente (nombre por defecto: filename con _ → espacio) -->
           <div class="ing-editor sm:col-span-4">
             <p class="editor-title">
-              {{ editIngId() ? 'Editar ingrediente' : 'Asignar ingrediente' }}
+              {{
+                (editIngId() ? 'ADMIN.IMAGES.EDIT_INGREDIENT' : 'ADMIN.IMAGES.ASSIGN_INGREDIENT')
+                  | translate
+              }}
             </p>
             <div class="flex flex-wrap items-center gap-2">
               <p-select
@@ -496,23 +559,30 @@
                 (ngModelChange)="editIngType.set($event)"
                 [ngModelOptions]="{ standalone: true }"
                 [options]="ingTypeOptions"
-                optionLabel="label"
+                optionLabel="labelKey"
                 optionValue="value"
                 [showClear]="false"
                 styleClass="w-36"
                 appendTo="body"
-              />
+              >
+                <ng-template #item let-option>
+                  <span>{{ option.labelKey | translate }}</span>
+                </ng-template>
+                <ng-template #selectedItem let-option>
+                  <span>{{ option.labelKey | translate }}</span>
+                </ng-template>
+              </p-select>
               <input
                 pInputText
                 type="text"
                 [ngModel]="editIngName()"
                 (ngModelChange)="editIngName.set($event)"
                 [ngModelOptions]="{ standalone: true }"
-                placeholder="Nombre del ingrediente"
+                [placeholder]="'ADMIN.IMAGES.INGREDIENT_NAME_PLACEHOLDER' | translate"
                 class="min-w-48 flex-1"
               />
               <p-button
-                [label]="editIngId() ? 'Guardar' : 'Asignar'"
+                [label]="(editIngId() ? 'ADMIN.IMAGES.SAVE' : 'ADMIN.IMAGES.ASSIGN') | translate"
                 icon="md md-check"
                 size="small"
                 [loading]="savingIng()"
@@ -522,7 +592,9 @@
           </div>
           @if (isSuperadmin() && tenantSlug()) {
             <div class="sm:col-span-4">
-              <p class="text-xs text-ink-muted-on-dark">Tenant</p>
+              <p class="text-xs text-ink-muted-on-dark">
+                {{ 'ADMIN.IMAGES.FIELD_TENANT' | translate }}
+              </p>
               <p class="font-bold text-ink-on-dark">{{ tenantSlug() }}</p>
             </div>
           }
@@ -530,11 +602,11 @@
         <div class="mt-4 flex justify-end">
           <p-button
             icon="md md-delete"
-            label="Eliminar recurso"
+            [label]="'ADMIN.IMAGES.DELETE_RESOURCE' | translate"
             severity="danger"
             size="small"
             [text]="true"
-            (onClick)="deleteAsset(item)"
+            (onClick)="deleteAsset(sel)"
           />
         </div>
       }
@@ -549,11 +621,16 @@
     [style]="{ width: 'min(92vw, 28rem)' }"
     [draggable]="false"
     [resizable]="false"
-    header="Asignar a proyecto"
+    [header]="'ADMIN.IMAGES.ASSIGN_DIALOG_TITLE' | translate"
   >
     <div class="flex flex-col gap-3">
       <p class="text-sm text-ink-muted-on-dark">
-        {{ selectedAssetIds().size }} recurso(s) se asignarán al proyecto elegido.
+        {{
+          (selectedAssetIds().size === 1
+            ? 'ADMIN.IMAGES.ASSIGN_HINT_ONE'
+            : 'ADMIN.IMAGES.ASSIGN_HINT_MANY'
+          ) | translate: { count: selectedAssetIds().size }
+        }}
       </p>
       <p-select
         [ngModel]="assignProjectId()"
@@ -561,7 +638,7 @@
         [options]="projectOptions()"
         optionLabel="label"
         optionValue="value"
-        placeholder="Elegí un proyecto"
+        [placeholder]="'ADMIN.IMAGES.CHOOSE_PROJECT' | translate"
         [filter]="true"
         [showClear]="false"
         class="w-full"
@@ -569,14 +646,18 @@
       />
       <div class="flex justify-end gap-2">
         <p-button
-          label="Cancelar"
+          [label]="'ADMIN.IMAGES.CANCEL' | translate"
           size="small"
           [text]="true"
           (onClick)="assignVisible.set(false)"
         />
-        <span pTooltip="Elegí un proyecto para asignar" showDelay="400" class="inline-flex">
+        <span
+          [pTooltip]="'ADMIN.IMAGES.CHOOSE_PROJECT_TOOLTIP' | translate"
+          showDelay="400"
+          class="inline-flex"
+        >
           <p-button
-            label="Asignar"
+            [label]="'ADMIN.IMAGES.ASSIGN' | translate"
             icon="md md-check"
             size="small"
             [disabled]="!assignProjectId()"

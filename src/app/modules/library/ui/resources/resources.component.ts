@@ -9,14 +9,8 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import {
-  catchError,
-  debounceTime,
-  EMPTY,
-  finalize,
-  lastValueFrom,
-  Subject,
-} from 'rxjs';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { catchError, debounceTime, EMPTY, finalize, lastValueFrom, Subject } from 'rxjs';
 
 import { Button } from 'primeng/button';
 import { IconField } from 'primeng/iconfield';
@@ -42,7 +36,7 @@ type ResFilter = 'all' | 'images' | 'videos' | 'audio' | AssetSectionKey | 'othe
 
 interface ResOption {
   value: ResFilter;
-  label: string;
+  labelKey: string;
   icon: string;
 }
 
@@ -60,6 +54,7 @@ interface ResOption {
     DatePipe,
     ServerUrlPipe,
     ImgFadeDirective,
+    TranslatePipe,
   ],
   providers: [ServerUrlPipe],
   templateUrl: './resources.component.html',
@@ -70,6 +65,7 @@ export class ResourcesComponent {
   private readonly libraryService = inject(LibraryService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly serverUrl = inject(ServerUrlPipe);
+  private readonly translate = inject(TranslateService);
 
   protected readonly pageSize = 48;
 
@@ -86,16 +82,15 @@ export class ResourcesComponent {
   protected readonly filter = signal<ResFilter>('all');
 
   protected readonly filterOptions: ResOption[] = [
-    { value: 'all', label: 'Todos', icon: 'md md-grid_view' },
-    { value: 'images', label: 'Imágenes', icon: 'md md-image' },
-    { value: 'videos', label: 'Videos', icon: 'md md-videocam' },
-    { value: 'audio', label: 'Audio', icon: 'md md-play_circle' },
-    { value: 'character', label: 'Personaje', icon: 'md md-person' },
-    { value: 'location', label: 'Ubicación', icon: 'md md-place' },
-    { value: 'props', label: 'Props', icon: 'md md-inventory_2' },
-    { value: 'other', label: 'Otros', icon: 'md md-description' },
+    { value: 'all', labelKey: 'LIBRARY.FILTER_ALL', icon: 'md md-grid_view' },
+    { value: 'images', labelKey: 'LIBRARY.FILTER_IMAGES', icon: 'md md-image' },
+    { value: 'videos', labelKey: 'LIBRARY.FILTER_VIDEOS', icon: 'md md-videocam' },
+    { value: 'audio', labelKey: 'LIBRARY.FILTER_AUDIO', icon: 'md md-play_circle' },
+    { value: 'character', labelKey: 'LIBRARY.FILTER_CHARACTER', icon: 'md md-person' },
+    { value: 'location', labelKey: 'LIBRARY.FILTER_LOCATION', icon: 'md md-place' },
+    { value: 'props', labelKey: 'LIBRARY.FILTER_PROPS', icon: 'md md-inventory_2' },
+    { value: 'other', labelKey: 'LIBRARY.FILTER_OTHER', icon: 'md md-description' },
   ];
-
 
   // ── Modal "Editar elemento" (componente compartido) ─────────────────────
   protected readonly editorVisible = signal(false);
@@ -117,13 +112,11 @@ export class ResourcesComponent {
   }
 
   constructor() {
-    this.search$
-      .pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef))
-      .subscribe((value) => {
-        this.searchTerm.set(value);
-        this.page.set(1);
-        this.load();
-      });
+    this.search$.pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef)).subscribe((value) => {
+      this.searchTerm.set(value);
+      this.page.set(1);
+      this.load();
+    });
 
     this.load();
   }
@@ -142,7 +135,7 @@ export class ResourcesComponent {
       .listFilesPaginated(filters)
       .pipe(
         catchError(() => {
-          this.error.set('No se pudieron cargar los recursos.');
+          this.error.set(this.translate.instant('LIBRARY.ERRORS.LOAD'));
           return EMPTY;
         }),
         finalize(() => this.loading.set(false)),
@@ -152,7 +145,6 @@ export class ResourcesComponent {
         this.total.set(res.total ?? 0);
       });
   }
-
 
   protected onSearchInput(value: string): void {
     this.searchInput.set(value);
@@ -259,7 +251,7 @@ export class ResourcesComponent {
       try {
         await lastValueFrom(this.libraryService.uploadFile(file, category));
       } catch {
-        this.error.set(`No se pudo subir "${file.name}".`);
+        this.error.set(this.translate.instant('LIBRARY.ERRORS.UPLOAD', { name: file.name }));
       }
       done += 1;
       this.uploadProgress.set({ done, total: files.length });
@@ -290,7 +282,6 @@ export class ResourcesComponent {
     void downloadRemoteFile(url ?? '', filename ?? undefined);
   }
 
-
   protected formatSize(size: number | null): string {
     if (!size || size <= 0) {
       return '—';
@@ -302,9 +293,16 @@ export class ResourcesComponent {
   }
 
   protected ingTypeLabel(type: string | null): string {
-    if (type === 'character') return 'personaje';
-    if (type === 'location') return 'locación';
-    if (type === 'props') return 'prop';
-    return type ?? 'recurso';
+    const key =
+      type === 'character'
+        ? 'LIBRARY.ING_CHARACTER'
+        : type === 'location'
+          ? 'LIBRARY.ING_LOCATION'
+          : type === 'props' || type === 'prop'
+            ? 'LIBRARY.ING_PROP'
+            : null;
+    return key
+      ? this.translate.instant(key)
+      : (type ?? this.translate.instant('LIBRARY.ING_RESOURCE'));
   }
 }

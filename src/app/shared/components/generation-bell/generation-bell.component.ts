@@ -7,6 +7,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { Button } from 'primeng/button';
 import { Popover } from 'primeng/popover';
@@ -25,7 +26,16 @@ import { StudioTake } from '@modules/studio/interfaces';
  */
 @Component({
   selector: 'app-generation-bell',
-  imports: [RouterLink, Button, Popover, Tag, Tooltip, ServerUrlPipe, CountUpDirective],
+  imports: [
+    RouterLink,
+    Button,
+    Popover,
+    Tag,
+    Tooltip,
+    ServerUrlPipe,
+    CountUpDirective,
+    TranslatePipe,
+  ],
   templateUrl: './generation-bell.component.html',
   styleUrl: './generation-bell.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

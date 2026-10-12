@@ -12,7 +12,7 @@
         @if (navAvatarUrl(); as avatar) {
           <img
             [src]="avatar | serverUrl"
-            alt="Foto de perfil"
+            alt="{{ 'SHARED.NAV.AVATAR_ALT' | translate }}"
             width="36"
             height="36"
             class="h-9 w-9 rounded-full object-cover"
@@ -20,7 +20,7 @@
         } @else {
           <img
             ngSrc="assets/img/sinappta-logo-sqared.png"
-            alt="Logo Synapta"
+            alt="{{ 'SHARED.NAV.LOGO_ALT' | translate }}"
             width="36"
             height="36"
             class="h-9 w-9"

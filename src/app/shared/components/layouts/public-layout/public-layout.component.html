@@ -7,8 +7,13 @@
       class="mx-auto flex max-w-6xl flex-col gap-3 px-4 sm:flex-row sm:items-center sm:justify-between sm:px-6"
     >
       <p class="text-sm font-bold text-ink">Synapta</p>
-      <nav class="flex flex-wrap items-center gap-x-5 gap-y-1" aria-label="Contacto y redes">
-        <a [href]="'mailto:' + contactEmail" class="text-sm text-ink-muted hover:text-ink">Email</a>
+      <nav
+        class="flex flex-wrap items-center gap-x-5 gap-y-1"
+        [attr.aria-label]="'SHARED.FOOTER.CONTACT_ARIA' | translate"
+      >
+        <a [href]="'mailto:' + contactEmail" class="text-sm text-ink-muted hover:text-ink">{{
+          'SHARED.FOOTER.EMAIL' | translate
+        }}</a>
         @for (social of socials; track social.label) {
           <a [href]="social.href" class="text-sm text-ink-muted hover:text-ink">{{
             social.label

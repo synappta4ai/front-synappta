@@ -1,5 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { catchError, EMPTY, finalize } from 'rxjs';
 
 import { Button } from 'primeng/button';
@@ -28,13 +37,14 @@ const ASSIGNABLE_ROLES = [1, 2, 3].map((value) => ({
 
 @Component({
   selector: 'app-tenant-users-dialog',
-  imports: [FormsModule, Dialog, Button, InputText, Message, Tag],
+  imports: [FormsModule, TranslatePipe, Dialog, Button, InputText, Message, Tag],
   templateUrl: './tenant-users-dialog.component.html',
   styleUrls: ['./tenant-users-dialog.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TenantUsersDialogComponent {
   private readonly adminService = inject(AdminService);
+  private readonly translate = inject(TranslateService);
 
   /** Tenant en gestión (null = diálogo cerrado). */
   readonly tenant = input<Tenant | null>(null);
@@ -78,7 +88,6 @@ export class TenantUsersDialogComponent {
 
   protected readonly tenantId = computed(() => this.tenant()?.id ?? 0);
   protected readonly visible = computed(() => this.tenant() !== null);
-  protected readonly header = computed(() => `Usuarios · ${this.tenant()?.name ?? ''}`);
 
   /** Permisos heredados de la empresa (mostrados marcados y bloqueados). */
   protected readonly inherited = computed(() => this.companyPerms());
@@ -109,7 +118,7 @@ export class TenantUsersDialogComponent {
       .listTenantMembers(id)
       .pipe(
         catchError(() => {
-          this.error.set('No se pudieron cargar los usuarios del tenant.');
+          this.error.set(this.translate.instant('ADMIN.USERS.ERRORS.LOAD_MEMBERS'));
           return EMPTY;
         }),
         finalize(() => this.loading.set(false)),
@@ -138,7 +147,7 @@ export class TenantUsersDialogComponent {
       .updateTenantPermissions(id, [...this.coPermsDraft()])
       .pipe(
         catchError(() => {
-          this.error.set('No se pudieron guardar los permisos de la empresa.');
+          this.error.set(this.translate.instant('ADMIN.USERS.ERRORS.SAVE_COMPANY'));
           return EMPTY;
         }),
         finalize(() => this.savingCompany.set(false)),
@@ -173,7 +182,7 @@ export class TenantUsersDialogComponent {
     const id = this.tenantId();
     if (!id || this.saving()) return;
     if (!this.form.username.trim() || this.form.password.length < 8) {
-      this.error.set('Usuario obligatorio y contraseña de al menos 8 caracteres.');
+      this.error.set(this.translate.instant('ADMIN.USERS.ERRORS.CREATE_VALIDATION'));
       return;
     }
     this.saving.set(true);
@@ -191,7 +200,11 @@ export class TenantUsersDialogComponent {
       })
       .pipe(
         catchError((err: unknown) => {
-          this.error.set(err instanceof Error ? err.message : 'No se pudo crear el usuario.');
+          this.error.set(
+            err instanceof Error
+              ? err.message
+              : this.translate.instant('ADMIN.USERS.ERRORS.CREATE'),
+          );
           return EMPTY;
         }),
         finalize(() => this.saving.set(false)),
@@ -218,7 +231,7 @@ export class TenantUsersDialogComponent {
       .listPlatformUsers(q)
       .pipe(
         catchError(() => {
-          this.error.set('No se pudo buscar usuarios.');
+          this.error.set(this.translate.instant('ADMIN.USERS.ERRORS.SEARCH'));
           return EMPTY;
         }),
       )
@@ -248,7 +261,11 @@ export class TenantUsersDialogComponent {
       })
       .pipe(
         catchError((err: unknown) => {
-          this.error.set(err instanceof Error ? err.message : 'No se pudo agregar el usuario.');
+          this.error.set(
+            err instanceof Error
+              ? err.message
+              : this.translate.instant('ADMIN.USERS.ERRORS.ATTACH'),
+          );
           return EMPTY;
         }),
         finalize(() => this.saving.set(false)),
@@ -270,7 +287,7 @@ export class TenantUsersDialogComponent {
       .updateTenantMemberRole(id, member.id, roleLevel)
       .pipe(
         catchError(() => {
-          this.error.set('No se pudo cambiar el rol.');
+          this.error.set(this.translate.instant('ADMIN.USERS.ERRORS.ROLE'));
           this.loadMembers();
           return EMPTY;
         }),
@@ -320,7 +337,7 @@ export class TenantUsersDialogComponent {
       .updateTenantMemberPermissions(id, member.id, [...this.editPerms()])
       .pipe(
         catchError(() => {
-          this.error.set('No se pudieron guardar los permisos.');
+          this.error.set(this.translate.instant('ADMIN.USERS.ERRORS.SAVE_PERMS'));
           return EMPTY;
         }),
         finalize(() => this.saving.set(false)),
@@ -342,7 +359,7 @@ export class TenantUsersDialogComponent {
       .removeTenantMember(id, member.id)
       .pipe(
         catchError(() => {
-          this.error.set('No se pudo quitar al usuario del tenant.');
+          this.error.set(this.translate.instant('ADMIN.USERS.ERRORS.REMOVE'));
           return EMPTY;
         }),
         finalize(() => this.saving.set(false)),

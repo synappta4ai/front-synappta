@@ -1,6 +1,7 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { catchError, EMPTY, finalize, forkJoin, lastValueFrom, mergeMap, of } from 'rxjs';
 import { Observable } from 'rxjs';
 
@@ -49,6 +50,7 @@ type IngFilter = 'all' | 'character' | 'location' | 'prop';
     ServerUrlPipe,
     TiltDirective,
     ImgFadeDirective,
+    TranslatePipe,
   ],
   templateUrl: './admin-images.component.html',
   styleUrl: './admin-images.component.css',
@@ -59,6 +61,7 @@ export class AdminImagesComponent {
   private readonly libraryService = inject(LibraryService);
   private readonly eventsService = inject(EventsService);
   private readonly sessionStore = inject(UserSessionStore);
+  private readonly translate = inject(TranslateService);
 
   protected readonly isSuperadmin = computed(
     () => this.sessionStore.currentUser()?.role_level === 0,
@@ -67,8 +70,8 @@ export class AdminImagesComponent {
   /** Sección activa: imágenes generadas o recursos subidos. */
   protected readonly section = signal<Section>('generated');
   protected readonly sectionOptions = [
-    { label: 'Generadas', value: 'generated', icon: 'md md-image' },
-    { label: 'Recursos subidos', value: 'uploads', icon: 'md md-upload' },
+    { labelKey: 'ADMIN.IMAGES.SECTION_GENERATED', value: 'generated', icon: 'md md-image' },
+    { labelKey: 'ADMIN.IMAGES.SECTION_UPLOADS', value: 'uploads', icon: 'md md-upload' },
   ];
 
   // ─── Generated ────────────────────────────────────────────────
@@ -92,53 +95,53 @@ export class AdminImagesComponent {
 
   /** Slug del tenant dueño de los recursos (visible para superadmin). */
   protected readonly tenantSlug = signal<string | null>(null);
-  protected readonly ingTypeLabels: Record<string, string> = {
-    character: 'Personaje',
-    location: 'Locación',
-    prop: 'Prop',
+  private readonly ingTypeLabelKeys: Record<string, string> = {
+    character: 'ADMIN.IMAGES.FILTER_CHARACTER',
+    location: 'ADMIN.IMAGES.FILTER_LOCATION',
+    prop: 'ADMIN.IMAGES.FILTER_PROP',
   };
 
   // ─── Tabs por tipo de ingrediente + subida múltiple ───────────
   protected readonly ingFilter = signal<IngFilter>('all');
-  protected readonly ingFilterOptions: { value: IngFilter; label: string; icon: string }[] = [
-    { value: 'all', label: 'Todos', icon: 'md md-grid_view' },
-    { value: 'character', label: 'Personaje', icon: 'md md-person' },
-    { value: 'location', label: 'Locación', icon: 'md md-place' },
-    { value: 'prop', label: 'Prop', icon: 'md md-inventory_2' },
+  protected readonly ingFilterOptions: { value: IngFilter; labelKey: string; icon: string }[] = [
+    { value: 'all', labelKey: 'ADMIN.IMAGES.FILTER_ALL', icon: 'md md-grid_view' },
+    { value: 'character', labelKey: 'ADMIN.IMAGES.FILTER_CHARACTER', icon: 'md md-person' },
+    { value: 'location', labelKey: 'ADMIN.IMAGES.FILTER_LOCATION', icon: 'md md-place' },
+    { value: 'prop', labelKey: 'ADMIN.IMAGES.FILTER_PROP', icon: 'md md-inventory_2' },
   ];
   protected readonly uploadButtons: {
     type: IngFilter;
-    label: string;
+    labelKey: string;
     icon: string;
-    hint: string;
+    hintKey: string;
     accept: string;
   }[] = [
     {
       type: 'all',
-      label: 'Todos',
+      labelKey: 'ADMIN.IMAGES.FILTER_ALL',
       icon: 'md md-upload',
-      hint: 'Subir múltiples archivos (sin tipo)',
+      hintKey: 'ADMIN.IMAGES.UPLOAD_ALL_HINT',
       accept: 'image/*,video/*,audio/*',
     },
     {
       type: 'character',
-      label: 'Personaje',
+      labelKey: 'ADMIN.IMAGES.FILTER_CHARACTER',
       icon: 'md md-person',
-      hint: 'Subir múltiples personajes (imágenes)',
+      hintKey: 'ADMIN.IMAGES.UPLOAD_CHARACTER_HINT',
       accept: 'image/*',
     },
     {
       type: 'location',
-      label: 'Locación',
+      labelKey: 'ADMIN.IMAGES.FILTER_LOCATION',
       icon: 'md md-place',
-      hint: 'Subir múltiples locaciones (imágenes)',
+      hintKey: 'ADMIN.IMAGES.UPLOAD_LOCATION_HINT',
       accept: 'image/*',
     },
     {
       type: 'prop',
-      label: 'Prop',
+      labelKey: 'ADMIN.IMAGES.FILTER_PROP',
       icon: 'md md-inventory_2',
-      hint: 'Subir múltiples props (imágenes)',
+      hintKey: 'ADMIN.IMAGES.UPLOAD_PROP_HINT',
       accept: 'image/*',
     },
   ];
@@ -159,9 +162,9 @@ export class AdminImagesComponent {
 
   // ─── Editor de ingrediente (viewer) ────────────────────────────
   protected readonly ingTypeOptions = [
-    { label: 'Personaje', value: 'character' },
-    { label: 'Locación', value: 'location' },
-    { label: 'Prop', value: 'prop' },
+    { labelKey: 'ADMIN.IMAGES.FILTER_CHARACTER', value: 'character' },
+    { labelKey: 'ADMIN.IMAGES.FILTER_LOCATION', value: 'location' },
+    { labelKey: 'ADMIN.IMAGES.FILTER_PROP', value: 'prop' },
   ];
   protected readonly editIngId = signal<string | null>(null);
   protected readonly editIngType = signal<string>('character');
@@ -198,14 +201,17 @@ export class AdminImagesComponent {
   });
 
   /** Recursos agrupados por sección de referencia (Personaje/Ubicación/Props). */
-  protected readonly assetSections = computed<{ label: string; assets: FileAsset[] }[]>(() => {
+  protected readonly assetSections = computed<{ labelKey: string; assets: FileAsset[] }[]>(() => {
     const list = this.filteredAssets();
     const groups = [
       ...ASSET_SECTIONS.map((s) => ({
-        label: s.label,
+        labelKey: this.ingTypeLabelKeys[s.key] ?? s.key,
         assets: list.filter((a) => a.category === s.key),
       })),
-      { label: 'Otros recursos', assets: list.filter((a) => !isAssetSection(a.category)) },
+      {
+        labelKey: 'ADMIN.IMAGES.SECTIONS_OTHER',
+        assets: list.filter((a) => !isAssetSection(a.category)),
+      },
     ];
     return groups.filter((g) => g.assets.length > 0);
   });
@@ -317,7 +323,7 @@ export class AdminImagesComponent {
       .listGeneratedImages(this.page(), this.limit, this.filterProjectId() ?? undefined)
       .pipe(
         catchError(() => {
-          this.error.set('No se pudieron cargar las imágenes generadas.');
+          this.error.set(this.translate.instant('ADMIN.IMAGES.ERRORS.LOAD_IMAGES'));
           return EMPTY;
         }),
         finalize(() => this.loading.set(false)),
@@ -338,7 +344,7 @@ export class AdminImagesComponent {
       })
       .pipe(
         catchError(() => {
-          this.error.set('No se pudieron cargar los recursos subidos.');
+          this.error.set(this.translate.instant('ADMIN.IMAGES.ERRORS.LOAD_UPLOADS'));
           return EMPTY;
         }),
         finalize(() => this.loading.set(false)),
@@ -444,7 +450,7 @@ export class AdminImagesComponent {
     req$
       .pipe(
         catchError(() => {
-          this.error.set('No se pudo guardar el ingrediente.');
+          this.error.set(this.translate.instant('ADMIN.IMAGES.ERRORS.SAVE_INGREDIENT'));
           return EMPTY;
         }),
         finalize(() => this.savingIng.set(false)),
@@ -516,7 +522,7 @@ export class AdminImagesComponent {
           this.assetsTotal.update((t) => t + 1);
         }
       } catch {
-        this.error.set(`No se pudo subir "${file.name}".`);
+        this.error.set(this.translate.instant('ADMIN.IMAGES.ERRORS.UPLOAD', { name: file.name }));
       }
       done += 1;
       this.uploadProgress.set({ done, total: files.length });
@@ -536,9 +542,9 @@ export class AdminImagesComponent {
     return asset.thumbnail_url || asset.url || '';
   }
 
-  /** Etiqueta legible del tipo de ingrediente. */
-  protected ingTypeLabel(type: string): string {
-    return this.ingTypeLabels[type] ?? type;
+  /** Clave i18n de la etiqueta legible del tipo de ingrediente. */
+  protected ingTypeLabelKey(type: string): string {
+    return this.ingTypeLabelKeys[type] ?? type;
   }
 
   /** Severity PrimeNG para el tag del tipo de ingrediente. */
@@ -579,7 +585,7 @@ export class AdminImagesComponent {
       .deleteFile(asset.id)
       .pipe(
         catchError(() => {
-          this.error.set('No se pudo eliminar el recurso.');
+          this.error.set(this.translate.instant('ADMIN.IMAGES.ERRORS.DELETE'));
           return EMPTY;
         }),
       )

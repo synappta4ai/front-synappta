@@ -1,6 +1,6 @@
 <p-dialog
   [visible]="visible()"
-  [header]="header()"
+  [header]="'ADMIN.USERS.HEADER' | translate: { name: tenant()?.name ?? '' }"
   [modal]="true"
   [style]="{ width: 'min(96vw, 46rem)' }"
   [draggable]="false"
@@ -16,13 +16,15 @@
   <div class="company-section">
     <div class="company-head">
       <div>
-        <p class="text-sm font-bold text-ink-on-dark">Permisos de la empresa</p>
+        <p class="text-sm font-bold text-ink-on-dark">
+          {{ 'ADMIN.USERS.COMPANY_TITLE' | translate }}
+        </p>
         <p class="text-xs text-ink-muted-on-dark">
-          Heredados por todos los usuarios: si agregás o quitás acá, afecta a cada usuario del tenant.
+          {{ 'ADMIN.USERS.COMPANY_HINT' | translate }}
         </p>
       </div>
       <p-button
-        label="Guardar empresa"
+        [label]="'ADMIN.USERS.COMPANY_SAVE' | translate"
         size="small"
         [loading]="savingCompany()"
         (onClick)="saveCompanyPerms()"
@@ -48,10 +50,10 @@
   <!-- Lista de miembros -->
   <div class="members-section">
     @if (loading()) {
-      <p class="text-sm text-ink-muted-on-dark">Cargando usuarios…</p>
+      <p class="text-sm text-ink-muted-on-dark">{{ 'ADMIN.USERS.LOADING' | translate }}</p>
     } @else if (members().length === 0) {
       <p class="text-sm text-ink-muted-on-dark">
-        Este tenant todavía no tiene usuarios. Creá el primero abajo.
+        {{ 'ADMIN.USERS.EMPTY' | translate }}
       </p>
     } @else {
       @for (member of members(); track member.id) {
@@ -59,7 +61,10 @@
           <div class="member-identity">
             <p class="member-name">{{ member.name }} {{ member.surname }}</p>
             <p class="member-sub">
-              &#64;{{ member.username }}@if (member.email) { · {{ member.email }} }
+              &#64;{{ member.username }}
+              @if (member.email) {
+                · {{ member.email }}
+              }
             </p>
           </div>
           <div class="member-role">
@@ -78,13 +83,19 @@
             }
           </div>
           <div class="member-perms">
-            <p-tag [value]="effectiveCount(member) + ' efectivos'" />
-            <button
-              type="button"
-              class="link-btn"
-              (click)="toggleEditPerms(member)"
-            >
-              {{ editingPerms() === member.id ? 'Cerrar' : 'Permisos' }}
+            <p-tag
+              [value]="
+                (effectiveCount(member) === 1
+                  ? 'ADMIN.USERS.EFFECTIVE_SINGULAR'
+                  : 'ADMIN.USERS.EFFECTIVE_PLURAL'
+                ) | translate: { count: effectiveCount(member) }
+              "
+            />
+            <button type="button" class="link-btn" (click)="toggleEditPerms(member)">
+              {{
+                (editingPerms() === member.id ? 'ADMIN.USERS.CLOSE' : 'ADMIN.USERS.PERMISSIONS')
+                  | translate
+              }}
             </button>
           </div>
           <div class="member-actions">
@@ -94,14 +105,14 @@
               [disabled]="saving()"
               (click)="remove(member)"
             >
-              Quitar
+              {{ 'ADMIN.USERS.REMOVE' | translate }}
             </button>
           </div>
         </div>
         @if (editingPerms() === member.id) {
           <div class="perms-panel">
             <p class="text-xs font-bold text-ink-on-dark">
-              Permisos de &#64;{{ member.username }} — los de la empresa son heredados; marcá solo los adicionales.
+              {{ 'ADMIN.USERS.PERMS_HINT' | translate: { username: member.username } }}
             </p>
             <div class="perms-grid">
               @for (def of catalog(); track def.key) {
@@ -122,7 +133,7 @@
             </div>
             <div class="perms-panel-actions">
               <p-button
-                label="Guardar permisos"
+                [label]="'ADMIN.USERS.SAVE_PERMS' | translate"
                 size="small"
                 [loading]="saving()"
                 (onClick)="savePerms(member)"
@@ -137,7 +148,7 @@
   <div class="divider"></div>
 
   <!-- Alta de usuarios -->
-  <h4 class="text-sm font-bold text-ink-on-dark">Agregar usuario al tenant</h4>
+  <h4 class="text-sm font-bold text-ink-on-dark">{{ 'ADMIN.USERS.ADD_TITLE' | translate }}</h4>
   <div class="mode-toggle">
     <button
       type="button"
@@ -145,7 +156,7 @@
       [class.active]="mode() === 'new'"
       (click)="setMode('new')"
     >
-      Usuario nuevo
+      {{ 'ADMIN.USERS.MODE_NEW' | translate }}
     </button>
     <button
       type="button"
@@ -153,34 +164,39 @@
       [class.active]="mode() === 'existing'"
       (click)="setMode('existing')"
     >
-      Usuario existente
+      {{ 'ADMIN.USERS.MODE_EXISTING' | translate }}
     </button>
   </div>
 
   @if (mode() === 'new') {
     <div class="new-form">
       <div class="field">
-        <label>Usuario *</label>
-        <input pInputText type="text" [(ngModel)]="form.username" placeholder="nombre.apellido" />
+        <label>{{ 'ADMIN.USERS.USERNAME_LABEL' | translate }}</label>
+        <input
+          pInputText
+          type="text"
+          [(ngModel)]="form.username"
+          [placeholder]="'ADMIN.USERS.USERNAME_PLACEHOLDER' | translate"
+        />
       </div>
       <div class="field">
-        <label>Contraseña * (mín. 8)</label>
+        <label>{{ 'ADMIN.USERS.PASSWORD_LABEL' | translate }}</label>
         <input pInputText type="password" [(ngModel)]="form.password" />
       </div>
       <div class="field">
-        <label>Nombre</label>
+        <label>{{ 'ADMIN.USERS.NAME_LABEL' | translate }}</label>
         <input pInputText type="text" [(ngModel)]="form.name" />
       </div>
       <div class="field">
-        <label>Apellido</label>
+        <label>{{ 'ADMIN.USERS.SURNAME_LABEL' | translate }}</label>
         <input pInputText type="text" [(ngModel)]="form.surname" />
       </div>
       <div class="field">
-        <label>Email</label>
+        <label>{{ 'ADMIN.USERS.EMAIL_LABEL' | translate }}</label>
         <input pInputText type="email" [(ngModel)]="form.email" />
       </div>
       <div class="field">
-        <label>Rol en el tenant</label>
+        <label>{{ 'ADMIN.USERS.ROLE_LABEL' | translate }}</label>
         <select class="role-select" [ngModel]="form.role" (ngModelChange)="form.role = $event">
           @for (role of roleOptions; track role.value) {
             <option [value]="role.value">{{ role.label }}</option>
@@ -188,7 +204,7 @@
         </select>
       </div>
       <div class="field field-wide">
-        <label>Permisos adicionales (los de la empresa ya los hereda)</label>
+        <label>{{ 'ADMIN.USERS.EXTRA_PERMS_LABEL' | translate }}</label>
         <div class="perms-grid">
           @for (def of catalog(); track def.key) {
             <label class="perm-check" [class.inherited]="inherited().has(def.key)">
@@ -204,7 +220,7 @@
         </div>
       </div>
       <p-button
-        label="Crear usuario"
+        [label]="'ADMIN.USERS.CREATE_BUTTON' | translate"
         icon="md md-person_add"
         [loading]="saving()"
         (onClick)="createNew()"
@@ -213,13 +229,13 @@
   } @else {
     <div class="existing-form">
       <div class="field">
-        <label>Buscar usuario existente (usuario, nombre o email)</label>
+        <label>{{ 'ADMIN.USERS.SEARCH_LABEL' | translate }}</label>
         <input
           pInputText
           type="text"
           [ngModel]="search()"
           (ngModelChange)="onSearchChange($event)"
-          placeholder="mínimo 2 caracteres"
+          [placeholder]="'ADMIN.USERS.SEARCH_PLACEHOLDER' | translate"
         />
       </div>
       @if (results().length > 0) {
@@ -228,10 +244,15 @@
             <div class="result-row">
               <div>
                 <p class="member-name">&#64;{{ user.username }}</p>
-                <p class="member-sub">{{ user.name }} {{ user.surname }} @if (user.email) { · {{ user.email }} }</p>
+                <p class="member-sub">
+                  {{ user.name }} {{ user.surname }}
+                  @if (user.email) {
+                    · {{ user.email }}
+                  }
+                </p>
               </div>
               <p-button
-                label="Agregar"
+                [label]="'ADMIN.USERS.ADD_BUTTON' | translate"
                 size="small"
                 [loading]="saving()"
                 (onClick)="attachExisting(user)"
@@ -240,10 +261,10 @@
           }
         </div>
         <p class="text-xs text-ink-muted-on-dark">
-          Se agrega como USER y hereda los permisos de la empresa; ajustá rol y extras en la lista.
+          {{ 'ADMIN.USERS.EXISTING_HINT' | translate }}
         </p>
         <div class="field field-wide">
-          <label>Permisos adicionales para los resultados</label>
+          <label>{{ 'ADMIN.USERS.EXTRA_PERMS_RESULTS' | translate }}</label>
           <div class="perms-grid">
             @for (def of catalog(); track def.key) {
               @if (!inherited().has(def.key)) {
@@ -265,6 +286,11 @@
   }
 
   <ng-template #footer>
-    <p-button label="Cerrar" size="small" [text]="true" (onClick)="close()" />
+    <p-button
+      [label]="'ADMIN.USERS.CLOSE' | translate"
+      size="small"
+      [text]="true"
+      (onClick)="close()"
+    />
   </ng-template>
 </p-dialog>

@@ -8,17 +8,23 @@
   <!-- Header / filters -->
   <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
     <div class="flex items-center gap-2">
-      <span class="text-sm font-bold text-ink">Videos generados</span>
-      <p-tag [value]="total() + ' videos'" severity="info" />
+      <span class="text-sm font-bold text-ink">{{ 'ADMIN.VIDEOS.TITLE' | translate }}</span>
+      <p-tag
+        [value]="
+          (total() === 1 ? 'ADMIN.VIDEOS.COUNT_ONE' : 'ADMIN.VIDEOS.COUNT_MANY')
+            | translate: { count: total() }
+        "
+        severity="info"
+      />
     </div>
     <div class="flex items-center gap-2">
       <input
         pInputText
         type="text"
-        aria-label="Filtrar videos"
+        [attr.aria-label]="'ADMIN.VIDEOS.FILTER_ARIA' | translate"
         [ngModel]="search()"
         (ngModelChange)="search.set($event)"
-        placeholder="Filtrar por proyecto, pieza o task..."
+        [placeholder]="'ADMIN.VIDEOS.FILTER_PLACEHOLDER' | translate"
         class="w-64 rounded-xl"
       />
     </div>
@@ -29,7 +35,7 @@
       class="flex flex-col gap-2 rounded-3xl border border-surface-border bg-surface p-6"
       aria-busy="true"
     >
-      <span class="sr-only">Cargando videos…</span>
+      <span class="sr-only">{{ 'ADMIN.VIDEOS.LOADING' | translate }}</span>
       <div class="skel skel-title" aria-hidden="true"></div>
       <div class="skel skel-text" aria-hidden="true"></div>
       <div class="skel skel-text" aria-hidden="true"></div>
@@ -44,9 +50,9 @@
           <i class="md md-videocam text-3xl text-ink-muted-on-dark"></i>
         </div>
         <div class="text-center">
-          <p class="font-bold text-ink-on-dark">No hay videos generados</p>
+          <p class="font-bold text-ink-on-dark">{{ 'ADMIN.VIDEOS.EMPTY_TITLE' | translate }}</p>
           <p class="mt-1 text-sm text-ink-muted-on-dark">
-            Los videos completados aparecerán aquí con su proyecto e información
+            {{ 'ADMIN.VIDEOS.EMPTY_HINT' | translate }}
           </p>
         </div>
       </div>
@@ -66,7 +72,11 @@
               (keydown.enter)="openPlayer(v)"
               tabindex="0"
               role="button"
-              [attr.aria-label]="'Ver video de ' + (v.event_name || 'proyecto sin nombre')"
+              [attr.aria-label]="
+                'ADMIN.VIDEOS.VIEW_ARIA'
+                  | translate
+                    : { name: v.event_name || ('ADMIN.VIDEOS.NO_PROJECT_NAME' | translate) }
+              "
             >
               <video
                 [src]="outputUrl(v) | serverUrl"
@@ -96,7 +106,7 @@
               <div class="flex items-start justify-between gap-2">
                 <div class="min-w-0">
                   <p class="truncate font-bold text-ink-on-dark">
-                    {{ v.event_name || 'Proyecto sin nombre' }}
+                    {{ v.event_name || ('ADMIN.VIDEOS.NO_PROJECT' | translate) }}
                   </p>
                   <p class="truncate text-xs text-ink-muted-on-dark">
                     {{ v.piece_code }}
@@ -150,7 +160,7 @@
                 </code>
                 <p-button
                   icon="md md-play_arrow"
-                  label="Ver"
+                  [label]="'ADMIN.VIDEOS.VIEW' | translate"
                   size="small"
                   text
                   (onClick)="openPlayer(v)"
@@ -166,14 +176,18 @@
         class="mt-4 flex items-center justify-between rounded-3xl border border-surface-border bg-surface px-5 py-3"
       >
         <span class="text-sm text-ink-muted-on-dark">
-          Página {{ page() }} — {{ total() }} videos
+          {{ 'ADMIN.VIDEOS.PAGE' | translate: { page: page() } }} —
+          {{
+            (total() === 1 ? 'ADMIN.VIDEOS.COUNT_ONE' : 'ADMIN.VIDEOS.COUNT_MANY')
+              | translate: { count: total() }
+          }}
         </span>
         <div class="flex gap-2">
           <p-button
             icon="md md-chevron_left"
             size="small"
             severity="secondary"
-            pTooltip="Página anterior"
+            [pTooltip]="'ADMIN.VIDEOS.PREV_PAGE' | translate"
             showDelay="400"
             [disabled]="!hasPrev()"
             (onClick)="prevPage()"
@@ -182,7 +196,7 @@
             icon="md md-chevron_right"
             size="small"
             severity="secondary"
-            pTooltip="Página siguiente"
+            [pTooltip]="'ADMIN.VIDEOS.NEXT_PAGE' | translate"
             showDelay="400"
             [disabled]="!hasNext()"
             (onClick)="nextPage()"
@@ -212,7 +226,7 @@
           </div>
           <div>
             <h3 class="text-lg font-bold text-ink-on-dark">
-              {{ v.event_name || 'Video generado' }}
+              {{ v.event_name || ('ADMIN.VIDEOS.GENERATED_VIDEO' | translate) }}
             </h3>
             <p class="text-xs text-ink-muted-on-dark">
               {{ v.piece_code }}
@@ -220,7 +234,12 @@
                 <span> · {{ v.piece_name }}</span>
               }
               @if (v.generation_number) {
-                <span> · Generación #{{ v.generation_number }}</span>
+                <span>
+                  ·
+                  {{
+                    'ADMIN.VIDEOS.GENERATION_NUMBER' | translate: { number: v.generation_number }
+                  }}
+                </span>
               }
             </p>
           </div>
@@ -239,15 +258,19 @@
         class="mt-4 grid gap-3 rounded-2xl border border-surface-border bg-surface-2 p-4 text-sm sm:grid-cols-4"
       >
         <div>
-          <p class="text-xs text-ink-muted-on-dark">Modelo</p>
+          <p class="text-xs text-ink-muted-on-dark">{{ 'ADMIN.VIDEOS.FIELD_MODEL' | translate }}</p>
           <p class="font-bold text-ink-on-dark">{{ v.model_name }}</p>
         </div>
         <div>
-          <p class="text-xs text-ink-muted-on-dark">Duración</p>
+          <p class="text-xs text-ink-muted-on-dark">
+            {{ 'ADMIN.VIDEOS.FIELD_DURATION' | translate }}
+          </p>
           <p class="font-bold text-ink-on-dark">{{ formatDuration(v.video_duration) }}</p>
         </div>
         <div>
-          <p class="text-xs text-ink-muted-on-dark">Resolución</p>
+          <p class="text-xs text-ink-muted-on-dark">
+            {{ 'ADMIN.VIDEOS.FIELD_RESOLUTION' | translate }}
+          </p>
           <p class="font-bold text-ink-on-dark">
             {{ v.video_resolution || '—' }}
             @if (v.video_fps) {
@@ -256,7 +279,9 @@
           </p>
         </div>
         <div>
-          <p class="text-xs text-ink-muted-on-dark">Ratio / Seed</p>
+          <p class="text-xs text-ink-muted-on-dark">
+            {{ 'ADMIN.VIDEOS.FIELD_RATIO_SEED' | translate }}
+          </p>
           <p class="font-bold text-ink-on-dark">
             {{ v.video_ratio || '—' }}
             @if (v.video_seed) {
@@ -265,28 +290,35 @@
           </p>
         </div>
         <div>
-          <p class="text-xs text-ink-muted-on-dark">Tokens</p>
+          <p class="text-xs text-ink-muted-on-dark">
+            {{ 'ADMIN.VIDEOS.FIELD_TOKENS' | translate }}
+          </p>
           <p class="font-bold text-ink-on-dark">
             {{ v.usage_tokens | number: '1.0-0' }}
             @if (v.usage_completion_tokens) {
               <span class="text-xs text-ink-muted-on-dark">
-                ({{ v.usage_completion_tokens | number: '1.0-0' }} completion)</span
+                ({{ v.usage_completion_tokens | number: '1.0-0' }}
+                {{ 'ADMIN.VIDEOS.COMPLETION' | translate }})</span
               >
             }
           </p>
         </div>
         <div>
-          <p class="text-xs text-ink-muted-on-dark">Generado por</p>
+          <p class="text-xs text-ink-muted-on-dark">
+            {{ 'ADMIN.VIDEOS.FIELD_GENERATED_BY' | translate }}
+          </p>
           <p class="font-bold text-ink-on-dark">
             {{ v.user_display_name || 'u' + (v.user_id ?? '—') }}
           </p>
         </div>
         <div>
-          <p class="text-xs text-ink-muted-on-dark">Fecha</p>
+          <p class="text-xs text-ink-muted-on-dark">{{ 'ADMIN.VIDEOS.FIELD_DATE' | translate }}</p>
           <p class="font-bold text-ink-on-dark">{{ v.created_at | date: 'medium' }}</p>
         </div>
         <div>
-          <p class="text-xs text-ink-muted-on-dark">Task ID</p>
+          <p class="text-xs text-ink-muted-on-dark">
+            {{ 'ADMIN.VIDEOS.FIELD_TASK_ID' | translate }}
+          </p>
           <code class="text-xs text-ink-on-dark">{{ v.task_id }}</code>
         </div>
       </div>

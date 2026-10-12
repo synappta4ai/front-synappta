@@ -1,4 +1,4 @@
-<app-page-container title="Consola de Administración" animate.enter="anim-page">
+<app-page-container [title]="'ADMIN.CONSOLE.TITLE' | translate" animate.enter="anim-page">
   <p-tabs [value]="activeValue()" [scrollable]="true" styleClass="admin-console-tabs">
     <p-tablist>
       @for (item of tabItems(); track item.value) {
@@ -8,7 +8,7 @@
             class="flex items-center gap-2 no-underline outline-none"
           >
             <i class="{{ item.icon }}"></i>
-            <span>{{ item.label }}</span>
+            <span>{{ item.labelKey | translate }}</span>
           </a>
         </p-tab>
       }

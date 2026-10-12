@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { TranslatePipe } from '@ngx-translate/core';
 import { Tabs, Tab, TabList } from 'primeng/tabs';
 
 import { UserSessionStore } from '@core/store/user.session';
@@ -8,7 +9,7 @@ import { PageContainerComponent } from '@shared/components/index';
 
 @Component({
   selector: 'app-admin-console',
-  imports: [Tabs, Tab, TabList, RouterLink, RouterOutlet, PageContainerComponent],
+  imports: [Tabs, Tab, TabList, RouterLink, RouterOutlet, PageContainerComponent, TranslatePipe],
   templateUrl: './admin-console.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -23,15 +24,35 @@ export class AdminConsoleComponent {
 
   protected readonly tabItems = computed(() => {
     const items = [
-      { value: 'models', label: 'Modelos', icon: 'md md-memory', routerLink: '/admin/models' },
-      { value: 'videos', label: 'Videos', icon: 'md md-videocam', routerLink: '/admin/videos' },
-      { value: 'imagens', label: 'Imágenes', icon: 'md md-image', routerLink: '/admin/imagens' },
-      { value: 'logs', label: 'Logs', icon: 'md md-list', routerLink: '/admin/logs' },
+      {
+        value: 'models',
+        labelKey: 'ADMIN.CONSOLE.TAB_MODELS',
+        icon: 'md md-memory',
+        routerLink: '/admin/models',
+      },
+      {
+        value: 'videos',
+        labelKey: 'ADMIN.CONSOLE.TAB_VIDEOS',
+        icon: 'md md-videocam',
+        routerLink: '/admin/videos',
+      },
+      {
+        value: 'imagens',
+        labelKey: 'ADMIN.CONSOLE.TAB_IMAGES',
+        icon: 'md md-image',
+        routerLink: '/admin/imagens',
+      },
+      {
+        value: 'logs',
+        labelKey: 'ADMIN.CONSOLE.TAB_LOGS',
+        icon: 'md md-list',
+        routerLink: '/admin/logs',
+      },
     ];
     if (this.isSuperadmin()) {
       items.push({
         value: 'tenants',
-        label: 'Tenants',
+        labelKey: 'ADMIN.CONSOLE.TAB_TENANTS',
         icon: 'md md-business',
         routerLink: '/admin/tenants',
       });

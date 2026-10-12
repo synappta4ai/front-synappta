@@ -1,6 +1,7 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { catchError, EMPTY, finalize } from 'rxjs';
 
 import { Button } from 'primeng/button';
@@ -31,9 +32,10 @@ interface CommRow {
 /** A phase tab inside the detail dialog. */
 interface PhaseTab {
   value: string;
-  label: string;
+  labelKey: string;
   icon: string;
-  badge: string;
+  badgeKey: string;
+  badgeParam?: number;
   comm: ServerCommunicationLog | null;
 }
 
@@ -54,6 +56,7 @@ interface PhaseTab {
     TabPanel,
     TabPanels,
     Tooltip,
+    TranslatePipe,
   ],
   templateUrl: './admin-logs.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -61,6 +64,7 @@ interface PhaseTab {
 export class AdminLogsComponent {
   private readonly adminService = inject(AdminService);
   private readonly sessionStore = inject(UserSessionStore);
+  private readonly translate = inject(TranslateService);
 
   protected readonly isSuperadmin = computed(
     () => this.sessionStore.currentUser()?.role_level === 0,
@@ -88,7 +92,7 @@ export class AdminLogsComponent {
       .listServerComms(this.page(), this.limit, this.taskIdFilter().trim() || undefined)
       .pipe(
         catchError(() => {
-          this.error.set('No se pudieron cargar los logs.');
+          this.error.set(this.translate.instant('ADMIN.LOGS.ERRORS.LOAD'));
           return EMPTY;
         }),
         finalize(() => this.loading.set(false)),
@@ -162,14 +166,16 @@ export class AdminLogsComponent {
   }
 
   /** Aggregate event of the merged row: terminal poll status or in-progress. */
-  protected rowEvent(r: CommRow): { label: string; severity: 'success' | 'danger' | 'info' } {
+  protected rowEvent(r: CommRow): { labelKey: string; severity: 'success' | 'danger' | 'info' } {
     const p = r.poll;
     if (p) {
-      if (p.status_code === 0 || p.error_message) return { label: 'ERROR', severity: 'danger' };
-      if (p.status_code >= 400) return { label: String(p.status_code), severity: 'danger' };
-      return { label: 'COMPLETADO', severity: 'success' };
+      if (p.status_code === 0 || p.error_message) {
+        return { labelKey: 'ADMIN.LOGS.EVENT_ERROR', severity: 'danger' };
+      }
+      if (p.status_code >= 400) return { labelKey: String(p.status_code), severity: 'danger' };
+      return { labelKey: 'ADMIN.LOGS.EVENT_COMPLETED', severity: 'success' };
     }
-    return { label: 'EN CURSO', severity: 'info' };
+    return { labelKey: 'ADMIN.LOGS.EVENT_IN_PROGRESS', severity: 'info' };
   }
 
   /** Final HTTP status shown in the table: terminal poll or submit. */
@@ -185,8 +191,8 @@ export class AdminLogsComponent {
   }
 
   protected rowDurationTitle(r: CommRow): string {
-    if ((r.poll?.total_duration_ms ?? 0) > 0) return 'Tiempo total: envío → resultado';
-    if ((r.generate?.duration_ms ?? 0) > 0) return 'Solo la llamada de envío (aún sin resultado)';
+    if ((r.poll?.total_duration_ms ?? 0) > 0) return 'ADMIN.LOGS.DURATION_TITLE_FULL';
+    if ((r.generate?.duration_ms ?? 0) > 0) return 'ADMIN.LOGS.DURATION_TITLE_SEND';
     return '';
   }
 
@@ -208,30 +214,30 @@ export class AdminLogsComponent {
 
   /** The phase tabs of the detail dialog for a merged row. */
   protected phases(r: CommRow): PhaseTab[] {
-    const pollBadge = `POLLING ×${r.poll?.poll_count ?? 0}`;
     const tabs: PhaseTab[] = [
       {
         value: 'generation',
-        label: 'Generación',
+        labelKey: 'ADMIN.LOGS.PHASE_GENERATION',
         icon: 'md md-upload',
-        badge: 'ENVÍO',
+        badgeKey: 'ADMIN.LOGS.BADGE_SENT',
         comm: r.generate,
       },
     ];
     if (r.estimate) {
       tabs.push({
         value: 'estimate',
-        label: 'Gasto estimado',
+        labelKey: 'ADMIN.LOGS.PHASE_ESTIMATE',
         icon: 'md md-description',
-        badge: 'GASTO',
+        badgeKey: 'ADMIN.LOGS.BADGE_SPEND',
         comm: r.estimate,
       });
     }
     tabs.push({
       value: 'polling',
-      label: 'Último polling',
+      labelKey: 'ADMIN.LOGS.PHASE_POLLING',
       icon: 'md md-refresh',
-      badge: pollBadge,
+      badgeKey: 'ADMIN.LOGS.BADGE_POLLING',
+      badgeParam: r.poll?.poll_count ?? 0,
       comm: r.poll,
     });
     return tabs;
@@ -268,12 +274,20 @@ export class AdminLogsComponent {
   protected costTooltip(cost: { credits: number; usd: number }): string {
     const parts: string[] = [];
     if (cost.credits > 0) {
-      parts.push(`${Math.round(cost.credits * 100) / 100} cr = créditos del proveedor (Higgsfield)`);
+      parts.push(
+        this.translate.instant('ADMIN.LOGS.COST_CREDITS', {
+          value: Math.round(cost.credits * 100) / 100,
+        }),
+      );
     }
     if (cost.usd > 0) {
-      parts.push(`$${Math.round(cost.usd * 1000) / 1000} = equivalente en dólares (USD)`);
+      parts.push(
+        this.translate.instant('ADMIN.LOGS.COST_USD', {
+          value: Math.round(cost.usd * 1000) / 1000,
+        }),
+      );
     }
-    return `Gasto estimado por el proveedor: ${parts.join(', ')}. Las generaciones fallidas o canceladas se reembolsan.`;
+    return this.translate.instant('ADMIN.LOGS.COST_TOOLTIP', { parts: parts.join(', ') });
   }
 
   protected statusSeverity(status: number): 'success' | 'danger' | 'warn' {

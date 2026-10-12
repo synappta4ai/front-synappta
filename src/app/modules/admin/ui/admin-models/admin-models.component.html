@@ -4,12 +4,12 @@
     <div class="mb-6">
       <p-message
         severity="info"
-        text="Selecciona primero el tenant que quieres gestionar."
+        [text]="'ADMIN.MODELS.SELECT_TENANT_HINT' | translate"
         styleClass="w-full mb-4"
       />
       @if (loadingTenants()) {
         <div class="flex flex-col gap-2 py-4" aria-busy="true">
-          <span class="sr-only">Cargando tenants…</span>
+          <span class="sr-only">{{ 'ADMIN.MODELS.LOADING_TENANTS' | translate }}</span>
           <div class="skel skel-text max-w-xl" aria-hidden="true"></div>
           <div class="skel skel-text max-w-xl" aria-hidden="true"></div>
         </div>
@@ -20,10 +20,10 @@
           (ngModelChange)="onTenantSelect($event)"
           optionLabel="label"
           optionValue="value"
-          placeholder="Selecciona un tenant para gestionar sus modelos y API keys"
-          aria-label="Seleccionar tenant"
+          [placeholder]="'ADMIN.MODELS.SELECT_TENANT_PLACEHOLDER' | translate"
+          [attr.aria-label]="'ADMIN.MODELS.SELECT_TENANT_ARIA' | translate"
           [filter]="true"
-          filterPlaceholder="Buscar tenant..."
+          [filterPlaceholder]="'ADMIN.MODELS.SEARCH_TENANT_PLACEHOLDER' | translate"
           styleClass="w-full max-w-xl"
           appendTo="body"
         />
@@ -39,7 +39,11 @@
 
   @if (saved()) {
     <div class="mb-6">
-      <p-message severity="success" text="Credencial guardada correctamente." styleClass="w-full" />
+      <p-message
+        severity="success"
+        [text]="'ADMIN.MODELS.CREDENTIAL_SAVED' | translate"
+        styleClass="w-full"
+      />
     </div>
   }
 
@@ -55,7 +59,7 @@
         class="flex flex-col gap-2 rounded-3xl border border-surface-border bg-surface p-6"
         aria-busy="true"
       >
-        <span class="sr-only">Cargando configuración del tenant…</span>
+        <span class="sr-only">{{ 'ADMIN.MODELS.LOADING_CONFIG' | translate }}</span>
         <div class="skel skel-title" aria-hidden="true"></div>
         <div class="skel skel-text" aria-hidden="true"></div>
         <div class="skel skel-text" aria-hidden="true"></div>
@@ -70,7 +74,9 @@
                 <i class="md md-key text-sm text-accent"></i>
               </div>
               <div>
-                <h4 class="font-bold text-ink-on-dark">API Keys del tenant</h4>
+                <h4 class="font-bold text-ink-on-dark">
+                  {{ 'ADMIN.MODELS.API_KEYS_TITLE' | translate }}
+                </h4>
                 @if (selectedTenant(); as tenant) {
                   <p class="text-xs text-ink-muted-on-dark">
                     <code class="rounded bg-surface-2 px-1.5 py-0.5 text-ink-on-dark">{{
@@ -83,30 +89,30 @@
 
             <div class="mb-4 flex flex-wrap gap-2">
               <span
-                pTooltip="No hay credenciales para exportar"
+                [pTooltip]="'ADMIN.MODELS.EXPORT_EMPTY_TOOLTIP' | translate"
                 showDelay="400"
                 class="inline-flex"
               >
                 <p-button
-                  label="Exportar"
+                  [label]="'ADMIN.MODELS.EXPORT' | translate"
                   icon="md md-download"
                   size="small"
                   outlined
                   [loading]="exporting()"
                   [disabled]="credentials().length === 0"
-                  pTooltip="Descarga las credenciales (incluye las claves) como archivo JSON"
+                  [pTooltip]="'ADMIN.MODELS.EXPORT_TOOLTIP' | translate"
                   showDelay="400"
                   tooltipPosition="top"
                   (onClick)="exportCredentials()"
                 />
               </span>
               <p-button
-                label="Importar"
+                [label]="'ADMIN.MODELS.IMPORT' | translate"
                 icon="md md-upload"
                 size="small"
                 outlined
                 [loading]="importing()"
-                pTooltip="Carga un archivo JSON de credenciales exportado y sobrescribe las existentes"
+                [pTooltip]="'ADMIN.MODELS.IMPORT_TOOLTIP' | translate"
                 showDelay="400"
                 tooltipPosition="top"
                 (onClick)="importInput.click()"
@@ -123,7 +129,8 @@
             <form [formGroup]="credForm" (ngSubmit)="saveCredential()" class="flex flex-col gap-4">
               <div class="flex flex-col gap-2">
                 <label for="cred-provider" class="text-xs font-bold text-ink-on-dark">
-                  Proveedor <span class="text-danger">*</span>
+                  {{ 'ADMIN.MODELS.PROVIDER_LABEL' | translate }}
+                  <span class="text-danger">*</span>
                 </label>
                 <p-select
                   inputId="cred-provider"
@@ -131,7 +138,7 @@
                   [options]="providerOptions"
                   optionLabel="label"
                   optionValue="value"
-                  placeholder="Selecciona un proveedor"
+                  [placeholder]="'ADMIN.MODELS.PROVIDER_PLACEHOLDER' | translate"
                   class="w-full"
                   appendTo="body"
                   (onChange)="onProviderChange($event.value)"
@@ -141,7 +148,11 @@
                       <i class="{{ option.icon }} text-ink-muted-on-dark"></i>
                       <span>{{ option.label }}</span>
                       @if (credentialForProvider(option.value); as cred) {
-                        <p-tag value="Configurado" severity="success" styleClass="ml-auto" />
+                        <p-tag
+                          [value]="'ADMIN.MODELS.CONFIGURED' | translate"
+                          severity="success"
+                          styleClass="ml-auto"
+                        />
                       }
                     </div>
                   </ng-template>
@@ -151,47 +162,47 @@
               @if (credForm.controls.provider.value === 'byteplus') {
                 <div class="flex flex-col gap-2">
                   <label for="cred-apikey" class="text-xs font-bold text-ink-on-dark">
-                    API Key <span class="text-danger">*</span>
+                    {{ 'ADMIN.MODELS.API_KEY_LABEL' | translate }}
+                    <span class="text-danger">*</span>
                   </label>
                   <p-password
                     inputId="cred-apikey"
                     formControlName="api_key"
                     [feedback]="false"
                     [toggleMask]="true"
-                    placeholder="API key de ModelArk — NO es la AK/SK ni una key 'sk-...'"
+                    [placeholder]="'ADMIN.MODELS.BYTEPLUS_API_KEY_PLACEHOLDER' | translate"
                     styleClass="w-full"
                     inputStyleClass="w-full"
                   />
                   <small class="text-ink-muted-on-dark">
-                    Consíguela en BytePlus Console → ModelArk → API Key Management. Se envía como
-                    Bearer token.
+                    {{ 'ADMIN.MODELS.BYTEPLUS_API_KEY_HINT' | translate }}
                   </small>
                 </div>
                 <div class="flex flex-col gap-2">
-                  <label for="cred-ak" class="text-xs font-bold text-ink-on-dark"
-                    >Access Key ID</label
-                  >
+                  <label for="cred-ak" class="text-xs font-bold text-ink-on-dark">
+                    {{ 'ADMIN.MODELS.ACCESS_KEY_ID_LABEL' | translate }}
+                  </label>
                   <input
                     pInputText
                     id="cred-ak"
                     formControlName="access_key_id"
-                    placeholder="AK... (opcional)"
+                    [placeholder]="'ADMIN.MODELS.ACCESS_KEY_ID_PLACEHOLDER' | translate"
                     class="w-full"
                   />
-                  <small class="text-ink-muted-on-dark"
-                    >Solo para sincronización de assets (gallery sync)</small
-                  >
+                  <small class="text-ink-muted-on-dark">
+                    {{ 'ADMIN.MODELS.ACCESS_KEY_ID_HINT' | translate }}
+                  </small>
                 </div>
                 <div class="flex flex-col gap-2">
-                  <label for="cred-sk" class="text-xs font-bold text-ink-on-dark"
-                    >Secret Access Key</label
-                  >
+                  <label for="cred-sk" class="text-xs font-bold text-ink-on-dark">
+                    {{ 'ADMIN.MODELS.SECRET_ACCESS_KEY_LABEL' | translate }}
+                  </label>
                   <p-password
                     inputId="cred-sk"
                     formControlName="secret_access_key"
                     [feedback]="false"
                     [toggleMask]="true"
-                    placeholder="SK... (opcional)"
+                    [placeholder]="'ADMIN.MODELS.SECRET_ACCESS_KEY_PLACEHOLDER' | translate"
                     styleClass="w-full"
                     inputStyleClass="w-full"
                   />
@@ -199,38 +210,40 @@
               } @else if (credForm.controls.provider.value === 'higgsfield') {
                 <div class="flex flex-col gap-2">
                   <label for="cred-hf-keyid" class="text-xs font-bold text-ink-on-dark">
-                    Key ID <span class="text-danger">*</span>
+                    {{ 'ADMIN.MODELS.KEY_ID_LABEL' | translate }}
+                    <span class="text-danger">*</span>
                   </label>
                   <input
                     pInputText
                     id="cred-hf-keyid"
                     formControlName="access_key_id"
-                    placeholder="Higgsfield API Key ID"
+                    [placeholder]="'ADMIN.MODELS.KEY_ID_PLACEHOLDER' | translate"
                     class="w-full"
                   />
                 </div>
                 <div class="flex flex-col gap-2">
                   <label for="cred-hf-secret" class="text-xs font-bold text-ink-on-dark">
-                    Key Secret <span class="text-danger">*</span>
+                    {{ 'ADMIN.MODELS.KEY_SECRET_LABEL' | translate }}
+                    <span class="text-danger">*</span>
                   </label>
                   <p-password
                     inputId="cred-hf-secret"
                     formControlName="secret_access_key"
                     [feedback]="false"
                     [toggleMask]="true"
-                    placeholder="Higgsfield API Key Secret"
+                    [placeholder]="'ADMIN.MODELS.KEY_SECRET_PLACEHOLDER' | translate"
                     styleClass="w-full"
                     inputStyleClass="w-full"
                   />
                   <small class="text-ink-muted-on-dark">
-                    Consigue ambos en Higgsfield Console (open.higgsfield.ai) → API Keys. Se envían
-                    como "Authorization: Key &lt;id&gt;:&lt;secret&gt;".
+                    {{ 'ADMIN.MODELS.HIGGSFIELD_HINT' | translate }}
                   </small>
                 </div>
               } @else {
                 <div class="flex flex-col gap-2">
                   <label for="cred-apikey" class="text-xs font-bold text-ink-on-dark">
-                    API Key <span class="text-danger">*</span>
+                    {{ 'ADMIN.MODELS.API_KEY_LABEL' | translate }}
+                    <span class="text-danger">*</span>
                   </label>
                   <p-password
                     inputId="cred-apikey"
@@ -239,8 +252,8 @@
                     [toggleMask]="true"
                     [placeholder]="
                       credForm.controls.provider.value === 'gemini'
-                        ? 'AIza... (Google AI Studio)'
-                        : 'sk-ant-... (Anthropic Console)'
+                        ? ('ADMIN.MODELS.GEMINI_KEY_PLACEHOLDER' | translate)
+                        : ('ADMIN.MODELS.ANTHROPIC_KEY_PLACEHOLDER' | translate)
                     "
                     styleClass="w-full"
                     inputStyleClass="w-full"
@@ -251,7 +264,7 @@
               @if (showsAgentModel(credForm.controls.provider.value)) {
                 <div class="flex flex-col gap-2">
                   <label for="cred-agent-model" class="text-xs font-bold text-ink-on-dark">
-                    Modelo del asistente (flujo de agencia)
+                    {{ 'ADMIN.MODELS.AGENT_MODEL_LABEL' | translate }}
                   </label>
                   <input
                     pInputText
@@ -261,13 +274,12 @@
                     class="w-full"
                   />
                   <small class="text-ink-muted-on-dark">
-                    El modelo LLM que usa el chat de la Agencia (flujo Inmobiliaria). Vacío = el
-                    proveedor elige por defecto.
+                    {{ 'ADMIN.MODELS.AGENT_MODEL_HINT' | translate }}
                   </small>
                 </div>
                 <div class="flex flex-col gap-2">
                   <label for="cred-agent-baseurl" class="text-xs font-bold text-ink-on-dark">
-                    Base URL
+                    {{ 'ADMIN.MODELS.BASE_URL_LABEL' | translate }}
                   </label>
                   <input
                     pInputText
@@ -277,14 +289,14 @@
                     class="w-full"
                   />
                   <small class="text-ink-muted-on-dark">
-                    Endpoint del proveedor LLM. Vacío = mantener la guardada.
+                    {{ 'ADMIN.MODELS.BASE_URL_HINT' | translate }}
                   </small>
                 </div>
               }
 
               <p-button
                 type="submit"
-                label="Guardar credencial"
+                [label]="'ADMIN.MODELS.SAVE_CREDENTIAL' | translate"
                 icon="md md-save"
                 [loading]="savingCredential()"
                 [disabled]="savingCredential()"
@@ -294,7 +306,9 @@
 
             @if (credentials().length > 0) {
               <div class="mt-5 border-t border-surface-border pt-4">
-                <h5 class="mb-3 text-sm font-bold text-ink-on-dark">Credenciales actuales</h5>
+                <h5 class="mb-3 text-sm font-bold text-ink-on-dark">
+                  {{ 'ADMIN.MODELS.CURRENT_CREDENTIALS' | translate }}
+                </h5>
                 <div class="flex flex-col gap-2">
                   @for (cred of credentials(); track cred.id; let i = $index) {
                     <div
@@ -311,7 +325,11 @@
                           {{ cred.api_key_mask || cred.access_key_id || '—' }}
                         </code>
                         @if (modelOf(cred)) {
-                          <p-tag value="{{ modelOf(cred) }}" severity="info" styleClass="shrink-0" />
+                          <p-tag
+                            value="{{ modelOf(cred) }}"
+                            severity="info"
+                            styleClass="shrink-0"
+                          />
                         }
                       </div>
                       <p-button
@@ -319,7 +337,7 @@
                         severity="danger"
                         size="small"
                         text
-                        pTooltip="Eliminar"
+                        [pTooltip]="'ADMIN.MODELS.DELETE' | translate"
                         showDelay="400"
                         tooltipPosition="left"
                         (onClick)="confirmDeleteCredential(cred)"
@@ -340,9 +358,16 @@
                 <i class="md md-memory text-sm text-accent"></i>
               </div>
               <div>
-                <h4 class="font-bold text-ink-on-dark">Modelos disponibles</h4>
+                <h4 class="font-bold text-ink-on-dark">
+                  {{ 'ADMIN.MODELS.MODELS_TITLE' | translate }}
+                </h4>
                 <p class="text-xs text-ink-muted-on-dark">
-                  {{ models().length }} modelos · el estado depende de las credenciales del tenant
+                  {{
+                    (models().length === 1
+                      ? 'ADMIN.MODELS.MODELS_SUBTITLE_SINGULAR'
+                      : 'ADMIN.MODELS.MODELS_SUBTITLE_PLURAL'
+                    ) | translate: { count: models().length }
+                  }}
                 </p>
               </div>
             </div>
@@ -357,10 +382,14 @@
             >
               <ng-template #header>
                 <tr>
-                  <th>Modelo</th>
-                  <th style="width: 12%" class="text-center">Tipo</th>
-                  <th style="width: 18%">Proveedor</th>
-                  <th style="width: 16%" class="text-center">Estado</th>
+                  <th>{{ 'ADMIN.MODELS.COL_MODEL' | translate }}</th>
+                  <th style="width: 12%" class="text-center">
+                    {{ 'ADMIN.MODELS.COL_TYPE' | translate }}
+                  </th>
+                  <th style="width: 18%">{{ 'ADMIN.MODELS.COL_PROVIDER' | translate }}</th>
+                  <th style="width: 16%" class="text-center">
+                    {{ 'ADMIN.MODELS.COL_STATUS' | translate }}
+                  </th>
                 </tr>
               </ng-template>
               <ng-template #body let-m let-i="rowIndex">
@@ -381,9 +410,17 @@
                   </td>
                   <td class="text-center">
                     @if (isModelConfigured(m)) {
-                      <p-tag value="Listo" severity="success" icon="md md-check" />
+                      <p-tag
+                        [value]="'ADMIN.MODELS.READY' | translate"
+                        severity="success"
+                        icon="md md-check"
+                      />
                     } @else {
-                      <p-tag value="Sin API key" severity="warn" icon="md md-error" />
+                      <p-tag
+                        [value]="'ADMIN.MODELS.NO_API_KEY' | translate"
+                        severity="warn"
+                        icon="md md-error"
+                      />
                     }
                   </td>
                 </tr>
@@ -402,9 +439,11 @@
         <i class="md md-business text-3xl text-ink-muted-on-dark"></i>
       </div>
       <div class="text-center">
-        <p class="font-bold text-ink-on-dark">Selecciona un tenant</p>
+        <p class="font-bold text-ink-on-dark">
+          {{ 'ADMIN.MODELS.SELECT_TENANT_EMPTY_TITLE' | translate }}
+        </p>
         <p class="mt-1 text-sm text-ink-muted-on-dark">
-          Para gestionar modelos y API keys elige primero el tenant a administrar
+          {{ 'ADMIN.MODELS.SELECT_TENANT_EMPTY_HINT' | translate }}
         </p>
       </div>
     </div>

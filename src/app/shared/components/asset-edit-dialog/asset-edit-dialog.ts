@@ -9,6 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { catchError, EMPTY, finalize, lastValueFrom } from 'rxjs';
 
 import { ConfirmationService } from 'primeng/api';
@@ -78,6 +79,7 @@ const STATUS_NONE = 'sin_estado';
     Select,
     Textarea,
     ImgFadeDirective,
+    TranslatePipe,
   ],
   providers: [ConfirmationService, ServerUrlPipe],
   templateUrl: './asset-edit-dialog.html',
@@ -89,6 +91,7 @@ export class AssetEditDialogComponent {
   private readonly eventsService = inject(EventsService);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly serverUrl = inject(ServerUrlPipe);
+  private readonly translate = inject(TranslateService);
 
   /** Visibilidad controlada por el padre. */
   readonly visible = input(false);
@@ -132,18 +135,19 @@ export class AssetEditDialogComponent {
   /** Último asset inicializado: evita re-inicializar al reabrir igual. */
   private readonly lastInit = signal<FileAsset | null>(null);
 
-  protected readonly categoryOptions: { value: IngredientType; label: string; icon: string }[] = [
-    { value: 'character', label: 'Personaje', icon: 'md md-person' },
-    { value: 'location', label: 'Ubicación', icon: 'md md-place' },
-    { value: 'prop', label: 'Utilería / Props', icon: 'md md-inventory_2' },
-  ];
+  protected readonly categoryOptions: { value: IngredientType; labelKey: string; icon: string }[] =
+    [
+      { value: 'character', labelKey: 'LIBRARY.EDIT.CAT_CHARACTER', icon: 'md md-person' },
+      { value: 'location', labelKey: 'LIBRARY.EDIT.CAT_LOCATION', icon: 'md md-place' },
+      { value: 'prop', labelKey: 'LIBRARY.EDIT.CAT_PROP', icon: 'md md-inventory_2' },
+    ];
 
-  protected readonly statusOptions: { value: string; label: string }[] = [
-    { value: STATUS_NONE, label: 'Sin estado' },
-    { value: 'borrador', label: 'Borrador' },
-    { value: 'en_revision', label: 'En revisión' },
-    { value: 'aprobado', label: 'Aprobado' },
-    { value: 'descartado', label: 'Descartado' },
+  protected readonly statusOptions: { value: string; labelKey: string }[] = [
+    { value: STATUS_NONE, labelKey: 'LIBRARY.EDIT.STATUS_NONE' },
+    { value: 'borrador', labelKey: 'LIBRARY.EDIT.STATUS_DRAFT' },
+    { value: 'en_revision', labelKey: 'LIBRARY.EDIT.STATUS_REVIEW' },
+    { value: 'aprobado', labelKey: 'LIBRARY.EDIT.STATUS_APPROVED' },
+    { value: 'descartado', labelKey: 'LIBRARY.EDIT.STATUS_DISCARDED' },
   ];
 
   /** Imágenes a mostrar: las del elemento o, si aún no existe, el recurso. */
@@ -283,7 +287,7 @@ export class AssetEditDialogComponent {
       this.filesLoaded.set(true);
       this.clampActive();
     } catch {
-      this.error.set('No se pudo cargar el elemento.');
+      this.error.set(this.translate.instant('LIBRARY.EDIT.ERRORS.LOAD_ELEMENT'));
     } finally {
       this.loadingElement.set(false);
     }
@@ -298,7 +302,7 @@ export class AssetEditDialogComponent {
       this.filesLoaded.set(true);
       this.clampActive();
     } catch {
-      this.error.set('No se pudieron cargar las imágenes del elemento.');
+      this.error.set(this.translate.instant('LIBRARY.EDIT.ERRORS.LOAD_IMAGES'));
     } finally {
       this.loadingElement.set(false);
     }
@@ -374,7 +378,7 @@ export class AssetEditDialogComponent {
       await this.loadElementFiles(id);
       this.changed.emit();
     } catch {
-      this.error.set('No se pudo añadir la imagen al elemento.');
+      this.error.set(this.translate.instant('LIBRARY.EDIT.ERRORS.ADD_IMAGE'));
     } finally {
       this.pickingImage.set(false);
     }
@@ -387,19 +391,25 @@ export class AssetEditDialogComponent {
     if (!ingId || !active) {
       return;
     }
-    const filename = active.filename ?? 'esta imagen';
+    const filename = active.filename ?? this.translate.instant('LIBRARY.EDIT.THIS_IMAGE');
     this.confirmationService.confirm({
-      message: `¿Quitar <strong>${filename}</strong> del elemento? El archivo sigue en la biblioteca.`,
-      header: 'Quitar imagen',
+      message: this.translate.instant('LIBRARY.EDIT.CONFIRM_REMOVE_MESSAGE', { name: filename }),
+      header: this.translate.instant('LIBRARY.EDIT.CONFIRM_REMOVE_TITLE'),
       icon: 'md md-warning',
-      acceptButtonProps: { label: 'Quitar', severity: 'danger' },
-      rejectButtonProps: { label: 'Cancelar', severity: 'secondary' },
+      acceptButtonProps: {
+        label: this.translate.instant('LIBRARY.EDIT.CONFIRM_REMOVE_ACCEPT'),
+        severity: 'danger',
+      },
+      rejectButtonProps: {
+        label: this.translate.instant('LIBRARY.EDIT.CONFIRM_REJECT'),
+        severity: 'secondary',
+      },
       accept: () => {
         this.libraryService
           .removeIngredientFile(ingId, active.file_id)
           .pipe(
             catchError(() => {
-              this.error.set('No se pudo quitar la imagen del elemento.');
+              this.error.set(this.translate.instant('LIBRARY.EDIT.ERRORS.REMOVE_IMAGE'));
               return EMPTY;
             }),
           )
@@ -459,7 +469,7 @@ export class AssetEditDialogComponent {
         }
       }
     } catch {
-      this.error.set('No se pudo guardar el elemento.');
+      this.error.set(this.translate.instant('LIBRARY.EDIT.ERRORS.SAVE'));
     } finally {
       this.savingElement.set(false);
     }
@@ -541,9 +551,7 @@ export class AssetEditDialogComponent {
       .listEvents()
       .pipe(catchError(() => EMPTY))
       .subscribe((events) => {
-        this.projectOptions.set(
-          events.map((event) => ({ label: event.name, value: event.id })),
-        );
+        this.projectOptions.set(events.map((event) => ({ label: event.name, value: event.id })));
       });
   }
 
@@ -578,7 +586,7 @@ export class AssetEditDialogComponent {
       .linkFileEvent(file.id, projectId)
       .pipe(
         catchError(() => {
-          this.error.set('No se pudo asignar el recurso al proyecto.');
+          this.error.set(this.translate.instant('LIBRARY.EDIT.ERRORS.ASSIGN'));
           return EMPTY;
         }),
         finalize(() => this.assigning.set(false)),
@@ -591,17 +599,25 @@ export class AssetEditDialogComponent {
 
   protected confirmDelete(file: FileAsset): void {
     this.confirmationService.confirm({
-      message: `¿Eliminar el recurso <strong>${file.filename}</strong>? Se moverá a la papelera.`,
-      header: 'Eliminar recurso',
+      message: this.translate.instant('LIBRARY.EDIT.CONFIRM_DELETE_MESSAGE', {
+        name: file.filename,
+      }),
+      header: this.translate.instant('LIBRARY.EDIT.CONFIRM_DELETE_TITLE'),
       icon: 'md md-warning',
-      acceptButtonProps: { label: 'Eliminar', severity: 'danger' },
-      rejectButtonProps: { label: 'Cancelar', severity: 'secondary' },
+      acceptButtonProps: {
+        label: this.translate.instant('LIBRARY.EDIT.CONFIRM_DELETE_ACCEPT'),
+        severity: 'danger',
+      },
+      rejectButtonProps: {
+        label: this.translate.instant('LIBRARY.EDIT.CONFIRM_REJECT'),
+        severity: 'secondary',
+      },
       accept: () => {
         this.libraryService
           .deleteFile(file.id)
           .pipe(
             catchError(() => {
-              this.error.set('No se pudo eliminar el recurso.');
+              this.error.set(this.translate.instant('LIBRARY.EDIT.ERRORS.DELETE'));
               return EMPTY;
             }),
           )

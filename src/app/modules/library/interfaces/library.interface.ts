@@ -223,11 +223,7 @@ export function deriveElementName(filename: string): string {
 
 /** Slug del elemento (sin '@'): el Nombre con separadores → '_'. */
 export function deriveElementSlug(name: string): string {
-  return name
-    .trim()
-    .replace(/\s+/g, '_')
-    .replace(/-+/g, '_')
-    .replace(/_+/g, '_');
+  return name.trim().replace(/\s+/g, '_').replace(/-+/g, '_').replace(/_+/g, '_');
 }
 
 /** ID completo del elemento: '@' + slug ('' si el nombre quedó vacío). */

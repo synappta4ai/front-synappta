@@ -1,4 +1,4 @@
-<app-page-container title="Mis generaciones" animate.enter="anim-page">
+<app-page-container [title]="'AGENCY.HISTORY.TITLE' | translate" animate.enter="anim-page">
   @if (error(); as message) {
     <div class="mb-6">
       <p-message severity="error" [text]="message" styleClass="w-full" />
@@ -16,7 +16,7 @@
           (click)="changeType(opt.value)"
         >
           <i [class]="opt.icon"></i>
-          {{ opt.label }}
+          {{ opt.labelKey | translate }}
           <span class="count" [class.badge]="typeFilter() === opt.value">{{
             typeCounts()[opt.value]
           }}</span>
@@ -30,8 +30,8 @@
         <input
           pInputText
           type="text"
-          aria-label="Buscar generaciones"
-          placeholder="Buscar modelo, proyecto, pieza…"
+          [attr.aria-label]="'AGENCY.HISTORY.SEARCH_ARIA' | translate"
+          [placeholder]="'AGENCY.HISTORY.SEARCH_PLACEHOLDER' | translate"
           [ngModel]="search()"
           (ngModelChange)="onSearch($event)"
         />
@@ -43,19 +43,21 @@
         [options]="projectOptions()"
         optionLabel="label"
         optionValue="value"
-        placeholder="Todos los proyectos"
+        [placeholder]="'AGENCY.HISTORY.PROJECT_ALL' | translate"
         [filter]="true"
         [showClear]="true"
         appendTo="body"
         styleClass="gen-project-select"
       />
 
-      <span class="total-chip" title="Costo acumulado de las generaciones listadas">
+      <span class="total-chip" [title]="'AGENCY.HISTORY.COST_TITLE' | translate">
         <i class="md md-bolt"></i>
         <strong>{{ totalCost() | number: '1.2-4' }}</strong>
         <small>USD</small>
         @if (totalCredits() > 0) {
-          <em>· {{ totalCredits() | number: '1.0-0' }} créditos</em>
+          <em
+            >· {{ totalCredits() | number: '1.0-0' }} {{ 'AGENCY.HISTORY.CREDITS' | translate }}</em
+          >
         }
       </span>
     </div>
@@ -64,7 +66,7 @@
   <!-- Estados -->
   @if (loading()) {
     <div class="empty-state" aria-busy="true">
-      <span class="sr-only">Cargando generaciones…</span>
+      <span class="sr-only">{{ 'AGENCY.HISTORY.LOADING' | translate }}</span>
       <div class="skel skel-title" aria-hidden="true"></div>
       <div class="skel skel-text" aria-hidden="true"></div>
       <div class="skel skel-text" aria-hidden="true"></div>
@@ -74,11 +76,8 @@
       <div class="empty-icon">
         <i class="md md-movie"></i>
       </div>
-      <h3>Todavía no hay generaciones</h3>
-      <p>
-        Genera videos o imágenes desde el Studio y van a aparecer acá con su modelo, proyecto,
-        costo y opciones de reutilizar o descargar.
-      </p>
+      <h3>{{ 'AGENCY.HISTORY.EMPTY_TITLE' | translate }}</h3>
+      <p>{{ 'AGENCY.HISTORY.EMPTY_HINT' | translate }}</p>
     </div>
   } @else {
     @for (group of dateGroups(); track group.ts) {
@@ -88,161 +87,187 @@
       </h3>
       <div class="gen-grid">
         @for (log of group.logs; track log.task_id; let i = $index) {
-        <article
-          class="gen-card"
-          animate.enter="anim-item"
-          [style.animation-delay.ms]="i < 8 ? i * 35 : 280"
-        >
-          <!-- Preview + click abre detalle -->
-          <div
-            class="gen-card__media"
-            role="button"
-            tabindex="0"
-            [attr.aria-label]="'Ver detalle de la generación'"
-            (click)="open(log)"
-            (keydown.enter)="open(log)"
+          <article
+            class="gen-card"
+            animate.enter="anim-item"
+            [style.animation-delay.ms]="i < 8 ? i * 35 : 280"
           >
-            @if (hasOutput(log)) {
-              @if (isVideo(log)) {
-                <video
-                  [src]="absoluteUrl(outputUrl(log))"
-                  preload="metadata"
-                  tabindex="-1"
-                  aria-hidden="true"
-                ></video>
-                <span class="gen-card__play" aria-hidden="true"
-                  ><i class="md md-play_arrow"></i
-                ></span>
-              } @else {
-                <img
-                  appImgFade
-                  [src]="absoluteUrl(outputUrl(log))"
-                  [alt]="log.piece_name || log.model_name || 'Generación'"
-                  loading="lazy"
-                  decoding="async"
-                />
-              }
-              <span class="gen-card__duration" title="Duración">{{
-                duration(log.video_duration)
-              }}</span>
-            } @else {
-              <div class="gen-card__placeholder">
-                @if (log.status === 'failed') {
-                  <i class="md md-error"></i>
-                  <span>Sin vista previa</span>
+            <!-- Preview + click abre detalle -->
+            <div
+              class="gen-card__media"
+              role="button"
+              tabindex="0"
+              [attr.aria-label]="'AGENCY.HISTORY.VIEW_DETAIL_ARIA' | translate"
+              (click)="open(log)"
+              (keydown.enter)="open(log)"
+            >
+              @if (hasOutput(log)) {
+                @if (isVideo(log)) {
+                  <video
+                    [src]="absoluteUrl(outputUrl(log))"
+                    preload="metadata"
+                    tabindex="-1"
+                    aria-hidden="true"
+                  ></video>
+                  <span class="gen-card__play" aria-hidden="true"
+                    ><i class="md md-play_arrow"></i
+                  ></span>
                 } @else {
-                  <i class="md md-hourglass_empty" [class.md-spin]="log.status === 'running'"></i>
-                  <span>Procesando…</span>
+                  <img
+                    appImgFade
+                    [src]="absoluteUrl(outputUrl(log))"
+                    [alt]="
+                      log.piece_name || log.model_name || ('AGENCY.HISTORY.GENERATION' | translate)
+                    "
+                    loading="lazy"
+                    decoding="async"
+                  />
                 }
-              </div>
-            }
-            <p-tag
-              [value]="statusLabel(log.status)"
-              [severity]="severity(log.status)"
-              styleClass="gen-card__status"
-            />
-          </div>
-
-          <!-- Metadata -->
-          <div class="gen-card__body">
-            <div class="gen-card__head">
-              <p class="gen-card__model" [title]="log.model_name">
-                {{ log.model_name || 'Modelo desconocido' }}
-              </p>
-              @if (log.video_fps && log.video_fps > 0) {
-                <span class="chip-mini">{{ log.video_fps }} fps</span>
+                <span class="gen-card__duration" [title]="'AGENCY.HISTORY.DURATION' | translate">{{
+                  duration(log.video_duration)
+                }}</span>
+              } @else {
+                <div class="gen-card__placeholder">
+                  @if (log.status === 'failed') {
+                    <i class="md md-error"></i>
+                    <span>{{ 'AGENCY.HISTORY.NO_PREVIEW' | translate }}</span>
+                  } @else {
+                    <i class="md md-hourglass_empty" [class.md-spin]="log.status === 'running'"></i>
+                    <span>{{ 'AGENCY.HISTORY.PROCESSING' | translate }}</span>
+                  }
+                </div>
               }
+              <p-tag
+                [value]="statusKey(log.status) | translate"
+                [severity]="severity(log.status)"
+                styleClass="gen-card__status"
+              />
             </div>
 
-            <p class="gen-card__project" [title]="log.event_name || ''">
-              <i class="md md-work"></i>
-              <span class="truncate">{{ log.event_name || 'Sin proyecto' }}</span>
-              @if (log.piece_code || log.piece_name) {
-                <span class="gen-card__piece" [title]="log.piece_name || log.piece_code"
-                  >· {{ log.piece_code || log.piece_name }}</span
-                >
-              }
-            </p>
-
-            <dl class="gen-card__meta">
-              <div>
-                <dt title="Usuario"><i class="md md-person"></i>Usuario</dt>
-                <dd>{{ log.user_display_name || 'Yo' }}</dd>
+            <!-- Metadata -->
+            <div class="gen-card__body">
+              <div class="gen-card__head">
+                <p class="gen-card__model" [title]="log.model_name">
+                  {{ log.model_name || ('AGENCY.HISTORY.MODEL_UNKNOWN' | translate) }}
+                </p>
+                @if (log.video_fps && log.video_fps > 0) {
+                  <span class="chip-mini">{{ log.video_fps }} fps</span>
+                }
               </div>
-              <div>
-                <dt title="Fecha"><i class="md md-schedule"></i>Fecha</dt>
-                <dd>{{ log.created_at | date: 'short' }}</dd>
-              </div>
-              <div>
-                <dt title="Costo estimado"><i class="md md-bolt"></i>Costo</dt>
-                <dd>{{ cost(log) | number: '1.2-4' }} USD</dd>
-              </div>
-              <div>
-                <dt title="Resolución"><i class="md md-desktop_windows"></i>Resolución</dt>
-                <dd>
-                  {{ log.video_resolution || '—' }}
-                  @if (log.video_duration && log.video_duration > 0) {
-                    · {{ duration(log.video_duration) }}
-                  }
-                </dd>
-              </div>
-            </dl>
 
-            <!-- Acciones -->
-            <div class="gen-card__actions">
-              <button
-                type="button"
-                class="log-reuse"
-                title="Reutilizar en el Studio"
-                [disabled]="!log.request"
-                (click)="reuse(log)"
-              >
-                <i class="md md-refresh"></i><span>REUSAR</span>
-              </button>
+              <p class="gen-card__project" [title]="log.event_name || ''">
+                <i class="md md-work"></i>
+                <span class="truncate">{{
+                  log.event_name || ('AGENCY.HISTORY.NO_PROJECT' | translate)
+                }}</span>
+                @if (log.piece_code || log.piece_name) {
+                  <span class="gen-card__piece" [title]="log.piece_name || log.piece_code"
+                    >· {{ log.piece_code || log.piece_name }}</span
+                  >
+                }
+              </p>
 
-              <p-button
-                icon="md md-download"
-                label="Descargar"
-                size="small"
-                severity="secondary"
-                [outlined]="true"
-                [disabled]="!hasOutput(log)"
-                (onClick)="downloadOutput(log, absoluteUrl(outputUrl(log)))"
-              />
+              <dl class="gen-card__meta">
+                <div>
+                  <dt [title]="'AGENCY.HISTORY.USER' | translate">
+                    <i class="md md-person"></i>{{ 'AGENCY.HISTORY.USER' | translate }}
+                  </dt>
+                  <dd>{{ log.user_display_name || ('AGENCY.HISTORY.YOU' | translate) }}</dd>
+                </div>
+                <div>
+                  <dt [title]="'AGENCY.HISTORY.DATE' | translate">
+                    <i class="md md-schedule"></i>{{ 'AGENCY.HISTORY.DATE' | translate }}
+                  </dt>
+                  <dd>{{ log.created_at | date: 'short' }}</dd>
+                </div>
+                <div>
+                  <dt [title]="'AGENCY.HISTORY.COST' | translate">
+                    <i class="md md-bolt"></i>{{ 'AGENCY.HISTORY.COST' | translate }}
+                  </dt>
+                  <dd>{{ cost(log) | number: '1.2-4' }} USD</dd>
+                </div>
+                <div>
+                  <dt [title]="'AGENCY.HISTORY.RESOLUTION' | translate">
+                    <i class="md md-desktop_windows"></i
+                    >{{ 'AGENCY.HISTORY.RESOLUTION' | translate }}
+                  </dt>
+                  <dd>
+                    {{ log.video_resolution || '—' }}
+                    @if (log.video_duration && log.video_duration > 0) {
+                      · {{ duration(log.video_duration) }}
+                    }
+                  </dd>
+                </div>
+              </dl>
 
-              <div class="log-rating-group" role="group" aria-label="Calificación de la generación">
+              <!-- Acciones -->
+              <div class="gen-card__actions">
                 <button
                   type="button"
-                  class="log-rating-check"
-                  [class.active]="log.rating_good"
-                  [title]="log.rating_good ? 'Quitar Me gusta' : 'Me gusta'"
-                  (click)="rate(log, 'good')"
+                  class="log-reuse"
+                  [title]="'AGENCY.HISTORY.REUSE_TITLE' | translate"
+                  [disabled]="!log.request"
+                  (click)="reuse(log)"
                 >
-                  <i class="md md-check"></i>
+                  <i class="md md-refresh"></i
+                  ><span>{{ 'AGENCY.HISTORY.REUSE_SHORT' | translate }}</span>
                 </button>
-                <button
-                  type="button"
-                  class="log-rating-check"
-                  [class.active]="log.rating_final"
-                  [title]="log.rating_final ? 'Quitar Elegida final' : 'Elegida final'"
-                  (click)="rate(log, 'final')"
+
+                <p-button
+                  icon="md md-download"
+                  [label]="'AGENCY.HISTORY.DOWNLOAD' | translate"
+                  size="small"
+                  severity="secondary"
+                  [outlined]="true"
+                  [disabled]="!hasOutput(log)"
+                  (onClick)="downloadOutput(log, absoluteUrl(outputUrl(log)))"
+                />
+
+                <div
+                  class="log-rating-group"
+                  role="group"
+                  [attr.aria-label]="'AGENCY.HISTORY.RATING_GROUP_ARIA' | translate"
                 >
-                  <i class="md md-check md-double"></i>
-                </button>
-                @if (log.rating_good || log.rating_final) {
                   <button
                     type="button"
-                    class="log-rating-clear"
-                    title="Limpiar calificación"
-                    (click)="clearRating(log)"
+                    class="log-rating-check"
+                    [class.active]="log.rating_good"
+                    [title]="
+                      (log.rating_good ? 'AGENCY.HISTORY.RATE_UNLIKE' : 'AGENCY.HISTORY.RATE_LIKE')
+                        | translate
+                    "
+                    (click)="rate(log, 'good')"
                   >
-                    <i class="md md-close"></i>
+                    <i class="md md-check"></i>
                   </button>
-                }
+                  <button
+                    type="button"
+                    class="log-rating-check"
+                    [class.active]="log.rating_final"
+                    [title]="
+                      (log.rating_final
+                        ? 'AGENCY.HISTORY.RATE_UNFINAL'
+                        : 'AGENCY.HISTORY.RATE_FINAL'
+                      ) | translate
+                    "
+                    (click)="rate(log, 'final')"
+                  >
+                    <i class="md md-check md-double"></i>
+                  </button>
+                  @if (log.rating_good || log.rating_final) {
+                    <button
+                      type="button"
+                      class="log-rating-clear"
+                      [title]="'AGENCY.HISTORY.RATE_CLEAR' | translate"
+                      (click)="clearRating(log)"
+                    >
+                      <i class="md md-close"></i>
+                    </button>
+                  }
+                </div>
               </div>
             </div>
-          </div>
-        </article>
+          </article>
         }
       </div>
     }
@@ -251,7 +276,7 @@
     <div class="load-more">
       @if (!exhausted()) {
         <p-button
-          label="Cargar más"
+          [label]="'AGENCY.HISTORY.LOAD_MORE' | translate"
           icon="md md-expand_more"
           severity="secondary"
           [outlined]="true"
@@ -259,11 +284,11 @@
           (onClick)="loadMore()"
         />
       } @else {
-        <span>Llegaste al final · {{ filtered().length }} generaciones listadas</span>
+        <span>{{ 'AGENCY.HISTORY.END' | translate: { count: filtered().length } }}</span>
       }
       @if (search() || projectId()) {
         <p-button
-          label="Limpiar filtros"
+          [label]="'AGENCY.HISTORY.CLEAR_FILTERS' | translate"
           icon="md md-close"
           severity="secondary"
           [text]="true"
@@ -290,9 +315,11 @@
             <i class="md md-movie"></i>
           </div>
           <div class="min-w-0">
-            <h3 class="viewer-head__title">{{ log.model_name || 'Generación' }}</h3>
+            <h3 class="viewer-head__title">
+              {{ log.model_name || ('AGENCY.HISTORY.GENERATION' | translate) }}
+            </h3>
             <p class="viewer-head__sub">
-              {{ log.event_name || 'Sin proyecto' }}
+              {{ log.event_name || ('AGENCY.HISTORY.NO_PROJECT' | translate) }}
               @if (log.piece_code || log.piece_name) {
                 · {{ log.piece_code || log.piece_name }}
               }
@@ -310,7 +337,7 @@
           <img
             appImgFade
             [src]="absoluteUrl(outputUrl(log))"
-            [alt]="log.piece_name || log.model_name || 'Generación'"
+            [alt]="log.piece_name || log.model_name || ('AGENCY.HISTORY.GENERATION' | translate)"
             class="viewer-preview"
             decoding="async"
           />
@@ -318,58 +345,64 @@
       } @else {
         <div class="viewer-unknown">
           <i class="md md-hourglass_empty"></i>
-          <p>Sin archivo de salida ({{ statusLabel(log.status).toLowerCase() }})</p>
+          <p>
+            {{ 'AGENCY.HISTORY.NO_OUTPUT' | translate }} ({{ statusKey(log.status) | translate }})
+          </p>
         </div>
       }
 
       <div class="viewer-meta">
         <div class="meta-item">
-          <span class="meta-item__label">Usuario</span>
-          <span class="meta-item__value">{{ log.user_display_name || 'Yo' }}</span>
+          <span class="meta-item__label">{{ 'AGENCY.HISTORY.USER' | translate }}</span>
+          <span class="meta-item__value">{{
+            log.user_display_name || ('AGENCY.HISTORY.YOU' | translate)
+          }}</span>
         </div>
         <div class="meta-item">
-          <span class="meta-item__label">Proyecto</span>
-          <span class="meta-item__value">{{ log.event_name || 'Sin proyecto' }}</span>
+          <span class="meta-item__label">{{ 'AGENCY.HISTORY.PROJECT' | translate }}</span>
+          <span class="meta-item__value">{{
+            log.event_name || ('AGENCY.HISTORY.NO_PROJECT' | translate)
+          }}</span>
         </div>
         <div class="meta-item">
-          <span class="meta-item__label">Pieza</span>
+          <span class="meta-item__label">{{ 'AGENCY.HISTORY.PIECE' | translate }}</span>
           <span class="meta-item__value">{{ log.piece_name || log.piece_code || '—' }}</span>
         </div>
         <div class="meta-item">
-          <span class="meta-item__label">Modelo</span>
+          <span class="meta-item__label">{{ 'AGENCY.HISTORY.MODEL' | translate }}</span>
           <span class="meta-item__value">{{ log.model_name || '—' }}</span>
         </div>
         <div class="meta-item">
-          <span class="meta-item__label">Costo</span>
+          <span class="meta-item__label">{{ 'AGENCY.HISTORY.COST' | translate }}</span>
           <span class="meta-item__value">
             {{ cost(log) | number: '1.2-4' }} USD
             @if (log.cost_credits && log.cost_credits > 0) {
-              · {{ log.cost_credits | number: '1.0-0' }} créditos
+              · {{ log.cost_credits | number: '1.0-0' }} {{ 'AGENCY.HISTORY.CREDITS' | translate }}
             }
           </span>
         </div>
         <div class="meta-item">
-          <span class="meta-item__label">Fuente de costo</span>
+          <span class="meta-item__label">{{ 'AGENCY.HISTORY.COST_SOURCE' | translate }}</span>
           <span class="meta-item__value">{{ log.cost_source || '—' }}</span>
         </div>
         <div class="meta-item">
-          <span class="meta-item__label">Fecha</span>
+          <span class="meta-item__label">{{ 'AGENCY.HISTORY.DATE' | translate }}</span>
           <span class="meta-item__value">{{ log.created_at | date: 'medium' }}</span>
         </div>
         <div class="meta-item">
-          <span class="meta-item__label">Estado</span>
-          <span class="meta-item__value">{{ statusLabel(log.status) }}</span>
+          <span class="meta-item__label">{{ 'AGENCY.HISTORY.STATUS' | translate }}</span>
+          <span class="meta-item__value">{{ statusKey(log.status) | translate }}</span>
         </div>
         <div class="meta-item">
-          <span class="meta-item__label">Modalidad</span>
+          <span class="meta-item__label">{{ 'AGENCY.HISTORY.MODALITY' | translate }}</span>
           <span class="meta-item__value">{{ log.resource_type || 'video' }}</span>
         </div>
         <div class="meta-item">
-          <span class="meta-item__label">Resolución</span>
+          <span class="meta-item__label">{{ 'AGENCY.HISTORY.RESOLUTION' | translate }}</span>
           <span class="meta-item__value">{{ log.video_resolution || '—' }}</span>
         </div>
         <div class="meta-item">
-          <span class="meta-item__label">Duración</span>
+          <span class="meta-item__label">{{ 'AGENCY.HISTORY.DURATION' | translate }}</span>
           <span class="meta-item__value">{{ duration(log.video_duration) || '—' }}</span>
         </div>
         <div class="meta-item">
@@ -378,7 +411,7 @@
         </div>
         @if (log.video_ratio) {
           <div class="meta-item">
-            <span class="meta-item__label">Ratio</span>
+            <span class="meta-item__label">{{ 'AGENCY.HISTORY.RATIO' | translate }}</span>
             <span class="meta-item__value">{{ log.video_ratio }}</span>
           </div>
         }
@@ -399,20 +432,20 @@
       <div class="viewer-actions">
         <p-button
           icon="md md-download"
-          label="Descargar"
+          [label]="'AGENCY.HISTORY.DOWNLOAD' | translate"
           [disabled]="!hasOutput(log)"
           (onClick)="downloadOutput(log, absoluteUrl(outputUrl(log)))"
         />
         <p-button
           icon="md md-refresh"
-          label="Reutilizar en Studio"
+          [label]="'AGENCY.HISTORY.REUSE_STUDIO' | translate"
           severity="secondary"
           [disabled]="!log.request"
           (onClick)="reuse(log)"
         />
         <p-button
           icon="md md-close"
-          label="Cerrar"
+          [label]="'AGENCY.HISTORY.CLOSE' | translate"
           severity="secondary"
           [text]="true"
           (onClick)="close()"

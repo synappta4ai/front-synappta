@@ -233,8 +233,7 @@
         @if (mentionMenuOpen() && mentionMenuPos(); as menuPos) {
           <div class="mention-menu" [style.top.px]="menuPos.top" [style.left.px]="menuPos.left">
             <p class="mention-menu-title">
-              <i class="md md-alternate_email"></i> Biblioteca: elementos, recursos e
-              ingredientes
+              <i class="md md-alternate_email"></i> Biblioteca: elementos, recursos e ingredientes
             </p>
             @for (row of mentionRows(); track row.key; let i = $index) {
               <button
@@ -661,14 +660,21 @@
         @if (hasCost(take)) {
           <span class="take-cost">
             @if ((take.costUsd ?? 0) > 0) {
-              <span tooltipPosition="top" showDelay="300" pTooltip="Costo equivalente en dólares (USD), estimado por Higgsfield">{{
-                formatCostUsd(take.costUsd!)
-              }}</span>
+              <span
+                tooltipPosition="top"
+                showDelay="300"
+                pTooltip="Costo equivalente en dólares (USD), estimado por Higgsfield"
+                >{{ formatCostUsd(take.costUsd!) }}</span
+              >
             }
             @if ((take.costCredits ?? 0) > 0) {
-              <span tooltipPosition="top" showDelay="300" pTooltip="Costo en créditos de Higgsfield. Las generaciones fallidas o canceladas se reembolsan" class="cost-credits">{{
-                formatCredits(take.costCredits!)
-              }}</span>
+              <span
+                tooltipPosition="top"
+                showDelay="300"
+                pTooltip="Costo en créditos de Higgsfield. Las generaciones fallidas o canceladas se reembolsan"
+                class="cost-credits"
+                >{{ formatCredits(take.costCredits!) }}</span
+              >
             }
             @if (take.transactionId) {
               <span class="cost-tx">TX {{ take.transactionId }}</span>
@@ -958,9 +964,12 @@
                   @if (hasCost(take)) {
                     <span class="take-cost">
                       @if ((take.costUsd ?? 0) > 0) {
-                        <span tooltipPosition="top" showDelay="300" pTooltip="Costo equivalente en dólares (USD), estimado por Higgsfield">{{
-                          formatCostUsd(take.costUsd!)
-                        }}</span>
+                        <span
+                          tooltipPosition="top"
+                          showDelay="300"
+                          pTooltip="Costo equivalente en dólares (USD), estimado por Higgsfield"
+                          >{{ formatCostUsd(take.costUsd!) }}</span
+                        >
                       }
                       @if ((take.costCredits ?? 0) > 0) {
                         <span
@@ -1316,7 +1325,6 @@
     [visible]="libraryPickerVisible()"
     (visibleChange)="libraryPickerVisible.set($event)"
     (confirmed)="onLibraryPicked($event)"
-    title="Elegir referencias de la biblioteca"
     [max]="maxSelectedRefs"
   />
 

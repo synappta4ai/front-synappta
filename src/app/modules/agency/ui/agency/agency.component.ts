@@ -36,6 +36,7 @@ import { Popover } from 'primeng/popover';
 import { ToggleSwitch } from 'primeng/toggleswitch';
 
 import { Router } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { AgencyService } from '../../services/agency.service';
 import {
@@ -65,29 +66,29 @@ type WorkflowPhase = 'input' | 'angles' | 'storyboard' | 'scenes';
 /** Experto que analiza el proyecto (valor = workflow del agente en el back). */
 type AgencyAgent = 'commercial' | 'real_estate' | 'cinema';
 
-const AGENT_OPTIONS: { value: AgencyAgent; label: string; hint: string }[] = [
+const AGENT_OPTIONS: { value: AgencyAgent; labelKey: string; hintKey: string }[] = [
   {
     value: 'commercial',
-    label: 'Comercial publicitario',
-    hint: 'Estratega comercial: propone ángulos de venta para productos y servicios.',
+    labelKey: 'AGENCY.STUDIO.AGENT_COMMERCIAL',
+    hintKey: 'AGENCY.STUDIO.AGENT_COMMERCIAL_HINT',
   },
   {
     value: 'real_estate',
-    label: 'Inmobiliaria',
-    hint: 'Especialista inmobiliario: ángulos para propiedades, amenidades y target.',
+    labelKey: 'AGENCY.STUDIO.AGENT_REAL_ESTATE',
+    hintKey: 'AGENCY.STUDIO.AGENT_REAL_ESTATE_HINT',
   },
   {
     value: 'cinema',
-    label: 'Cine',
-    hint: 'Director de cine: propuestas cinematográficas con luz, planos y cámara.',
+    labelKey: 'AGENCY.STUDIO.AGENT_CINEMA',
+    hintKey: 'AGENCY.STUDIO.AGENT_CINEMA_HINT',
   },
 ];
 
 /** Encuadre del proyecto en el mensaje al agente, según el experto elegido. */
 const AGENT_KIND_LABEL: Record<AgencyAgent, string> = {
-  commercial: 'Proyecto comercial',
-  real_estate: 'Proyecto inmobiliario',
-  cinema: 'Proyecto audiovisual',
+  commercial: 'AGENCY.STUDIO.AGENT_KIND_COMMERCIAL',
+  real_estate: 'AGENCY.STUDIO.AGENT_KIND_REAL_ESTATE',
+  cinema: 'AGENCY.STUDIO.AGENT_KIND_CINEMA',
 };
 
 /** Slug de la ruta especializada del experto en el back. */
@@ -101,6 +102,14 @@ const AGENT_ROUTE_SLUG: Record<AgencyAgent, string> = {
 interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
+}
+
+/** Una invocación de herramienta del asistente, visible en el chat. */
+interface ChatToolActivity {
+  name: string;
+  status: 'running' | 'ok' | 'error';
+  summary: string;
+  error: string;
 }
 
 interface SalesAngle {
@@ -166,66 +175,68 @@ interface StoryboardShot {
 }
 
 /** Plantillas de ángulos de venta (se rotan si se piden más de las que hay). */
-const ANGLE_TEMPLATES: { title: string; description: string }[] = [
+const ANGLE_TEMPLATES: { titleKey: string; descriptionKey: string }[] = [
   {
-    title: 'Exclusividad y lujo',
-    description:
-      'Resaltar los acabados premium, amenities exclusivos y la experiencia de habitar un espacio único.',
+    titleKey: 'AGENCY.STUDIO.ANGLE_1_TITLE',
+    descriptionKey: 'AGENCY.STUDIO.ANGLE_1_DESC',
   },
   {
-    title: 'Inversión inteligente',
-    description:
-      'Enfocarse en la rentabilidad, plusvalía, ubicación estratégica y potencial de crecimiento.',
+    titleKey: 'AGENCY.STUDIO.ANGLE_2_TITLE',
+    descriptionKey: 'AGENCY.STUDIO.ANGLE_2_DESC',
   },
   {
-    title: 'Estilo de vida',
-    description: 'Mostrar cómo es vivir ahí: entorno, comodidad, comunidad, cercanía a servicios.',
+    titleKey: 'AGENCY.STUDIO.ANGLE_3_TITLE',
+    descriptionKey: 'AGENCY.STUDIO.ANGLE_3_DESC',
   },
   {
-    title: 'Ubicación y conectividad',
-    description:
-      'Destacar cercanía a transportes, comercios, escuelas y puntos de interés de la zona.',
+    titleKey: 'AGENCY.STUDIO.ANGLE_4_TITLE',
+    descriptionKey: 'AGENCY.STUDIO.ANGLE_4_DESC',
   },
   {
-    title: 'Sostenibilidad y diseño',
-    description:
-      'Resaltar eficiencia energética, materiales sustentables, espacios verdes y diseño contemporáneo.',
+    titleKey: 'AGENCY.STUDIO.ANGLE_5_TITLE',
+    descriptionKey: 'AGENCY.STUDIO.ANGLE_5_DESC',
   },
 ];
 
 /** Fotos sugeridas por tipo de ángulo: keywords sobre título + descripción.
  *  Ej.: "lujo" → acabados, salón de reuniones, alcoba; "seguridad" → portón,
- *  equipo de seguridad. Primera coincidencia que matchea manda. */
-const REFERENCE_SUGGESTIONS: { keywords: string[]; items: string[] }[] = [
+ *  equipo de seguridad. Primera coincidencia que matchea manda.
+ *  Los `keywords` son tokens de matching (contra texto del agente), no UI:
+ *  quedan sin traducir; `itemKeys` son los textos visibles/prompt i18n. */
+const REFERENCE_SUGGESTIONS: { keywords: string[]; itemKeys: string[] }[] = [
   // Especialización por escena: elementos concretos de los planos y tomas.
   {
     keywords: ['fachada', 'entrada', 'exterior', 'atardecer', 'torre'],
-    items: ['la fachada al atardecer', 'la entrada principal', 'la vista de la torre'],
+    itemKeys: [
+      'AGENCY.STUDIO.REF_FACADE_SUNSET',
+      'AGENCY.STUDIO.REF_MAIN_ENTRANCE',
+      'AGENCY.STUDIO.REF_TOWER_VIEW',
+    ],
   },
   {
     keywords: ['cocina', 'comedor'],
-    items: ['la cocina terminada', 'los detalles de la isla de cocina'],
+    itemKeys: ['AGENCY.STUDIO.REF_FINISHED_KITCHEN', 'AGENCY.STUDIO.REF_KITCHEN_ISLAND'],
   },
   {
     keywords: ['lobby', 'recepci', 'reuniones', 'salón', 'salon'],
-    items: ['el lobby de acceso', 'el salón de reuniones'],
+    itemKeys: ['AGENCY.STUDIO.REF_ACCESS_LOBBY', 'AGENCY.STUDIO.REF_MEETING_ROOM'],
   },
   {
     keywords: ['alcoba', 'dormitorio', 'habitaci'],
-    items: ['la alcoba principal', 'el detalle de la ventana'],
+    itemKeys: ['AGENCY.STUDIO.REF_MASTER_BEDROOM', 'AGENCY.STUDIO.REF_WINDOW_DETAIL'],
   },
   {
     keywords: ['piscina', 'gimnasio', 'jardín', 'jardin', 'terraza', 'deck'],
-    items: ['la piscina', 'la terraza y el jardín'],
+    itemKeys: ['AGENCY.STUDIO.REF_POOL', 'AGENCY.STUDIO.REF_TERRACE_GARDEN'],
   },
   // Marco del ángulo: el contexto general del que nace la escena.
   {
     keywords: ['lujo', 'premium', 'exclusiv', 'acabado', 'amenit'],
-    items: [
-      'los acabados premium',
-      'el salón de reuniones',
-      'la alcoba principal',
-      'las amenidades exclusivas',
+    itemKeys: [
+      'AGENCY.STUDIO.REF_PREMIUM_FINISHES',
+      'AGENCY.STUDIO.REF_MEETING_ROOM',
+      'AGENCY.STUDIO.REF_MASTER_BEDROOM',
+      'AGENCY.STUDIO.REF_EXCLUSIVE_AMENITIES',
     ],
   },
   {
@@ -238,34 +249,50 @@ const REFERENCE_SUGGESTIONS: { keywords: string[]; items: string[] }[] = [
       'camara',
       'control de acceso',
     ],
-    items: [
-      'el portón del edificio',
-      'el equipo de seguridad',
-      'el acceso controlado y las cámaras',
+    itemKeys: [
+      'AGENCY.STUDIO.REF_BUILDING_GATE',
+      'AGENCY.STUDIO.REF_SECURITY_TEAM',
+      'AGENCY.STUDIO.REF_CONTROLLED_ACCESS',
     ],
   },
   {
     keywords: ['inversi', 'rentab', 'plusval', 'financ', 'oportunidad'],
-    items: ['la fachada del edificio', 'las vistas panorámicas', 'la zona en desarrollo'],
+    itemKeys: [
+      'AGENCY.STUDIO.REF_FACADE',
+      'AGENCY.STUDIO.REF_SKYLINE_VIEWS',
+      'AGENCY.STUDIO.REF_DEVELOPING_AREA',
+    ],
   },
   {
     keywords: ['estilo de vida', 'comunidad', 'entorno', 'familiar', 'barrio', 'vecin'],
-    items: ['las áreas comunes', 'la vida en la comunidad', 'el entorno del barrio'],
+    itemKeys: [
+      'AGENCY.STUDIO.REF_COMMON_AREAS',
+      'AGENCY.STUDIO.REF_COMMUNITY_LIFE',
+      'AGENCY.STUDIO.REF_NEIGHBORHOOD',
+    ],
   },
   {
     keywords: ['ubicaci', 'conectiv', 'transporte', 'accesibil'],
-    items: ['la vista de la zona', 'los transportes cercanos', 'los puntos de interés'],
+    itemKeys: [
+      'AGENCY.STUDIO.REF_AREA_VIEW',
+      'AGENCY.STUDIO.REF_NEARBY_TRANSPORT',
+      'AGENCY.STUDIO.REF_POINTS_OF_INTEREST',
+    ],
   },
   {
     keywords: ['sosten', 'diseñ', 'disen', 'energ', 'verde', 'natural', 'ecol'],
-    items: ['los espacios verdes', 'los materiales sustentables', 'el diseño contemporáneo'],
+    itemKeys: [
+      'AGENCY.STUDIO.REF_GREEN_SPACES',
+      'AGENCY.STUDIO.REF_SUSTAINABLE_MATERIALS',
+      'AGENCY.STUDIO.REF_CONTEMPORARY_DESIGN',
+    ],
   },
 ];
 
-const DEFAULT_REFERENCE_SUGGESTIONS = [
-  'la fachada del edificio',
-  'las áreas comunes',
-  'la vista general del proyecto',
+const DEFAULT_REFERENCE_SUGGESTIONS: string[] = [
+  'AGENCY.STUDIO.REF_FACADE',
+  'AGENCY.STUDIO.REF_COMMON_AREAS',
+  'AGENCY.STUDIO.REF_GENERAL_VIEW',
 ];
 
 /** Parsea un evento SSE del agente ({event, data}), o null. */
@@ -278,33 +305,6 @@ function parseAgentEvent(rawEvent: string): { name: string; data: Record<string,
   } catch {
     return null;
   }
-}
-
-/** Convierte el artefacto sales_angles del agente en ángulos del flujo. */
-function anglesFromAgent(data: Record<string, unknown>, count: number): SalesAngle[] {
-  const raw = Array.isArray(data['angles']) ? (data['angles'] as Record<string, unknown>[]) : [];
-  return raw.slice(0, count).map((a, i) => ({
-    id: `angle-${i + 1}`,
-    title: String(a['title'] ?? `Ángulo ${i + 1}`),
-    description: [a['hook'], a['narrative_pitch'], a['target_audience']]
-      .filter((v) => typeof v === 'string' && v.trim() !== '')
-      .join(' — '),
-    selected: !!a['selected'],
-  }));
-}
-
-/** Arma la lista de ángulos a crear (1–10), rotando las plantillas. */
-function buildAngles(count: number): SalesAngle[] {
-  const n = Math.min(Math.max(Math.round(count) || 3, 1), 10);
-  return Array.from({ length: n }, (_, i) => {
-    const template = ANGLE_TEMPLATES[i % ANGLE_TEMPLATES.length];
-    return {
-      id: `angle-${i + 1}`,
-      title: `Ángulo ${i + 1} — ${template.title}`,
-      description: template.description,
-      selected: false,
-    };
-  });
 }
 
 @Component({
@@ -332,6 +332,7 @@ function buildAngles(count: number): SalesAngle[] {
     AutogrowDirective,
     ServerUrlPipe,
     LowerCasePipe,
+    TranslatePipe,
     AssetEditDialogComponent,
   ],
   templateUrl: './agency.component.html',
@@ -347,6 +348,7 @@ export class AgencyComponent {
   /** Cola global y take reel de generaciones (compartido con el studio). */
   private readonly eventsStore = inject(GenerationEventsStore);
   private readonly router = inject(Router);
+  private readonly translate = inject(TranslateService);
 
   protected readonly currentPhase = signal<WorkflowPhase>('input');
   protected readonly loading = signal(false);
@@ -355,50 +357,54 @@ export class AgencyComponent {
 
   /** Experto elegido para analizar el proyecto (default: comercial). */
   protected readonly agent = signal<AgencyAgent>('commercial');
-  protected readonly agentOptions = AGENT_OPTIONS;
+  protected readonly agentOptions = computed(() => {
+    this.translate.currentLang();
+    return AGENT_OPTIONS.map((o) => ({
+      value: o.value,
+      label: this.translate.instant(o.labelKey),
+      hint: this.translate.instant(o.hintKey),
+    }));
+  });
   protected readonly agentLabel = computed(
-    () => AGENT_OPTIONS.find((o) => o.value === this.agent())?.label ?? 'Comercial publicitario',
+    () => this.agentOptions().find((o) => o.value === this.agent())?.label ?? '',
   );
   protected readonly agentHint = computed(
-    () => AGENT_OPTIONS.find((o) => o.value === this.agent())?.hint ?? '',
+    () => this.agentOptions().find((o) => o.value === this.agent())?.hint ?? '',
   );
   /** Placeholder del contexto, adaptado al experto elegido. */
   protected readonly descriptionPlaceholder = computed(() => {
-    const tail =
-      'Esta descripción, junto a los insumos que cargues, me dará el contexto necesario para darte una mejor respuesta.';
+    this.translate.currentLang();
+    const tail = this.translate.instant('AGENCY.STUDIO.CONTEXT_TAIL');
     switch (this.agent()) {
       case 'real_estate':
-        return (
-          'Describe brevemente tu proyecto (puntos fuertes del proyecto inmobiliario, ' +
-          `amenidades, precio promedio, target del cliente, etc). ${tail}`
-        );
+        return this.translate.instant('AGENCY.STUDIO.CONTEXT_PH_RE', { tail });
       case 'cinema':
-        return (
-          'Describe brevemente tu proyecto (temática, idea escueta del video, guion, ' +
-          `tono, referencias visuales, etc). ${tail}`
-        );
+        return this.translate.instant('AGENCY.STUDIO.CONTEXT_PH_CINEMA', { tail });
       default:
-        return (
-          'Describe brevemente tu proyecto (de qué va el comercial, target del cliente, ' +
-          `puntos fuertes del producto o servicio, guion del comercial, etc). ${tail}`
-        );
+        return this.translate.instant('AGENCY.STUDIO.CONTEXT_PH_COMMERCIAL', { tail });
     }
   });
 
   /** Nombre del paso 2 según el experto: ángulos (inmobiliaria) o prompts. */
-  protected readonly anglesStepName = computed(() =>
-    this.agent() === 'real_estate' ? 'Ángulos' : 'Prompts',
-  );
+  protected readonly anglesStepName = computed(() => {
+    this.translate.currentLang();
+    return this.translate.instant(
+      this.agent() === 'real_estate' ? 'AGENCY.STUDIO.STEP_ANGLES' : 'AGENCY.STUDIO.STEP_PROMPTS',
+    );
+  });
   /** Sustantivo en minúscula para las frases del flujo. */
-  protected readonly anglesNoun = computed(() =>
-    this.agent() === 'real_estate' ? 'ángulos de venta' : 'prompts',
-  );
+  protected readonly anglesNoun = computed(() => {
+    this.translate.currentLang();
+    return this.translate.instant(
+      this.agent() === 'real_estate' ? 'AGENCY.STUDIO.NOUN_ANGLES' : 'AGENCY.STUDIO.NOUN_PROMPTS',
+    );
+  });
 
   protected readonly phases = computed<{ key: WorkflowPhase; name: string }[]>(() => [
-    { key: 'input', name: 'Documentación' },
+    { key: 'input', name: this.translate.instant('AGENCY.STUDIO.PHASE_DOCUMENTATION') },
     { key: 'angles', name: this.anglesStepName() },
-    { key: 'storyboard', name: 'Storyboard' },
-    { key: 'scenes', name: 'Escenas' },
+    { key: 'storyboard', name: this.translate.instant('AGENCY.STUDIO.PHASE_STORYBOARD') },
+    { key: 'scenes', name: this.translate.instant('AGENCY.STUDIO.PHASE_SCENES') },
   ]);
 
   protected readonly phaseIndex = computed(() =>
@@ -437,7 +443,7 @@ export class AgencyComponent {
   protected readonly modelImageOptions = computed(() => this.modelOptionsFor('image'));
   protected readonly modelVideoOptions = computed(() => this.modelOptionsFor('video'));
   protected readonly projectDescription = signal('');
-  protected readonly angles = signal<SalesAngle[]>(buildAngles(3));
+  protected readonly angles = signal<SalesAngle[]>(this.buildAngles(3));
   /** Ids de ángulos tildados: derivado de `angles` para que nunca se
    *  desincronice del estado real (antes era una copia a mano que un
    *  restore podía pisar). */
@@ -508,7 +514,7 @@ export class AgencyComponent {
   protected readonly imageRatioOptions = computed(() => {
     const ratios = this.activeImageModel()?.defaults?.ratios ?? [];
     return [
-      { label: 'Automática (default del modelo)', value: '' },
+      { label: this.translate.instant('AGENCY.STUDIO.MODEL_AUTO_RATIO'), value: '' },
       ...ratios.map((r) => ({ label: r, value: r })),
     ];
   });
@@ -537,7 +543,7 @@ export class AgencyComponent {
   protected readonly videoRatioOptions = computed(() => {
     const ratios = this.activeVideoModel()?.defaults?.ratios ?? [];
     return [
-      { label: 'Automática (default del modelo)', value: '' },
+      { label: this.translate.instant('AGENCY.STUDIO.MODEL_AUTO_RATIO'), value: '' },
       ...ratios.map((r) => ({ label: r, value: r })),
     ];
   });
@@ -546,7 +552,7 @@ export class AgencyComponent {
   protected readonly videoResolutionOptions = computed(() => {
     const resolutions = this.activeVideoModel()?.defaults?.resolutions ?? [];
     return [
-      { label: 'Automática (default del modelo)', value: '' },
+      { label: this.translate.instant('AGENCY.STUDIO.MODEL_AUTO_RATIO'), value: '' },
       ...resolutions.map((r) => ({ label: r, value: r })),
     ];
   });
@@ -675,7 +681,9 @@ export class AgencyComponent {
       for (const file of files) {
         const result = await firstValueFrom(this.agencyService.extractBrief(file));
         if (!result?.text) {
-          this.error.set(`No se pudo extraer texto de ${file.name} (¿PDF escaneado como imagen?).`);
+          this.error.set(
+            this.translate.instant('AGENCY.STUDIO.ERRORS.EXTRACT', { name: file.name }),
+          );
           return;
         }
         this.appendBriefText(result.text);
@@ -683,14 +691,14 @@ export class AgencyComponent {
         truncated = truncated || result.truncated;
       }
       this.briefNote.set(
-        `Texto de ${added.join(', ')} agregado a la descripción` +
-          (truncated ? ' (recortado a 8.000 caracteres)' : ''),
+        this.translate.instant('AGENCY.STUDIO.ERRORS.NOTE_ADDED', { names: added.join(', ') }) +
+          (truncated ? this.translate.instant('AGENCY.STUDIO.ERRORS.NOTE_TRUNCATED') : ''),
       );
     } catch (err) {
       // HttpErrorResponse trae el mensaje del back en err.error.message.
       const wrapped = err as { message?: string; error?: { message?: string } };
       const message = wrapped?.error?.message || wrapped?.message || '';
-      this.error.set(message || 'No se pudo extraer el texto del folleto.');
+      this.error.set(message || this.translate.instant('AGENCY.STUDIO.ERRORS.EXTRACT_GENERIC'));
     } finally {
       this.extractingBrief.set(false);
     }
@@ -753,11 +761,11 @@ export class AgencyComponent {
   private phaseBlockedMessage(phase: WorkflowPhase): string {
     switch (phase) {
       case 'angles':
-        return 'Completá los datos del proyecto para ver los ángulos.';
+        return this.translate.instant('AGENCY.STUDIO.ERRORS.ANGLES_BLOCKED');
       case 'storyboard':
-        return 'Seleccioná al menos un ángulo para ver el storyboard.';
+        return this.translate.instant('AGENCY.STUDIO.ERRORS.STORYBOARD_BLOCKED');
       case 'scenes':
-        return 'Aprobá el storyboard de todas las escenas para continuar.';
+        return this.translate.instant('AGENCY.STUDIO.ERRORS.SCENES_BLOCKED');
       default:
         return '';
     }
@@ -778,7 +786,7 @@ export class AgencyComponent {
     if (currentIndex < phases.length - 1) {
       const next = phases[currentIndex + 1];
       if (next === 'scenes' && !this.canProceedToScenes) {
-        this.error.set('Aprobá el storyboard de todas las escenas para continuar.');
+        this.error.set(this.translate.instant('AGENCY.STUDIO.ERRORS.SCENES_BLOCKED'));
         return;
       }
       this.currentPhase.set(next);
@@ -842,7 +850,7 @@ export class AgencyComponent {
     const count = fixed
       ? Number((this.form.getRawValue() as { anglesCount?: number }).anglesCount) || 3
       : 10;
-    this.angles.set(buildAngles(count));
+    this.angles.set(this.buildAngles(count));
 
     this.loading.set(true);
     this.error.set(null);
@@ -872,7 +880,7 @@ export class AgencyComponent {
           const why =
             err instanceof Error && err.message
               ? err.message
-              : 'No se pudieron guardar los datos del proyecto.';
+              : this.translate.instant('AGENCY.STUDIO.ERRORS.SAVE_PROJECT');
           this.error.set(why);
           return EMPTY;
         }),
@@ -895,7 +903,7 @@ export class AgencyComponent {
     description: string;
   }): Observable<Project> {
     if (!values.name) {
-      return throwError(() => new Error('Nombre de proyecto vacío'));
+      return throwError(() => new Error(this.translate.instant('AGENCY.STUDIO.ERRORS.EMPTY_NAME')));
     }
     return this.eventsService.listEvents().pipe(
       mergeMap((projects) => {
@@ -1019,7 +1027,7 @@ export class AgencyComponent {
     const scene = this.storyboard().find((s) => s.id === sceneId);
     if (!scene || scene.boardGenerating) return;
     if (!scene.refsApproved) {
-      this.error.set('Aprobá las fotos de referencia de la escena para generar imágenes.');
+      this.error.set(this.translate.instant('AGENCY.STUDIO.ERRORS.APPROVE_REFS'));
       return;
     }
     const count = Math.min(Math.max(scene.shots.length || 3, 1), 12);
@@ -1092,13 +1100,13 @@ export class AgencyComponent {
     const prompt = this.boardPrompt().trim();
     if (!scene || scene.boardGenerating) return;
     if (!prompt) {
-      this.error.set('Escribí el prompt del storyboard.');
+      this.error.set(this.translate.instant('AGENCY.STUDIO.ERRORS.BOARD_PROMPT'));
       return;
     }
     const imageModels = this.models().filter((m) => m.modality === 'image');
     const model = imageModels.find((m) => m.name === this.modelImage()) ?? imageModels[0];
     if (!model) {
-      this.error.set('No hay modelos de imagen disponibles.');
+      this.error.set(this.translate.instant('AGENCY.STUDIO.ERRORS.NO_IMAGE_MODELS'));
       return;
     }
     const count = this.boardShotCount();
@@ -1122,7 +1130,7 @@ export class AgencyComponent {
     this.ensureSceneAnchor(scene)
       .pipe(
         catchError(() => {
-          this.error.set('No se pudo preparar el proyecto de la Agencia.');
+          this.error.set(this.translate.instant('AGENCY.STUDIO.ERRORS.PREPARE_PROJECT'));
           setGenerating(false);
           return EMPTY;
         }),
@@ -1140,7 +1148,11 @@ export class AgencyComponent {
           })
           .pipe(
             catchError(() => {
-              this.error.set(`Error al generar el storyboard de ${scene.title}.`);
+              this.error.set(
+                this.translate.instant('AGENCY.STUDIO.ERRORS.BOARD_GENERATE', {
+                  title: scene.title,
+                }),
+              );
               setGenerating(false);
               return EMPTY;
             }),
@@ -1150,7 +1162,11 @@ export class AgencyComponent {
               .pollTaskUntilDone('image', response.taskId)
               .pipe(
                 catchError(() => {
-                  this.error.set(`Error al consultar el storyboard de ${scene.title}.`);
+                  this.error.set(
+                    this.translate.instant('AGENCY.STUDIO.ERRORS.BOARD_POLL', {
+                      title: scene.title,
+                    }),
+                  );
                   setGenerating(false);
                   return EMPTY;
                 }),
@@ -1161,7 +1177,7 @@ export class AgencyComponent {
                     ? status.outputs[0].url
                     : null;
                 if (!url) {
-                  this.error.set('La generación no produjo imagen. Reintentá.');
+                  this.error.set(this.translate.instant('AGENCY.STUDIO.ERRORS.BOARD_NO_OUTPUT'));
                   setGenerating(false);
                   return;
                 }
@@ -1250,7 +1266,7 @@ export class AgencyComponent {
         void this.uploadBoardReference(scene.id, scene.boardImageUrl!).then((fileId) => {
           this.editorLoading.set(false);
           if (!fileId) {
-            this.error.set('No se pudo cargar la hoja de storyboard para editar.');
+            this.error.set(this.translate.instant('AGENCY.STUDIO.ERRORS.BOARD_LOAD'));
             return;
           }
           this.openAssetEditor(fileId);
@@ -1343,10 +1359,11 @@ export class AgencyComponent {
 
   /** Opciones de modelo para una modalidad ('Automático' = default del back). */
   private modelOptionsFor(modality: Modality): { label: string; value: string }[] {
+    this.translate.currentLang();
     const list = this.models()
       .filter((m) => m.modality === modality)
       .map((m) => ({ label: m.display_name || m.name, value: m.name }));
-    return [{ label: 'Automático', value: '' }, ...list];
+    return [{ label: this.translate.instant('AGENCY.STUDIO.MODEL_AUTO'), value: '' }, ...list];
   }
 
   /** Modelo LLM configurado en la credencial (extra.model de admin/models). */
@@ -1385,14 +1402,41 @@ export class AgencyComponent {
       mergeMap((cred) =>
         cred
           ? of(cred)
-          : throwError(
-              () =>
-                new Error(
-                  'Sin credencial LLM (openrouter/anthropic) en Admin → Credenciales.',
-                ),
-            ),
+          : throwError(() => new Error(this.translate.instant('AGENCY.STUDIO.ERRORS.NO_LLM'))),
       ),
     );
+  }
+
+  /** Arma la lista de ángulos a crear (1–10), rotando las plantillas. */
+  private buildAngles(count: number): SalesAngle[] {
+    this.translate.currentLang();
+    const n = Math.min(Math.max(Math.round(count) || 3, 1), 10);
+    return Array.from({ length: n }, (_, i) => {
+      const template = ANGLE_TEMPLATES[i % ANGLE_TEMPLATES.length];
+      return {
+        id: `angle-${i + 1}`,
+        title: this.translate.instant('AGENCY.STUDIO.ANGLE_FALLBACK_TITLE', {
+          n: i + 1,
+          title: this.translate.instant(template.titleKey),
+        }),
+        description: this.translate.instant(template.descriptionKey),
+        selected: false,
+      };
+    });
+  }
+
+  private anglesFromAgent(data: Record<string, unknown>, count: number): SalesAngle[] {
+    const raw = Array.isArray(data['angles']) ? (data['angles'] as Record<string, unknown>[]) : [];
+    return raw.slice(0, count).map((a, i) => ({
+      id: `angle-${i + 1}`,
+      title: String(
+        a['title'] ?? this.translate.instant('AGENCY.STUDIO.ANGLE_DEFAULT_TITLE', { n: i + 1 }),
+      ),
+      description: [a['hook'], a['narrative_pitch'], a['target_audience']]
+        .filter((v) => typeof v === 'string' && v.trim() !== '')
+        .join(' — '),
+      selected: !!a['selected'],
+    }));
   }
 
   /** Ángulos de venta: los genera el LLM elegido (credencial del tenant) vía
@@ -1400,9 +1444,7 @@ export class AgencyComponent {
    *  observable falla: no se rellena con plantillas, porque ángulos
    *  inventados no son producto. */
   private generateAnglesWithAgent(count: number): Observable<SalesAngle[]> {
-    return this.pickLlmCredential().pipe(
-      mergeMap((cred) => this.requestAgentAngles(cred, count)),
-    );
+    return this.pickLlmCredential().pipe(mergeMap((cred) => this.requestAgentAngles(cred, count)));
   }
 
   private requestAgentAngles(cred: Credential, count: number): Observable<SalesAngle[]> {
@@ -1413,7 +1455,7 @@ export class AgencyComponent {
     };
     const agent = this.agent();
     const message = [
-      `${AGENT_KIND_LABEL[agent]}: ${raw.propertyName} (${raw.location}).`,
+      `${this.translate.instant(AGENT_KIND_LABEL[agent])}: ${raw.propertyName} (${raw.location}).`,
       raw.description,
       agent === 'real_estate'
         ? `Generá ${count} ángulos de venta y detené el flujo ahí.`
@@ -1463,7 +1505,7 @@ export class AgencyComponent {
               const parsed = parseAgentEvent(rawEvent);
               if (parsed?.name === 'sales_angles') {
                 controller.abort();
-                const mapped = anglesFromAgent(parsed.data, count);
+                const mapped = this.anglesFromAgent(parsed.data, count);
                 if (mapped.length > 0) {
                   // Solo ángulos reales: si el LLM devolvió menos de los
                   // pedidos se muestran esos, sin completar con plantillas.
@@ -1478,8 +1520,12 @@ export class AgencyComponent {
         })
         .catch((err: unknown) => {
           const why =
-            err instanceof Error && err.message ? err.message : 'sin respuesta del agente';
-          subscriber.error(new Error(`No se generaron los ángulos: ${why}`));
+            err instanceof Error && err.message
+              ? err.message
+              : this.translate.instant('AGENCY.STUDIO.ERRORS.NO_AGENT_RESPONSE');
+          subscriber.error(
+            new Error(this.translate.instant('AGENCY.STUDIO.ERRORS.ANGLES', { why })),
+          );
         })
         .finally(() => clearTimeout(timer));
     });
@@ -1546,7 +1592,7 @@ export class AgencyComponent {
     if (!project) {
       this.currentPhase.set('input');
       const count = Number((this.form.getRawValue() as { anglesCount?: number }).anglesCount) || 3;
-      this.angles.set(buildAngles(count));
+      this.angles.set(this.buildAngles(count));
       this.storyboard.set([]);
       this.modelText.set('');
       this.modelImage.set('');
@@ -1687,8 +1733,9 @@ export class AgencyComponent {
   /** Fotos sugeridas para ESTA escena: keywords sobre título+descripción de
    *  la escena, sus tomas y su ángulo (especialización por escena). */
   protected sceneSuggestions(sceneId: string): string[] {
+    this.translate.currentLang();
     const scene = this.storyboard().find((s) => s.id === sceneId);
-    if (!scene) return DEFAULT_REFERENCE_SUGGESTIONS;
+    if (!scene) return DEFAULT_REFERENCE_SUGGESTIONS.map((k) => this.translate.instant(k));
     const angle = this.angles().find((a) => a.id === scene.angleId);
     const text = [
       scene.title,
@@ -1702,11 +1749,14 @@ export class AgencyComponent {
     const items: string[] = [];
     for (const group of REFERENCE_SUGGESTIONS) {
       if (!group.keywords.some((k) => text.includes(k))) continue;
-      for (const item of group.items) {
+      for (const key of group.itemKeys) {
+        const item = this.translate.instant(key);
         if (!items.includes(item)) items.push(item);
       }
     }
-    return items.length ? items.slice(0, 5) : DEFAULT_REFERENCE_SUGGESTIONS;
+    return items.length
+      ? items.slice(0, 5)
+      : DEFAULT_REFERENCE_SUGGESTIONS.map((k) => this.translate.instant(k));
   }
 
   /** Fotos ya subidas de la escena (miniaturas + narrativa). */
@@ -1730,14 +1780,14 @@ export class AgencyComponent {
       .getFile(fileId)
       .pipe(
         catchError(() => {
-          this.error.set('No se pudo cargar el recurso para editar.');
+          this.error.set(this.translate.instant('AGENCY.STUDIO.ERRORS.ASSET_LOAD'));
           return EMPTY;
         }),
         finalize(() => this.editorLoading.set(false)),
       )
       .subscribe((asset) => {
         if (!asset) {
-          this.error.set('No se pudo cargar el recurso para editar.');
+          this.error.set(this.translate.instant('AGENCY.STUDIO.ERRORS.ASSET_LOAD'));
           return;
         }
         this.editorAsset.set(asset);
@@ -1827,7 +1877,7 @@ export class AgencyComponent {
     if (input) input.value = '';
     if (!files.length) return;
     if (!this.storyboard().some((s) => s.id === sceneId)) {
-      this.error.set('No se encontró la escena para guardar las fotos de referencia.');
+      this.error.set(this.translate.instant('AGENCY.STUDIO.ERRORS.SCENE_NOT_FOUND'));
       return;
     }
     this.uploadingRefScenes.update((list) => (list.includes(sceneId) ? list : [...list, sceneId]));
@@ -1862,7 +1912,9 @@ export class AgencyComponent {
             done();
           },
           error: () => {
-            this.error.set(`No se pudo subir ${file.name}.`);
+            this.error.set(
+              this.translate.instant('AGENCY.STUDIO.ERRORS.UPLOAD', { name: file.name }),
+            );
             done();
           },
         });
@@ -2256,7 +2308,7 @@ export class AgencyComponent {
     if (!target || !prompt || prompt.generating) return;
     const model = this.activeVideoModel();
     if (!model) {
-      this.error.set('No hay modelos de video disponibles.');
+      this.error.set(this.translate.instant('AGENCY.STUDIO.ERRORS.NO_VIDEO_MODELS'));
       return;
     }
     this.error.set(null);
@@ -2264,7 +2316,7 @@ export class AgencyComponent {
     this.ensureSceneAnchor(scene)
       .pipe(
         catchError(() => {
-          this.error.set('No se pudo preparar el proyecto de la Agencia.');
+          this.error.set(this.translate.instant('AGENCY.STUDIO.ERRORS.PREPARE_PROJECT'));
           this.patchPrompt(sceneId, shotId, index, { generating: false });
           return EMPTY;
         }),
@@ -2306,7 +2358,11 @@ export class AgencyComponent {
           .generate('video', payload)
           .pipe(
             catchError(() => {
-              this.error.set(`Error al generar el video de ${scene.title}.`);
+              this.error.set(
+                this.translate.instant('AGENCY.STUDIO.ERRORS.VIDEO_GENERATE', {
+                  title: scene.title,
+                }),
+              );
               this.eventsStore.remove(takeId);
               this.patchPrompt(sceneId, shotId, index, { generating: false });
               return EMPTY;
@@ -2328,7 +2384,11 @@ export class AgencyComponent {
               .pollTaskUntilDone('video', response.taskId)
               .pipe(
                 catchError(() => {
-                  this.error.set(`Error al consultar el video de ${scene.title}.`);
+                  this.error.set(
+                    this.translate.instant('AGENCY.STUDIO.ERRORS.VIDEO_POLL', {
+                      title: scene.title,
+                    }),
+                  );
                   this.patchPrompt(sceneId, shotId, index, { generating: false });
                   return EMPTY;
                 }),
@@ -2341,8 +2401,14 @@ export class AgencyComponent {
                 if (status.status === 'failed' || status.status === 'cancelled') {
                   this.error.set(
                     status.status === 'failed'
-                      ? `El video de ${scene.title} falló: ${status.error ?? 'reintentá.'}`
-                      : `La generación del video de ${scene.title} fue cancelada.`,
+                      ? this.translate.instant('AGENCY.STUDIO.ERRORS.VIDEO_FAILED', {
+                          title: scene.title,
+                          error:
+                            status.error ?? this.translate.instant('AGENCY.STUDIO.ERRORS.RETRY'),
+                        })
+                      : this.translate.instant('AGENCY.STUDIO.ERRORS.VIDEO_CANCELLED', {
+                          title: scene.title,
+                        }),
                   );
                 }
                 this.patchPrompt(sceneId, shotId, index, {
@@ -2432,7 +2498,7 @@ export class AgencyComponent {
   ): void {
     const prompt = this.promptAt(scene.id, shotId, index);
     if (!prompt || !prompt.text.trim()) {
-      this.error.set('Este prompt no tiene contenido para llevar al Studio.');
+      this.error.set(this.translate.instant('AGENCY.STUDIO.ERRORS.PROMPT_EMPTY'));
       return;
     }
     const take = this.takeForPrompt(scene.id, shotId, index);
@@ -2443,14 +2509,14 @@ export class AgencyComponent {
     }
     const model = this.activeVideoModel();
     if (!model) {
-      this.error.set('No hay modelos de video disponibles.');
+      this.error.set(this.translate.instant('AGENCY.STUDIO.ERRORS.NO_VIDEO_MODELS'));
       return;
     }
     this.error.set(null);
     this.ensureSceneAnchor(scene)
       .pipe(
         catchError(() => {
-          this.error.set('No se pudo preparar el proyecto de la Agencia.');
+          this.error.set(this.translate.instant('AGENCY.STUDIO.ERRORS.PREPARE_PROJECT'));
           return EMPTY;
         }),
       )
@@ -2470,6 +2536,21 @@ export class AgencyComponent {
     this.videoPreview.set({ url, title });
   }
 
+  protected scenePreviewTitle(sceneTitle: string, index: number, total: number): string {
+    return this.translate.instant('AGENCY.STUDIO.P4_PREVIEW_SCENE_TITLE', {
+      index,
+      total,
+      title: sceneTitle,
+    });
+  }
+
+  protected shotPreviewTitle(sceneTitle: string, shotNumber: number): string {
+    return this.translate.instant('AGENCY.STUDIO.P4_PREVIEW_SHOT_TITLE', {
+      n: shotNumber,
+      title: sceneTitle,
+    });
+  }
+
   protected closeVideoPreview(): void {
     this.videoPreview.set(null);
   }
@@ -2484,6 +2565,10 @@ export class AgencyComponent {
   protected readonly chatDraft = signal('');
   /** Turno en curso (deshabilita el input y el botón enviar). */
   protected readonly chatBusy = signal(false);
+  /** Actividad de herramientas del asistente en el turno actual: cada
+   *  invocación (consultar proyectos, generar video/imagen, etc.) aparece
+   *  acá para que el usuario vea qué está haciendo el agente en vivo. */
+  protected readonly chatActivity = signal<ChatToolActivity[]>([]);
   /** conversation_id devuelto por el back para continuar el hilo. */
   private chatConversationId = '';
 
@@ -2508,12 +2593,16 @@ export class AgencyComponent {
     this.chatDraft.set('');
     this.chatMessages.update((m) => [...m, { role: 'user', content: message }]);
     this.chatBusy.set(true);
+    this.chatActivity.set([]);
 
     this.pickLlmCredential()
       .pipe(
         mergeMap((cred) => this.streamChatTurn(cred, message)),
         catchError((err: unknown) => {
-          const why = err instanceof Error && err.message ? err.message : 'sin respuesta del agente';
+          const why =
+            err instanceof Error && err.message
+              ? err.message
+              : this.translate.instant('AGENCY.STUDIO.ERRORS.NO_AGENT_RESPONSE');
           this.chatMessages.update((m) => [...m, { role: 'assistant', content: `⚠️ ${why}` }]);
           return EMPTY;
         }),
@@ -2527,7 +2616,9 @@ export class AgencyComponent {
   private streamChatTurn(cred: Credential, message: string): Observable<void> {
     const token = this.session.token();
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 45_000);
+    // El turno del asistente puede encadenar varias herramientas (cada una
+    // con su ida al LLM), así que el tope sube respecto del chat simple.
+    const timer = setTimeout(() => controller.abort(), 120_000);
 
     return new Observable<void>((subscriber) => {
       fetch(this.agentChatUrl(), {
@@ -2568,10 +2659,17 @@ export class AgencyComponent {
               if (!parsed) continue;
               if (parsed.name === 'meta' && typeof parsed.data['conversation_id'] === 'string') {
                 this.chatConversationId = parsed.data['conversation_id'];
+              } else if (parsed.name === 'tool') {
+                this.applyToolEvent(parsed.data);
               } else if (parsed.name === 'text') {
                 this.appendChatText(String(parsed.data['text'] ?? ''));
               } else if (parsed.name === 'error') {
-                throw new Error(String(parsed.data['message'] ?? 'error del agente'));
+                throw new Error(
+                  String(
+                    parsed.data['message'] ??
+                      this.translate.instant('AGENCY.STUDIO.ERRORS.AGENT_ERROR'),
+                  ),
+                );
               }
             }
           }
@@ -2580,11 +2678,58 @@ export class AgencyComponent {
         })
         .catch((err: unknown) => {
           const why =
-            err instanceof Error && err.message ? err.message : 'sin respuesta del agente';
+            err instanceof Error && err.message
+              ? err.message
+              : this.translate.instant('AGENCY.STUDIO.ERRORS.NO_AGENT_RESPONSE');
           subscriber.error(new Error(why));
         })
         .finally(() => clearTimeout(timer));
     });
+  }
+
+  /** Aplica un evento SSE "tool": muestra el avance de la invocación y, si
+   *  el asistente encoló una generación, la engancha a la cola compartida
+   *  para que aparezca en el reel con su progreso en vivo. */
+  private applyToolEvent(data: Record<string, unknown>): void {
+    const name = String(data['name'] ?? '');
+    const status = String(data['status'] ?? '') as ChatToolActivity['status'];
+    const taskId = typeof data['task_id'] === 'string' ? data['task_id'] : '';
+    const summary = typeof data['summary'] === 'string' ? data['summary'] : '';
+    const error = typeof data['error'] === 'string' ? data['error'] : '';
+    if (!name) return;
+
+    // Reemplaza la entrada "running" de esta herramienta (o agrega una).
+    this.chatActivity.update((list) => {
+      const existing = list.findIndex((a) => a.name === name && a.status === 'running');
+      const entry: ChatToolActivity = { name, status, summary, error };
+      if (existing >= 0) {
+        const next = [...list];
+        next[existing] = entry;
+        return next;
+      }
+      return [...list, entry];
+    });
+
+    // Generación encolada por el asistente → track global: el reel y la
+    // campana la siguen con progreso en vivo, igual que una del estudio.
+    if (taskId && (name === 'generate_video' || name === 'generate_image') && status === 'ok') {
+      this.eventsStore.upsert({
+        id: taskId,
+        prompt: summary,
+        modelName: '',
+        modelDisplayName: this.agentLabel(),
+        modelType: 'api',
+        ratio: '',
+        resolution: '',
+        duration: 0,
+        status: 'queued',
+        progress: 0,
+        videoUrl: null,
+        error: null,
+        createdAt: Date.now(),
+      });
+      this.eventsStore.track(taskId);
+    }
   }
 
   /** Concatena un fragmento al último mensaje del asistente. */
@@ -2682,7 +2827,7 @@ export class AgencyComponent {
    *  sessionStorage y el studio carga proyecto, modelo y formato. */
   protected goToStudio(take: StudioTake): void {
     if (!take.request) {
-      this.error.set('Esta generación no tiene payload de origen para retocar en el Studio.');
+      this.error.set(this.translate.instant('AGENCY.STUDIO.ERRORS.NO_PAYLOAD'));
       return;
     }
     sessionStorage.setItem('studio:reuse', JSON.stringify(take.request));

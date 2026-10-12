@@ -1,11 +1,12 @@
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { CONTACT_EMAIL, CONTACT_SOCIALS } from '@constants/contact.constants';
 
 @Component({
   selector: 'layout',
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, TranslatePipe],
   templateUrl: './public-layout.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

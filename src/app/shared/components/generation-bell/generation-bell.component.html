@@ -6,8 +6,8 @@
   severity="contrast"
   styleClass="relative"
   (onClick)="toggle($event)"
-  ariaLabel="Eventos de generación"
-  pTooltip="Eventos de generación"
+  ariaLabel="{{ 'APP.ROUTES.GENERATION_EVENTS' | translate }}"
+  pTooltip="{{ 'APP.ROUTES.GENERATION_EVENTS' | translate }}"
   tooltipPosition="bottom"
   showDelay="400"
 />
@@ -24,14 +24,17 @@
 
 <p-popover #popoverRef styleClass="gen-bell-popover">
   <div class="pop-head">
-    <span><i class="md md-bolt"></i> Generaciones</span>
+    <span><i class="md md-bolt"></i> {{ 'SHARED.BELL.TITLE' | translate }}</span>
     @if (hasActive()) {
-      <span class="pop-live"><span class="dot"></span> {{ store.activeCount() }} en curso</span>
+      <span class="pop-live"
+        ><span class="dot"></span>
+        {{ 'SHARED.BELL.IN_PROGRESS' | translate: { count: store.activeCount() } }}</span
+      >
     }
   </div>
 
   @if (store.events().length === 0) {
-    <p class="pop-empty">Sin eventos de generación todavía.</p>
+    <p class="pop-empty">{{ 'SHARED.BELL.EMPTY' | translate }}</p>
   }
 
   <div class="pop-list">
@@ -72,7 +75,7 @@
             </span>
           }
           @if (store.isUnread(take.id)) {
-            <span class="pop-new">nuevo</span>
+            <span class="pop-new">{{ 'SHARED.BELL.NEW' | translate }}</span>
           }
         </span>
       </a>
@@ -80,6 +83,6 @@
   </div>
 
   <a routerLink="/events" class="pop-footer">
-    Ver todos los eventos <i class="md md-arrow_forward"></i>
+    {{ 'SHARED.BELL.VIEW_ALL' | translate }} <i class="md md-arrow_forward"></i>
   </a>
 </p-popover>

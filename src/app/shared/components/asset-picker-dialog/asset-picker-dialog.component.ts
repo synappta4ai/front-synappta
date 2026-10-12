@@ -11,6 +11,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { catchError, EMPTY, finalize } from 'rxjs';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { Button } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
@@ -51,6 +52,7 @@ type PickerFilter = 'all' | 'character' | 'location' | 'props' | 'images' | 'vid
     ServerUrlPipe,
     TiltDirective,
     ImgFadeDirective,
+    TranslatePipe,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -68,8 +70,8 @@ type PickerFilter = 'all' | 'character' | 'location' | 'props' | 'images' | 'vid
         <div class="flex items-center gap-3">
           <div class="picker-head-icon"><i class="md md-photo_library"></i></div>
           <div>
-            <h3 class="picker-title">{{ title() }}</h3>
-            <p class="picker-subtitle">Recursos de la biblioteca — mismos que Admin → Imágenes</p>
+            <h3 class="picker-title">{{ dialogTitle() }}</h3>
+            <p class="picker-subtitle">{{ 'SHARED.ASSET_PICKER.SUBTITLE' | translate }}</p>
           </div>
         </div>
       </ng-template>
@@ -80,7 +82,7 @@ type PickerFilter = 'all' | 'character' | 'location' | 'props' | 'images' | 'vid
           [ngModel]="filter()"
           (ngModelChange)="onFilterChange($event)"
           [options]="filterOptions"
-          optionLabel="label"
+          optionLabel="labelKey"
           optionValue="value"
           [allowEmpty]="false"
           styleClass="section-toggle"
@@ -88,7 +90,7 @@ type PickerFilter = 'all' | 'character' | 'location' | 'props' | 'images' | 'vid
           <ng-template #item let-option>
             <span class="picker-tab-item">
               <i class="md {{ option.icon }}"></i>
-              <span>{{ option.label }}</span>
+              <span>{{ option.labelKey | translate }}</span>
               <span class="picker-tab-count">{{ pickerCounts()[option.value] }}</span>
             </span>
           </ng-template>
@@ -101,7 +103,7 @@ type PickerFilter = 'all' | 'character' | 'location' | 'props' | 'images' | 'vid
             type="text"
             [ngModel]="search()"
             (ngModelChange)="onSearchChange($event)"
-            placeholder="Buscar por nombre…"
+            placeholder="{{ 'LIBRARY.SEARCH_PLACEHOLDER' | translate }}"
           />
         </p-iconfield>
       </div>
@@ -109,58 +111,58 @@ type PickerFilter = 'all' | 'character' | 'location' | 'props' | 'images' | 'vid
       @if (loading()) {
         <div class="picker-empty">
           <i class="md md-autorenew md-spin text-2xl text-accent"></i>
-          <p class="text-sm text-ink-muted-on-dark">Cargando recursos…</p>
+          <p class="text-sm text-ink-muted-on-dark">{{ 'LIBRARY.LOADING' | translate }}</p>
         </div>
       } @else if (paged().length === 0) {
         <div class="picker-empty">
           <div class="picker-empty-icon"><i class="md md-inbox"></i></div>
-          <h3>No hay recursos</h3>
-          <p>Sube recursos desde Admin → Imágenes y aparecerán aquí.</p>
+          <h3>{{ 'LIBRARY.EMPTY_TITLE' | translate }}</h3>
+          <p>{{ 'SHARED.ASSET_PICKER.EMPTY_HINT' | translate }}</p>
         </div>
       } @else {
-        @for (group of groups(); track group.label) {
-          @if (group.label) {
+        @for (group of groups(); track group.labelKey) {
+          @if (group.labelKey) {
             <h4 class="picker-section-head">
-              {{ group.label }}
+              {{ group.labelKey | translate }}
               <span class="picker-section-count">{{ group.assets.length }}</span>
             </h4>
           }
           <div class="picker-grid">
-          @for (asset of group.assets; track asset.id) {
-            <button
-              type="button"
-              class="picker-card"
-              appTilt
-              [class.picked]="isSelected(asset.id)"
-              (click)="toggle(asset.id)"
-              [title]="asset.filename"
-            >
-              <div class="picker-thumb zoomable">
-                @if (asset.mime_type?.startsWith('image/')) {
-                  <img
-                    appImgFade
-                    [src]="assetThumb(asset) | serverUrl"
-                    [alt]="asset.filename"
-                    loading="lazy"
-                  />
-                } @else if (asset.mime_type?.startsWith('video/')) {
-                  <video [src]="asset.url | serverUrl" preload="metadata"></video>
-                } @else {
-                  <span class="flex h-full w-full items-center justify-center">
-                    <i class="md md-description text-2xl text-ink-muted-on-dark"></i>
-                  </span>
-                }
-                <span class="picker-check"><i class="md md-check"></i></span>
-                @if (asset.ingredients?.length) {
-                  <span class="picker-ing">
-                    <i class="md md-label"></i>
-                    {{ asset.ingredients![0].name }}
-                  </span>
-                }
-              </div>
-              <p class="picker-filename">{{ asset.filename }}</p>
-            </button>
-          }
+            @for (asset of group.assets; track asset.id) {
+              <button
+                type="button"
+                class="picker-card"
+                appTilt
+                [class.picked]="isSelected(asset.id)"
+                (click)="toggle(asset.id)"
+                [title]="asset.filename"
+              >
+                <div class="picker-thumb zoomable">
+                  @if (asset.mime_type?.startsWith('image/')) {
+                    <img
+                      appImgFade
+                      [src]="assetThumb(asset) | serverUrl"
+                      [alt]="asset.filename"
+                      loading="lazy"
+                    />
+                  } @else if (asset.mime_type?.startsWith('video/')) {
+                    <video [src]="asset.url | serverUrl" preload="metadata"></video>
+                  } @else {
+                    <span class="flex h-full w-full items-center justify-center">
+                      <i class="md md-description text-2xl text-ink-muted-on-dark"></i>
+                    </span>
+                  }
+                  <span class="picker-check"><i class="md md-check"></i></span>
+                  @if (asset.ingredients?.length) {
+                    <span class="picker-ing">
+                      <i class="md md-label"></i>
+                      {{ asset.ingredients![0].name }}
+                    </span>
+                  }
+                </div>
+                <p class="picker-filename">{{ asset.filename }}</p>
+              </button>
+            }
           </div>
         }
 
@@ -168,7 +170,7 @@ type PickerFilter = 'all' | 'character' | 'location' | 'props' | 'images' | 'vid
         @if (total() > pageSize()) {
           <div class="picker-pagination">
             <span class="text-sm text-ink-muted-on-dark">
-              Página {{ page() }} — {{ total() }} recursos
+              {{ 'SHARED.ASSET_PICKER.PAGE' | translate: { page: page(), total: total() } }}
             </span>
             <div class="flex gap-2">
               <p-button
@@ -191,20 +193,22 @@ type PickerFilter = 'all' | 'character' | 'location' | 'props' | 'images' | 'vid
       <ng-template #footer>
         <div class="flex w-full items-center justify-between">
           <span class="text-sm text-ink-muted-on-dark">
-            {{ selectedIds().size }} seleccionado(s)
+            {{ 'SHARED.ASSET_PICKER.SELECTED' | translate: { count: selectedIds().size } }}
             @if (max() > 0) {
-              <span class="text-ink-muted-on-dark">(máx. {{ max() }})</span>
+              <span class="text-ink-muted-on-dark">{{
+                'SHARED.ASSET_PICKER.MAX' | translate: { max: max() }
+              }}</span>
             }
           </span>
           <div class="flex gap-2">
             <p-button
-              label="Cancelar"
+              label="{{ 'SHARED.ASSET_PICKER.CANCEL' | translate }}"
               size="small"
               [text]="true"
               (onClick)="visibleChange.emit(false)"
             />
             <p-button
-              label="Usar seleccionados"
+              label="{{ 'SHARED.ASSET_PICKER.USE_SELECTED' | translate }}"
               icon="md md-check"
               size="small"
               [disabled]="selectedIds().size === 0"
@@ -458,6 +462,7 @@ type PickerFilter = 'all' | 'character' | 'location' | 'props' | 'images' | 'vid
 })
 export class AssetPickerDialogComponent {
   private readonly libraryService = inject(LibraryService);
+  private readonly translate = inject(TranslateService);
 
   /** Visibilidad de la modal (two-way con la página contenedora). */
   readonly visible = input.required<boolean>();
@@ -467,7 +472,12 @@ export class AssetPickerDialogComponent {
   readonly confirmed = output<FileAsset[]>();
 
   /** Título de la modal. */
-  readonly title = input<string>('Elegir recursos de la biblioteca');
+  readonly title = input<string>('');
+  /** Título mostrado: el provisto o el fallback i18n del picker. */
+  protected readonly dialogTitle = computed(() => {
+    this.translate.currentLang();
+    return this.title() || this.translate.instant('SHARED.ASSET_PICKER.DEFAULT_TITLE');
+  });
   /** Máximo seleccionable; 0 = sin límite. */
   readonly max = input<number>(0);
   /** Filtrar por proyecto (evento) o biblioteca completa. */
@@ -484,12 +494,12 @@ export class AssetPickerDialogComponent {
   readonly selectedIds = signal<Set<string>>(new Set());
 
   readonly filterOptions = [
-    { label: 'Todos', value: 'all' as const, icon: 'md md-grid_view' },
-    { label: 'Personaje', value: 'character' as const, icon: 'md md-person' },
-    { label: 'Ubicación', value: 'location' as const, icon: 'md md-place' },
-    { label: 'Props', value: 'props' as const, icon: 'md md-inventory_2' },
-    { label: 'Imágenes', value: 'images' as const, icon: 'md md-image' },
-    { label: 'Videos', value: 'videos' as const, icon: 'md md-videocam' },
+    { labelKey: 'LIBRARY.FILTER_ALL', value: 'all' as const, icon: 'md md-grid_view' },
+    { labelKey: 'LIBRARY.FILTER_CHARACTER', value: 'character' as const, icon: 'md md-person' },
+    { labelKey: 'LIBRARY.FILTER_LOCATION', value: 'location' as const, icon: 'md md-place' },
+    { labelKey: 'LIBRARY.FILTER_PROPS', value: 'props' as const, icon: 'md md-inventory_2' },
+    { labelKey: 'LIBRARY.FILTER_IMAGES', value: 'images' as const, icon: 'md md-image' },
+    { labelKey: 'LIBRARY.FILTER_VIDEOS', value: 'videos' as const, icon: 'md md-videocam' },
   ];
 
   /** Contadores por filtro para los tabs (como la galería): secciones por
@@ -530,21 +540,19 @@ export class AssetPickerDialogComponent {
    * Grid agrupado por sección de referencia (Personaje / Ubicación / Props /
    * Otros). Con búsqueda o filtro activo se muestra plano (un solo grupo).
    */
-  readonly groups = computed<{ label: string; assets: FileAsset[] }[]>(() => {
+  readonly groups = computed<{ labelKey: string; assets: FileAsset[] }[]>(() => {
     const list = this.paged();
     if (this.filter() !== 'all' || this.search().trim()) {
-      return [{ label: '', assets: list }];
+      return [{ labelKey: '', assets: list }];
     }
     const groups = [
       ...ASSET_SECTIONS.map((s) => ({
-        label: s.label,
+        labelKey: `LIBRARY.FILTER_${s.key.toUpperCase()}`,
         assets: list.filter((a) => assetMatchesSection(a, s.key)),
       })),
       {
-        label: 'Otros recursos',
-        assets: list.filter(
-          (a) => !ASSET_SECTIONS.some((s) => assetMatchesSection(a, s.key)),
-        ),
+        labelKey: 'SHARED.ASSET_PICKER.OTHERS',
+        assets: list.filter((a) => !ASSET_SECTIONS.some((s) => assetMatchesSection(a, s.key))),
       },
     ];
     return groups.filter((g) => g.assets.length > 0);
