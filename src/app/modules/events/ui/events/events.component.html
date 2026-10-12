@@ -1,4 +1,4 @@
-<app-page-container title="Eventos" animate.enter="anim-page">
+<app-page-container [title]="'EVENTS.TITLE' | translate" animate.enter="anim-page">
   @if (error(); as message) {
     <div class="mb-6">
       <p-message severity="error" [text]="message" [escape]="false" styleClass="w-full" />
@@ -12,14 +12,14 @@
         <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
           <i class="md md-add_circle text-lg text-accent"></i>
         </div>
-        <h2 class="text-lg font-bold text-ink-on-dark">Crear Nuevo Evento</h2>
+        <h2 class="text-lg font-bold text-ink-on-dark">{{ 'EVENTS.CREATE_TITLE' | translate }}</h2>
       </div>
     </ng-template>
 
     <div class="flex flex-col gap-4 sm:flex-row sm:items-end">
       <div class="flex flex-1 flex-col gap-2">
         <label for="new-event" class="text-xs font-bold text-ink-on-dark">
-          Nombre del Evento <span class="text-danger">*</span>
+          {{ 'EVENTS.NAME_LABEL' | translate }} <span class="text-danger">*</span>
         </label>
         <p-iconfield iconPosition="left">
           <p-inputicon styleClass="md md-event_available" />
@@ -28,7 +28,7 @@
             id="new-event"
             type="text"
             [(ngModel)]="newName"
-            placeholder="Ej: Lanzamiento Residencias El Parque"
+            placeholder="{{ 'EVENTS.NAME_PLACEHOLDER' | translate }}"
             class="w-full"
           />
         </p-iconfield>
@@ -42,13 +42,13 @@
             (ngModelChange)="toggleShowInactive()"
             inputId="show-inactive-events"
           />
-          <label for="show-inactive-events" class="text-xs text-ink-muted-on-dark"
-            >Mostrar inactivos</label
-          >
+          <label for="show-inactive-events" class="text-xs text-ink-muted-on-dark">{{
+            'EVENTS.SHOW_INACTIVE' | translate
+          }}</label>
         </div>
-        <span pTooltip="Escribí un nombre para crear el evento" showDelay="400" class="inline-flex">
+        <span pTooltip="{{ 'EVENTS.CREATE_HINT' | translate }}" showDelay="400" class="inline-flex">
           <p-button
-            label="Crear Evento"
+            label="{{ 'EVENTS.CREATE' | translate }}"
             icon="md md-add"
             [loading]="loading()"
             [disabled]="loading() || !newName().trim()"
@@ -66,7 +66,7 @@
       class="flex flex-col gap-2 rounded-3xl border border-surface-border bg-surface p-6"
       aria-busy="true"
     >
-      <span class="sr-only">Cargando eventos…</span>
+      <span class="sr-only">{{ 'EVENTS.LOADING' | translate }}</span>
       <div class="skel skel-title" aria-hidden="true"></div>
       <div class="skel skel-text" aria-hidden="true"></div>
       <div class="skel skel-text" aria-hidden="true"></div>
@@ -80,9 +80,15 @@
               <i class="md md-list text-lg text-accent"></i>
             </div>
             <div>
-              <h2 class="text-lg font-bold text-ink-on-dark">Lista de Eventos</h2>
+              <h2 class="text-lg font-bold text-ink-on-dark">
+                {{ 'EVENTS.LIST_TITLE' | translate }}
+              </h2>
               <p class="text-sm text-ink-muted-on-dark">
-                {{ events().length }} eventos registrados
+                @if (events().length === 1) {
+                  {{ 'EVENTS.COUNT_SINGULAR' | translate: { count: events().length } }}
+                } @else {
+                  {{ 'EVENTS.COUNT_PLURAL' | translate: { count: events().length } }}
+                }
               </p>
             </div>
           </div>
@@ -97,11 +103,11 @@
       >
         <ng-template #header>
           <tr>
-            <th style="width: 30%">Nombre</th>
-            <th style="width: 25%">Descripción</th>
-            <th style="width: 10%" class="text-center">Programas</th>
-            <th style="width: 20%">Fecha</th>
-            <th style="width: 10%" class="text-center">Estado</th>
+            <th style="width: 30%">{{ 'EVENTS.COL_NAME' | translate }}</th>
+            <th style="width: 25%">{{ 'EVENTS.COL_DESCRIPTION' | translate }}</th>
+            <th style="width: 10%" class="text-center">{{ 'EVENTS.COL_PROGRAMS' | translate }}</th>
+            <th style="width: 20%">{{ 'EVENTS.COL_DATE' | translate }}</th>
+            <th style="width: 10%" class="text-center">{{ 'EVENTS.COL_STATUS' | translate }}</th>
             <th style="width: 5%"></th>
           </tr>
         </ng-template>
@@ -134,9 +140,9 @@
             </td>
             <td class="text-center">
               @if (event.active) {
-                <p-tag value="Activo" severity="success" />
+                <p-tag value="{{ 'EVENTS.STATUS_ACTIVE' | translate }}" severity="success" />
               } @else {
-                <p-tag value="Inactivo" severity="danger" />
+                <p-tag value="{{ 'EVENTS.STATUS_INACTIVE' | translate }}" severity="danger" />
               }
             </td>
             <td>
@@ -146,7 +152,7 @@
                 text
                 rounded
                 size="small"
-                pTooltip="Abrir"
+                pTooltip="{{ 'EVENTS.OPEN' | translate }}"
                 showDelay="400"
               />
             </td>
@@ -160,9 +166,9 @@
                   <i class="md md-calendar_month text-3xl text-ink-muted-on-dark"></i>
                 </div>
                 <div class="text-center">
-                  <p class="font-bold text-ink-on-dark">No hay eventos todavía</p>
+                  <p class="font-bold text-ink-on-dark">{{ 'EVENTS.EMPTY_TITLE' | translate }}</p>
                   <p class="mt-1 text-sm text-ink-muted-on-dark">
-                    Crea tu primer evento para comenzar
+                    {{ 'EVENTS.EMPTY_HINT' | translate }}
                   </p>
                 </div>
               </div>

@@ -100,6 +100,33 @@
     "NETWORK_ERROR": "No se pudo conectar con el servidor. Revisá tu conexión.",
     "SERVER_ERROR": "El servidor tuvo un error. Intentá de nuevo en unos minutos."
   },
+  "EVENTS": {
+    "TITLE": "Eventos",
+    "CREATE_TITLE": "Crear Nuevo Evento",
+    "NAME_LABEL": "Nombre del Evento",
+    "NAME_PLACEHOLDER": "Ej: Lanzamiento Residencias El Parque",
+    "SHOW_INACTIVE": "Mostrar inactivos",
+    "CREATE_HINT": "Escribí un nombre para crear el evento",
+    "CREATE": "Crear Evento",
+    "LOADING": "Cargando eventos…",
+    "LIST_TITLE": "Lista de Eventos",
+    "COUNT_SINGULAR": "{{count}} evento registrado",
+    "COUNT_PLURAL": "{{count}} eventos registrados",
+    "COL_NAME": "Nombre",
+    "COL_DESCRIPTION": "Descripción",
+    "COL_PROGRAMS": "Programas",
+    "COL_DATE": "Fecha",
+    "COL_STATUS": "Estado",
+    "STATUS_ACTIVE": "Activo",
+    "STATUS_INACTIVE": "Inactivo",
+    "OPEN": "Abrir",
+    "EMPTY_TITLE": "No hay eventos todavía",
+    "EMPTY_HINT": "Crea tu primer evento para comenzar",
+    "ERRORS": {
+      "LOAD": "No se pudieron cargar los eventos.",
+      "CREATE": "No se pudo crear el evento."
+    }
+  },
   "PROJECTS": {
     "TITLE": "Proyectos",
     "SAVED": "Cambios guardados correctamente.",
