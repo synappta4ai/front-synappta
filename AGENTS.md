@@ -265,3 +265,12 @@ Reglas:
   `library.interface.ts` (`ASSET_SECTIONS`, claves `character`/`location`/
   `props`) y el matching por tipo se hace con `assetMatchesSection()`
   (categoría **o** ingrediente tipado; `IngredientType` usa `prop` singular).
+- **Chat del asistente (/agency)**: el back emite eventos SSE `tool`
+  (status `running|ok|error`, con `task_id` cuando encola generaciones);
+  `applyToolEvent()` en `agency.component.ts` los muestra como chips de
+  actividad y engancha el `task_id` al `GenerationEventsStore` (reel y
+  campana siguen la generación). El turno del asistente puede encadenar
+  varias herramientas: el timeout del fetch es 120s, no 45s.
+- **Servidor MCP remoto**: `POST /api/v1/mcp` (Streamable HTTP stateless)
+  expone el dominio a agentes externos con el mismo JWT del login. No
+  duplicar esas tools en el front: son para clientes MCP (Claude/Codex).
