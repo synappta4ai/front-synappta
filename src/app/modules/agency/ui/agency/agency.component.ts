@@ -8,6 +8,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import { LowerCasePipe } from '@angular/common';
 import {
   FormsModule,
   NonNullableFormBuilder,
@@ -88,6 +89,19 @@ const AGENT_KIND_LABEL: Record<AgencyAgent, string> = {
   real_estate: 'Proyecto inmobiliario',
   cinema: 'Proyecto audiovisual',
 };
+
+/** Slug de la ruta especializada del experto en el back. */
+const AGENT_ROUTE_SLUG: Record<AgencyAgent, string> = {
+  commercial: 'commercial',
+  real_estate: 'real-estate',
+  cinema: 'cinema',
+};
+
+/** Mensaje del chat con el agente experto. */
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
 
 interface SalesAngle {
   id: string;
@@ -317,6 +331,7 @@ function buildAngles(count: number): SalesAngle[] {
     ToggleSwitch,
     AutogrowDirective,
     ServerUrlPipe,
+    LowerCasePipe,
     AssetEditDialogComponent,
   ],
   templateUrl: './agency.component.html',
@@ -1344,10 +1359,16 @@ export class AgencyComponent {
     }
   }
 
-  /** Ángulos de venta: los genera el LLM elegido (credencial del tenant) vía
-   *  el agente. Sin credencial o sin respuesta el observable falla: no se
-   *  rellena con plantillas, porque ángulos inventados no son producto. */
-  private generateAnglesWithAgent(count: number): Observable<SalesAngle[]> {
+  /** URL del chat del agente elegido: cada experto tiene su ruta propia
+   *  en el back (/agent/chat/commercial|real-estate|cinema). */
+  private agentChatUrl(): string {
+    return `${environment.API_URL}/agent/chat/${AGENT_ROUTE_SLUG[this.agent()]}`;
+  }
+
+  /** Credencial LLM usable del tenant (openrouter/anthropic): la dueña
+   *  del modelo elegido en el cerebro del paso 1, si no la preferida por
+   *  provider, si no la primera. Sin ninguna, el observable falla. */
+  private pickLlmCredential(): Observable<Credential> {
     return this.agencyService.listCredentials().pipe(
       map((creds) => {
         const usable = creds.filter(
@@ -1361,17 +1382,26 @@ export class AgencyComponent {
         const providerFor = !model || model.includes('/') ? 'openrouter' : 'anthropic';
         return byModel ?? usable.find((c) => c.provider === providerFor) ?? usable[0] ?? null;
       }),
-      mergeMap((cred) => {
-        if (!cred) {
-          return throwError(
-            () =>
-              new Error(
-                'Sin credencial LLM (openrouter/anthropic) en Admin → Credenciales: no se generaron ángulos.',
-              ),
-          );
-        }
-        return this.requestAgentAngles(cred, count);
-      }),
+      mergeMap((cred) =>
+        cred
+          ? of(cred)
+          : throwError(
+              () =>
+                new Error(
+                  'Sin credencial LLM (openrouter/anthropic) en Admin → Credenciales.',
+                ),
+            ),
+      ),
+    );
+  }
+
+  /** Ángulos de venta: los genera el LLM elegido (credencial del tenant) vía
+   *  el agente experto del flujo. Sin credencial o sin respuesta el
+   *  observable falla: no se rellena con plantillas, porque ángulos
+   *  inventados no son producto. */
+  private generateAnglesWithAgent(count: number): Observable<SalesAngle[]> {
+    return this.pickLlmCredential().pipe(
+      mergeMap((cred) => this.requestAgentAngles(cred, count)),
     );
   }
 
@@ -1394,7 +1424,7 @@ export class AgencyComponent {
     const timer = setTimeout(() => controller.abort(), 45_000);
 
     return new Observable<SalesAngle[]>((subscriber) => {
-      fetch(`${environment.API_URL}/agent/chat`, {
+      fetch(this.agentChatUrl(), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1404,7 +1434,9 @@ export class AgencyComponent {
           conversation_id: '',
           message,
           provider: cred.provider,
-          workflow: this.agent(),
+          // El artefacto se pide explícito: el experto responde JSON de
+          // ángulos, no prosa conversacional.
+          artifact: 'sales_angles',
           ...(this.modelText() ? { model: this.modelText() } : {}),
         }),
         signal: controller.signal,
@@ -2440,6 +2472,130 @@ export class AgencyComponent {
 
   protected closeVideoPreview(): void {
     this.videoPreview.set(null);
+  }
+
+  // ─── Chat asistente con el agente experto ────────────────────
+
+  /** Panel de chat abierto. */
+  protected readonly chatVisible = signal(false);
+  /** Historial visible de la conversación con el experto. */
+  protected readonly chatMessages = signal<ChatMessage[]>([]);
+  /** Texto pendiente de enviar. */
+  protected readonly chatDraft = signal('');
+  /** Turno en curso (deshabilita el input y el botón enviar). */
+  protected readonly chatBusy = signal(false);
+  /** conversation_id devuelto por el back para continuar el hilo. */
+  private chatConversationId = '';
+
+  /** Cambia el experto y corta la conversación: cada agente tiene su
+   *  propia personalidad y su propia memoria de turno. */
+  protected onAgentChange(agent: AgencyAgent): void {
+    if (agent === this.agent()) return;
+    this.agent.set(agent);
+    this.chatConversationId = '';
+    this.chatMessages.set([]);
+  }
+
+  /** Alterna el panel de chat. */
+  protected toggleChat(): void {
+    this.chatVisible.update((open) => !open);
+  }
+
+  /** Envía el borrador al experto y agrega su respuesta en streaming. */
+  protected sendChat(): void {
+    const message = this.chatDraft().trim();
+    if (!message || this.chatBusy()) return;
+    this.chatDraft.set('');
+    this.chatMessages.update((m) => [...m, { role: 'user', content: message }]);
+    this.chatBusy.set(true);
+
+    this.pickLlmCredential()
+      .pipe(
+        mergeMap((cred) => this.streamChatTurn(cred, message)),
+        catchError((err: unknown) => {
+          const why = err instanceof Error && err.message ? err.message : 'sin respuesta del agente';
+          this.chatMessages.update((m) => [...m, { role: 'assistant', content: `⚠️ ${why}` }]);
+          return EMPTY;
+        }),
+        finalize(() => this.chatBusy.set(false)),
+      )
+      .subscribe();
+  }
+
+  /** Un turno del chat: lee el SSE del experto y agrega los fragmentos
+   *  de texto del asistente a medida que llegan. */
+  private streamChatTurn(cred: Credential, message: string): Observable<void> {
+    const token = this.session.token();
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 45_000);
+
+    return new Observable<void>((subscriber) => {
+      fetch(this.agentChatUrl(), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          conversation_id: this.chatConversationId,
+          message,
+          provider: cred.provider,
+          workflow: this.agent(),
+          ...(this.modelText() ? { model: this.modelText() } : {}),
+        }),
+        signal: controller.signal,
+      })
+        .then(async (res) => {
+          if (!res.ok || !res.body) {
+            const detail = await res.text().catch(() => '');
+            throw new Error(
+              detail
+                ? `HTTP ${res.status}: ${detail.slice(0, 240)}`
+                : `agent chat HTTP ${res.status}`,
+            );
+          }
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = '';
+          for (;;) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const events = buffer.split('\n\n');
+            buffer = events.pop() ?? '';
+            for (const raw of events) {
+              const parsed = parseAgentEvent(raw);
+              if (!parsed) continue;
+              if (parsed.name === 'meta' && typeof parsed.data['conversation_id'] === 'string') {
+                this.chatConversationId = parsed.data['conversation_id'];
+              } else if (parsed.name === 'text') {
+                this.appendChatText(String(parsed.data['text'] ?? ''));
+              } else if (parsed.name === 'error') {
+                throw new Error(String(parsed.data['message'] ?? 'error del agente'));
+              }
+            }
+          }
+          subscriber.next();
+          subscriber.complete();
+        })
+        .catch((err: unknown) => {
+          const why =
+            err instanceof Error && err.message ? err.message : 'sin respuesta del agente';
+          subscriber.error(new Error(why));
+        })
+        .finally(() => clearTimeout(timer));
+    });
+  }
+
+  /** Concatena un fragmento al último mensaje del asistente. */
+  private appendChatText(text: string): void {
+    this.chatMessages.update((m) => {
+      const last = m[m.length - 1];
+      if (last?.role === 'assistant') {
+        return [...m.slice(0, -1), { ...last, content: last.content + text }];
+      }
+      return [...m, { role: 'assistant', content: text }];
+    });
   }
 
   /** Recalcula la altura de los textareas auto-crecibles (tras rearmarlos). */

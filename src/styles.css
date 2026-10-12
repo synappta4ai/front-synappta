@@ -4808,3 +4808,189 @@ main:has(> app-studio) {
 .p-toggleswitch-handle {
   top: 15% !important;
 }
+
+/* ── Chat asistente del agente experto (/agency) ───────────
+   Panel lateral fijo: burbujas del usuario/experto, typing y
+   formulario. Mismos tokens que el resto de la página. */
+.agency-chat-fab {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgb(0 0 0 / 25%);
+  transition:
+    background-color 120ms ease,
+    transform 120ms ease;
+}
+
+.agency-chat-fab:hover {
+  background: var(--color-accent-hover);
+  transform: translateY(-1px);
+}
+
+.agency-chat-fab i {
+  font-size: 24px;
+}
+
+.agency-chat-panel {
+  position: fixed;
+  right: 24px;
+  bottom: 88px;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  width: min(380px, calc(100vw - 32px));
+  height: min(520px, calc(100vh - 140px));
+  border: 1px solid var(--color-surface-border);
+  border-radius: 16px;
+  background: var(--color-background);
+  box-shadow: 0 12px 40px rgb(0 0 0 / 30%);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(8px);
+  transition:
+    opacity 140ms ease,
+    transform 140ms ease,
+    visibility 140ms ease;
+}
+
+.agency-chat-panel.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.agency-chat-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-surface-border);
+}
+
+.agency-chat-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-ink-on-dark);
+}
+
+.agency-chat-sub {
+  font-size: 11px;
+  color: var(--color-ink-muted-on-dark);
+}
+
+.agency-chat-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-ink-muted-on-dark);
+  cursor: pointer;
+  transition:
+    color 120ms ease,
+    background-color 120ms ease;
+}
+
+.agency-chat-close:hover {
+  color: var(--color-ink-on-dark);
+  background: var(--color-surface-2);
+}
+
+.agency-chat-log {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  overflow-y: auto;
+}
+
+.agency-chat-empty {
+  font-size: 13px;
+  color: var(--color-ink-muted-on-dark);
+}
+
+.agency-chat-msg {
+  max-width: 85%;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  background: var(--color-surface-2);
+  color: var(--color-ink-on-dark);
+}
+
+.agency-chat-msg.user {
+  align-self: flex-end;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.agency-chat-msg.assistant {
+  align-self: flex-start;
+  border: 1px solid var(--color-surface-border);
+  background: transparent;
+}
+
+.agency-chat-msg.typing {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  width: fit-content;
+}
+
+.agency-chat-msg.typing span {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--color-ink-muted-on-dark);
+  animation: agency-chat-blink 1.2s infinite ease-in-out;
+}
+
+.agency-chat-msg.typing span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.agency-chat-msg.typing span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes agency-chat-blink {
+  0%,
+  80%,
+  100% {
+    opacity: 0.25;
+  }
+
+  40% {
+    opacity: 1;
+  }
+}
+
+.agency-chat-input {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 12px;
+  border-top: 1px solid var(--color-surface-border);
+}
+
+.agency-chat-input textarea {
+  resize: none;
+}

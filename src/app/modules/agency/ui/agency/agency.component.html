@@ -117,7 +117,7 @@
               optionLabel="label"
               optionValue="value"
               [ngModel]="agent()"
-              (ngModelChange)="agent.set($event)"
+              (ngModelChange)="onAgentChange($event)"
               [ngModelOptions]="{ standalone: true }"
               styleClass="w-full"
               appendTo="body"
@@ -1874,4 +1874,78 @@
     (changed)="onAssetEditorChanged()"
     (assetSaved)="onAssetEditorSaved($event)"
   />
+
+  <!-- Chat con el agente experto: asistente para armar el video -->
+  <button
+    type="button"
+    class="agency-chat-fab"
+    [attr.aria-expanded]="chatVisible()"
+    aria-controls="agency-chat-panel"
+    (click)="toggleChat()"
+  >
+    <i class="md md-forum"></i>
+    <span class="sr-only">Asistente {{ agentLabel() }}</span>
+  </button>
+
+  <aside
+    id="agency-chat-panel"
+    class="agency-chat-panel"
+    [class.open]="chatVisible()"
+    [attr.aria-hidden]="!chatVisible()"
+  >
+    <header class="agency-chat-head">
+      <div>
+        <p class="agency-chat-title">{{ agentLabel() }}</p>
+        <p class="agency-chat-sub">Asistente para armar tu video</p>
+      </div>
+      <button
+        type="button"
+        class="agency-chat-close"
+        title="Cerrar asistente"
+        (click)="toggleChat()"
+      >
+        <i class="md md-close"></i>
+      </button>
+    </header>
+
+    <div class="agency-chat-log" aria-live="polite">
+      @if (chatMessages().length === 0) {
+        <p class="agency-chat-empty">
+          Preguntale a tu {{ agentLabel() | lowercase }}: te ayuda a definir el enfoque, el guion y
+          los ángulos antes de generar el video.
+        </p>
+      }
+      @for (msg of chatMessages(); track $index) {
+        <div class="agency-chat-msg" [class.user]="msg.role === 'user'">
+          {{ msg.content }}
+        </div>
+      }
+      @if (chatBusy()) {
+        <div class="agency-chat-msg assistant typing" aria-hidden="true">
+          <span></span><span></span><span></span>
+        </div>
+      }
+    </div>
+
+    <form class="agency-chat-input" (ngSubmit)="sendChat()">
+      <textarea
+        pTextarea
+        rows="2"
+        class="w-full"
+        [ngModel]="chatDraft()"
+        (ngModelChange)="chatDraft.set($event)"
+        [ngModelOptions]="{ standalone: true }"
+        [placeholder]="'Preguntale a ' + agentLabel() + '…'"
+        [attr.aria-label]="'Mensaje para ' + agentLabel()"
+        [disabled]="chatBusy()"
+        (keydown.enter)="$event.preventDefault(); sendChat()"
+      ></textarea>
+      <p-button
+        icon="md md-send"
+        [disabled]="chatBusy() || !chatDraft().trim()"
+        (onClick)="sendChat()"
+        [attr.aria-label]="'Enviar mensaje a ' + agentLabel()"
+      />
+    </form>
+  </aside>
 </app-page-container>
