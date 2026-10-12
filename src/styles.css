@@ -67,6 +67,9 @@
 .md-all_inbox::before {
   content: 'all_inbox';
 }
+.md-apartment::before {
+  content: 'apartment';
+}
 .md-alternate_email::before {
   content: 'alternate_email';
 }
@@ -81,6 +84,9 @@
 }
 .md-attach_file::before {
   content: 'attach_file';
+}
+.md-auto_fix_high::before {
+  content: 'auto_fix_high';
 }
 .md-block::before {
   content: 'block';
@@ -118,6 +124,9 @@
 .md-dark_mode::before {
   content: 'dark_mode';
 }
+.md-dashboard::before {
+  content: 'dashboard';
+}
 .md-delete::before {
   content: 'delete';
 }
@@ -151,6 +160,9 @@
 .md-folder_open::before {
   content: 'folder_open';
 }
+.md-forum::before {
+  content: 'forum';
+}
 .md-gps_fixed::before {
   content: 'gps_fixed';
 }
@@ -159,6 +171,9 @@
 }
 .md-hourglass_empty::before {
   content: 'hourglass_empty';
+}
+.md-history::before {
+  content: 'history';
 }
 .md-image::before {
   content: 'image';
@@ -180,6 +195,12 @@
 }
 .md-light_mode::before {
   content: 'light_mode';
+}
+.md-lightbulb::before {
+  content: 'lightbulb';
+}
+.md-link_off::before {
+  content: 'link_off';
 }
 .md-list::before {
   content: 'list';
@@ -248,8 +269,14 @@
 .md-search::before {
   content: 'search';
 }
+.md-send::before {
+  content: 'send';
+}
 .md-settings::before {
   content: 'settings';
+}
+.md-smart-toy::before {
+  content: 'smart_toy';
 }
 .md-storage::before {
   content: 'storage';
@@ -658,6 +685,15 @@ input {
   background: var(--color-ink-on-dark);
   border-color: var(--color-ink-on-dark);
   color: var(--color-ink);
+}
+
+/* Text+contrast (campana del navbar, cerrar visores): en .dark la regla de
+   arriba le pintaba fondo claro con icono claro → icono invisible. El botón
+   texto conserva fondo transparente y tinta clara sobre la superficie oscura. */
+.dark .p-button.p-button-text.p-button-contrast:not(:disabled) {
+  background: transparent;
+  border-color: transparent;
+  color: var(--color-ink-on-dark);
 }
 
 .p-button.p-button-danger:not(:disabled) {
