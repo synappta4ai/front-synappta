@@ -22,6 +22,12 @@ Instrucciones para agentes de IA que trabajan en este repositorio. Léelas antes
 
 > Antes de dar una tarea por terminada, corre `npm run build` y `npm test`. Si no pasan, no está terminada.
 
+## Commits
+
+- Usa **Conventional Commits** (`feat`, `fix`, `docs`, `chore`, `refactor`, …), en inglés e imperativo, < 72 caracteres.
+- Un cambio lógico por commit; no mezcles refactors o arreglos no relacionados.
+- **Al commitear y hacer push, actualiza la versión de `package.json` en un commit `chore` dedicado** (separado del commit de código). La versión también alimenta `APP_VERSION` en `src/environments/*` vía `npm run env`.
+
 ## TypeScript
 
 - `strict` está activado en `tsconfig.json` (`strictTemplates`, `strictInjectionParameters`, etc.). El código nuevo debe cumplirlo.
