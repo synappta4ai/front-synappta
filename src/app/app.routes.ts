@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
 import { superadminGuard } from '@core/guards';
 
-import { authGuard } from '@guards/auth.guard';
+import { authGuard, notAuthGuard } from '@guards/auth.guard';
 import { PrivateLayoutComponent } from '@shared/components/layouts/private-layout/private-layout.component';
 import { PublicLayoutComponent } from '@shared/components/layouts/public-layout/public-layout.component';
 
@@ -16,6 +16,7 @@ export const routes: Routes = [
       },
       {
         path: 'auth',
+        canActivate: [notAuthGuard],
         loadChildren: () => import('@modules/auth/auth.routes').then((m) => m.authRoutes),
       },
     ],
@@ -34,36 +35,11 @@ export const routes: Routes = [
         canActivate: [authGuard],
         loadChildren: () => import('@modules/studio/studio.routes').then((m) => m.studioRoutes),
       },
-      // {
-      //   path: 'video',
-      //   canActivate: [authGuard],
-      //   loadChildren: () => import('@modules/video/video.routes').then((m) => m.videoRoutes),
-      // },
-      // {
-      //   // /events muestra los eventos de generación; el CRUD de eventos
-      //   // (proyectos de agencia) vive en /events/manage.
-      //   path: 'events',
-      //   canActivate: [authGuard],
-      //   children: [
-      //     {
-      //       path: '',
-      //       title: 'Eventos de generación',
-      //       loadComponent: () =>
-      //         import('@modules/studio/ui/generation-events/generation-events.component').then(
-      //           (m) => m.GenerationEventsComponent,
-      //         ),
-      //     },
-      //     {
-      //       path: 'manage',
-      //       title: 'Eventos',
-      //       loadChildren: () => import('@modules/events/events.routes').then((m) => m.eventsRoutes),
-      //     },
-      //   ],
-      // },
       {
         path: 'projects',
         canActivate: [authGuard],
-        loadChildren: () => import('@modules/projects/projects.routes').then((m) => m.projectsRoutes),
+        loadChildren: () =>
+          import('@modules/projects/projects.routes').then((m) => m.projectsRoutes),
       },
       {
         path: 'resources',
@@ -76,9 +52,6 @@ export const routes: Routes = [
         loadChildren: () =>
           import('@modules/agency/agency.routes').then((m) => m.myGenerationsRoutes),
       },
-      // Rutas antiguas (español): redirigen a las rutas en inglés.
-      { path: 'recursos', redirectTo: 'resources', pathMatch: 'full' },
-      { path: 'mis-generaciones', redirectTo: 'my-generations', pathMatch: 'full' },
       {
         path: 'admin',
         canActivate: [authGuard, superadminGuard],
@@ -88,6 +61,6 @@ export const routes: Routes = [
   },
   {
     path: '**',
-    redirectTo: '/agency',
+    redirectTo: '/studio',
   },
 ];
