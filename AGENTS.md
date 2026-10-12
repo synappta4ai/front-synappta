@@ -26,7 +26,8 @@ Instrucciones para agentes de IA que trabajan en este repositorio. Léelas antes
 
 - Usa **Conventional Commits** (`feat`, `fix`, `docs`, `chore`, `refactor`, …), en inglés e imperativo, < 72 caracteres.
 - Un cambio lógico por commit; no mezcles refactors o arreglos no relacionados.
-- **Al commitear y hacer push, actualiza la versión de `package.json` en un commit `chore` dedicado** (separado del commit de código). La versión también alimenta `APP_VERSION` en `src/environments/*` vía `npm run env`.
+- **Al commitear y hacer push, actualiza la versión de `package.json` en un commit `chore` dedicado** (separado del commit de código). La versión alimenta `APP_VERSION` en `src/environments/*` cada vez que corre `npm run env` (prebuild/prewatch); el build la pisa, así que **no** la copies a mano.
+- **Prohibido comitear cambios en `src/environments/`**: son artefactos generados por `scripts/generate-env.ts`. Si el build los modifica, descartarlos antes de commitear (`git checkout -- src/environments`). Solo se comitean cuando cambia la estructura del archivo (nueva variable o target en `scripts/generate-env.ts`).
 
 ## TypeScript
 
@@ -124,10 +125,13 @@ Sin inputs de personalización usa las claves `ALERTS.*` de `src/assets/i18n/{es
 
 ## Environments
 
-- Tres ambientes definidos por `fileReplacements` en `angular.json`:
+- Cuatro ambientes definidos por `fileReplacements` en `angular.json`:
   - **local** — configuración `development` (`ng serve`) → `src/environments/environment.ts`
+  - **localhost** — configuración `local` (`npm run start:local`) → `src/environments/environment.local.ts` (API `http://localhost:8099/api/v1`)
   - **dev** — configuración `dev` (`npm run build:dev`) → `src/environments/environment.dev.ts`
   - **prod** — configuración `production` (`npm run build`) → `src/environments/environment.prod.ts`
+- `scripts/generate-env.ts` (`npm run env`) corre **solo** en `prebuild`/`prebuild:dev`/`prewatch`; **no** en `ng serve` ni en `ng test`. Los `src/environments/*.ts` commiteados son la base; si necesitás regenerarlos a mano, usá `npm run env`.
+- **No se comitean los cambios** que el build genera en `src/environments/` (ver Commits). Tampoco se reescribe `.env.example`: es un archivo maintainido a mano.
 - Importarlos siempre con el alias `@env/environment` (nunca con rutas relativas).
 - La API base se lee de `environment.apiUrl` en los API repositories.
 
@@ -252,7 +256,7 @@ Reglas:
   - `p-selectbutton`: renderiza cada opción como `p-togglebutton` (los
     selectores CSS van contra `p-togglebutton.section-toggle`, no contra
     un contenedor); para contenido custom usar el slot `<ng-template #item
-    let-option>`.
+let-option>`.
   - `p-datepicker`: rompe SSR (NG0502) — evitar.
   - `p-dialog` controlado con signal + `(visibleChange)`.
   - En templates NO existe `Boolean` (TS2339) ni globals (`Math`, `Date`).
@@ -264,7 +268,7 @@ Reglas:
   `primeng/tooltip`; el fade-in usa rAF (en el panel preview puede quedarse
   en opacity 0 — artefacto del entorno, no un bug).
 - **Login E2E**: `POST /api/v1/auth/login-tenant` `{username, password,
-  tenant_id: 1}` con credenciales de `.env.e2e`. El password contiene un
+tenant_id: 1}` con credenciales de `.env.e2e`. El password contiene un
   en-dash U+2013: curl desde terminal lo rompe — usar Node/fetch (en
   preview_evaluate escribirlo como `\u20135`).
 - **Tipos de recursos**: las secciones de referencia viven en
