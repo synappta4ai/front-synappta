@@ -1,5 +1,4 @@
-import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
-import { computed, inject, PLATFORM_ID } from '@angular/core';
+import { computed, inject, Injectable, PLATFORM_ID, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { DEFAULT_STORAGE_CONFIG } from '@constants/common';
 
@@ -55,154 +54,142 @@ function saveState(platformId: unknown, state: Partial<AppState>): void {
   }
 }
 
-export const AppStore = signalStore(
-  { providedIn: 'root' },
-  withState<AppState>(initialAppState),
-  withComputed((store) => ({
-    isReady: computed(() => store.isInitialized() && !store.isLoading()),
-    hasConnection: computed(() => store.isOnline() || store.isLocalConnected()),
-  })),
-  withMethods((store) => {
-    const platformId = inject(PLATFORM_ID);
-    let networkListenerSetup = false;
-    let dbCheckInterval: ReturnType<typeof setInterval> | null = null;
+@Injectable({ providedIn: 'root' })
+export class AppStore {
+  private readonly platformId = inject(PLATFORM_ID);
 
-    function setupNetworkListener(): void {
-      if (networkListenerSetup || !platformId || !isPlatformBrowser(platformId)) {
-        return;
-      }
+  private readonly _isOnline = signal(initialAppState.isOnline);
+  private readonly _isLocalConnected = signal(initialAppState.isLocalConnected);
+  private readonly _lastSyncTime = signal<Date | null>(initialAppState.lastSyncTime);
+  private readonly _isInitialized = signal(initialAppState.isInitialized);
+  private readonly _isLoading = signal(initialAppState.isLoading);
+  private readonly _useOfflineApi = signal(initialAppState.useOfflineApi);
 
-      networkListenerSetup = true;
+  readonly isOnline = this._isOnline.asReadonly();
+  readonly isLocalConnected = this._isLocalConnected.asReadonly();
+  readonly lastSyncTime = this._lastSyncTime.asReadonly();
+  readonly isInitialized = this._isInitialized.asReadonly();
+  readonly isLoading = this._isLoading.asReadonly();
+  readonly useOfflineApi = this._useOfflineApi.asReadonly();
 
-      const updateOnlineStatus = (): void => {
-        const isOnline = navigator.onLine;
-        patchState(store, { isOnline });
-      };
+  readonly isReady = computed(() => this.isInitialized() && !this.isLoading());
+  readonly hasConnection = computed(() => this.isOnline() || this.isLocalConnected());
 
-      window.addEventListener('online', updateOnlineStatus);
-      window.addEventListener('offline', updateOnlineStatus);
+  private networkListenerSetup = false;
+  private dbCheckInterval: ReturnType<typeof setInterval> | null = null;
 
-      updateOnlineStatus();
+  private setupNetworkListener(): void {
+    if (this.networkListenerSetup || !isPlatformBrowser(this.platformId)) {
+      return;
     }
 
-    function startDbConnectionCheck(): void {
-      if (dbCheckInterval || !platformId || !isPlatformBrowser(platformId)) {
-        return;
-      }
+    this.networkListenerSetup = true;
 
-      dbCheckInterval = setInterval(() => {
-        checkLocalConnection();
-      }, 5000);
-    }
-
-    function stopDbConnectionCheck(): void {
-      if (dbCheckInterval) {
-        clearInterval(dbCheckInterval);
-        dbCheckInterval = null;
-      }
-    }
-
-    async function checkLocalConnection(): Promise<boolean> {
-      if (!platformId || !isPlatformBrowser(platformId)) {
-        patchState(store, { isLocalConnected: false });
-        return false;
-      }
-
-      return new Promise((resolve) => {
-        try {
-          const request = indexedDB.open(DEFAULT_STORAGE_CONFIG.dbName ?? 'Synapta-V2');
-
-          request.onerror = () => {
-            patchState(store, { isLocalConnected: false });
-            resolve(false);
-          };
-
-          request.onsuccess = () => {
-            patchState(store, { isLocalConnected: true });
-            request.result?.close();
-            resolve(true);
-          };
-        } catch {
-          patchState(store, { isLocalConnected: false });
-          resolve(false);
-        }
-      });
-    }
-
-    return {
-      async init(): Promise<void> {
-        patchState(store, { isLoading: true });
-
-        setupNetworkListener();
-
-        await checkLocalConnection();
-
-        const stored = getStoredState(platformId);
-        if (stored) {
-          patchState(store, {
-            lastSyncTime: stored.lastSyncTime ?? null,
-          });
-        }
-
-        patchState(store, { isInitialized: true, isLoading: false });
-
-        startDbConnectionCheck();
-
-        saveState(platformId, {
-          isOnline: store.isOnline(),
-          isLocalConnected: store.isLocalConnected(),
-          lastSyncTime: store.lastSyncTime(),
-          isInitialized: store.isInitialized(),
-          isLoading: store.isLoading(),
-        });
-      },
-      async setOnlineStatus(isOnline: boolean): Promise<void> {
-        patchState(store, { isOnline });
-        if (platformId) {
-          saveState(platformId, {
-            isOnline: store.isOnline(),
-            isLocalConnected: store.isLocalConnected(),
-            lastSyncTime: store.lastSyncTime(),
-            isInitialized: store.isInitialized(),
-            isLoading: store.isLoading(),
-          });
-        }
-      },
-
-      async setLocalConnected(isLocalConnected: boolean): Promise<void> {
-        patchState(store, { isLocalConnected });
-        if (platformId) {
-          saveState(platformId, {
-            isOnline: store.isOnline(),
-            isLocalConnected: store.isLocalConnected(),
-            lastSyncTime: store.lastSyncTime(),
-            isInitialized: store.isInitialized(),
-            isLoading: store.isLoading(),
-          });
-        }
-      },
-
-      async syncNow(): Promise<void> {
-        patchState(store, { lastSyncTime: new Date() });
-        if (platformId) {
-          saveState(platformId, {
-            isOnline: store.isOnline(),
-            isLocalConnected: store.isLocalConnected(),
-            lastSyncTime: store.lastSyncTime(),
-            isInitialized: store.isInitialized(),
-            isLoading: store.isLoading(),
-          });
-        }
-      },
-
-      setLoading(isLoading: boolean): void {
-        patchState(store, { isLoading });
-      },
-
-      destroy(): void {
-        stopDbConnectionCheck();
-        networkListenerSetup = false;
-      },
+    const updateOnlineStatus = (): void => {
+      this._isOnline.set(navigator.onLine);
     };
-  }),
-);
+
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+
+    updateOnlineStatus();
+  }
+
+  private startDbConnectionCheck(): void {
+    if (this.dbCheckInterval || !isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
+    this.dbCheckInterval = setInterval(() => {
+      void this.checkLocalConnection();
+    }, 5000);
+  }
+
+  private stopDbConnectionCheck(): void {
+    if (this.dbCheckInterval) {
+      clearInterval(this.dbCheckInterval);
+      this.dbCheckInterval = null;
+    }
+  }
+
+  private checkLocalConnection(): Promise<boolean> {
+    if (!isPlatformBrowser(this.platformId)) {
+      this._isLocalConnected.set(false);
+      return Promise.resolve(false);
+    }
+
+    return new Promise((resolve) => {
+      try {
+        const request = indexedDB.open(DEFAULT_STORAGE_CONFIG.dbName ?? 'Synapta-V2');
+
+        request.onerror = () => {
+          this._isLocalConnected.set(false);
+          resolve(false);
+        };
+
+        request.onsuccess = () => {
+          this._isLocalConnected.set(true);
+          request.result?.close();
+          resolve(true);
+        };
+      } catch {
+        this._isLocalConnected.set(false);
+        resolve(false);
+      }
+    });
+  }
+
+  async init(): Promise<void> {
+    this._isLoading.set(true);
+
+    this.setupNetworkListener();
+
+    await this.checkLocalConnection();
+
+    const stored = getStoredState(this.platformId);
+    if (stored) {
+      this._lastSyncTime.set(stored.lastSyncTime ?? null);
+    }
+
+    this._isInitialized.set(true);
+    this._isLoading.set(false);
+
+    this.startDbConnectionCheck();
+
+    this.persist();
+  }
+
+  async setOnlineStatus(isOnline: boolean): Promise<void> {
+    this._isOnline.set(isOnline);
+    this.persist();
+  }
+
+  async setLocalConnected(isLocalConnected: boolean): Promise<void> {
+    this._isLocalConnected.set(isLocalConnected);
+    this.persist();
+  }
+
+  async syncNow(): Promise<void> {
+    this._lastSyncTime.set(new Date());
+    this.persist();
+  }
+
+  setLoading(isLoading: boolean): void {
+    this._isLoading.set(isLoading);
+  }
+
+  destroy(): void {
+    this.stopDbConnectionCheck();
+    this.networkListenerSetup = false;
+  }
+
+  private persist(): void {
+    saveState(this.platformId, {
+      isOnline: this.isOnline(),
+      isLocalConnected: this.isLocalConnected(),
+      lastSyncTime: this.lastSyncTime(),
+      isInitialized: this.isInitialized(),
+      isLoading: this.isLoading(),
+    });
+  }
+}

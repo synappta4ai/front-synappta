@@ -8,6 +8,12 @@ import { AuthApiRepository } from '../repositories';
 import { UserSessionStore } from '../../../core/store/user.session';
 import { environment } from '@env/environment';
 
+function jwt(exp: number): string {
+  const encode = (value: string): string =>
+    btoa(value).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  return `${encode('{"alg":"HS256","typ":"JWT"}')}.${encode(JSON.stringify({ sub: 1, exp }))}.signature`;
+}
+
 describe('AuthService', () => {
   let service: AuthService;
   let httpMock: HttpTestingController;
@@ -56,7 +62,7 @@ describe('AuthService', () => {
       success: true,
       message: 'success',
       data: {
-        token: 'jwt-123',
+        token: jwt(Math.floor(Date.now() / 1000) + 3600),
         user: { id: 1, username: 'drako', role_level: 3, role_name: 'USER' },
         tenant_id: 1,
         tenant_slug: 'synapta',
@@ -64,9 +70,28 @@ describe('AuthService', () => {
     };
 
     service.login({ username: 'drako', password: 'secret' }).subscribe((session) => {
-      expect(session.token).toBe('jwt-123');
+      expect(session.token).toBe(response.data.token);
       expect(sessionStore.isLoggedIn()).toBe(true);
       expect(sessionStore.currentUser()?.username).toBe('drako');
+    });
+
+    httpMock.expectOne(`${environment.API_URL}/auth/login`).flush(response);
+  });
+
+  it('does not count an expired token as an active session', () => {
+    const response = {
+      success: true,
+      message: 'success',
+      data: {
+        token: jwt(Math.floor(Date.now() / 1000) - 60),
+        user: { id: 1, username: 'drako', role_level: 3, role_name: 'USER' },
+        tenant_id: 1,
+        tenant_slug: 'synapta',
+      },
+    };
+
+    service.login({ username: 'drako', password: 'secret' }).subscribe(() => {
+      expect(sessionStore.isLoggedIn()).toBe(false);
     });
 
     httpMock.expectOne(`${environment.API_URL}/auth/login`).flush(response);
