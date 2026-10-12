@@ -1,4 +1,4 @@
-<app-page-container title="Generación de Video" animate.enter="anim-page">
+<app-page-container [title]="'VIDEO.TITLE' | translate" animate.enter="anim-page">
   @if (error(); as message) {
     <div class="mb-6">
       <p-message severity="error" [text]="message" [escape]="false" styleClass="w-full" />
@@ -14,8 +14,10 @@
             <i class="md md-check_circle text-lg text-success"></i>
           </div>
           <div>
-            <h2 class="text-lg font-bold text-success">¡Video generado exitosamente!</h2>
-            <p class="text-sm text-ink-muted-on-dark">Tu video está listo para descargar</p>
+            <h2 class="text-lg font-bold text-success">
+              {{ 'VIDEO.RESULT_HEADLINE' | translate }}
+            </h2>
+            <p class="text-sm text-ink-muted-on-dark">{{ 'VIDEO.RESULT_SUBTITLE' | translate }}</p>
           </div>
         </div>
       </ng-template>
@@ -23,15 +25,15 @@
       <div class="flex flex-col gap-4">
         <video controls class="aspect-video w-full rounded-xl shadow-sm">
           <source [src]="url | serverUrl" type="video/mp4" />
-          Tu navegador no soporta video HTML5.
+          {{ 'VIDEO.VIDEO_UNSUPPORTED' | translate }}
         </video>
 
         <div class="flex items-center justify-between rounded-xl bg-surface-2 p-4">
           <div class="flex items-center gap-3">
             <i class="md md-video_file text-xl text-accent"></i>
             <div>
-              <p class="font-bold text-ink-on-dark">Video generado</p>
-              <p class="text-sm text-ink-muted-on-dark">Haz clic derecho para descargar</p>
+              <p class="font-bold text-ink-on-dark">{{ 'VIDEO.RESULT_TITLE' | translate }}</p>
+              <p class="text-sm text-ink-muted-on-dark">{{ 'VIDEO.RESULT_HINT' | translate }}</p>
             </div>
           </div>
           <a
@@ -41,7 +43,7 @@
             class="inline-flex items-center gap-2 rounded-xl bg-accent px-4 py-2 text-xs font-bold text-on-accent transition-colors hover:bg-accent-hover active:scale-[0.98]"
           >
             <i class="md md-open_in_new"></i>
-            Abrir en nueva pestaña
+            {{ 'VIDEO.OPEN_NEW_TAB' | translate }}
           </a>
         </div>
       </div>
@@ -56,8 +58,8 @@
           <i class="md md-videocam text-lg text-accent"></i>
         </div>
         <div>
-          <h2 class="text-lg font-bold text-ink-on-dark">Configurar Generación</h2>
-          <p class="text-sm text-ink-muted-on-dark">Define los parámetros para tu video</p>
+          <h2 class="text-lg font-bold text-ink-on-dark">{{ 'VIDEO.FORM_TITLE' | translate }}</h2>
+          <p class="text-sm text-ink-muted-on-dark">{{ 'VIDEO.FORM_SUBTITLE' | translate }}</p>
         </div>
       </div>
     </ng-template>
@@ -66,7 +68,7 @@
       <!-- Model Selection -->
       <div class="flex flex-col gap-2">
         <label for="model" class="text-xs font-bold text-ink-on-dark">
-          Modelo de Video <span class="text-danger">*</span>
+          {{ 'VIDEO.MODEL_LABEL' | translate }} <span class="text-danger">*</span>
         </label>
 
         @if (loadingModels()) {
@@ -74,7 +76,7 @@
             class="flex items-center gap-2 rounded-xl border border-surface-border bg-surface-2 p-3"
             aria-busy="true"
           >
-            <span class="sr-only">Cargando modelos…</span>
+            <span class="sr-only">{{ 'VIDEO.MODEL_LOADING' | translate }}</span>
             <div class="skel skel-text w-full" aria-hidden="true"></div>
           </div>
         } @else {
@@ -86,7 +88,7 @@
             [options]="models()"
             optionLabel="display_name"
             optionValue="name"
-            placeholder="Selecciona un modelo de video"
+            [placeholder]="'VIDEO.MODEL_PLACEHOLDER' | translate"
             [filter]="true"
             filterBy="generator,name"
             [showClear]="true"
@@ -127,22 +129,30 @@
           <div class="mt-2 rounded-2xl border border-surface-border bg-surface-2 p-4">
             <div class="mb-3 flex items-center gap-2">
               <i class="md md-info text-accent"></i>
-              <span class="text-xs font-bold text-ink-on-dark">Información del Modelo</span>
+              <span class="text-xs font-bold text-ink-on-dark">{{
+                'VIDEO.MODEL_INFO_TITLE' | translate
+              }}</span>
             </div>
             <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <div>
-                <p class="text-xs font-bold text-ink-muted-on-dark">Proveedor</p>
+                <p class="text-xs font-bold text-ink-muted-on-dark">
+                  {{ 'VIDEO.PROVIDER' | translate }}
+                </p>
                 <p class="text-sm font-bold text-ink-on-dark">
                   {{ model.credential_provider }}
                 </p>
               </div>
               <div>
-                <p class="text-xs font-bold text-ink-muted-on-dark">Generador</p>
+                <p class="text-xs font-bold text-ink-muted-on-dark">
+                  {{ 'VIDEO.GENERATOR' | translate }}
+                </p>
                 <p class="text-sm font-bold text-ink-on-dark">{{ model.generator }}</p>
               </div>
               @if (model.defaults.ratios?.length) {
                 <div>
-                  <p class="text-xs font-bold text-ink-muted-on-dark">Ratios</p>
+                  <p class="text-xs font-bold text-ink-muted-on-dark">
+                    {{ 'VIDEO.RATIOS' | translate }}
+                  </p>
                   <div class="mt-1 flex flex-wrap gap-1">
                     @for (ratio of model.defaults.ratios; track ratio) {
                       <span
@@ -155,7 +165,9 @@
               }
               @if (model.defaults.resolutions?.length) {
                 <div>
-                  <p class="text-xs font-bold text-ink-muted-on-dark">Resoluciones</p>
+                  <p class="text-xs font-bold text-ink-muted-on-dark">
+                    {{ 'VIDEO.RESOLUTIONS' | translate }}
+                  </p>
                   <div class="mt-1 flex flex-wrap gap-1">
                     @for (res of model.defaults.resolutions; track res) {
                       <span
@@ -174,29 +186,29 @@
       <!-- Prompt -->
       <div class="flex flex-col gap-2">
         <label for="prompt" class="text-xs font-bold text-ink-on-dark">
-          Prompt <span class="text-danger">*</span>
+          {{ 'VIDEO.PROMPT_LABEL' | translate }} <span class="text-danger">*</span>
         </label>
         <textarea
           pTextarea
           id="prompt"
           formControlName="prompt"
           rows="4"
-          placeholder="Describe la escena que quieres generar con detalle..."
+          [placeholder]="'VIDEO.PROMPT_PLACEHOLDER' | translate"
           class="w-full"
         ></textarea>
-        <small class="text-ink-muted-on-dark">Sé específico para obtener mejores resultados</small>
+        <small class="text-ink-muted-on-dark">{{ 'VIDEO.PROMPT_HINT' | translate }}</small>
       </div>
       <!-- Project / Piece selection -->
       <div class="rounded-2xl border border-surface-border bg-surface-2 p-5">
         <h3 class="mb-4 flex items-center gap-2 text-xs font-bold text-ink-on-dark">
           <i class="md md-folder text-ink-muted-on-dark"></i>
-          Proyecto y pieza
+          {{ 'VIDEO.PROJECT_PIECE_TITLE' | translate }}
         </h3>
         <div class="grid gap-5 sm:grid-cols-2">
           <div class="flex flex-col gap-2">
             <div class="flex h-9 items-center">
               <label for="projectSelect" class="text-xs font-bold text-ink-on-dark">
-                Proyecto <span class="text-danger">*</span>
+                {{ 'VIDEO.PROJECT_LABEL' | translate }} <span class="text-danger">*</span>
               </label>
             </div>
             @if (loadingProjects()) {
@@ -204,7 +216,7 @@
                 class="flex items-center gap-2 rounded-xl border border-surface-border bg-surface p-3"
                 aria-busy="true"
               >
-                <span class="sr-only">Cargando proyectos…</span>
+                <span class="sr-only">{{ 'VIDEO.PROJECT_LOADING' | translate }}</span>
                 <div class="skel skel-text w-full" aria-hidden="true"></div>
               </div>
             } @else {
@@ -215,9 +227,9 @@
                 [ngModel]="selectedProject()"
                 (ngModelChange)="onProjectChange($event)"
                 [ngModelOptions]="{ standalone: true }"
-                placeholder="Selecciona un proyecto"
+                [placeholder]="'VIDEO.PROJECT_PLACEHOLDER' | translate"
                 [filter]="true"
-                filterPlaceholder="Buscar proyecto..."
+                [filterPlaceholder]="'VIDEO.PROJECT_FILTER_PLACEHOLDER' | translate"
                 [showClear]="true"
                 styleClass="w-full"
                 appendTo="body"
@@ -227,16 +239,16 @@
                     <i class="md md-folder text-sm text-accent"></i>
                     <span>{{ project.name }}</span>
                     @if (project.program_count) {
-                      <span class="ml-auto text-xs text-ink-muted-on-dark"
-                        >{{ project.program_count }} programas</span
-                      >
+                      <span class="ml-auto text-xs text-ink-muted-on-dark">{{
+                        'VIDEO.PROGRAMS' | translate: { count: project.program_count }
+                      }}</span>
                     }
                   </div>
                 </ng-template>
               </p-select>
             }
             <small class="text-ink-muted-on-dark">
-              Administra proyectos en
+              {{ 'VIDEO.PROJECT_HELP' | translate }}
               <a class="text-accent underline" href="/projects">/projects</a>
             </small>
           </div>
@@ -244,11 +256,11 @@
           <div class="flex flex-col gap-2">
             <div class="flex h-9 items-center justify-between">
               <label for="pieceSelect" class="text-xs font-bold text-ink-on-dark">
-                Pieza <span class="text-danger">*</span>
+                {{ 'VIDEO.PIECE_LABEL' | translate }} <span class="text-danger">*</span>
               </label>
               @if (selectedProject()) {
                 <p-button
-                  label="Nueva pieza"
+                  [label]="'VIDEO.NEW_PIECE' | translate"
                   icon="md md-add"
                   text
                   size="small"
@@ -260,23 +272,23 @@
               <div
                 class="rounded-xl border border-dashed border-surface-border bg-surface p-3 text-center text-sm text-ink-muted-on-dark"
               >
-                Selecciona primero un proyecto
+                {{ 'VIDEO.PIECE_SELECT_PROJECT' | translate }}
               </div>
             } @else if (loadingPieces()) {
               <div
                 class="flex items-center gap-2 rounded-xl border border-surface-border bg-surface p-3"
                 aria-busy="true"
               >
-                <span class="sr-only">Cargando piezas…</span>
+                <span class="sr-only">{{ 'VIDEO.PIECES_LOADING' | translate }}</span>
                 <div class="skel skel-text w-full" aria-hidden="true"></div>
               </div>
             } @else if (pieces().length === 0) {
               <div
                 class="rounded-xl border border-dashed border-surface-border bg-surface p-3 text-center"
               >
-                <p class="text-sm text-ink-muted-on-dark">Este proyecto no tiene piezas.</p>
+                <p class="text-sm text-ink-muted-on-dark">{{ 'VIDEO.PIECES_EMPTY' | translate }}</p>
                 <p-button
-                  label="Crear la primera pieza"
+                  [label]="'VIDEO.PIECE_CREATE_FIRST' | translate"
                   icon="md md-add"
                   text
                   size="small"
@@ -290,9 +302,9 @@
                 [ngModel]="selectedPiece()"
                 (ngModelChange)="onPieceChange($event)"
                 [ngModelOptions]="{ standalone: true }"
-                placeholder="Selecciona la pieza a generar"
+                [placeholder]="'VIDEO.PIECE_PLACEHOLDER' | translate"
                 [filter]="true"
-                filterPlaceholder="Buscar pieza..."
+                [filterPlaceholder]="'VIDEO.PIECE_FILTER_PLACEHOLDER' | translate"
                 [showClear]="true"
                 styleClass="w-full"
                 appendTo="body"
@@ -308,7 +320,9 @@
                 <ng-template #item let-piece>
                   <div class="flex items-center gap-2">
                     <span class="font-bold text-ink-on-dark">#{{ piece.number }}</span>
-                    <span>{{ piece.name || piece.piece_code || 'Pieza' }}</span>
+                    <span>{{
+                      piece.name || piece.piece_code || ('VIDEO.PIECE_FALLBACK' | translate)
+                    }}</span>
                     @if (piece.piece_code) {
                       <code
                         class="ml-auto rounded-full bg-surface-2 px-1.5 py-0.5 text-xs text-ink-muted-on-dark"
@@ -343,12 +357,12 @@
           <div class="flex h-9 items-center justify-between">
             <label class="text-xs font-bold text-ink-on-dark">
               <i class="md md-photo_library mr-1 text-ink-muted-on-dark"></i>
-              Imágenes de referencia del proyecto
+              {{ 'VIDEO.REFS_TITLE' | translate }}
             </label>
             @if (selectedProject()) {
               <div class="flex items-center gap-1">
                 <p-button
-                  label="Biblioteca"
+                  [label]="'VIDEO.LIBRARY' | translate"
                   icon="md md-folder_open"
                   size="small"
                   [text]="true"
@@ -368,7 +382,7 @@
                     [class.md-autorenew]="uploadingRef()"
                     [class.md-upload]="!uploadingRef()"
                   ></i>
-                  <span class="ml-1">Subir</span>
+                  <span class="ml-1">{{ 'VIDEO.UPLOAD' | translate }}</span>
                   <input
                     #refInput
                     type="file"
@@ -385,22 +399,21 @@
             <div
               class="rounded-xl border border-dashed border-surface-border bg-surface p-3 text-center text-sm text-ink-muted-on-dark"
             >
-              Selecciona un proyecto para ver y subir sus imágenes de referencia
+              {{ 'VIDEO.REFS_SELECT_PROJECT' | translate }}
             </div>
           } @else if (loadingRefs()) {
             <div
               class="flex items-center gap-2 rounded-xl border border-surface-border bg-surface p-3"
               aria-busy="true"
             >
-              <span class="sr-only">Cargando referencias…</span>
+              <span class="sr-only">{{ 'VIDEO.REFS_LOADING' | translate }}</span>
               <div class="skel skel-text w-full" aria-hidden="true"></div>
             </div>
           } @else if (refImages().length === 0) {
             <div
               class="rounded-xl border border-dashed border-surface-border bg-surface p-3 text-center text-sm text-ink-muted-on-dark"
             >
-              Este proyecto todavía no tiene imágenes asignadas. Sube una o asígnalas desde Admin →
-              Imágenes.
+              {{ 'VIDEO.REFS_EMPTY' | translate }}
             </div>
           } @else {
             <div class="flex flex-wrap gap-2">
@@ -440,18 +453,18 @@
                 </button>
               }
             </div>
-            <small class="text-ink-muted-on-dark"
-              >{{ selectedRefIds().size }} seleccionadas (máx. {{ maxSelectedRefs }}) — se envían
-              como referencia al modelo.</small
-            >
+            <small class="text-ink-muted-on-dark">{{
+              'VIDEO.REFS_SELECTED'
+                | translate: { count: selectedRefIds().size, max: maxSelectedRefs }
+            }}</small>
           }
         </div>
         <div class="mt-5 grid items-start gap-5 sm:grid-cols-2">
           <div class="flex flex-col gap-2">
             <div class="flex h-9 items-center">
-              <label for="generationNumber" class="text-xs font-bold text-ink-on-dark"
-                >Generation #</label
-              >
+              <label for="generationNumber" class="text-xs font-bold text-ink-on-dark">{{
+                'VIDEO.GENERATION_LABEL' | translate
+              }}</label>
             </div>
             <p-inputNumber
               inputId="generationNumber"
@@ -463,9 +476,9 @@
           </div>
           <div class="flex flex-col gap-2">
             <div class="flex h-9 items-center justify-between">
-              <label for="duration" class="text-xs font-bold text-ink-on-dark"
-                >Duración (seg)</label
-              >
+              <label for="duration" class="text-xs font-bold text-ink-on-dark">{{
+                'VIDEO.DURATION_LABEL' | translate
+              }}</label>
               <span class="rounded-full bg-surface px-2 py-0.5 text-xs font-bold text-accent">
                 {{ form.controls.duration.value }}s
               </span>
@@ -497,19 +510,28 @@
               />
             }
             <small class="text-ink-muted-on-dark">
-              {{ selectedModel()?.display_name || 'El modelo' }} soporta
-              {{ durationRange().min }}–{{ durationRange().max }}s
+              {{
+                'VIDEO.DURATION_SUPPORT'
+                  | translate
+                    : {
+                        model:
+                          selectedModel()?.display_name ||
+                          ('VIDEO.DURATION_MODEL_FALLBACK' | translate),
+                        min: durationRange().min,
+                        max: durationRange().max,
+                      }
+              }}
             </small>
           </div>
         </div>
         @if (selectedProject() && selectedPiece()) {
           <p class="mt-3 flex items-center gap-2 text-xs text-ink-muted-on-dark">
             <i class="md md-check_circle text-success"></i>
-            Se generará como
+            {{ 'VIDEO.GENERATE_AS' | translate }}
             <code class="rounded-full bg-surface px-1.5 py-0.5">{{
-              selectedPiece()?.piece_code || 'SIN-CODIGO'
+              selectedPiece()?.piece_code || ('VIDEO.NO_CODE' | translate)
             }}</code>
-            · generación #{{ form.controls.generationNumber.value }}
+            {{ 'VIDEO.GEN_HASH' | translate: { n: form.controls.generationNumber.value } }}
           </p>
         }
       </div>
@@ -517,19 +539,23 @@
       <div class="flex items-center justify-between border-t border-surface-border pt-4">
         <p class="text-sm text-ink-muted-on-dark">
           <i class="md md-info mr-1"></i>
-          La generación puede tomar varios minutos
+          {{ 'VIDEO.TAKES_MINUTES' | translate }}
         </p>
-        <span pTooltip="Elegí un modelo para generar" showDelay="400" class="inline-flex">
+        <span
+          [pTooltip]="'VIDEO.PICK_MODEL_TOOLTIP' | translate"
+          showDelay="400"
+          class="inline-flex"
+        >
           <p-button
             type="submit"
-            label="Generar video"
+            [label]="'VIDEO.GENERATE_VIDEO' | translate"
             icon="md md-play_arrow"
             [loading]="submitting() || polling()"
             [disabled]="submitting() || polling() || !form.controls.model.value"
             styleClass="px-6 active:scale-[0.98]"
           >
             @if (polling()) {
-              <span>Generando…</span>
+              <span>{{ 'VIDEO.GENERATING' | translate }}</span>
             }
           </p-button>
         </span>
@@ -548,15 +574,17 @@
           </div>
         </div>
         <div>
-          <p class="text-lg font-bold text-ink-on-dark">Generando video…</p>
+          <p class="text-lg font-bold text-ink-on-dark">
+            {{ 'VIDEO.GENERATING_TITLE' | translate }}
+          </p>
           <p class="mt-1 text-sm text-ink-muted-on-dark">
-            Esto puede tomar varios minutos. No cierres esta página.
+            {{ 'VIDEO.GENERATING_HINT' | translate }}
           </p>
         </div>
         <p-progressBar [value]="progress()" [showValue]="true" styleClass="w-full max-w-md" />
         <div class="flex items-center gap-2 text-sm text-accent">
           <i class="md md-autorenew md-spin"></i>
-          <span>Procesando con IA — {{ progress() }}% estimado</span>
+          <span>{{ 'VIDEO.PROCESSING' | translate: { progress: progress() } }}</span>
         </div>
       </div>
     </div>
@@ -564,7 +592,7 @@
 
   <!-- Quick-create piece dialog -->
   <p-dialog
-    header="Nueva pieza"
+    header="{{ 'VIDEO.NEW_PIECE_TITLE' | translate }}"
     [visible]="pieceDialogVisible()"
     (visibleChange)="pieceDialogVisible.set($event)"
     [modal]="true"
@@ -575,37 +603,42 @@
     <div class="flex flex-col gap-4 pt-2">
       @if (selectedProject(); as project) {
         <p class="text-sm text-ink-muted-on-dark">
-          Proyecto: <strong class="text-ink-on-dark">{{ project.name }}</strong>
+          {{ 'VIDEO.PROJECT_ROW_LABEL' | translate }}
+          <strong class="text-ink-on-dark">{{ project.name }}</strong>
         </p>
       }
       <div class="grid gap-4 sm:grid-cols-2">
         <div class="flex flex-col gap-2">
           <label for="qc-name" class="text-xs font-bold text-ink-on-dark">
-            Nombre <span class="text-danger">*</span>
+            {{ 'VIDEO.NAME_LABEL' | translate }} <span class="text-danger">*</span>
           </label>
           <input
             pInputText
             id="qc-name"
             [ngModel]="newPiece().name"
             (ngModelChange)="newPiece().name = $event"
-            placeholder="Ej: Video apertura"
+            [placeholder]="'VIDEO.NAME_PLACEHOLDER' | translate"
             class="w-full"
           />
         </div>
         <div class="flex flex-col gap-2">
-          <label for="qc-code" class="text-xs font-bold text-ink-on-dark">Código</label>
+          <label for="qc-code" class="text-xs font-bold text-ink-on-dark">{{
+            'VIDEO.CODE_LABEL' | translate
+          }}</label>
           <input
             pInputText
             id="qc-code"
             [ngModel]="newPiece().piece_code"
             (ngModelChange)="newPiece().piece_code = $event"
-            placeholder="Automático si se deja vacío"
+            [placeholder]="'VIDEO.CODE_PLACEHOLDER' | translate"
             class="w-full"
           />
         </div>
       </div>
       <div class="flex flex-col gap-2">
-        <label for="qc-program" class="text-xs font-bold text-ink-on-dark">Programa</label>
+        <label for="qc-program" class="text-xs font-bold text-ink-on-dark">{{
+          'VIDEO.PROGRAM_LABEL' | translate
+        }}</label>
         <p-select
           inputId="qc-program"
           [options]="
@@ -618,7 +651,7 @@
           "
           [ngModel]="newPiece().program_id"
           (ngModelChange)="newPiece().program_id = $event"
-          placeholder="Sin programa"
+          [placeholder]="'VIDEO.PROGRAM_PLACEHOLDER' | translate"
           [showClear]="true"
           styleClass="w-full"
           appendTo="body"
@@ -626,9 +659,9 @@
       </div>
       <div class="grid gap-4 sm:grid-cols-2">
         <div class="flex flex-col gap-2">
-          <label for="qc-duration" class="text-xs font-bold text-ink-on-dark"
-            >Duración planeada (s)</label
-          >
+          <label for="qc-duration" class="text-xs font-bold text-ink-on-dark">{{
+            'VIDEO.PLANNED_DURATION_LABEL' | translate
+          }}</label>
           <p-inputNumber
             inputId="qc-duration"
             [ngModel]="newPiece().duration"
@@ -638,9 +671,9 @@
           />
         </div>
         <div class="flex flex-col gap-2">
-          <label for="qc-ratio" class="text-xs font-bold text-ink-on-dark"
-            >Relación de aspecto</label
-          >
+          <label for="qc-ratio" class="text-xs font-bold text-ink-on-dark">{{
+            'VIDEO.ASPECT_RATIO_LABEL' | translate
+          }}</label>
           <p-select
             inputId="qc-ratio"
             [options]="$any(aspectRatioOptions)"
@@ -655,14 +688,18 @@
     </div>
     <ng-template #footer>
       <p-button
-        label="Cancelar"
+        [label]="'VIDEO.CANCEL' | translate"
         severity="secondary"
         text
         (onClick)="pieceDialogVisible.set(false)"
       />
-      <span pTooltip="Escribí un nombre para crear la pieza" showDelay="400" class="inline-flex">
+      <span
+        [pTooltip]="'VIDEO.CREATE_PIECE_TOOLTIP' | translate"
+        showDelay="400"
+        class="inline-flex"
+      >
         <p-button
-          label="Crear y seleccionar"
+          [label]="'VIDEO.CREATE_AND_SELECT' | translate"
           icon="md md-check"
           [loading]="savingPiece()"
           [disabled]="!newPiece().name.trim()"
