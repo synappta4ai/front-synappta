@@ -89,6 +89,9 @@
             },
             "development": {
               "buildTarget": "front-synapta:build:development"
+            },
+            "dev": {
+              "buildTarget": "front-synapta:build:dev"
             }
           },
           "defaultConfiguration": "development"

@@ -3707,6 +3707,8 @@ main:has(> app-studio) {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  max-height: 40dvh;
+  overflow-y: auto;
 }
 
 .studio-shell .reel-day-head {
@@ -4001,6 +4003,8 @@ main:has(> app-studio) {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  max-height: 40dvh;
+  overflow-y: auto;
 }
 
 .studio-shell .queue-item {
