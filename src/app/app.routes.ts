@@ -64,6 +64,13 @@ export const routes: Routes = [
         canActivate: [authGuard],
         loadChildren: () => import('@modules/gpu/gpu.routes').then((m) => m.gpuRoutes),
       },
+      {
+        // Herramientas del cliente (Hoja de poses, …): cualquier usuario
+        // autenticado; el guard vive en cada ruta del módulo si hace falta.
+        path: 'tools',
+        canActivate: [authGuard],
+        loadChildren: () => import('@modules/tools/tools.routes').then((m) => m.toolsRoutes),
+      },
     ],
   },
   {

@@ -1,0 +1,221 @@
+<div class="studio-shell" animate.enter="anim-page">
+  <!-- ══════════ Columna: parámetros ══════════ -->
+  <aside class="studio-left">
+    <p class="project-caption" [title]="'TOOLS.POSE_SHEET_DESC' | translate">
+      <i class="md md-auto_fix_high"></i> {{ 'TOOLS.POSE_SHEET' | translate }}
+    </p>
+
+    @if (error()) {
+      <p-message severity="error" [text]="error()!" />
+    }
+
+    <div class="panel">
+      <div class="panel-head">
+        <span><i class="md md-image"></i> {{ 'TOOLS.MODEL_LABEL' | translate }}</span>
+      </div>
+      @if (loadingModels()) {
+        <p class="muted small">{{ 'TOOLS.LOADING_CATALOG' | translate }}</p>
+      } @else if (models().length === 0) {
+        <p class="muted small">{{ 'TOOLS.NO_MODELS' | translate }}</p>
+      } @else {
+        <p-select
+          id="pose-model"
+          [ngModel]="selectedModel()"
+          (ngModelChange)="selectedModel.set($event)"
+          [options]="models()"
+          optionLabel="display_name"
+          optionValue="name"
+          [placeholder]="'TOOLS.MODEL_PLACEHOLDER' | translate"
+          [showClear]="false"
+          class="w-full"
+          appendTo="body"
+        >
+          <ng-template #item let-m>
+            <div class="flex items-center justify-between gap-2 w-full">
+              <div class="min-w-0">
+                <p class="font-bold truncate">{{ m.display_name ?? m.name }}</p>
+                <p class="text-xs opacity-60 truncate">{{ m.name }}</p>
+              </div>
+              <p-tag [value]="m.credential_provider" severity="info" styleClass="text-xs" />
+            </div>
+          </ng-template>
+        </p-select>
+      }
+      @if (soulSelected() && refs().length > 0) {
+        <p-message severity="warn" [text]="'TOOLS.SOUL_REFS_HINT' | translate" class="mt-2 block" />
+      }
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <span><i class="md md-grid_view"></i> {{ 'TOOLS.VARIANT_LABEL' | translate }}</span>
+      </div>
+      <div
+        class="pose-variant-grid"
+        role="group"
+        aria-label="{{ 'TOOLS.VARIANT_LABEL' | translate }}"
+      >
+        @for (v of variants; track v.key) {
+          <button
+            type="button"
+            class="pose-variant"
+            [class.active]="variant() === v.key"
+            (click)="onVariantChange(v.key)"
+          >
+            <strong>{{ v.labelKey | translate }}</strong>
+            <span>{{ v.descriptionKey | translate }}</span>
+          </button>
+        }
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <label for="pose-prompt">{{ 'TOOLS.PROMPT_LABEL' | translate }}</label>
+        <p-button
+          [label]="'TOOLS.RESET_DEFAULT' | translate"
+          icon="md md-refresh"
+          [text]="true"
+          size="small"
+          [disabled]="!promptDirty()"
+          (onClick)="resetPrompt()"
+        />
+      </div>
+      @if (loadingPrompt()) {
+        <p class="muted small">{{ 'TOOLS.LOADING_PROMPT' | translate }}</p>
+      } @else {
+        <textarea
+          id="pose-prompt"
+          rows="8"
+          [ngModel]="editedPrompt()"
+          (ngModelChange)="editedPrompt.set($event)"
+          class="pose-textarea pose-prompt"
+        ></textarea>
+      }
+      <p class="muted small mt-1">{{ 'TOOLS.PROMPT_HINT' | translate }}</p>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <span><i class="md md-person"></i> {{ 'TOOLS.CHARACTER_NAME_LABEL' | translate }}</span>
+      </div>
+      <input
+        id="pose-name"
+        type="text"
+        [ngModel]="characterName()"
+        (ngModelChange)="characterName.set($event)"
+        [placeholder]="'TOOLS.CHARACTER_NAME_PLACEHOLDER' | translate"
+        class="pose-input"
+      />
+      <label for="pose-desc" class="muted small mt-2 mb-1 block">
+        {{ 'TOOLS.CHARACTER_DESC_LABEL' | translate }}
+      </label>
+      <textarea
+        id="pose-desc"
+        rows="2"
+        [ngModel]="characterDesc()"
+        (ngModelChange)="characterDesc.set($event)"
+        [placeholder]="'TOOLS.CHARACTER_DESC_PLACEHOLDER' | translate"
+        class="pose-textarea"
+      ></textarea>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <span><i class="md md-photo_library"></i> {{ 'TOOLS.REFS_LABEL' | translate }}</span>
+      </div>
+      <p class="muted small">{{ 'TOOLS.REFS_HINT' | translate }}</p>
+      <input
+        #refsInput
+        type="file"
+        accept="image/png,image/jpeg"
+        multiple
+        class="hidden"
+        (change)="onRefsPicked($event)"
+        [attr.aria-label]="'TOOLS.REFS_ADD' | translate"
+      />
+      <p-button
+        [label]="'TOOLS.REFS_ADD' | translate"
+        icon="md md-upload"
+        severity="secondary"
+        size="small"
+        class="mt-2"
+        [loading]="uploadingRefs()"
+        (onClick)="refsInput.click()"
+      />
+      @if (refs().length === 0) {
+        <p class="muted small mt-2">{{ 'TOOLS.REFS_EMPTY' | translate }}</p>
+      } @else {
+        <div class="pose-refs">
+          @for (ref of refs(); track ref.id) {
+            <div class="pose-ref">
+              <img
+                [src]="ref.thumbnail_url ?? ref.url | serverUrl"
+                [alt]="ref.filename"
+                loading="lazy"
+              />
+              <button
+                type="button"
+                class="pose-ref-clear"
+                (click)="removeRef(ref.id)"
+                [attr.aria-label]="ref.filename"
+              >
+                <i class="md md-close"></i>
+              </button>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="pose-generate-bar">
+      <p-button
+        [label]="generating() ? ('TOOLS.GENERATING' | translate) : ('TOOLS.GENERATE' | translate)"
+        icon="md md-auto_fix_high"
+        [loading]="generating()"
+        [disabled]="!selectedModel() || generating()"
+        styleClass="w-full"
+        (onClick)="generate()"
+      />
+      @if (generating() && progress() !== null) {
+        <p-tag [value]="progress() + '%'" severity="info" />
+      }
+    </div>
+  </aside>
+
+  <!-- ══════════ Visor: resultado ══════════ -->
+  <div class="studio-center">
+    <div class="panel pose-viewer">
+      <div class="panel-head">
+        <span><i class="md md-visibility"></i> {{ 'TOOLS.RESULT_TITLE' | translate }}</span>
+        @if (savedName()) {
+          <p-tag [value]="savedName()!" severity="success" styleClass="text-xs" />
+        }
+      </div>
+      @if (result().length === 0) {
+        <div class="pose-empty">
+          <i class="md md-person"></i>
+          <span>{{ 'TOOLS.POSE_SHEET_DESC' | translate }}</span>
+        </div>
+      } @else {
+        <div class="pose-canvas">
+          @for (output of result(); track output.url) {
+            <img [src]="output.url | serverUrl" alt="{{ 'TOOLS.RESULT_TITLE' | translate }}" />
+          }
+        </div>
+        <div class="mt-2 flex flex-wrap items-center gap-3">
+          <p-button
+            [label]="saving() ? ('TOOLS.SAVING' | translate) : ('TOOLS.SAVE_CHARACTER' | translate)"
+            icon="md md-person_add"
+            [loading]="saving()"
+            [disabled]="saving()"
+            (onClick)="saveAsCharacter()"
+          />
+          @if (savedName()) {
+            <p-message severity="success" [text]="'TOOLS.SAVED' | translate" />
+          }
+        </div>
+      }
+    </div>
+  </div>
+</div>

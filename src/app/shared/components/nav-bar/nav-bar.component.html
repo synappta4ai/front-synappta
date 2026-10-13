@@ -42,4 +42,22 @@
       </div>
     </ng-template>
   </p-menubar>
+
+  <p-popover #toolsPopover styleClass="tools-popover">
+    <div class="pop-head">
+      <span><i class="md md-auto_fix_high"></i> {{ 'TOOLS.TITLE' | translate }}</span>
+    </div>
+    <div class="pop-list">
+      @for (tool of toolItems(); track tool.routerLink) {
+        <a [routerLink]="tool.routerLink" class="pop-item" (click)="hideTools()">
+          <span class="pop-thumb icon"><i [class]="tool.icon"></i></span>
+          <span class="pop-info">
+            <span class="pop-model">{{ tool.label }}</span>
+            <span class="pop-prompt">{{ tool.description }}</span>
+          </span>
+          <i class="md md-chevron_right pop-go"></i>
+        </a>
+      }
+    </div>
+  </p-popover>
 </header>

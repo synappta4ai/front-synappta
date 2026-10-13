@@ -1,0 +1,104 @@
+/* Popover HERRAMIENTAS (navbar): misma superficie oscura que la campana. */
+.tools-popover {
+  width: 320px;
+  padding: 0 !important;
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-surface-border) !important;
+  color: var(--color-ink-on-dark) !important;
+  box-shadow: none !important;
+  border-radius: 16px !important;
+}
+
+.tools-popover .p-popover-content {
+  padding: 0;
+}
+
+.tools-popover .p-popover-arrow {
+  border-bottom-color: var(--color-surface-border) !important;
+}
+
+.tools-popover .pop-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--color-surface-border);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-ink-muted-on-dark);
+}
+
+.tools-popover .pop-head i {
+  color: var(--color-accent);
+  margin-right: 6px;
+}
+
+.tools-popover .pop-list {
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+.tools-popover .pop-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--color-surface-border);
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.12s ease;
+}
+
+.tools-popover .pop-item:hover {
+  background: var(--color-surface-hover);
+}
+
+.tools-popover .pop-item:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.tools-popover .pop-thumb {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: var(--color-scrim);
+  flex-shrink: 0;
+}
+
+.tools-popover .pop-thumb.icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-accent);
+}
+
+.tools-popover .pop-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.tools-popover .pop-model {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-ink-on-dark);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tools-popover .pop-prompt {
+  font-size: 12px;
+  color: var(--color-ink-muted-on-dark);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tools-popover .pop-go {
+  color: var(--color-ink-muted-on-dark);
+  flex-shrink: 0;
+}

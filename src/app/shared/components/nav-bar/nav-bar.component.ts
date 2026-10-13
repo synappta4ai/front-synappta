@@ -1,8 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, viewChild } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MenuItem } from 'primeng/api';
 import { Menubar } from 'primeng/menubar';
+import { Popover } from 'primeng/popover';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { UserSessionStore } from '@core/store/user.session';
@@ -20,15 +21,32 @@ import { SlidePillDirective } from '../slide-pill/slide-pill.directive';
     GenerationBellComponent,
     ThemePanelComponent,
     Menubar,
+    Popover,
     SlidePillDirective,
     TranslatePipe,
   ],
   templateUrl: './nav-bar.component.html',
+  styleUrl: './nav-bar.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NavBarComponent {
   private readonly sessionStore = inject(UserSessionStore);
   private readonly translate = inject(TranslateService);
+  private readonly toolsPopover = viewChild<Popover>('toolsPopover');
+
+  /** Herramientas del cliente (popover HERRAMIENTAS; se amplía sin tocar el back). */
+  protected readonly toolItems = computed(() => {
+    this.translate.currentLang();
+    const t = (key: string): string => this.translate.instant(key);
+    return [
+      {
+        label: t('TOOLS.POSE_SHEET'),
+        description: t('TOOLS.POSE_SHEET_DESC'),
+        icon: 'md md-person',
+        routerLink: '/tools/pose-sheet',
+      },
+    ];
+  });
 
   /** Foto del usuario para el logo cuadrado del start; null → logo por defecto. */
   protected readonly navAvatarUrl = computed(() => {
@@ -50,6 +68,11 @@ export class NavBarComponent {
       { label: t('APP.ROUTES.PROJECTS'), icon: 'md md-folder', routerLink: '/projects' },
       { label: t('APP.ROUTES.RESOURCES'), icon: 'md md-photo_library', routerLink: '/resources' },
       { label: t('APP.ROUTES.MY_GENERATIONS'), icon: 'md md-movie', routerLink: '/my-generations' },
+      {
+        label: t('APP.ROUTES.TOOLS'),
+        icon: 'md md-auto_fix_high',
+        command: (event) => this.toggleTools(event.originalEvent),
+      },
     ];
     if (isTenantAdmin) {
       items.push({
@@ -67,4 +90,14 @@ export class NavBarComponent {
     }
     return items;
   });
+
+  protected toggleTools(event?: Event): void {
+    if (event) {
+      this.toolsPopover()?.toggle(event);
+    }
+  }
+
+  protected hideTools(): void {
+    this.toolsPopover()?.hide();
+  }
 }
