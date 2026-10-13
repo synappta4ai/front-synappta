@@ -57,6 +57,13 @@ export const routes: Routes = [
         canActivate: [authGuard, superadminGuard],
         loadChildren: () => import('@modules/admin/admin.routes').then((m) => m.adminRoutes),
       },
+      {
+        // "Tu GPU": emparejar las máquinas con GPU del equipo (admin del
+        // tenant, role_level ≤ 1 — el guard vive en el módulo).
+        path: 'gpu',
+        canActivate: [authGuard],
+        loadChildren: () => import('@modules/gpu/gpu.routes').then((m) => m.gpuRoutes),
+      },
     ],
   },
   {

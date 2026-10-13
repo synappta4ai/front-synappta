@@ -21,7 +21,8 @@
       "RESOURCES": "Resources",
       "EVENTS": "Events",
       "VIDEO": "Video",
-      "ADMIN": "Admin"
+      "ADMIN": "Admin",
+      "GPU": "Your GPU"
     }
   },
   "SHARED": {
@@ -1223,5 +1224,58 @@
       "POLL_STATUS": "Error checking the task status.",
       "GENERATION_FAILED": "The generation failed."
     }
+  },
+  "GPU": {
+    "TITLE": "Your GPU",
+    "SUBTITLE": "Connect the GPU computers in your team and use them to generate videos and images.",
+    "CONNECT": "Connect GPU",
+    "ONLINE_COUNT": "{{count}} online",
+    "REVOKE": "Disconnect",
+    "REVOKE_TOOLTIP": "Removes this machine's permission. To reconnect it, repeat the pairing.",
+    "UNKNOWN": "Unspecified GPU",
+    "ERRORS": {
+      "LOAD": "Couldn't load the GPUs. Try again in a few seconds.",
+      "PAIRING": "Couldn't generate the pairing code. Try again."
+    },
+    "STATUS": {
+      "ONLINE": "Online",
+      "OFFLINE": "Offline"
+    },
+    "FIELDS": {
+      "VRAM": "Memory",
+      "OS": "OS",
+      "VERSION": "Version",
+      "MODELS": "Models",
+      "LAST_SEEN": "Last seen"
+    },
+    "STEPS": {
+      "DOWNLOAD": {
+        "TITLE": "Download Synapta Worker",
+        "BODY": "It's the program that uses that machine's GPU to generate. Large (~150 MB), downloaded once."
+      },
+      "INSTALL": {
+        "TITLE": "Install it with a double click",
+        "BODY": "The installer does everything by itself: no programming knowledge or terminals needed."
+      },
+      "PAIR": {
+        "TITLE": "Paste the code from the app",
+        "BODY": "When installation finishes, paste the code below. The GPU connects in seconds."
+      }
+    },
+    "PAIRING": {
+      "TITLE": "Connect a GPU",
+      "INTRO": "On the machine with the GPU, open Synapta Worker and paste this code:",
+      "CODE_LABEL": "Pairing code",
+      "COPY": "Copy",
+      "COPIED": "Copied!",
+      "EXPIRES": "Expires in {{seconds}} seconds. If it expires, generate a new one.",
+      "HOWTO_TITLE": "Steps on the machine with the GPU:",
+      "HOWTO_1": "Open Synapta Worker (installed with a double click).",
+      "HOWTO_2": "Paste the code above when asked.",
+      "HOWTO_3": "Wait until it says \"GPU connected\". Done!",
+      "SECURITY": "Anyone with this code could connect a machine to your account: don't share it."
+    },
+    "REVOKE_CONFIRM": "Disconnect \"{{name}}\"? That machine will stop generating until you pair it again.",
+    "REVOKE_CANCEL": "Cancel"
   }
 }

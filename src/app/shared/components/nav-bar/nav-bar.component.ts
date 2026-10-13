@@ -39,7 +39,11 @@ export class NavBarComponent {
   protected readonly menuItems = computed<MenuItem[]>(() => {
     this.translate.currentLang();
     const t = (key: string): string => this.translate.instant(key);
-    const isSuperadmin = this.sessionStore.currentUser()?.role_level === 0;
+    const roleLevel = this.sessionStore.currentUser()?.role_level;
+    const isSuperadmin = roleLevel === 0;
+    // "Tu GPU": emparejamiento de GPUs — accesible para admins del tenant
+    // (el back aplica RequireRole(1) en esos endpoints).
+    const isTenantAdmin = roleLevel !== undefined && roleLevel !== null && roleLevel <= 1;
     const items: MenuItem[] = [
       { label: t('APP.ROUTES.AGENCY'), icon: 'md md-work', routerLink: '/agency' },
       { label: t('APP.ROUTES.STUDIO'), icon: 'md md-bolt', routerLink: '/studio' },
@@ -47,6 +51,13 @@ export class NavBarComponent {
       { label: t('APP.ROUTES.RESOURCES'), icon: 'md md-photo_library', routerLink: '/resources' },
       { label: t('APP.ROUTES.MY_GENERATIONS'), icon: 'md md-movie', routerLink: '/my-generations' },
     ];
+    if (isTenantAdmin) {
+      items.push({
+        label: t('APP.ROUTES.GPU'),
+        icon: 'md md-memory',
+        routerLink: '/gpu',
+      });
+    }
     if (isSuperadmin) {
       items.push({
         label: t('APP.ROUTES.ADMIN'),

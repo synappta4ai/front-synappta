@@ -21,7 +21,8 @@
       "RESOURCES": "Recursos",
       "EVENTS": "Eventos",
       "VIDEO": "Video",
-      "ADMIN": "Admin"
+      "ADMIN": "Admin",
+      "GPU": "Tu GPU"
     }
   },
   "SHARED": {
@@ -1223,5 +1224,58 @@
       "POLL_STATUS": "Error al consultar el estado de la tarea.",
       "GENERATION_FAILED": "La generación falló."
     }
+  },
+  "GPU": {
+    "TITLE": "Tu GPU",
+    "SUBTITLE": "Conectá las computadoras con GPU de tu equipo y usalas para generar videos e imágenes.",
+    "CONNECT": "Conectar GPU",
+    "ONLINE_COUNT": "{{count}} en línea",
+    "REVOKE": "Desconectar",
+    "REVOKE_TOOLTIP": "Quita el permiso de esta máquina. Para volver a conectarla, repetí el emparejamiento.",
+    "UNKNOWN": "GPU no especificada",
+    "ERRORS": {
+      "LOAD": "No pude cargar las GPUs. Reintentá en unos segundos.",
+      "PAIRING": "No pude generar el código de emparejamiento. Reintentá."
+    },
+    "STATUS": {
+      "ONLINE": "En línea",
+      "OFFLINE": "Desconectada"
+    },
+    "FIELDS": {
+      "VRAM": "Memoria",
+      "OS": "Sistema",
+      "VERSION": "Versión",
+      "MODELS": "Modelos",
+      "LAST_SEEN": "Última actividad"
+    },
+    "STEPS": {
+      "DOWNLOAD": {
+        "TITLE": "Descargá el Synapta Worker",
+        "BODY": "Es el programa que usa la GPU de esa máquina para generar. Pesado (~150 MB), se descarga una sola vez."
+      },
+      "INSTALL": {
+        "TITLE": "Instalalo con un doble click",
+        "BODY": "El instalador hace todo solo: no necesita saber de programación ni abrir terminales."
+      },
+      "PAIR": {
+        "TITLE": "Pegá el código de la app",
+        "BODY": "Al terminar la instalación, pegá el código que aparece abajo. La GPU queda conectada en segundos."
+      }
+    },
+    "PAIRING": {
+      "TITLE": "Conectar una GPU",
+      "INTRO": "En la máquina con la GPU, abrí el Synapta Worker y pegá este código:",
+      "CODE_LABEL": "Código de emparejamiento",
+      "COPY": "Copiar",
+      "COPIED": "¡Copiado!",
+      "EXPIRES": "Vence en {{seconds}} segundos. Si vence, generá uno nuevo.",
+      "HOWTO_TITLE": "Pasos en la máquina con la GPU:",
+      "HOWTO_1": "Abrí el Synapta Worker (se instala con un doble click).",
+      "HOWTO_2": "Pegá el código de arriba cuando lo pida.",
+      "HOWTO_3": "Esperá a que diga \"GPU conectada\". ¡Listo!",
+      "SECURITY": "Cualquiera con este código podría conectar una máquina a tu cuenta: no lo compartas."
+    },
+    "REVOKE_CONFIRM": "¿Desconectar \"{{name}}\"? La máquina dejará de generar hasta que vuelvas a emparejarla.",
+    "REVOKE_CANCEL": "Cancelar"
   }
 }
