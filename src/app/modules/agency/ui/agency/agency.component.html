@@ -1083,6 +1083,15 @@
                       <span class="text-xs font-bold text-ink-on-dark">{{
                         'AGENCY.STUDIO.P4_SCENE_PROMPT' | translate
                       }}</span>
+                      <p-button
+                        [label]="'AGENCY.STUDIO.P4_SUGGEST_AGENT' | translate"
+                        icon="md md-auto_fix_high"
+                        severity="secondary"
+                        size="small"
+                        [loading]="clipAgentSceneId() === scene.id"
+                        [disabled]="!!clipAgentSceneId()"
+                        (onClick)="suggestPromptsFromAgent(scene)"
+                      />
                       <span class="text-xs text-ink-muted-on-dark">
                         {{
                           'AGENCY.STUDIO.P4_VIDEO_COUNT'
@@ -1090,6 +1099,20 @@
                         }}
                       </span>
                     </div>
+                    @if (editorNotes(scene).length > 0) {
+                      <div class="mb-2 rounded-xl border border-surface-border bg-surface p-3">
+                        <span class="text-xs font-bold text-ink-on-dark">{{
+                          'AGENCY.STUDIO.P4_EDITOR_NOTES' | translate
+                        }}</span>
+                        <ul
+                          class="m-0 mt-1 flex list-disc flex-col gap-1 pl-5 text-sm text-ink-muted-on-dark"
+                        >
+                          @for (note of editorNotes(scene); track note.key) {
+                            <li>{{ note.key }}: {{ note.value }}</li>
+                          }
+                        </ul>
+                      </div>
+                    }
                     @for (prompt of scene.prompts ?? []; track $index; let p = $index) {
                       <div
                         class="flex flex-col gap-3 rounded-2xl border border-surface-border bg-surface p-4"
@@ -1726,6 +1749,54 @@
             {{ 'AGENCY.STUDIO.BOARD_PROMPT_HINT' | translate }}
           </small>
         </div>
+        <div class="flex flex-wrap items-center gap-3">
+          <p-button
+            [label]="'AGENCY.STUDIO.BOARD_SUGGEST_AGENT' | translate"
+            icon="md md-auto_fix_high"
+            severity="secondary"
+            size="small"
+            [loading]="boardAgentLoading()"
+            [disabled]="boardAgentLoading()"
+            (onClick)="suggestBoardFromAgent()"
+          />
+          @if (boardAgentLoading()) {
+            <small class="text-ink-muted-on-dark">{{
+              'AGENCY.STUDIO.BOARD_SUGGEST_HINT' | translate
+            }}</small>
+          }
+        </div>
+        @if (scene.boardArtifact; as board) {
+          @if (board.vinetas.length > 0) {
+            <div class="flex flex-col gap-1">
+              <span class="text-xs font-bold text-ink-on-dark">{{
+                'AGENCY.STUDIO.BOARD_VINETAS' | translate
+              }}</span>
+              <ul
+                class="m-0 flex list-disc flex-col gap-1 pl-5 text-sm text-ink-muted-on-dark"
+              >
+                @for (v of board.vinetas; track $index) {
+                  <li>
+                    @if (v.tipo_toma) {
+                      <span class="font-semibold text-ink-on-dark">{{ v.tipo_toma }}</span>
+                    }
+                    {{ v.que_se_ve }}
+                    @if (v.duracion_s) {
+                      <span>· {{ v.duracion_s }}s</span>
+                    }
+                  </li>
+                }
+              </ul>
+              @if (board.fotos_faltantes; as faltantes) {
+                @if (faltantes.length) {
+                  <small class="text-ink-muted-on-dark">{{
+                    'AGENCY.STUDIO.BOARD_MISSING_PHOTOS'
+                      | translate: { list: faltantes.join(', ') }
+                  }}</small>
+                }
+              }
+            </div>
+          }
+        }
         @if (scene.references?.length) {
           <div class="flex flex-col gap-1">
             <span class="text-xs font-bold text-ink-on-dark">{{

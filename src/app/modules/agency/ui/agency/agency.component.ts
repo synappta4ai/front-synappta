@@ -134,6 +134,27 @@ interface ReferenceImage {
   url: string | null;
 }
 
+/** Viñeta del artefacto storyboard (paso 2, contrato validado en el back). */
+interface StoryboardVinheta {
+  n?: number;
+  tipo_toma?: string;
+  que_se_ve?: string;
+  duracion_s?: number;
+}
+
+/** Artefacto storyboard del back: viñetas + prompt de la hoja. */
+interface StoryboardArtifact {
+  vinetas: StoryboardVinheta[];
+  prompt_hoja_storyboard?: string;
+  fotos_faltantes?: string[];
+}
+
+/** Artefacto clip_prompt del back: prompt final del clip + notas editor. */
+interface ClipArtifact {
+  prompt_video?: string;
+  notas_editor?: Record<string, unknown>;
+}
+
 /** Un prompt de video del paso Escenas y su resultado (un video por prompt). */
 interface VideoPrompt {
   text: string;
@@ -168,6 +189,10 @@ interface StoryboardScene {
   refsApproved?: boolean;
   /** Prompts del video de la escena (uno por segmento de duración). */
   prompts?: VideoPrompt[];
+  /** Artefacto storyboard del experto (viñetas + prompt de la hoja). */
+  boardArtifact?: StoryboardArtifact | null;
+  /** Artefacto clip_prompt del experto (texto creativo del clip). */
+  clipArtifact?: ClipArtifact | null;
   /** Legado (flujo anterior): video único de la escena. */
   videoUrl?: string | null;
   generatingVideo?: boolean;
@@ -473,6 +498,10 @@ export class AgencyComponent {
   protected readonly boardRatio = signal('');
   /** Prompt editable de la hoja de storyboard. */
   protected readonly boardPrompt = signal('');
+  /** Turno de artefacto storyboard en curso (sugerencia del experto). */
+  protected readonly boardAgentLoading = signal(false);
+  /** Escena cuyo prompt de clip se está sugiriendo con el experto. */
+  protected readonly clipAgentSceneId = signal<string | null>(null);
   /** El usuario editó el prompt a mano: no se pisa al cambiar la cantidad de tomas. */
   protected readonly boardPromptEdited = signal(false);
 
@@ -1071,6 +1100,267 @@ export class AgencyComponent {
   protected onBoardPromptChange(value: string): void {
     this.boardPrompt.set(value);
     this.boardPromptEdited.set(true);
+  }
+
+  // ─── Artefactos de los pasos 2 y 3 (storyboard / clip_prompt) ──────
+
+  /** Turno de artefacto del back para los pasos 2 y 3: pide `kind` con el
+   *  `payload` dado y emite `artifact` (viaja a onArtifact), `questions`
+   *  (al chat del asistente) y `error`. */
+  private requestArtifactTurn(
+    kind: string,
+    payload: Record<string, unknown>,
+    onArtifact: (data: Record<string, unknown>) => void,
+  ): Observable<void> {
+    return this.pickLlmCredential().pipe(
+      mergeMap((cred) => {
+        const token = this.session.token();
+        const controller = new AbortController();
+        // Igual que el paso 1: tools + un reintento de corrección en el
+        // back pueden alargar el turno.
+        const timer = setTimeout(() => controller.abort(), 120_000);
+        return new Observable<void>((subscriber) => {
+          fetch(this.agentChatUrl(), {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify({
+              conversation_id: this.conversationId(),
+              message: `Paso del flujo: ${kind}.`,
+              provider: cred.provider,
+              workflow: this.agent(),
+              artifact: kind,
+              payload,
+              ...(this.modelText() ? { model: this.modelText() } : {}),
+            }),
+            signal: controller.signal,
+          })
+            .then(async (res) => {
+              if (!res.ok || !res.body) {
+                const detail = await res.text().catch(() => '');
+                throw new Error(
+                  detail
+                    ? `HTTP ${res.status}: ${detail.slice(0, 240)}`
+                    : `agent chat HTTP ${res.status}`,
+                );
+              }
+              const reader = res.body.getReader();
+              const decoder = new TextDecoder();
+              let buffer = '';
+              for (;;) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                buffer += decoder.decode(value, { stream: true });
+                const events = buffer.split('\n\n');
+                buffer = events.pop() ?? '';
+                for (const rawEvent of events) {
+                  const parsed = parseAgentEvent(rawEvent);
+                  if (!parsed) continue;
+                  if (parsed.name === 'meta') {
+                    const conv = parsed.data['conversation_id'];
+                    if (typeof conv === 'string') this.setConversationId(conv);
+                  } else if (parsed.name === 'questions') {
+                    controller.abort();
+                    const questions = Array.isArray(parsed.data['questions'])
+                      ? (parsed.data['questions'] as unknown[]).filter(
+                          (q): q is string => typeof q === 'string' && q.trim() !== '',
+                        )
+                      : [];
+                    this.noteQuestions(questions);
+                    throw new Error(this.translate.instant('AGENCY.STUDIO.ERRORS.QUESTIONS'));
+                  } else if (parsed.name === 'artifact') {
+                    const data = (parsed.data['data'] ?? {}) as Record<string, unknown>;
+                    controller.abort();
+                    onArtifact(data);
+                    subscriber.next();
+                    subscriber.complete();
+                    return;
+                  } else if (parsed.name === 'error') {
+                    throw new Error(
+                      String(
+                        parsed.data['message'] ??
+                          this.translate.instant('AGENCY.STUDIO.ERRORS.AGENT_ERROR'),
+                      ),
+                    );
+                  }
+                }
+              }
+              throw new Error(`sin artefacto ${kind} en la respuesta`);
+            })
+            .catch((err: unknown) => {
+              const why =
+                err instanceof Error && err.message
+                  ? err.message
+                  : this.translate.instant('AGENCY.STUDIO.ERRORS.NO_AGENT_RESPONSE');
+              subscriber.error(
+                new Error(this.translate.instant('AGENCY.STUDIO.ERRORS.AGENT_TURN', { why })),
+              );
+            })
+            .finally(() => clearTimeout(timer));
+        });
+      }),
+    );
+  }
+
+  /** Pide al experto las viñetas y el prompt de la hoja de la escena
+   *  abierta (artefacto storyboard). El prompt sugerido pisa el de
+   *  plantilla salvo que el usuario lo haya editado a mano; las viñetas
+   *  reordenan las tomas pendientes (las ya generadas no se tocan). */
+  protected suggestBoardFromAgent(): void {
+    const scene = this.boardScene();
+    if (!scene || this.boardAgentLoading()) return;
+    const payload: Record<string, unknown> = {
+      prompt: {
+        id: scene.id,
+        titulo: scene.title,
+        resumen_para_usuario: scene.description,
+        ...(scene.angleTitle ? { angulo: scene.angleTitle } : {}),
+      },
+      referencias: (scene.references ?? []).map((r, i) => ({
+        tag: `@image${i + 1}`,
+        archivo: r.filename,
+        descripcion: '',
+        funcion: 'sin_definir',
+      })),
+      cantidad_vinetas: this.boardShotCount(),
+      duracion_total_s: this.videoDuration(),
+      aspecto: this.boardRatio() || this.videoRatio(),
+      duracion_minima_vineta_s: 1.5,
+    };
+    this.boardAgentLoading.set(true);
+    this.error.set(null);
+    this.requestArtifactTurn('storyboard', payload, (data) =>
+      this.applyBoardArtifact(scene.id, data),
+    )
+      .pipe(finalize(() => this.boardAgentLoading.set(false)))
+      .subscribe({
+        error: (err: unknown) =>
+          this.error.set(
+            err instanceof Error
+              ? err.message
+              : this.translate.instant('AGENCY.STUDIO.ERRORS.NO_AGENT_RESPONSE'),
+          ),
+      });
+  }
+
+  private applyBoardArtifact(sceneId: string, data: Record<string, unknown>): void {
+    const raw = Array.isArray(data['vinetas'])
+      ? (data['vinetas'] as Record<string, unknown>[])
+      : [];
+    const artifact: StoryboardArtifact = {
+      vinetas: raw.map((v) => ({
+        n: typeof v['n'] === 'number' ? v['n'] : undefined,
+        tipo_toma: typeof v['tipo_toma'] === 'string' ? v['tipo_toma'] : '',
+        que_se_ve: typeof v['que_se_ve'] === 'string' ? v['que_se_ve'] : '',
+        duracion_s: typeof v['duracion_s'] === 'number' ? v['duracion_s'] : undefined,
+      })),
+      prompt_hoja_storyboard:
+        typeof data['prompt_hoja_storyboard'] === 'string'
+          ? data['prompt_hoja_storyboard']
+          : '',
+      fotos_faltantes: Array.isArray(data['fotos_faltantes'])
+        ? (data['fotos_faltantes'] as unknown[]).filter(
+            (f): f is string => typeof f === 'string' && f.trim() !== '',
+          )
+        : [],
+    };
+    this.storyboard.update((scenes) =>
+      scenes.map((s) => {
+        if (s.id !== sceneId) return s;
+        // Una toma por viñeta; las tomas con imagen ya generada no se
+        // reescriben (el dibujo real manda sobre la sugerencia).
+        const shots = this.resizeShots(s, Math.max(artifact.vinetas.length, 1)).map(
+          (sh, i) => {
+            const v = artifact.vinetas[i];
+            if (!v || sh.imageUrl) return sh;
+            const desc = [v.tipo_toma, v.que_se_ve]
+              .filter((p): p is string => !!p && p.trim() !== '')
+              .join(' — ');
+            return desc ? { ...sh, description: desc } : sh;
+          },
+        );
+        return { ...s, boardArtifact: artifact, shots };
+      }),
+    );
+    if (artifact.vinetas.length > 0) {
+      this.boardShotCount.set(Math.min(Math.max(artifact.vinetas.length, 1), 12));
+    }
+    if (!this.boardPromptEdited() && artifact.prompt_hoja_storyboard) {
+      this.boardPrompt.set(artifact.prompt_hoja_storyboard);
+    }
+    this.persistWorkflow();
+  }
+
+  /** Pide al experto el prompt final del clip de una escena (artefacto
+   *  clip_prompt): el texto creativo con tiempos y bloques reemplaza al de
+   *  plantilla en los prompts de escena (las tomas siguen con su plantilla). */
+  protected suggestPromptsFromAgent(scene: StoryboardScene): void {
+    if (this.clipAgentSceneId()) return;
+    const hasBoard = !!(scene.boardFileId || scene.boardImageUrl);
+    const payload: Record<string, unknown> = {
+      prompt: {
+        id: scene.id,
+        titulo: scene.title,
+        resumen_para_usuario: scene.description,
+        ...(scene.angleTitle ? { angulo: scene.angleTitle } : {}),
+      },
+      vinetas: scene.boardArtifact?.vinetas ?? [],
+      referencias: [
+        ...(hasBoard ? [{ tag: '@image1', archivo: 'storyboard.jpg', tipo: 'storyboard' }] : []),
+        ...(scene.references ?? []).map((r, i) => ({
+          tag: `@image${i + (hasBoard ? 2 : 1)}`,
+          archivo: r.filename,
+          tipo: 'foto_real',
+        })),
+      ],
+      modelo_video: this.modelVideo(),
+      duracion_total_s: this.videoDuration(),
+      aspecto: this.videoRatio(),
+      resolucion: this.videoResolution(),
+      sonido: this.videoAudio(),
+    };
+    this.clipAgentSceneId.set(scene.id);
+    this.error.set(null);
+    this.requestArtifactTurn('clip_prompt', payload, (data) =>
+      this.applyClipArtifact(scene.id, data),
+    )
+      .pipe(finalize(() => this.clipAgentSceneId.set(null)))
+      .subscribe({
+        error: (err: unknown) =>
+          this.error.set(
+            err instanceof Error
+              ? err.message
+              : this.translate.instant('AGENCY.STUDIO.ERRORS.NO_AGENT_RESPONSE'),
+          ),
+      });
+  }
+
+  private applyClipArtifact(sceneId: string, data: Record<string, unknown>): void {
+    const notas = data['notas_editor'];
+    const artifact: ClipArtifact = {
+      prompt_video:
+        typeof data['prompt_video'] === 'string' ? data['prompt_video'] : '',
+      notas_editor:
+        notas && typeof notas === 'object' ? (notas as Record<string, unknown>) : {},
+    };
+    this.storyboard.update((scenes) =>
+      scenes.map((s) => (s.id === sceneId ? { ...s, clipArtifact: artifact } : s)),
+    );
+    if (artifact.prompt_video) {
+      // Rearma los prompts de escena con el texto del experto como base.
+      this.generatePrompts();
+    }
+  }
+
+  /** Notas para el editor del artefacto clip_prompt (par clave-valor). */
+  protected editorNotes(scene: StoryboardScene): { key: string; value: string }[] {
+    const notas = scene.clipArtifact?.notas_editor;
+    if (!notas) return [];
+    return Object.entries(notas)
+      .filter(([, v]) => typeof v === 'string' && v.trim() !== '')
+      .map(([key, value]) => ({ key, value: String(value) }));
   }
 
   /** Narrativa de las fotos reales subidas para el ángulo de la escena:
@@ -1788,6 +2078,8 @@ export class AgencyComponent {
             approved: sc.approved ?? false,
             references: Array.isArray(sc.references) ? sc.references : [],
             refsApproved: sc.refsApproved ?? false,
+            boardArtifact: sc.boardArtifact ?? null,
+            clipArtifact: sc.clipArtifact ?? null,
             prompts,
             shots,
           };
@@ -2130,6 +2422,19 @@ export class AgencyComponent {
     ratio: string,
     resolution: string,
   ): string {
+    // Escena con artefacto clip_prompt: el texto creativo (con sus bloques
+    // y tiempos) lo escribió el experto; solo se agregan la continuidad
+    // entre segmentos y la línea de especificación del modelo.
+    if (!shot && scene.clipArtifact?.prompt_video) {
+      const lines = [scene.clipArtifact.prompt_video];
+      if (segments > 1) {
+        lines.push(
+          `Segmento ${index + 1} de ${segments}: continuidad directa con el segmento anterior, mismo ritmo, encuadre y personajes.`,
+        );
+      }
+      lines.push(this.specLine(this.segmentDuration(index), ratio, resolution));
+      return lines.join('\n');
+    }
     const shotIndex = shot ? scene.shots.indexOf(shot) : -1;
     const lines: string[] =
       shotIndex >= 0
