@@ -64,10 +64,17 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
   protected readonly error = signal<string | null>(null);
 
   /**
-   * Descarga del paquete del worker (zip con el código, setup e install.bat).
+   * Instalador gráfico de Windows (.exe, onefile): doble click y corre la
+   * GUI que instala, empareja y arranca — sin terminal ni Python previo.
    * Se sirve como asset estático del front: mismo origen, sin pasar por el back.
    */
-  protected readonly downloadUrl = 'assets/worker/synapta-worker.zip';
+  protected readonly exeDownloadUrl = 'assets/worker/SynaptaWorker-Setup.exe';
+
+  /**
+   * Fallback para macOS/Linux: zip con el código del worker y los scripts
+   * de setup (mismo contenido que extrae el .exe).
+   */
+  protected readonly zipDownloadUrl = 'assets/worker/synapta-worker.zip';
 
   protected readonly pairingVisible = signal(false);
   protected readonly pairing = signal<PairingCode | null>(null);
@@ -113,12 +120,25 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
       });
   }
 
-  /** Dispara la descarga del zip del worker sin salir de la página. */
+  /** true si esta sesión corre en Windows (ahí va el .exe, no el zip). */
+  private get isWindows(): boolean {
+    return /Windows|Win32|Win64/i.test(navigator.userAgent ?? '');
+  }
+
+  /**
+   * Dispara la descarga del worker sin salir de la página.
+   * Windows → SynaptaWorker-Setup.exe (lo que quiere el cliente: un click
+   * y doble click); el resto de sistemas → zip con el código.
+   */
   protected downloadWorker(): void {
+    const windows = this.isWindows;
     const link = document.createElement('a');
-    link.href = this.downloadUrl;
-    link.download = 'synapta-worker.zip';
+    link.href = windows ? this.exeDownloadUrl : this.zipDownloadUrl;
+    link.download = windows ? 'SynaptaWorker-Setup.exe' : 'synapta-worker.zip';
+    link.rel = 'noopener';
+    document.body.appendChild(link); // Firefox no dispara clicks de links sueltos
     link.click();
+    link.remove();
   }
 
   /** Click principal: generar un código de emparejamiento nuevo. */

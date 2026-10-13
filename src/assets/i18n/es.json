@@ -1230,7 +1230,7 @@
     "SUBTITLE": "Conectá las computadoras con GPU de tu equipo y usalas para generar videos e imágenes.",
     "CONNECT": "Conectar GPU",
     "DOWNLOAD": "Descargar Worker",
-    "DOWNLOAD_TOOLTIP": "Baja el zip con el Synapta Worker (código e instalador) para la máquina con GPU.",
+    "DOWNLOAD_TOOLTIP": "Baja el instalador (.exe) del Synapta Worker para la máquina con GPU: doble click y listo. En Mac/Linux baja el zip.",
     "ONLINE_COUNT": "{{count}} en línea",
     "REVOKE": "Desconectar",
     "REVOKE_TOOLTIP": "Quita el permiso de esta máquina. Para volver a conectarla, repetí el emparejamiento.",
@@ -1253,7 +1253,7 @@
     "STEPS": {
       "DOWNLOAD": {
         "TITLE": "Descargá el Synapta Worker",
-        "BODY": "Es el programa que usa la GPU de esa máquina para generar. Zip liviano: lo pesado (motores) se instala después, una sola vez."
+        "BODY": "Es el programa que usa la GPU de esa máquina para generar. Instalador liviano: lo pesado (motores) se instala después, una sola vez."
       },
       "INSTALL": {
         "TITLE": "Instalalo con un doble click",
