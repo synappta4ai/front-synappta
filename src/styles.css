@@ -2116,7 +2116,8 @@ p-selectbutton:has(.section-toggle) {
    viewport, sin depender de la altura exacta de la navbar. El min-height
    garantiza que no quede una franja vacía cuando el contenido es más
    bajo que la ventana (64px ≈ altura de la navbar). */
-main:has(> app-studio) {
+main:has(> app-studio),
+main:has(> app-pose-sheet) {
   display: flex;
   flex-direction: column;
   min-height: calc(100dvh - 64px);
