@@ -98,6 +98,14 @@ const AGENT_ROUTE_SLUG: Record<AgencyAgent, string> = {
   cinema: 'cinema',
 };
 
+/** Artefacto del paso 1 (ángulos / prompts / análisis) según el experto:
+ *  cada agente tiene su propio contrato de salida en el back. */
+const ARTIFACT_STEP1: Record<AgencyAgent, string> = {
+  commercial: 'scene_prompts',
+  real_estate: 'sales_angles',
+  cinema: 'scene_analysis',
+};
+
 /** Mensaje del chat con el agente experto. */
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -1447,6 +1455,12 @@ export class AgencyComponent {
     return this.pickLlmCredential().pipe(mergeMap((cred) => this.requestAgentAngles(cred, count)));
   }
 
+  /** Paso 1 del flujo: el experto devuelve su artefacto (ángulos de venta,
+   *  prompts de escena o análisis del guion, según el agente) y el back lo
+   *  valida contra el contrato del .md. El brief viaja como `payload`, así
+   *  el LLM no tiene que parsear el mensaje. Si el agente pide más
+   *  información (evento `questions`) el turno se corta y las preguntas van
+   *  al chat del asistente para continuar por ahí. */
   private requestAgentAngles(cred: Credential, count: number): Observable<SalesAngle[]> {
     const raw = this.form.getRawValue() as {
       propertyName: string;
@@ -1459,11 +1473,21 @@ export class AgencyComponent {
       raw.description,
       agent === 'real_estate'
         ? `Generá ${count} ángulos de venta y detené el flujo ahí.`
-        : 'Generá los ángulos necesarios para comunicar el guion y detené el flujo ahí.',
+        : 'Generá los ángulos necesarios para comunicar el guion (máximo 10) y detené el flujo ahí.',
     ].join(' ');
     const token = this.session.token();
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 45_000);
+    // El turno de artefacto puede encadenar tools + un reintento de
+    // corrección en el back: el tope es el mismo del chat largo.
+    const timer = setTimeout(() => controller.abort(), 120_000);
+    // Cantidad exacta solo donde el contrato la exige (inmobiliaria);
+    // los otros expertos deciden cuántos prompts necesita el guion.
+    const payload: Record<string, unknown> = {
+      nombre_proyecto: raw.propertyName,
+      ubicacion: raw.location,
+      contexto: raw.description,
+      ...(agent === 'real_estate' ? { cantidad_angulos: count } : {}),
+    };
 
     return new Observable<SalesAngle[]>((subscriber) => {
       fetch(this.agentChatUrl(), {
@@ -1473,12 +1497,13 @@ export class AgencyComponent {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
-          conversation_id: '',
+          conversation_id: this.conversationId(),
           message,
           provider: cred.provider,
-          // El artefacto se pide explícito: el experto responde JSON de
-          // ángulos, no prosa conversacional.
-          artifact: 'sales_angles',
+          workflow: agent,
+          // Artefacto del paso 1 según el agente elegido.
+          artifact: ARTIFACT_STEP1[agent],
+          payload,
           ...(this.modelText() ? { model: this.modelText() } : {}),
         }),
         signal: controller.signal,
@@ -1503,20 +1528,61 @@ export class AgencyComponent {
             buffer = events.pop() ?? '';
             for (const rawEvent of events) {
               const parsed = parseAgentEvent(rawEvent);
-              if (parsed?.name === 'sales_angles') {
+              if (!parsed) continue;
+              if (parsed.name === 'meta') {
+                const conv = parsed.data['conversation_id'];
+                if (typeof conv === 'string') this.setConversationId(conv);
+                continue;
+              }
+              if (parsed.name === 'questions') {
                 controller.abort();
-                const mapped = this.anglesFromAgent(parsed.data, count);
+                const questions = Array.isArray(parsed.data['questions'])
+                  ? (parsed.data['questions'] as unknown[]).filter(
+                      (q): q is string => typeof q === 'string' && q.trim() !== '',
+                    )
+                  : [];
+                // Las preguntas se contestan en el chat del asistente:
+                // se abre el panel y se vuelcan ahí.
+                this.noteQuestions(questions);
+                throw new Error(this.translate.instant('AGENCY.STUDIO.ERRORS.QUESTIONS'));
+              }
+              if (parsed.name === 'artifact') {
+                const kind = String(parsed.data['kind'] ?? '');
+                const data = (parsed.data['data'] ?? {}) as Record<string, unknown>;
+                const mapped =
+                  kind === 'sales_angles'
+                    ? this.anglesFromAgent(data, count)
+                    : this.promptsToAngles(data);
                 if (mapped.length > 0) {
-                  // Solo ángulos reales: si el LLM devolvió menos de los
-                  // pedidos se muestran esos, sin completar con plantillas.
+                  // Solo resultados reales: si el experto devolvió menos
+                  // de los pedidos se muestran esos, sin plantillas.
+                  controller.abort();
                   subscriber.next(mapped);
                   subscriber.complete();
                   return;
                 }
               }
+              // Alias legacy del back para el paso 1 inmobiliario.
+              if (parsed.name === 'sales_angles') {
+                const mapped = this.anglesFromAgent(parsed.data, count);
+                if (mapped.length > 0) {
+                  controller.abort();
+                  subscriber.next(mapped);
+                  subscriber.complete();
+                  return;
+                }
+              }
+              if (parsed.name === 'error') {
+                throw new Error(
+                  String(
+                    parsed.data['message'] ??
+                      this.translate.instant('AGENCY.STUDIO.ERRORS.AGENT_ERROR'),
+                  ),
+                );
+              }
             }
           }
-          throw new Error('sin sales_angles en la respuesta');
+          throw new Error('sin artefacto del paso 1 en la respuesta');
         })
         .catch((err: unknown) => {
           const why =
@@ -1529,6 +1595,33 @@ export class AgencyComponent {
         })
         .finally(() => clearTimeout(timer));
     });
+  }
+
+  /** Escena/prompt del paso 1 → tarjeta del wizard (comercial y cine
+   *  devuelven `prompts` en vez de `angulos`). */
+  private promptsToAngles(data: Record<string, unknown>): SalesAngle[] {
+    const raw = Array.isArray(data['prompts'])
+      ? (data['prompts'] as Record<string, unknown>[])
+      : [];
+    return raw.map((p, i) => ({
+      id: String(p['id'] ?? `P${i + 1}`),
+      title: String(
+        p['titulo'] ?? this.translate.instant('AGENCY.STUDIO.ANGLE_DEFAULT_TITLE', { n: i + 1 }),
+      ),
+      description: [p['resumen_para_usuario'], p['mensaje_marca']]
+        .filter((v): v is string => typeof v === 'string' && v.trim() !== '')
+        .join(' — '),
+      selected: false,
+    }));
+  }
+
+  /** Vuelca las preguntas del agente al chat del asistente y abre el
+   *  panel: ahí se contestan (el siguiente mensaje reintenta el paso). */
+  private noteQuestions(questions: string[]): void {
+    this.chatVisible.set(true);
+    if (questions.length === 0) return;
+    const body = questions.map((q) => `• ${q}`).join('\n');
+    this.chatMessages.update((m) => [...m, { role: 'assistant', content: body }]);
   }
 
   // ─── Persistencia del avance (event.metadata.agency) ───────────────
@@ -2569,15 +2662,29 @@ export class AgencyComponent {
    *  invocación (consultar proyectos, generar video/imagen, etc.) aparece
    *  acá para que el usuario vea qué está haciendo el agente en vivo. */
   protected readonly chatActivity = signal<ChatToolActivity[]>([]);
-  /** conversation_id devuelto por el back para continuar el hilo. */
-  private chatConversationId = '';
+  /** conversation_id por agente: cada experto mantiene su propio hilo en
+   *  el back (el historial se aísla por conversación), así cambiar de
+   *  experto nunca reutiliza el hilo del anterior. */
+  private readonly conversationIds: Record<AgencyAgent, string> = {
+    commercial: '',
+    real_estate: '',
+    cinema: '',
+  };
 
-  /** Cambia el experto y corta la conversación: cada agente tiene su
-   *  propia personalidad y su propia memoria de turno. */
+  private conversationId(): string {
+    return this.conversationIds[this.agent()];
+  }
+
+  private setConversationId(id: string): void {
+    this.conversationIds[this.agent()] = id;
+  }
+
+  /** Cambia el experto y arranca un hilo nuevo con él: cada agente tiene
+   *  su propia personalidad y su propio conversation_id. */
   protected onAgentChange(agent: AgencyAgent): void {
     if (agent === this.agent()) return;
     this.agent.set(agent);
-    this.chatConversationId = '';
+    this.conversationIds[agent] = '';
     this.chatMessages.set([]);
   }
 
@@ -2628,7 +2735,7 @@ export class AgencyComponent {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
-          conversation_id: this.chatConversationId,
+          conversation_id: this.conversationId(),
           message,
           provider: cred.provider,
           workflow: this.agent(),
@@ -2657,12 +2764,27 @@ export class AgencyComponent {
             for (const raw of events) {
               const parsed = parseAgentEvent(raw);
               if (!parsed) continue;
-              if (parsed.name === 'meta' && typeof parsed.data['conversation_id'] === 'string') {
-                this.chatConversationId = parsed.data['conversation_id'];
+              if (parsed.name === 'meta') {
+                const conv = parsed.data['conversation_id'];
+                if (typeof conv === 'string') this.setConversationId(conv);
               } else if (parsed.name === 'tool') {
                 this.applyToolEvent(parsed.data);
               } else if (parsed.name === 'text') {
                 this.appendChatText(String(parsed.data['text'] ?? ''));
+              } else if (parsed.name === 'questions') {
+                // El asistente cerró el turno con preguntas: se muestran
+                // como mensaje del asistente para contestarlas.
+                const questions = Array.isArray(parsed.data['questions'])
+                  ? (parsed.data['questions'] as unknown[]).filter(
+                      (q): q is string => typeof q === 'string' && q.trim() !== '',
+                    )
+                  : [];
+                if (questions.length > 0) {
+                  this.appendChatText(
+                    (this.chatMessages().length ? '\n\n' : '') +
+                      questions.map((q) => `• ${q}`).join('\n'),
+                  );
+                }
               } else if (parsed.name === 'error') {
                 throw new Error(
                   String(

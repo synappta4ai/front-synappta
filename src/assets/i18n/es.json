@@ -976,6 +976,7 @@
         "BOARD_LOAD": "No se pudo cargar la hoja de storyboard para editar.",
         "NO_LLM": "Sin credencial LLM (openrouter/anthropic) en Admin → Credenciales.",
         "ANGLES": "No se generaron los ángulos: {{why}}",
+        "QUESTIONS": "El agente necesita más información: contestá en el chat del asistente para continuar.",
         "ASSET_LOAD": "No se pudo cargar el recurso para editar.",
         "SCENE_NOT_FOUND": "No se encontró la escena para guardar las fotos de referencia.",
         "UPLOAD": "No se pudo subir {{name}}.",
