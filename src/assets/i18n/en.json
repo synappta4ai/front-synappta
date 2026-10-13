@@ -1229,6 +1229,8 @@
     "TITLE": "Your GPU",
     "SUBTITLE": "Connect the GPU computers in your team and use them to generate videos and images.",
     "CONNECT": "Connect GPU",
+    "DOWNLOAD": "Download Worker",
+    "DOWNLOAD_TOOLTIP": "Gets the zip with the Synapta Worker (code and installer) for the GPU machine.",
     "ONLINE_COUNT": "{{count}} online",
     "REVOKE": "Disconnect",
     "REVOKE_TOOLTIP": "Removes this machine's permission. To reconnect it, repeat the pairing.",
@@ -1251,7 +1253,7 @@
     "STEPS": {
       "DOWNLOAD": {
         "TITLE": "Download Synapta Worker",
-        "BODY": "It's the program that uses that machine's GPU to generate. Large (~150 MB), downloaded once."
+        "BODY": "It's the program that uses that machine's GPU to generate. Light zip: the heavy part (engines) installs afterwards, once."
       },
       "INSTALL": {
         "TITLE": "Install it with a double click",

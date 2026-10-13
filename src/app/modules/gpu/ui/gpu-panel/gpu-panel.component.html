@@ -16,6 +16,13 @@
         </span>
       }
       <p-button
+        icon="md md-download"
+        [label]="'GPU.DOWNLOAD' | translate"
+        (onClick)="downloadWorker()"
+        [outlined]="true"
+        pTooltip="{{ 'GPU.DOWNLOAD_TOOLTIP' | translate }}"
+      />
+      <p-button
         icon="md md-add"
         [label]="'GPU.CONNECT' | translate"
         (onClick)="requestPairingCode()"
@@ -38,6 +45,13 @@
           <p class="text-sm text-surface-500 dark:text-surface-400">
             {{ 'GPU.STEPS.DOWNLOAD.BODY' | translate }}
           </p>
+          <p-button
+            size="small"
+            [label]="'GPU.DOWNLOAD' | translate"
+            icon="md md-download"
+            (onClick)="downloadWorker()"
+            class="mt-2 self-start"
+          />
         </div>
       </p-card>
       <p-card styleClass="h-full">

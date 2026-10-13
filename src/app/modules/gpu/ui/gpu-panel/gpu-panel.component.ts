@@ -63,6 +63,12 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
 
+  /**
+   * Descarga del paquete del worker (zip con el código, setup e install.bat).
+   * Se sirve como asset estático del front: mismo origen, sin pasar por el back.
+   */
+  protected readonly downloadUrl = 'assets/worker/synapta-worker.zip';
+
   protected readonly pairingVisible = signal(false);
   protected readonly pairing = signal<PairingCode | null>(null);
   protected readonly pairingLoading = signal(false);
@@ -105,6 +111,14 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
         this.workers.set(workers);
         this.error.set(null);
       });
+  }
+
+  /** Dispara la descarga del zip del worker sin salir de la página. */
+  protected downloadWorker(): void {
+    const link = document.createElement('a');
+    link.href = this.downloadUrl;
+    link.download = 'synapta-worker.zip';
+    link.click();
   }
 
   /** Click principal: generar un código de emparejamiento nuevo. */
