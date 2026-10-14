@@ -207,9 +207,7 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
       }
     }
     return out;
-  });
-
-  /** ¿Se muestra el catálogo del bridge porque el central no responde? */
+  });  /** ¿Se muestra el catálogo del bridge porque el central no responde? */
   protected readonly showingBridgeCatalog = computed(
     () =>
       this.modelsError() !== null &&
@@ -217,10 +215,42 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
       this.bridgeFallbackModels().length > 0,
   );
 
+  /**
+   * GPU que reportó cada modelo (GET /gpu/workers), por clave en minúsculas.
+   * El modo bridge necesita la identidad para encolar la descarga ahí; los
+   * backs todavía desplegados no la mandan por modelo, así que se resuelve
+   * acá desde la lista de GPUs emparejadas.
+   */
+  private readonly workerIndex = computed(() => {
+    const index = new Map<string, GpuWorker>();
+    for (const w of this.workers()) {
+      if (!w.online || !Array.isArray(w.models)) continue;
+      for (const m of w.models) {
+        const key = (m?.key || '').toLowerCase();
+        if (key && !index.has(key)) index.set(key, w);
+      }
+    }
+    return index;
+  });
+
   /** Lo que ve la tabla: gestión central o snapshot del bridge. */
-  protected readonly displayedModels = computed<ManagedWorkerModel[]>(() =>
-    this.workerModels().length > 0 ? this.workerModels() : this.bridgeFallbackModels(),
-  );
+  protected readonly displayedModels = computed<ManagedWorkerModel[]>(() => {
+    const list =
+      this.workerModels().length > 0 ? this.workerModels() : this.bridgeFallbackModels();
+    if (!this.bridgeMode()) return list;
+    const index = this.workerIndex();
+    return list.map((model) => {
+      if (model.worker_id) return model;
+      const worker = index.get((model.name || '').toLowerCase());
+      if (!worker) return model;
+      return {
+        ...model,
+        worker_id: worker.id,
+        worker_name: worker.name,
+        worker_version: worker.version,
+      };
+    });
+  });
 
   /** Modelos listos para generar (disponibles y sin descarga en curso). */
   protected readonly readyModelCount = computed(
