@@ -35,6 +35,18 @@ export interface SaveCharacterResult {
   ingredient: Ingredient;
 }
 
+/** Nombre de archivo seguro a partir del nombre del personaje. */
+function slugifyFileName(name: string): string {
+  const slug = name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60);
+  return slug || 'pose-sheet';
+}
+
 /**
  * Fachada de Herramientas (v1: solo Hoja de poses). Orquesta los services
  * existentes: AgencyService genera, LibraryService guarda en Recursos como
@@ -112,7 +124,7 @@ export class ToolsService {
     description?: string;
     eventId: string;
   }): Observable<SaveCharacterResult> {
-    return from(this.downloadOutput(request.outputUrl)).pipe(
+    return from(this.downloadOutput(request.outputUrl, request.name)).pipe(
       mergeMap((file) => this.libraryService.uploadFile(file, 'images', request.eventId)),
       mergeMap((asset) =>
         this.libraryService
@@ -132,7 +144,7 @@ export class ToolsService {
     );
   }
 
-  private async downloadOutput(url: string): Promise<File> {
+  private async downloadOutput(url: string, name: string): Promise<File> {
     const absolute = /^https?:\/\//i.test(url) ? url : `${this.apiOrigin}${url}`;
     const res = await fetch(absolute);
     if (!res.ok) {
@@ -140,6 +152,8 @@ export class ToolsService {
     }
     const blob = await res.blob();
     const ext = blob.type.includes('png') ? 'png' : 'jpg';
-    return new File([blob], `pose-sheet.${ext}`, { type: blob.type || 'image/png' });
+    return new File([blob], `${slugifyFileName(name)}.${ext}`, {
+      type: blob.type || 'image/png',
+    });
   }
 }

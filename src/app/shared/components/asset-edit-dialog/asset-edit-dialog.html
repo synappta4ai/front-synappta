@@ -202,7 +202,7 @@
           appendTo="body"
           styleClass="w-full"
         >
-          <ng-template pTemplate="selectedItem" let-opt>
+          <ng-template #selectedItem let-opt>
             <span class="select-with-icon"
               ><i [class]="opt.icon"></i>{{ opt.labelKey | translate }}</span
             >
@@ -258,12 +258,12 @@
             appendTo="body"
             styleClass="w-full"
           >
-            <ng-template pTemplate="selectedItem" let-opt>
-              <span>{{ opt.labelKey | translate }}</span>
-            </ng-template>
-            <ng-template pTemplate="item" let-opt>
-              <span>{{ opt.labelKey | translate }}</span>
-            </ng-template>
+          <ng-template #selectedItem let-opt>
+            <span>{{ opt.labelKey | translate }}</span>
+          </ng-template>
+          <ng-template #item let-opt>
+            <span>{{ opt.labelKey | translate }}</span>
+          </ng-template>
           </p-select>
         </div>
       </div>
