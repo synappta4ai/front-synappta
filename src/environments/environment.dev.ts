@@ -1,6 +1,6 @@
 export const environment = {
   PRODUCTION: false,
-  APP_VERSION: '1.2.0',
+  APP_VERSION: '1.3.0',
   API_URL: 'https://back-dev.synappta.cloud/api/v1',
   SOCKET_URL: 'wss://socket-dev.synappta.cloud',
   ATMOSPHERE: 'development',
