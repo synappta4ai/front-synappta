@@ -204,14 +204,17 @@
           }
         </div>
         <div class="mt-2 flex flex-wrap items-center gap-3">
-          <p-button
-            [label]="saving() ? ('TOOLS.SAVING' | translate) : ('TOOLS.SAVE_CHARACTER' | translate)"
-            icon="md md-person_add"
-            [loading]="saving()"
-            [disabled]="saving()"
-            (onClick)="saveAsCharacter()"
-          />
-          @if (savedName()) {
+          @if (!savedName()) {
+            <p-button
+              [label]="
+                saving() ? ('TOOLS.SAVING' | translate) : ('TOOLS.SAVE_CHARACTER' | translate)
+              "
+              icon="md md-person_add"
+              [loading]="saving()"
+              [disabled]="saving()"
+              (onClick)="saveAsCharacter()"
+            />
+          } @else {
             <p-message severity="success" [text]="'TOOLS.SAVED' | translate" />
           }
         </div>

@@ -171,8 +171,14 @@ export class PoseSheetComponent implements OnInit {
           if (typeof status.progress_percent === 'number') {
             this.progress.set(status.progress_percent);
           }
-          if (status.status === 'succeeded') {
-            this.result.set(status.outputs ?? []);
+          if (status.status === 'succeeded' || status.status === 'completed') {
+            const outputs = status.outputs ?? [];
+            this.result.set(outputs);
+            // Guardado automático en Recursos como personaje; el botón
+            // manual queda como reintento si el auto-guardado falla.
+            if (outputs[0]?.url && !this.savedName() && !this.saving()) {
+              this.saveAsCharacter();
+            }
           } else if (status.status === 'failed' || status.status === 'cancelled') {
             this.error.set(status.error ?? status.status);
           }
