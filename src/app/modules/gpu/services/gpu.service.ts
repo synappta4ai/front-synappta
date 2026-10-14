@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { unwrap } from '@utils/unwrap-api-response';
 
 import {
+  BulkDeleteResult,
   GpuWorker,
   ManagedWorkerModel,
   PairingCode,
@@ -42,5 +43,9 @@ export class GpuService {
 
   deleteWorkerModel(key: string): Observable<WorkerModelOperation> {
     return unwrap(this.repository.deleteWorkerModel(key));
+  }
+
+  deleteAllWorkerModels(): Observable<BulkDeleteResult> {
+    return unwrap(this.repository.deleteAllWorkerModels());
   }
 }

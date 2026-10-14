@@ -73,7 +73,9 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
   protected readonly workerModels = signal<ManagedWorkerModel[]>([]);
   protected readonly modelsLoading = signal(false);
   protected readonly modelsError = signal<string | null>(null);
+  protected readonly modelsNotice = signal<string | null>(null);
   protected readonly modelBusy = signal<string | null>(null);
+  protected readonly bulkDeleting = signal(false);
 
   /**
    * Instalador gráfico de Windows (.exe, onefile): doble click y corre la
@@ -173,6 +175,43 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
 
   protected cancelDownload(model: ManagedWorkerModel): void {
     this.runModelOperation(model, 'cancel');
+  }
+
+  /** Desinstalar todo: borra todos los pesos del disco (libera GB). */
+  protected deleteAllDownloads(): void {
+    if (this.bulkDeleting() || this.workerModels().length === 0) return;
+    this.confirmationService.confirm({
+      message: this.translate.instant('GPU.MODELS.DELETE_ALL_CONFIRM'),
+      header: this.translate.instant('GPU.MODELS.DELETE_ALL'),
+      icon: 'md md-warning',
+      acceptButtonProps: { label: this.translate.instant('GPU.MODELS.DELETE_ALL'), severity: 'danger' },
+      rejectButtonProps: { label: this.translate.instant('GPU.REVOKE_CANCEL'), severity: 'secondary', outlined: true },
+      accept: () => {
+        this.bulkDeleting.set(true);
+        this.modelsError.set(null);
+        this.modelsNotice.set(null);
+        this.gpuService
+          .deleteAllWorkerModels()
+          .pipe(
+            catchError(() => {
+              this.modelsError.set(this.translate.instant('GPU.MODELS.ERRORS.OPERATION'));
+              return EMPTY;
+            }),
+            finalize(() => this.bulkDeleting.set(false)),
+          )
+          .subscribe((result) => {
+            const failed = Object.keys(result.failed ?? {}).length;
+            this.modelsNotice.set(
+              this.translate.instant('GPU.MODELS.DELETE_ALL_DONE', {
+                count: result.deleted.length,
+                size: this.formatSize(result.freed_bytes),
+                failed,
+              }),
+            );
+            this.loadWorkerModels(true);
+          });
+      },
+    });
   }
 
   /** El borrado libera disco: se confirma porque no se puede deshacer. */

@@ -1289,6 +1289,10 @@
       "CANCEL": "Cancel",
       "DELETE": "Delete",
       "DELETE_CONFIRM": "Delete the weights for \"{{name}}\"? This frees disk space and the model will stay unavailable until you download it again.",
+      "DELETE_ALL": "Uninstall all",
+      "DELETE_ALL_TOOLTIP": "Delete every model weight and free disk space. Cannot be undone.",
+      "DELETE_ALL_CONFIRM": "Delete ALL model weights? This frees disk space, but you will need to download them again to generate.",
+      "DELETE_ALL_DONE": "{{count}} models uninstalled ({{size}} freed, {{failed}} failed).",
       "ERRORS": {
         "LOAD": "Couldn't load worker models. Try again in a few seconds.",
         "OPERATION": "The model operation failed. Check worker status and try again."

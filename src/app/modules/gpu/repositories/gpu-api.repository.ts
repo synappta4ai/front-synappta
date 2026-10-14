@@ -6,6 +6,7 @@ import { ApiResponse } from '@interfaces/api.interface';
 import { environment } from '@env/environment';
 
 import {
+  BulkDeleteResult,
   GpuWorker,
   ManagedWorkerModel,
   PairingCode,
@@ -58,5 +59,9 @@ export class GpuApiRepository {
     return this.http.delete<ApiResponse<WorkerModelOperation>>(
       `${this.apiUrl}/worker/models/${encoded}`,
     );
+  }
+
+  deleteAllWorkerModels(): Observable<ApiResponse<BulkDeleteResult>> {
+    return this.http.delete<ApiResponse<BulkDeleteResult>>(`${this.apiUrl}/worker/models`);
   }
 }

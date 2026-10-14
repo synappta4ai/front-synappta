@@ -101,18 +101,34 @@
           {{ 'GPU.MODELS.SUBTITLE' | translate: { ready: readyModelCount(), total: workerModels().length } }}
         </p>
       </div>
-      <p-button
-        size="small"
-        icon="md md-refresh"
-        [label]="'GPU.MODELS.REFRESH' | translate"
-        [outlined]="true"
-        [loading]="modelsLoading()"
-        (onClick)="load(true)"
-      />
+      <div class="flex items-center gap-2">
+        <p-button
+          size="small"
+          severity="danger"
+          [outlined]="true"
+          icon="md md-delete_sweep"
+          [label]="'GPU.MODELS.DELETE_ALL' | translate"
+          [loading]="bulkDeleting()"
+          [disabled]="workerModels().length === 0 || modelBusy() !== null"
+          pTooltip="{{ 'GPU.MODELS.DELETE_ALL_TOOLTIP' | translate }}"
+          (onClick)="deleteAllDownloads()"
+        />
+        <p-button
+          size="small"
+          icon="md md-refresh"
+          [label]="'GPU.MODELS.REFRESH' | translate"
+          [outlined]="true"
+          [loading]="modelsLoading()"
+          (onClick)="load(true)"
+        />
+      </div>
     </div>
 
     @if (modelsError()) {
       <p-message severity="error" [text]="modelsError()!" class="mt-4 block" />
+    }
+    @if (modelsNotice()) {
+      <p-message severity="success" [text]="modelsNotice()!" class="mt-4 block" />
     }
 
     @if (modelsLoading() && workerModels().length === 0) {

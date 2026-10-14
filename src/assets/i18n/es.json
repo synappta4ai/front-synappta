@@ -1289,6 +1289,10 @@
       "CANCEL": "Cancelar",
       "DELETE": "Borrar",
       "DELETE_CONFIRM": "¿Borrar los pesos de \"{{name}}\"? Libera disco y el modelo dejará de estar disponible hasta descargarlo de nuevo.",
+      "DELETE_ALL": "Desinstalar todo",
+      "DELETE_ALL_TOOLTIP": "Borra los pesos de todos los modelos y libera el disco. No se puede deshacer.",
+      "DELETE_ALL_CONFIRM": "¿Borrar los pesos de TODOS los modelos? Libera el disco, pero tendrás que descargarlos de nuevo para generar.",
+      "DELETE_ALL_DONE": "{{count}} modelos desinstalados ({{size}} liberados, {{failed}} con errores).",
       "ERRORS": {
         "LOAD": "No pude cargar los modelos del worker. Reintentá en unos segundos.",
         "OPERATION": "La operación sobre el modelo falló. Revisá el estado del worker y reintentá."

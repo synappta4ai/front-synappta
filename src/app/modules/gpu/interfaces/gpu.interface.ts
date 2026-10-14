@@ -63,6 +63,13 @@ export interface ManagedWorkerModel {
   downloaded?: ManagedWorkerModelDownload;
 }
 
+/** Resultado del borrado masivo de pesos ("desinstalar todo"). */
+export interface BulkDeleteResult {
+  deleted: string[];
+  failed: Record<string, string>;
+  freed_bytes: number;
+}
+
 /** Resultado de una operación sobre los pesos (descarga, cancelación, borrado). */
 export interface WorkerModelOperation {
   key: string;
