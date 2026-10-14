@@ -158,10 +158,52 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
       });
   }
 
+  /**
+   * Catálogo reportado por las GPUs emparejadas (snapshot del bridge).
+   * Cuando el worker central no responde, la vista de gestión falla pero las
+   * GPUs ya informaron su catálogo en GET /gpu/workers: se muestra eso en
+   * modo solo lectura en vez de un error vacío.
+   */
+  protected readonly bridgeFallbackModels = computed<ManagedWorkerModel[]>(() =>
+    this.workers()
+      .filter((w) => w.online && Array.isArray(w.models))
+      .flatMap((w) =>
+        w.models.map((m): ManagedWorkerModel => ({
+          name: m.key,
+          display_name: m.label || m.key,
+          modality: m.mode || '',
+          type: 'downloaded' as const,
+          downloaded: {
+            mode: m.mode || '',
+            engine: m.engine || '',
+            pipeline: m.pipeline || '',
+            repo: m.repo || undefined,
+            family: m.family || undefined,
+            available: m.available,
+            downloading: false,
+            download_percent: m.available ? 100 : 0,
+            size_bytes: 0,
+          },
+        })))
+  );
+
+  /** ¿Se muestra el catálogo del bridge porque el central no responde? */
+  protected readonly showingBridgeCatalog = computed(
+    () =>
+      this.modelsError() !== null &&
+      this.workerModels().length === 0 &&
+      this.bridgeFallbackModels().length > 0,
+  );
+
+  /** Lo que ve la tabla: gestión central o snapshot del bridge. */
+  protected readonly displayedModels = computed<ManagedWorkerModel[]>(() =>
+    this.workerModels().length > 0 ? this.workerModels() : this.bridgeFallbackModels(),
+  );
+
   /** Modelos listos para generar (disponibles y sin descarga en curso). */
   protected readonly readyModelCount = computed(
     () =>
-      this.workerModels().filter((model) => model.downloaded?.available && !model.downloaded.downloading)
+      this.displayedModels().filter((model) => model.downloaded?.available && !model.downloaded.downloading)
         .length,
   );
 

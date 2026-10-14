@@ -98,7 +98,7 @@
           {{ 'GPU.MODELS.TITLE' | translate }}
         </h2>
         <p class="mt-1 text-sm text-surface-500 dark:text-surface-400">
-          {{ 'GPU.MODELS.SUBTITLE' | translate: { ready: readyModelCount(), total: workerModels().length } }}
+          {{ 'GPU.MODELS.SUBTITLE' | translate: { ready: readyModelCount(), total: displayedModels().length } }}
         </p>
       </div>
       <div class="flex items-center gap-2">
@@ -124,22 +124,29 @@
       </div>
     </div>
 
-    @if (modelsError()) {
+    @if (modelsError() && !showingBridgeCatalog()) {
       <p-message severity="error" [text]="modelsError()!" class="mt-4 block" />
+    }
+    @if (showingBridgeCatalog()) {
+      <p-message
+        severity="info"
+        text="{{ 'GPU.MODELS.BRIDGE_NOTICE' | translate: { count: displayedModels().length } }}"
+        class="mt-4 block"
+      />
     }
     @if (modelsNotice()) {
       <p-message severity="success" [text]="modelsNotice()!" class="mt-4 block" />
     }
 
-    @if (modelsLoading() && workerModels().length === 0) {
+    @if (modelsLoading() && displayedModels().length === 0) {
       <div class="mt-6 flex justify-center">
         <p-progressspinner strokeWidth="4" />
       </div>
-    } @else if (!modelsLoading() && workerModels().length === 0 && !modelsError()) {
+    } @else if (!modelsLoading() && displayedModels().length === 0 && !modelsError()) {
       <p-message severity="info" [text]="'GPU.MODELS.EMPTY' | translate" class="mt-4 block" />
-    } @else if (workerModels().length > 0) {
+    } @else if (displayedModels().length > 0) {
       <p-table
-        [value]="$any(workerModels())"
+        [value]="$any(displayedModels())"
         [tableStyle]="{ 'min-width': '52rem' }"
         [rowHover]="true"
         [scrollable]="true"
@@ -199,6 +206,8 @@
                 </p>
               } @else if ((model.downloaded?.size_bytes ?? 0) > 0) {
                 <span class="text-sm">{{ formatSize(model.downloaded?.size_bytes ?? 0) }}</span>
+              } @else if (showingBridgeCatalog()) {
+                <span class="text-sm text-surface-500 dark:text-surface-400">—</span>
               } @else {
                 <span class="text-sm text-surface-500 dark:text-surface-400">
                   {{ 'GPU.MODELS.NOT_DOWNLOADED' | translate }}
@@ -206,6 +215,9 @@
               }
             </td>
             <td>
+              @if (showingBridgeCatalog()) {
+                <span class="text-sm text-surface-500 dark:text-surface-400">—</span>
+              } @else {
               <div class="flex flex-wrap justify-end gap-2">
                 @if (model.downloaded?.downloading) {
                   <p-button
@@ -244,6 +256,7 @@
                   />
                 }
               </div>
+              }
             </td>
           </tr>
         </ng-template>
