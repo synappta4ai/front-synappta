@@ -90,6 +90,151 @@
     </div>
   }
 
+  <!-- ─── Modelos del worker: gestión de pesos ─────────────── -->
+  <section class="mt-10" aria-label="{{ 'GPU.MODELS.TITLE' | translate }}">
+    <div class="flex flex-wrap items-end justify-between gap-3">
+      <div>
+        <h2 class="text-lg font-semibold text-surface-900 dark:text-surface-0">
+          {{ 'GPU.MODELS.TITLE' | translate }}
+        </h2>
+        <p class="mt-1 text-sm text-surface-500 dark:text-surface-400">
+          {{ 'GPU.MODELS.SUBTITLE' | translate: { ready: readyModelCount(), total: workerModels().length } }}
+        </p>
+      </div>
+      <p-button
+        size="small"
+        icon="md md-refresh"
+        [label]="'GPU.MODELS.REFRESH' | translate"
+        [outlined]="true"
+        [loading]="modelsLoading()"
+        (onClick)="load(true)"
+      />
+    </div>
+
+    @if (modelsError()) {
+      <p-message severity="error" [text]="modelsError()!" class="mt-4 block" />
+    }
+
+    @if (modelsLoading() && workerModels().length === 0) {
+      <div class="mt-6 flex justify-center">
+        <p-progressspinner strokeWidth="4" />
+      </div>
+    } @else if (!modelsLoading() && workerModels().length === 0 && !modelsError()) {
+      <p-message severity="info" [text]="'GPU.MODELS.EMPTY' | translate" class="mt-4 block" />
+    } @else if (workerModels().length > 0) {
+      <p-table
+        [value]="$any(workerModels())"
+        [tableStyle]="{ 'min-width': '52rem' }"
+        [rowHover]="true"
+        [scrollable]="true"
+        scrollHeight="flex"
+        styleClass="p-datatable-sm mt-4"
+      >
+        <ng-template #header>
+          <tr>
+            <th>{{ 'GPU.MODELS.COL_MODEL' | translate }}</th>
+            <th style="width: 16%" class="text-center">{{ 'GPU.MODELS.COL_STATUS' | translate }}</th>
+            <th style="width: 28%">{{ 'GPU.MODELS.COL_SIZE' | translate }}</th>
+            <th style="width: 24%" class="text-right">{{ 'GPU.MODELS.COL_ACTIONS' | translate }}</th>
+          </tr>
+        </ng-template>
+        <ng-template #body let-model>
+          <tr>
+            <td>
+              <p class="font-medium text-surface-900 dark:text-surface-0">
+                {{ model.display_name || model.name }}
+              </p>
+              <p class="text-xs text-surface-500 dark:text-surface-400">
+                {{ model.name }} · {{ model.modality || model.downloaded?.mode || '—' }} ·
+                {{ model.downloaded?.family || model.downloaded?.engine || '—' }}
+              </p>
+              @if (model.downloaded?.download_error) {
+                <p class="mt-1 text-xs text-red-500">
+                  {{ model.downloaded.download_error }}
+                </p>
+              }
+            </td>
+            <td class="text-center">
+              @if (model.downloaded?.downloading) {
+                <p-tag
+                  [value]="'GPU.MODELS.DOWNLOADING' | translate"
+                  severity="warn"
+                  icon="md md-downloading"
+                />
+              } @else if (model.downloaded?.available) {
+                <p-tag
+                  [value]="'GPU.MODELS.READY' | translate"
+                  severity="success"
+                  icon="md md-check_circle"
+                />
+              } @else {
+                <p-tag
+                  [value]="'GPU.MODELS.NOT_AVAILABLE' | translate"
+                  severity="secondary"
+                  icon="md md-cloud_off"
+                />
+              }
+            </td>
+            <td>
+              @if (model.downloaded?.downloading) {
+                <p-progressbar [value]="downloadProgress(model)" />
+                <p class="mt-1 text-xs text-surface-500 dark:text-surface-400">
+                  {{ downloadProgress(model) }}% · {{ formatSize(model.downloaded?.size_bytes ?? 0) }}
+                </p>
+              } @else if ((model.downloaded?.size_bytes ?? 0) > 0) {
+                <span class="text-sm">{{ formatSize(model.downloaded?.size_bytes ?? 0) }}</span>
+              } @else {
+                <span class="text-sm text-surface-500 dark:text-surface-400">
+                  {{ 'GPU.MODELS.NOT_DOWNLOADED' | translate }}
+                </span>
+              }
+            </td>
+            <td>
+              <div class="flex flex-wrap justify-end gap-2">
+                @if (model.downloaded?.downloading) {
+                  <p-button
+                    size="small"
+                    severity="secondary"
+                    icon="md md-cancel"
+                    [label]="'GPU.MODELS.CANCEL' | translate"
+                    [loading]="isModelBusy(model, 'cancel')"
+                    [disabled]="modelBusy() !== null"
+                    (onClick)="cancelDownload(model)"
+                  />
+                } @else {
+                  @if (!model.downloaded?.available) {
+                    <p-button
+                      size="small"
+                      icon="md md-download"
+                      [label]="
+                        (model.downloaded?.download_error
+                          ? ('GPU.MODELS.RETRY' | translate)
+                          : ('GPU.MODELS.DOWNLOAD' | translate))
+                      "
+                      [loading]="isModelBusy(model, 'download')"
+                      [disabled]="modelBusy() !== null"
+                      (onClick)="startDownload(model)"
+                    />
+                  }
+                  <p-button
+                    size="small"
+                    severity="danger"
+                    [outlined]="true"
+                    icon="md md-delete"
+                    [label]="'GPU.MODELS.DELETE' | translate"
+                    [loading]="isModelBusy(model, 'delete')"
+                    [disabled]="modelBusy() !== null"
+                    (onClick)="deleteDownload(model)"
+                  />
+                }
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    }
+  </section>
+
   @if (workers().length > 0) {
     <section class="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       @for (worker of workers(); track worker.id) {

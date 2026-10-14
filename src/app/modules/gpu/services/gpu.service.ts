@@ -3,7 +3,12 @@ import { Observable } from 'rxjs';
 
 import { unwrap } from '@utils/unwrap-api-response';
 
-import { GpuWorker, PairingCode } from '../interfaces/gpu.interface';
+import {
+  GpuWorker,
+  ManagedWorkerModel,
+  PairingCode,
+  WorkerModelOperation,
+} from '../interfaces/gpu.interface';
 import { GpuApiRepository } from '../repositories/gpu-api.repository';
 
 /** Fachada del panel "Tu GPU": lista, emparejamiento y revocación. */
@@ -21,5 +26,21 @@ export class GpuService {
 
   revokeWorker(id: string): Observable<null> {
     return unwrap(this.repository.revokeWorker(id));
+  }
+
+  listWorkerModels(): Observable<ManagedWorkerModel[]> {
+    return unwrap(this.repository.listWorkerModels());
+  }
+
+  downloadWorkerModel(key: string): Observable<WorkerModelOperation> {
+    return unwrap(this.repository.downloadWorkerModel(key));
+  }
+
+  cancelWorkerModelDownload(key: string): Observable<WorkerModelOperation> {
+    return unwrap(this.repository.cancelWorkerModelDownload(key));
+  }
+
+  deleteWorkerModel(key: string): Observable<WorkerModelOperation> {
+    return unwrap(this.repository.deleteWorkerModel(key));
   }
 }

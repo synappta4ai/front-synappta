@@ -1271,6 +1271,29 @@
     "REVOKE": "Desconectar",
     "REVOKE_TOOLTIP": "Quita el permiso de esta máquina. Para volver a conectarla, repetí el emparejamiento.",
     "UNKNOWN": "GPU no especificada",
+    "MODELS": {
+      "TITLE": "Modelos del worker",
+      "SUBTITLE": "{{ready}} de {{total}} listos para generar. Los no disponibles no aparecen en los selectores: descargalos o borralos acá.",
+      "REFRESH": "Actualizar",
+      "EMPTY": "El worker todavía no reporta modelos. Conectá una GPU o revisá su estado.",
+      "COL_MODEL": "Modelo",
+      "COL_STATUS": "Estado",
+      "COL_SIZE": "Peso / progreso",
+      "COL_ACTIONS": "Acciones",
+      "READY": "Disponible",
+      "NOT_AVAILABLE": "No disponible",
+      "DOWNLOADING": "Descargando",
+      "NOT_DOWNLOADED": "Sin descargar",
+      "DOWNLOAD": "Descargar",
+      "RETRY": "Reintentar",
+      "CANCEL": "Cancelar",
+      "DELETE": "Borrar",
+      "DELETE_CONFIRM": "¿Borrar los pesos de \"{{name}}\"? Libera disco y el modelo dejará de estar disponible hasta descargarlo de nuevo.",
+      "ERRORS": {
+        "LOAD": "No pude cargar los modelos del worker. Reintentá en unos segundos.",
+        "OPERATION": "La operación sobre el modelo falló. Revisá el estado del worker y reintentá."
+      }
+    },
     "ERRORS": {
       "LOAD": "No pude cargar las GPUs. Reintentá en unos segundos.",
       "PAIRING": "No pude generar el código de emparejamiento. Reintentá."

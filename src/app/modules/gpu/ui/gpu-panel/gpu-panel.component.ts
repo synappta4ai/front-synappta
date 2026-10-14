@@ -17,12 +17,18 @@ import { Card } from 'primeng/card';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { Dialog } from 'primeng/dialog';
 import { Message } from 'primeng/message';
+import { ProgressBar } from 'primeng/progressbar';
 import { ProgressSpinner } from 'primeng/progressspinner';
+import { TableModule } from 'primeng/table';
 import { Tag } from 'primeng/tag';
 import { Tooltip } from 'primeng/tooltip';
 
 import { GpuService } from '../../services/gpu.service';
-import { GpuWorker, PairingCode } from '../../interfaces/gpu.interface';
+import {
+  GpuWorker,
+  ManagedWorkerModel,
+  PairingCode,
+} from '../../interfaces/gpu.interface';
 
 /**
  * Panel "Tu GPU": el administrador del tenant empareja las máquinas con GPU
@@ -44,7 +50,9 @@ import { GpuWorker, PairingCode } from '../../interfaces/gpu.interface';
     ConfirmDialog,
     Dialog,
     Message,
+    ProgressBar,
     ProgressSpinner,
+    TableModule,
     Tag,
     Tooltip,
     TranslatePipe,
@@ -62,6 +70,10 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
   protected readonly workers = signal<GpuWorker[]>([]);
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
+  protected readonly workerModels = signal<ManagedWorkerModel[]>([]);
+  protected readonly modelsLoading = signal(false);
+  protected readonly modelsError = signal<string | null>(null);
+  protected readonly modelBusy = signal<string | null>(null);
 
   /**
    * Instalador gráfico de Windows (.exe, onefile): doble click y corre la
@@ -102,6 +114,11 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
   }
 
   protected load(silent = false): void {
+    this.loadWorkers(silent);
+    this.loadWorkerModels(silent);
+  }
+
+  private loadWorkers(silent = false): void {
     if (!silent) this.loading.set(true);
     this.gpuService
       .listWorkers()
@@ -118,6 +135,95 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
         this.workers.set(workers);
         this.error.set(null);
       });
+  }
+
+  private loadWorkerModels(silent = false): void {
+    if (!silent) this.modelsLoading.set(true);
+    this.gpuService
+      .listWorkerModels()
+      .pipe(
+        catchError(() => {
+          if (!silent) {
+            this.modelsError.set(this.translate.instant('GPU.MODELS.ERRORS.LOAD'));
+          }
+          return EMPTY;
+        }),
+        finalize(() => this.modelsLoading.set(false)),
+      )
+      .subscribe((models) => {
+        this.workerModels.set(models);
+        this.modelsError.set(null);
+      });
+  }
+
+  /** Modelos listos para generar (disponibles y sin descarga en curso). */
+  protected readonly readyModelCount = computed(
+    () =>
+      this.workerModels().filter((model) => model.downloaded?.available && !model.downloaded.downloading)
+        .length,
+  );
+
+  protected isModelBusy(model: ManagedWorkerModel, action: string): boolean {
+    return this.modelBusy() === `${action}:${model.name}`;
+  }
+
+  protected startDownload(model: ManagedWorkerModel): void {
+    this.runModelOperation(model, 'download');
+  }
+
+  protected cancelDownload(model: ManagedWorkerModel): void {
+    this.runModelOperation(model, 'cancel');
+  }
+
+  /** El borrado libera disco: se confirma porque no se puede deshacer. */
+  protected deleteDownload(model: ManagedWorkerModel): void {
+    this.confirmationService.confirm({
+      message: this.translate.instant('GPU.MODELS.DELETE_CONFIRM', { name: model.display_name || model.name }),
+      header: this.translate.instant('GPU.MODELS.DELETE'),
+      icon: 'md md-warning',
+      acceptButtonProps: { label: this.translate.instant('GPU.MODELS.DELETE'), severity: 'danger' },
+      rejectButtonProps: { label: this.translate.instant('GPU.REVOKE_CANCEL'), severity: 'secondary', outlined: true },
+      accept: () => this.runModelOperation(model, 'delete'),
+    });
+  }
+
+  private runModelOperation(model: ManagedWorkerModel, action: 'download' | 'cancel' | 'delete'): void {
+    if (this.modelBusy()) return;
+    this.modelBusy.set(`${action}:${model.name}`);
+    this.modelsError.set(null);
+    const request =
+      action === 'download'
+        ? this.gpuService.downloadWorkerModel(model.name)
+        : action === 'cancel'
+          ? this.gpuService.cancelWorkerModelDownload(model.name)
+          : this.gpuService.deleteWorkerModel(model.name);
+    request
+      .pipe(
+        catchError(() => {
+          this.modelsError.set(this.translate.instant('GPU.MODELS.ERRORS.OPERATION'));
+          return EMPTY;
+        }),
+        finalize(() => this.modelBusy.set(null)),
+      )
+      .subscribe(() => this.loadWorkerModels(true));
+  }
+
+  protected downloadProgress(model: ManagedWorkerModel): number {
+    const progress = model.downloaded?.download_percent ?? 0;
+    if (!Number.isFinite(progress)) return 0;
+    return Math.min(100, Math.max(0, Math.round(progress)));
+  }
+
+  protected formatSize(bytes: number): string {
+    if (!Number.isFinite(bytes) || bytes <= 0) return '—';
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    let value = bytes;
+    let unit = 0;
+    while (value >= 1024 && unit < units.length - 1) {
+      value /= 1024;
+      unit += 1;
+    }
+    return `${value.toFixed(value >= 10 || unit === 0 ? 0 : 1)} ${units[unit]}`;
   }
 
   /** true si esta sesión corre en Windows (ahí va el .exe, no el zip). */

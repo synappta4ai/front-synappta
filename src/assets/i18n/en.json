@@ -1271,6 +1271,29 @@
     "REVOKE": "Disconnect",
     "REVOKE_TOOLTIP": "Removes this machine's permission. To reconnect it, repeat the pairing.",
     "UNKNOWN": "Unspecified GPU",
+    "MODELS": {
+      "TITLE": "Worker models",
+      "SUBTITLE": "{{ready}} of {{total}} ready to generate. Unavailable models stay out of pickers: download or delete them here.",
+      "REFRESH": "Refresh",
+      "EMPTY": "The worker is not reporting models yet. Connect a GPU or check its status.",
+      "COL_MODEL": "Model",
+      "COL_STATUS": "Status",
+      "COL_SIZE": "Weights / progress",
+      "COL_ACTIONS": "Actions",
+      "READY": "Available",
+      "NOT_AVAILABLE": "Unavailable",
+      "DOWNLOADING": "Downloading",
+      "NOT_DOWNLOADED": "Not downloaded",
+      "DOWNLOAD": "Download",
+      "RETRY": "Retry",
+      "CANCEL": "Cancel",
+      "DELETE": "Delete",
+      "DELETE_CONFIRM": "Delete the weights for \"{{name}}\"? This frees disk space and the model will stay unavailable until you download it again.",
+      "ERRORS": {
+        "LOAD": "Couldn't load worker models. Try again in a few seconds.",
+        "OPERATION": "The model operation failed. Check worker status and try again."
+      }
+    },
     "ERRORS": {
       "LOAD": "Couldn't load the GPUs. Try again in a few seconds.",
       "PAIRING": "Couldn't generate the pairing code. Try again."

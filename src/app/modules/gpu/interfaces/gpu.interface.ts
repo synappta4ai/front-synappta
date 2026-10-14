@@ -35,3 +35,40 @@ export interface PairingCode {
   code: string;
   expires_at: string;
 }
+
+/** Estado en vivo de los pesos de un modelo (vista de gestión del worker). */
+export interface ManagedWorkerModelDownload {
+  mode: string;
+  engine: string;
+  pipeline: string;
+  repo?: string;
+  steps?: number;
+  vram_gb?: number;
+  family?: string;
+  available: boolean;
+  downloading: boolean;
+  download_percent: number;
+  size_bytes: number;
+  download_error?: string;
+  notes?: string;
+}
+
+/** Modelo del worker para la gestión de descargas (incluye no disponibles). */
+export interface ManagedWorkerModel {
+  name: string;
+  display_name: string;
+  modality: string;
+  type: 'downloaded';
+  generator?: string;
+  downloaded?: ManagedWorkerModelDownload;
+}
+
+/** Resultado de una operación sobre los pesos (descarga, cancelación, borrado). */
+export interface WorkerModelOperation {
+  key: string;
+  state: string;
+  progress: number;
+  bytes_downloaded: number;
+  total_bytes: number;
+  error?: string;
+}
