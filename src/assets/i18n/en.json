@@ -1294,6 +1294,7 @@
       "DELETE_ALL_CONFIRM": "Delete ALL model weights? This frees disk space, but you will need to download them again to generate.",
       "DELETE_ALL_DONE": "{{count}} models uninstalled ({{size}} freed, {{failed}} failed).",
       "BRIDGE_NOTICE": "Showing the catalog reported by your GPU ({{count}} models). Downloading or deleting weights needs the central worker.",
+      "VRAM_REQ": "Requires {{gb}} GB of VRAM",
       "ERRORS": {
         "LOAD": "Couldn't load worker models. Try again in a few seconds.",
         "OPERATION": "The model operation failed. Check worker status and try again."

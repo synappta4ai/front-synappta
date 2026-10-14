@@ -1294,6 +1294,7 @@
       "DELETE_ALL_CONFIRM": "¿Borrar los pesos de TODOS los modelos? Libera el disco, pero tendrás que descargarlos de nuevo para generar.",
       "DELETE_ALL_DONE": "{{count}} modelos desinstalados ({{size}} liberados, {{failed}} con errores).",
       "BRIDGE_NOTICE": "Mostrando el catálogo que reporta tu GPU ({{count}} modelos). Descargar o borrar pesos requiere el worker central.",
+      "VRAM_REQ": "Requiere {{gb}} GB de VRAM",
       "ERRORS": {
         "LOAD": "No pude cargar los modelos del worker. Reintentá en unos segundos.",
         "OPERATION": "La operación sobre el modelo falló. Revisá el estado del worker y reintentá."

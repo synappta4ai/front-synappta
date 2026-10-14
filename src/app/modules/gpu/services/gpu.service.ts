@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 
 import { unwrap } from '@utils/unwrap-api-response';
 
@@ -29,8 +29,20 @@ export class GpuService {
     return unwrap(this.repository.revokeWorker(id));
   }
 
-  listWorkerModels(): Observable<ManagedWorkerModel[]> {
-    return unwrap(this.repository.listWorkerModels());
+  /** Modelos + origen: bridge = snapshot solo lectura, sin gestión de pesos. */
+  listWorkerModels(): Observable<{ models: ManagedWorkerModel[]; bridge: boolean }> {
+    return this.repository.listWorkerModelsResponse().pipe(
+      map((resp) => {
+        const body = resp.body;
+        if (!body || body.success === false) {
+          throw new Error(body?.message || 'Request failed');
+        }
+        return {
+          models: body.data ?? [],
+          bridge: resp.headers.get('X-Worker-Source') === 'bridge',
+        };
+      }),
+    );
   }
 
   downloadWorkerModel(key: string): Observable<WorkerModelOperation> {

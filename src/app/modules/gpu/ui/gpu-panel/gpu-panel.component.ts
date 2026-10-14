@@ -139,6 +139,14 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
       });
   }
 
+  /** ¿El catálogo vino del bridge (solo lectura, sin gestión de pesos)? */
+  protected readonly bridgeSource = signal(false);
+
+  /** ¿Vista de solo lectura? Snapshot local o backend en modo bridge. */
+  protected readonly bridgeMode = computed(
+    () => this.showingBridgeCatalog() || this.bridgeSource(),
+  );
+
   private loadWorkerModels(silent = false): void {
     if (!silent) this.modelsLoading.set(true);
     this.gpuService
@@ -152,8 +160,9 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
         }),
         finalize(() => this.modelsLoading.set(false)),
       )
-      .subscribe((models) => {
+      .subscribe(({ models, bridge }) => {
         this.workerModels.set(models);
+        this.bridgeSource.set(bridge);
         this.modelsError.set(null);
       });
   }

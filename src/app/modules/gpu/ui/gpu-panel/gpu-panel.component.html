@@ -109,7 +109,7 @@
           icon="md md-delete_sweep"
           [label]="'GPU.MODELS.DELETE_ALL' | translate"
           [loading]="bulkDeleting()"
-          [disabled]="workerModels().length === 0 || modelBusy() !== null"
+          [disabled]="workerModels().length === 0 || modelBusy() !== null || bridgeMode()"
           pTooltip="{{ 'GPU.MODELS.DELETE_ALL_TOOLTIP' | translate }}"
           (onClick)="deleteAllDownloads()"
         />
@@ -124,10 +124,10 @@
       </div>
     </div>
 
-    @if (modelsError() && !showingBridgeCatalog()) {
+    @if (modelsError() && !bridgeMode()) {
       <p-message severity="error" [text]="modelsError()!" class="mt-4 block" />
     }
-    @if (showingBridgeCatalog()) {
+    @if (bridgeMode()) {
       <p-message
         severity="info"
         text="{{ 'GPU.MODELS.BRIDGE_NOTICE' | translate: { count: displayedModels().length } }}"
@@ -206,7 +206,11 @@
                 </p>
               } @else if ((model.downloaded?.size_bytes ?? 0) > 0) {
                 <span class="text-sm">{{ formatSize(model.downloaded?.size_bytes ?? 0) }}</span>
-              } @else if (showingBridgeCatalog()) {
+              } @else if (bridgeMode() && (model.downloaded?.vram_gb ?? 0) > 0) {
+                <span class="text-sm text-surface-500 dark:text-surface-400">
+                  {{ 'GPU.MODELS.VRAM_REQ' | translate: { gb: model.downloaded?.vram_gb } }}
+                </span>
+              } @else if (bridgeMode()) {
                 <span class="text-sm text-surface-500 dark:text-surface-400">—</span>
               } @else {
                 <span class="text-sm text-surface-500 dark:text-surface-400">
@@ -215,7 +219,7 @@
               }
             </td>
             <td>
-              @if (showingBridgeCatalog()) {
+              @if (bridgeMode()) {
                 <span class="text-sm text-surface-500 dark:text-surface-400">—</span>
               } @else {
               <div class="flex flex-wrap justify-end gap-2">

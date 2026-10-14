@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpResponse } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
@@ -34,8 +34,11 @@ export class GpuApiRepository {
     return this.http.delete<ApiResponse<null>>(`${this.apiUrl}/gpu/workers/${id}`);
   }
 
-  listWorkerModels(): Observable<ApiResponse<ManagedWorkerModel[]>> {
-    return this.http.get<ApiResponse<ManagedWorkerModel[]>>(`${this.apiUrl}/worker/models`);
+  /** Respuesta completa: el header X-Worker-Source dice si es central o bridge. */
+  listWorkerModelsResponse(): Observable<HttpResponse<ApiResponse<ManagedWorkerModel[]>>> {
+    return this.http.get<ApiResponse<ManagedWorkerModel[]>>(`${this.apiUrl}/worker/models`, {
+      observe: 'response',
+    });
   }
 
   downloadWorkerModel(key: string): Observable<ApiResponse<WorkerModelOperation>> {
