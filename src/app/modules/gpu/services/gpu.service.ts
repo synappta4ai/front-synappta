@@ -60,4 +60,9 @@ export class GpuService {
   deleteAllWorkerModels(): Observable<BulkDeleteResult> {
     return unwrap(this.repository.deleteAllWorkerModels());
   }
+
+  /** Encola la descarga de un modelo en una GPU emparejada (modo bridge). */
+  requestBridgeDownload(workerId: string, key: string): Observable<{ worker_id: string; model_key: string }> {
+    return unwrap(this.repository.requestBridgeDownload(workerId, key));
+  }
 }

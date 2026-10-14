@@ -11,6 +11,11 @@ export interface WorkerModel {
   family: string;
   available: boolean;
   notes: string;
+  /** Estado real de pesos (el agente lo lee del gRPC local; ausente = legado). */
+  downloading?: boolean;
+  download_percent?: number;
+  size_bytes?: number;
+  download_error?: string;
 }
 
 /** Una GPU emparejada (fila del registry del back). */
@@ -61,6 +66,10 @@ export interface ManagedWorkerModel {
   type: 'downloaded';
   generator?: string;
   downloaded?: ManagedWorkerModelDownload;
+  /** Origen bridge: qué GPU lo reporta (para pedir la descarga a esa máquina). */
+  worker_id?: string;
+  worker_name?: string;
+  worker_version?: string;
 }
 
 /** Resultado del borrado masivo de pesos ("desinstalar todo"). */

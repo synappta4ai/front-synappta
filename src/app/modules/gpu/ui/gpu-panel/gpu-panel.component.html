@@ -220,7 +220,25 @@
             </td>
             <td>
               @if (bridgeMode()) {
-                <span class="text-sm text-surface-500 dark:text-surface-400">—</span>
+                <div class="flex flex-wrap justify-end gap-2">
+                  @if (model.downloaded?.downloading) {
+                    <span class="text-sm text-surface-500 dark:text-surface-400">
+                      {{ 'GPU.MODELS.DOWNLOADING' | translate }}…
+                    </span>
+                  } @else if (!model.downloaded?.available && model.worker_id) {
+                    <p-button
+                      size="small"
+                      icon="md md-download"
+                      [label]="'GPU.MODELS.DOWNLOAD' | translate"
+                      [loading]="isModelBusy(model, 'download')"
+                      [disabled]="modelBusy() !== null"
+                      (onClick)="bridgeDownload(model)"
+                      pTooltip="{{ 'GPU.MODELS.DOWNLOAD_BRIDGE_TOOLTIP' | translate: { worker: model.worker_name } }}"
+                    />
+                  } @else {
+                    <span class="text-sm text-surface-500 dark:text-surface-400">—</span>
+                  }
+                </div>
               } @else {
               <div class="flex flex-wrap justify-end gap-2">
                 @if (model.downloaded?.downloading) {
@@ -275,7 +293,12 @@
           <div class="flex h-full flex-col gap-3">
             <div class="flex items-start justify-between gap-2">
               <div>
-                <h2 class="font-medium">{{ worker.name }}</h2>
+                <h2 class="flex flex-wrap items-center gap-2 font-medium">
+                  {{ worker.name }}
+                  @if (worker.version) {
+                    <p-tag [value]="'v' + worker.version" severity="info" />
+                  }
+                </h2>
                 <p class="text-sm text-surface-500 dark:text-surface-400">
                   {{ worker.gpu_name || 'GPU.UNKNOWN' | translate }}
                 </p>

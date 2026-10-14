@@ -170,18 +170,27 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
   /**
    * Catálogo reportado por las GPUs emparejadas (snapshot del bridge).
    * Cuando el worker central no responde, la vista de gestión falla pero las
-   * GPUs ya informaron su catálogo en GET /gpu/workers: se muestra eso en
-   * modo solo lectura en vez de un error vacío.
+   * GPUs ya informaron su catálogo en GET /gpu/workers: se muestra eso con
+   * descarga por worker (el agente la recoge en el próximo heartbeat).
+   * Si varias GPUs reportan el mismo modelo, gana la primera en línea.
    */
-  protected readonly bridgeFallbackModels = computed<ManagedWorkerModel[]>(() =>
-    this.workers()
-      .filter((w) => w.online && Array.isArray(w.models))
-      .flatMap((w) =>
-        w.models.map((m): ManagedWorkerModel => ({
+  protected readonly bridgeFallbackModels = computed<ManagedWorkerModel[]>(() => {
+    const seen = new Set<string>();
+    const out: ManagedWorkerModel[] = [];
+    for (const w of this.workers()) {
+      if (!w.online || !Array.isArray(w.models)) continue;
+      for (const m of w.models) {
+        if (!m?.key || seen.has(m.key)) continue;
+        seen.add(m.key);
+        const downloading = m.downloading ?? false;
+        out.push({
           name: m.key,
           display_name: m.label || m.key,
           modality: m.mode || '',
           type: 'downloaded' as const,
+          worker_id: w.id,
+          worker_name: w.name,
+          worker_version: w.version,
           downloaded: {
             mode: m.mode || '',
             engine: m.engine || '',
@@ -189,12 +198,16 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
             repo: m.repo || undefined,
             family: m.family || undefined,
             available: m.available,
-            downloading: false,
-            download_percent: m.available ? 100 : 0,
-            size_bytes: 0,
+            downloading,
+            download_percent: m.download_percent ?? (m.available ? 100 : 0),
+            size_bytes: m.size_bytes ?? 0,
+            download_error: m.download_error || undefined,
           },
-        })))
-  );
+        });
+      }
+    }
+    return out;
+  });
 
   /** ¿Se muestra el catálogo del bridge porque el central no responde? */
   protected readonly showingBridgeCatalog = computed(
@@ -218,6 +231,36 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
 
   protected isModelBusy(model: ManagedWorkerModel, action: string): boolean {
     return this.modelBusy() === `${action}:${model.name}`;
+  }
+
+  /**
+   * Descarga en modo bridge: encola el modelo en la GPU que lo reportó.
+   * El agente lo toma en el próximo heartbeat (~20 s) y el progreso real
+   * aparece en el snapshot (downloading/download_percent).
+   */
+  protected bridgeDownload(model: ManagedWorkerModel): void {
+    if (this.modelBusy() || !model.worker_id) return;
+    this.modelBusy.set(`download:${model.name}`);
+    this.modelsError.set(null);
+    this.modelsNotice.set(null);
+    this.gpuService
+      .requestBridgeDownload(model.worker_id, model.name)
+      .pipe(
+        catchError(() => {
+          this.modelsError.set(this.translate.instant('GPU.MODELS.ERRORS.OPERATION'));
+          return EMPTY;
+        }),
+        finalize(() => this.modelBusy.set(null)),
+      )
+      .subscribe(() => {
+        this.modelsNotice.set(
+          this.translate.instant('GPU.MODELS.DOWNLOAD_REQUESTED', {
+            name: model.display_name || model.name,
+            worker: model.worker_name || '',
+          }),
+        );
+        this.load(true);
+      });
   }
 
   protected startDownload(model: ManagedWorkerModel): void {

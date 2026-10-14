@@ -67,4 +67,16 @@ export class GpuApiRepository {
   deleteAllWorkerModels(): Observable<ApiResponse<BulkDeleteResult>> {
     return this.http.delete<ApiResponse<BulkDeleteResult>>(`${this.apiUrl}/worker/models`);
   }
+
+  /**
+   * Descarga en una GPU emparejada (modo bridge): el admin la encola y el
+   * agente la recoge en el próximo heartbeat (back: workerbridge).
+   */
+  requestBridgeDownload(workerId: string, key: string): Observable<ApiResponse<{ worker_id: string; model_key: string }>> {
+    const encoded = encodeURIComponent(key);
+    return this.http.post<ApiResponse<{ worker_id: string; model_key: string }>>(
+      `${this.apiUrl}/gpu/workers/${workerId}/models/${encoded}/download`,
+      {},
+    );
+  }
 }

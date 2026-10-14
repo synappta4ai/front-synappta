@@ -1293,7 +1293,9 @@
       "DELETE_ALL_TOOLTIP": "Delete every model weight and free disk space. Cannot be undone.",
       "DELETE_ALL_CONFIRM": "Delete ALL model weights? This frees disk space, but you will need to download them again to generate.",
       "DELETE_ALL_DONE": "{{count}} models uninstalled ({{size}} freed, {{failed}} failed).",
-      "BRIDGE_NOTICE": "Showing the catalog reported by your GPU ({{count}} models). Downloading or deleting weights needs the central worker.",
+      "BRIDGE_NOTICE": "Showing the catalog reported by your GPU ({{count}} models). Downloads are requested per machine and start in ~20 s.",
+      "DOWNLOAD_REQUESTED": "Download of \"{{name}}\" requested on {{worker}}: starts in ~20 s, progress shows here.",
+      "DOWNLOAD_BRIDGE_TOOLTIP": "Request the download on {{worker}} (starts on the next heartbeat).",
       "VRAM_REQ": "Requires {{gb}} GB of VRAM",
       "ERRORS": {
         "LOAD": "Couldn't load worker models. Try again in a few seconds.",
