@@ -11,7 +11,7 @@ import {
   ViewChild,
   ElementRef,
 } from '@angular/core';
-import { DatePipe, isPlatformBrowser } from '@angular/common';
+import { DatePipe, DecimalPipe, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { catchError, EMPTY, finalize } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -49,6 +49,7 @@ import { AssetEditDialogComponent } from '@shared/components/asset-edit-dialog/a
 import { SlidePillDirective } from '@shared/components/slide-pill/slide-pill.directive';
 import { TiltDirective } from '@shared/components/tilt/tilt.directive';
 import { ImgFadeDirective } from '@shared/components/img-fade/img-fade.directive';
+import { UiIcon } from '@shared/components/ui-icon/ui-icon.component';
 
 interface RatioOption {
   label: string;
@@ -84,6 +85,7 @@ interface MentionRow {
   imports: [
     FormsModule,
     DatePipe,
+    DecimalPipe,
     Button,
     Dialog,
     Popover,
@@ -99,13 +101,13 @@ interface MentionRow {
     SlidePillDirective,
     TiltDirective,
     ImgFadeDirective,
+    UiIcon,
   ],
   templateUrl: './studio.component.html',
   styleUrl: './studio.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '(document:keydown)': 'onShortcut($event)',
-    '(document:click)': 'onDocClick($event)',
     '(window:resize)': 'onWinResize()',
   },
 })
@@ -853,53 +855,42 @@ export class StudioComponent {
   // ─── Historial por día: agrupación del reel + recuperar sesión ──
   protected readonly sessionDate = this.eventsStore.sessionDate;
 
-  // Selector de día del historial: dropdown con los días que tienen
-  // generaciones de video del usuario. Muestra 10 y el scroll al fondo
-  // revela más (y pagina ventanas más viejas contra el backend).
+  // Retención de cámaras: 60 días guardados en el backend. La sección
+  // Studio solo muestra los últimos 7 días con actividad (chips + acordeón).
   private static readonly HISTORY_WINDOW_MS = 60 * 24 * 60 * 60 * 1000;
+  private static readonly HISTORY_VISIBLE_DAYS = 7;
   private static readonly HISTORY_PAGE_LIMIT = 200;
-  /** Ventanas extra auto-cargadas cuando aún no hay 10 días (panel sin
-      overflow: el scroll no dispararía la paginación). */
-  private static readonly MAX_AUTOFILL_FETCHES = 6;
 
-  protected readonly dayMenuOpen = signal(false);
-  /** Días (ISO desc) con generaciones de video, según el backend. */
+  /** Días (ISO desc) con generaciones de video, según el backend (hasta 60d). */
   protected readonly historyDays = signal<{ key: string; label: string; count: number }[]>([]);
-  /** Días visibles del catálogo. */
-  protected readonly dayWindow = signal(10);
-  protected readonly loadingDays = signal(false);
-  protected readonly visibleDayOptions = computed(() =>
-    this.historyDays().slice(0, this.dayWindow()),
+  /** Días visibles en la sección Studio: máximo 7, los más recientes. */
+  protected readonly visibleHistoryDays = computed(() =>
+    this.historyDays().slice(0, StudioComponent.HISTORY_VISIBLE_DAYS),
   );
-
-  /** Borde inferior (ms) de la última ventana consultada; null = sin consultar. */
-  private oldestDayFetchMs: number | null = null;
+  protected readonly loadingDays = signal(false);
   private daysRequested = false;
-  /** La última ventana no trajo generaciones: no hay días más viejos. */
-  private daysExhausted = false;
-  private autoFillFetches = 0;
   private readonly destroyRef = inject(DestroyRef);
 
-  protected toggleDayMenu(): void {
-    const next = !this.dayMenuOpen();
-    this.dayMenuOpen.set(next);
-    if (next) {
-      this.ensureHistoryDays();
-    }
+  /**
+   * Día expandido del reel; null = auto (el más reciente), '' = ninguno.
+   * Acordeón de un solo día abierto para no mostrar una lista
+   * interminable de videos en la columna.
+   */
+  protected readonly openDay = signal<string | null>(null);
+
+  protected isDayOpen(key: string, firstKey: string | null): boolean {
+    const open = this.openDay();
+    const effective = open === null ? firstKey : open === '' ? null : open;
+    return effective === key;
   }
 
-  /** Scroll del panel al fondo: revela días cargados y pagina el backend. */
-  protected onDayPanelScroll(event: Event): void {
-    const el = event.target as HTMLElement;
-    if (el.scrollTop + el.clientHeight < el.scrollHeight - 24) {
-      return;
-    }
-    this.revealMoreHistoryDays();
+  protected toggleDayGroup(key: string, firstKey: string | null): void {
+    this.openDay.set(this.isDayOpen(key, firstKey) ? '' : key);
   }
 
   /** Elige un día del historial (null = volver al reel en vivo). */
   protected pickDay(key: string | null): void {
-    this.dayMenuOpen.set(false);
+    this.openDay.set(null);
     if (!key) {
       this.clearSession();
       return;
@@ -907,65 +898,15 @@ export class StudioComponent {
     this.eventsStore.loadSession(key);
   }
 
-  /** Cierra el dropdown si el click cae fuera del selector. */
-  protected onDocClick(event: MouseEvent): void {
-    if (!this.dayMenuOpen()) {
-      return;
-    }
-    const target = event.target as HTMLElement | null;
-    if (target?.closest?.('.reel-day-select')) {
-      return;
-    }
-    this.dayMenuOpen.set(false);
-  }
-
-  /** Consulta (una sola vez) los días con generaciones recientes. */
+  /** Consulta (una sola vez) los días con generaciones (ventana de 60 días). */
   private ensureHistoryDays(): void {
     if (this.daysRequested || !isPlatformBrowser(this.platformId)) {
       return;
     }
     this.daysRequested = true;
-    this.fetchHistoryDays(Date.now());
-  }
-
-  private revealMoreHistoryDays(): void {
-    if (this.loadingDays()) {
-      return;
-    }
-    if (this.dayWindow() < this.historyDays().length) {
-      this.dayWindow.update((w) => w + 10);
-      return;
-    }
-    if (this.daysExhausted || this.oldestDayFetchMs === null) {
-      return;
-    }
-    this.fetchHistoryDays(this.oldestDayFetchMs - 1);
-  }
-
-  /** Con pocos días el panel no hace scroll: pide la ventana anterior
-      automáticamente hasta llegar a 10 días (o agotar la historia). */
-  private maybeAutoFillDays(): void {
-    if (this.daysExhausted || this.loadingDays()) {
-      return;
-    }
-    if (this.historyDays().length >= 10) {
-      return;
-    }
-    if (this.autoFillFetches >= StudioComponent.MAX_AUTOFILL_FETCHES) {
-      return;
-    }
-    if (this.oldestDayFetchMs === null) {
-      return;
-    }
-    this.autoFillFetches++;
-    this.fetchHistoryDays(this.oldestDayFetchMs - 1);
-  }
-
-  /** Consulta la ventana [to - 60d, to] y mezcla los días al catálogo. */
-  private fetchHistoryDays(toMs: number): void {
     this.loadingDays.set(true);
+    const toMs = Date.now();
     const fromMs = toMs - StudioComponent.HISTORY_WINDOW_MS;
-    this.oldestDayFetchMs = fromMs;
     this.agencyService
       .taskHistory({
         from: new Date(fromMs).toISOString(),
@@ -976,42 +917,22 @@ export class StudioComponent {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         finalize(() => this.loadingDays.set(false)),
-        catchError(() => {
-          this.daysExhausted = true;
-          return EMPTY;
-        }),
+        catchError(() => EMPTY),
       )
       .subscribe((logs) => {
-        // finalize corre recién en complete: bajar el flag acá para que el
-        // auto-relleno pueda encadenar la ventana siguiente.
-        this.loadingDays.set(false);
-        const rows = logs ?? [];
-        if (rows.length === 0) {
-          this.daysExhausted = true;
-          return;
-        }
         const counts = new Map<string, number>();
-        for (const log of rows) {
+        for (const log of logs ?? []) {
           if (!log.task_id || log.task_id === '<no-task>') {
             continue;
           }
           const key = this.dayKey(new Date(log.created_at).getTime());
           counts.set(key, (counts.get(key) ?? 0) + 1);
         }
-        if (counts.size === 0) {
-          this.daysExhausted = true;
-          return;
-        }
-        const merged = new Map(this.historyDays().map((d) => [d.key, d.count]));
-        for (const [key, count] of counts) {
-          merged.set(key, (merged.get(key) ?? 0) + count);
-        }
         this.historyDays.set(
-          [...merged.entries()]
+          [...counts.entries()]
             .sort((a, b) => (a[0] < b[0] ? 1 : -1))
             .map(([key, count]) => ({ key, count, label: this.dayLabel(key) })),
         );
-        this.maybeAutoFillDays();
       });
   }
 
@@ -1060,6 +981,9 @@ export class StudioComponent {
     },
   );
 
+  /** Clave del grupo más reciente (día auto-expandido del acordeón). */
+  protected readonly firstGroupKey = computed(() => this.reelGroups()[0]?.key ?? null);
+
   /** Etiqueta de la sesión activa ("Hoy", "Ayer" o fecha corta). */
   protected readonly sessionLabel = computed(() => {
     const session = this.sessionDate();
@@ -1090,6 +1014,7 @@ export class StudioComponent {
 
   /** Sale del modo sesión: el reel vuelve a mostrar todos los días. */
   protected clearSession(): void {
+    this.openDay.set(null);
     this.eventsStore.clearSession();
   }
 
@@ -1181,6 +1106,8 @@ export class StudioComponent {
     this.loadAssets();
     this.loadIngredients();
     this.restoreCols();
+    // Chips de fecha del reel: catálogo de días con actividad (60d, visible 7).
+    this.ensureHistoryDays();
   }
 
   // ─── Columnas redimensionables (gutters entre columnas) ──────────
@@ -2098,10 +2025,6 @@ export class StudioComponent {
       return;
     }
     if (event.key === 'Escape') {
-      if (this.dayMenuOpen()) {
-        this.dayMenuOpen.set(false);
-        return;
-      }
       if (this.mentionMenuOpen()) {
         this.closeMentionMenu();
         return;
