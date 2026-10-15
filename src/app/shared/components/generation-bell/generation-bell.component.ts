@@ -6,6 +6,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 
@@ -34,6 +35,7 @@ import { StudioTake } from '@modules/studio/interfaces';
     Tooltip,
     ServerUrlPipe,
     CountUpDirective,
+    DecimalPipe,
     TranslatePipe,
   ],
   templateUrl: './generation-bell.component.html',

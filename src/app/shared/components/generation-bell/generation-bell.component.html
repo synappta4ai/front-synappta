@@ -63,7 +63,7 @@
           <span class="pop-title-row">
             <span class="pop-model">{{ take.modelDisplayName }}</span>
             <p-tag
-              [value]="take.progress + '%'"
+              [value]="(take.progress | number: '1.0-0') + '%'"
               [severity]="severity(take.status)"
               styleClass="text-xs"
             />

@@ -92,6 +92,7 @@
                 "
                 (click)="selectProject(project)"
                 (keydown.enter)="selectProject(project)"
+                (keydown.space)="$event.preventDefault(); selectProject(project)"
                 tabindex="0"
                 role="button"
                 [attr.aria-label]="'PROJECTS.OPEN_ARIA' | translate: { name: project.name }"
@@ -119,6 +120,7 @@
                     severity="secondary"
                     text
                     size="small"
+                    [ariaLabel]="'PROJECTS.OPEN' | translate"
                     [pTooltip]="'PROJECTS.OPEN' | translate"
                     showDelay="400"
                     tooltipPosition="left"
@@ -128,6 +130,7 @@
                     severity="danger"
                     text
                     size="small"
+                    [ariaLabel]="'PROJECTS.DELETE' | translate"
                     [pTooltip]="'PROJECTS.DELETE' | translate"
                     showDelay="400"
                     tooltipPosition="left"
@@ -154,6 +157,7 @@
                   severity="secondary"
                   text
                   (onClick)="closeDetail()"
+                  [ariaLabel]="'PROJECTS.BACK' | translate"
                   [pTooltip]="'PROJECTS.BACK' | translate"
                   showDelay="400"
                   tooltipPosition="bottom"
@@ -229,7 +233,10 @@
                                 [src]="url | serverUrl"
                                 [alt]="log.piece_code || log.model_name"
                                 class="aspect-video w-full object-cover"
+                                width="640"
+                                height="360"
                                 loading="lazy"
+                                decoding="async"
                               />
                             }
                           }
@@ -238,7 +245,7 @@
                               {{ log.piece_code || log.model_name }}
                             </span>
                             <span class="shrink-0 text-xs text-ink-muted-on-dark">
-                              {{ logDate(log) }}
+                              {{ log.created_at | date: 'dd MMM' }}
                             </span>
                           </div>
                           @if (log.status === 'succeeded' || log.status === 'failed') {
@@ -260,9 +267,16 @@
                                       : 'PROJECTS.RATING_GOOD'
                                     ) | translate
                                   "
+                                  [attr.aria-label]="
+                                    (log.rating_good
+                                      ? 'PROJECTS.RATING_GOOD_REMOVE'
+                                      : 'PROJECTS.RATING_GOOD'
+                                    ) | translate
+                                  "
+                                  [attr.aria-pressed]="log.rating_good"
                                   (click)="rateLog(log, 'good')"
                                 >
-                                  <i class="md md-check"></i>
+                                  <ui-icon name="md-check" />
                                 </button>
                                 <button
                                   type="button"
@@ -274,9 +288,16 @@
                                       : 'PROJECTS.RATING_FINAL'
                                     ) | translate
                                   "
+                                  [attr.aria-label]="
+                                    (log.rating_final
+                                      ? 'PROJECTS.RATING_FINAL_REMOVE'
+                                      : 'PROJECTS.RATING_FINAL'
+                                    ) | translate
+                                  "
+                                  [attr.aria-pressed]="log.rating_final"
                                   (click)="rateLog(log, 'final')"
                                 >
-                                  <i class="md md-check md-double"></i>
+                                  <ui-icon name="md-check md-double" />
                                 </button>
                                 @if (log.rating_good || log.rating_final) {
                                   <button
@@ -373,7 +394,10 @@
                                       [src]="file.thumbnail_url || file.url | serverUrl"
                                       [alt]="file.filename"
                                       class="h-full w-full object-cover"
+                                      width="480"
+                                      height="480"
                                       loading="lazy"
+                                      decoding="async"
                                       (error)="markThumbBroken(file.id)"
                                     />
                                   } @else {
@@ -447,6 +471,8 @@
         <input
           pInputText
           id="project-name"
+          name="project-name"
+          autocomplete="off"
           [ngModel]="newProject().name"
           (ngModelChange)="newProject().name = $event"
           [placeholder]="'PROJECTS.NAME_PLACEHOLDER' | translate"
@@ -461,6 +487,8 @@
         <input
           pInputText
           id="project-venue"
+          name="project-venue"
+          autocomplete="off"
           [ngModel]="newProject().venue"
           (ngModelChange)="newProject().venue = $event"
           [placeholder]="'PROJECTS.OPTIONAL' | translate"
@@ -474,6 +502,7 @@
         <textarea
           pTextarea
           id="project-desc"
+          name="project-description"
           rows="3"
           [ngModel]="newProject().description"
           (ngModelChange)="newProject().description = $event"

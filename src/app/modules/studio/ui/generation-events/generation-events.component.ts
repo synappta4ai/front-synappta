@@ -1,3 +1,4 @@
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
@@ -24,6 +25,8 @@ type Filter = 'all' | 'active' | 'done';
     ServerUrlPipe,
     SlidePillDirective,
     TiltDirective,
+    DatePipe,
+    DecimalPipe,
     TranslatePipe,
   ],
   templateUrl: './generation-events.component.html',
@@ -95,9 +98,5 @@ export class GenerationEventsComponent {
       cancelled: this.translate.instant('STUDIO.STATUS_CANCELLED'),
     };
     return labels[status];
-  }
-
-  protected time(ts: number): string {
-    return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
 }

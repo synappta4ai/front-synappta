@@ -5,3 +5,4 @@ export * from './page-container/page-container.component';
 export * from './theme-panel/theme-panel.component';
 export * from './validation-errors/validator-errors.component';
 export * from './asset-picker-dialog/asset-picker-dialog.component';
+export * from './ui-icon/ui-icon.component';

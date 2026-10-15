@@ -22,6 +22,7 @@ import { AiModel, StatusOutput } from '@modules/agency/interfaces';
 import { FileAsset } from '@modules/library/interfaces';
 import { LibraryService } from '@modules/library/services';
 import { ServerUrlPipe } from '@pipes/server-url.pipe';
+import { UiIcon } from '@shared/components/ui-icon/ui-icon.component';
 
 import { POSE_SHEET_PIECE_CODE, POSE_SHEET_VARIANTS, PoseSheetVariant } from '../../interfaces';
 import { PoseSheetAnchor, ToolsService } from '../../services';
@@ -36,7 +37,7 @@ const REF_MIME_TYPES: readonly string[] = ['image/png', 'image/jpeg'];
  */
 @Component({
   selector: 'app-pose-sheet',
-  imports: [FormsModule, TranslatePipe, Button, Message, Select, Tag, ServerUrlPipe],
+  imports: [FormsModule, TranslatePipe, Button, Message, Select, Tag, ServerUrlPipe, UiIcon],
   templateUrl: './pose-sheet.component.html',
   styleUrl: './pose-sheet.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

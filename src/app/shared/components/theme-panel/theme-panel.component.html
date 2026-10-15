@@ -18,7 +18,10 @@
         <img
           [src]="userAvatarUrl()"
           [alt]="currentUser()?.name ?? ('SHARED.THEME_PANEL.USER_FALLBACK' | translate)"
+          width="96"
+          height="96"
           loading="lazy"
+          decoding="async"
           (error)="onAvatarLoadError()"
         />
       </div>
@@ -121,7 +124,15 @@
     <div class="profile-head">
       <div class="profile-avatar-wrap">
         <div class="user-avatar profile-avatar">
-          <img [src]="userAvatarUrl()" [alt]="user.name" (error)="onAvatarLoadError()" />
+          <img
+            [src]="userAvatarUrl()"
+            [alt]="user.name"
+            width="96"
+            height="96"
+            loading="lazy"
+            decoding="async"
+            (error)="onAvatarLoadError()"
+          />
         </div>
         @if (avatarUploading()) {
           <div class="avatar-overlay avatar-overlay--busy">

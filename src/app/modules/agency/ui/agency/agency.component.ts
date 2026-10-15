@@ -51,6 +51,7 @@ import {
 import { EventsService } from '@modules/events/services';
 import { Event as Project, Piece } from '@modules/events/interfaces';
 import { PageContainerComponent, ValidatorErrors } from '@shared/components/index';
+import { UiIcon } from '@shared/components/ui-icon/ui-icon.component';
 import { AssetEditDialogComponent } from '@shared/components/asset-edit-dialog/asset-edit-dialog';
 import { AutogrowDirective } from '@shared/components/autogrow/autogrow.directive';
 import { UserSessionStore } from '@core/store/user.session';
@@ -347,6 +348,7 @@ function parseAgentEvent(rawEvent: string): { name: string; data: Record<string,
     ReactiveFormsModule,
     PageContainerComponent,
     ValidatorErrors,
+    UiIcon,
     Tooltip,
     Button,
     Card,

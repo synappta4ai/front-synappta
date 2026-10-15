@@ -676,6 +676,8 @@
       "SEARCH_ARIA": "Search generations",
       "SEARCH_PLACEHOLDER": "Search model, project, piece…",
       "PROJECT_ALL": "All projects",
+      "DAY_ALL": "All",
+      "DAY_FILTER_ARIA": "Filter generations by day",
       "COST_TITLE": "Accumulated cost of the listed generations",
       "CREDITS": "credits",
       "LOADING": "Loading generations…",
@@ -1053,6 +1055,7 @@
     "VIEW_NAMED": "View {{name}}",
     "VIEW_LIBRARY_COUNT": "View the {{count}} resources in the library",
     "PROMPT_PLACEHOLDER": "ADD YOUR PROMPT — use @ to reference resources",
+    "PROMPT_ARIA": "Generation prompt, use @ to reference resources",
     "MENTION_TITLE": "Library: elements, resources and ingredients",
     "MENTION_EMPTY": "No matches in the library",
     "MENTION_HINT": "↑↓ navigate · Enter select · Esc close",
@@ -1176,7 +1179,8 @@
       "VIEWER_FAILED": "Generation failed",
       "VIEWER_QUEUED": "Queued…",
       "VIEWER_GENERATING": "Generating…",
-      "VIEWER_EMPTY": "Choose an event to view it"
+      "VIEWER_EMPTY": "Choose an event to view it",
+      "DISCARD_TAKE": "Discard take"
     }
   },
   "VIDEO": {

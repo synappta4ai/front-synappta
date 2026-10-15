@@ -1,4 +1,4 @@
-import { DatePipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -23,6 +23,8 @@ import { TableModule } from 'primeng/table';
 import { Tag } from 'primeng/tag';
 import { Tooltip } from 'primeng/tooltip';
 
+import { formatBytesValue } from '@pipes/format-bytes.pipe';
+
 import { GpuService } from '../../services/gpu.service';
 import {
   GpuWorker,
@@ -45,6 +47,7 @@ import {
   selector: 'app-gpu-panel',
   imports: [
     DatePipe,
+    DecimalPipe,
     Button,
     Card,
     ConfirmDialog,
@@ -378,15 +381,7 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
   }
 
   protected formatSize(bytes: number): string {
-    if (!Number.isFinite(bytes) || bytes <= 0) return '—';
-    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-    let value = bytes;
-    let unit = 0;
-    while (value >= 1024 && unit < units.length - 1) {
-      value /= 1024;
-      unit += 1;
-    }
-    return `${value.toFixed(value >= 10 || unit === 0 ? 0 : 1)} ${units[unit]}`;
+    return formatBytesValue(bytes);
   }
 
   /** true si esta sesión corre en Windows (ahí va el .exe, no el zip). */

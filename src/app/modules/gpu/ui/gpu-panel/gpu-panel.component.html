@@ -202,7 +202,8 @@
               @if (model.downloaded?.downloading) {
                 <p-progressbar [value]="downloadProgress(model)" />
                 <p class="mt-1 text-xs text-surface-500 dark:text-surface-400">
-                  {{ downloadProgress(model) }}% · {{ formatSize(model.downloaded?.size_bytes ?? 0) }}
+                  {{ downloadProgress(model) | number: '1.0-0' }}% ·
+                  {{ formatSize(model.downloaded?.size_bytes ?? 0) }}
                 </p>
               } @else if ((model.downloaded?.size_bytes ?? 0) > 0) {
                 <span class="text-sm">{{ formatSize(model.downloaded?.size_bytes ?? 0) }}</span>

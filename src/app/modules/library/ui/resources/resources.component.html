@@ -12,7 +12,8 @@
         <p-inputicon styleClass="md md-search" />
         <input
           pInputText
-          type="text"
+          type="search"
+          name="search"
           [attr.aria-label]="'LIBRARY.SEARCH_ARIA' | translate"
           [placeholder]="'LIBRARY.SEARCH_PLACEHOLDER' | translate"
           [ngModel]="searchInput()"
@@ -36,6 +37,7 @@
         "
         tabindex="0"
         (keydown.enter)="fileInput.click()"
+        (keydown.space)="$event.preventDefault(); fileInput.click()"
       >
         <i [class]="uploading() ? 'md md-refresh md-spin' : 'md md-upload'"></i>
         {{
@@ -101,6 +103,7 @@
           [attr.aria-label]="'LIBRARY.VIEW_ARIA' | translate: { name: file.filename }"
           (click)="openViewer(file)"
           (keydown.enter)="openViewer(file)"
+          (keydown.space)="$event.preventDefault(); openViewer(file)"
         >
           <div class="resource-card__thumb">
             @if (file.mime_type?.startsWith('image/') && !brokenThumbs().has(file.id)) {
@@ -108,6 +111,8 @@
                 appImgFade
                 [src]="file.thumbnail_url || file.url | serverUrl"
                 [alt]="file.filename"
+                width="480"
+                height="360"
                 loading="lazy"
                 decoding="async"
                 (error)="markThumbBroken(file.id)"

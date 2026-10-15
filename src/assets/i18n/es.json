@@ -676,6 +676,8 @@
       "SEARCH_ARIA": "Buscar generaciones",
       "SEARCH_PLACEHOLDER": "Buscar modelo, proyecto, pieza…",
       "PROJECT_ALL": "Todos los proyectos",
+      "DAY_ALL": "Todas",
+      "DAY_FILTER_ARIA": "Filtrar generaciones por día",
       "COST_TITLE": "Costo acumulado de las generaciones listadas",
       "CREDITS": "créditos",
       "LOADING": "Cargando generaciones…",
@@ -1053,6 +1055,7 @@
     "VIEW_NAMED": "Ver {{name}}",
     "VIEW_LIBRARY_COUNT": "Ver los {{count}} recursos en la biblioteca",
     "PROMPT_PLACEHOLDER": "AGREGÁ TU PROMPT — usá @ para citar recursos",
+    "PROMPT_ARIA": "Prompt de generación, usá @ para citar recursos",
     "MENTION_TITLE": "Biblioteca: elementos, recursos e ingredientes",
     "MENTION_EMPTY": "Sin coincidencias en la biblioteca",
     "MENTION_HINT": "↑↓ navegar · Enter elegir · Esc cerrar",
@@ -1176,7 +1179,8 @@
       "VIEWER_FAILED": "La generación falló",
       "VIEWER_QUEUED": "En cola…",
       "VIEWER_GENERATING": "Generando…",
-      "VIEWER_EMPTY": "Elegí un evento para verlo"
+      "VIEWER_EMPTY": "Elegí un evento para verlo",
+      "DISCARD_TAKE": "Descartar toma"
     }
   },
   "VIDEO": {

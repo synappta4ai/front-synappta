@@ -42,7 +42,10 @@
             class="hero-media"
             [src]="slide.src"
             [alt]="slide.alt"
+            width="1280"
+            height="720"
             [loading]="i === 0 ? 'eager' : 'lazy'"
+            [attr.fetchpriority]="i === 0 ? 'high' : 'auto'"
             decoding="async"
             draggable="false"
           />

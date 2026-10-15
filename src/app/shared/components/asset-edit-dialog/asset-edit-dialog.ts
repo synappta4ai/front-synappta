@@ -24,6 +24,7 @@ import { Select } from 'primeng/select';
 import { Textarea } from 'primeng/textarea';
 
 import { ServerUrlPipe } from '@pipes/server-url.pipe';
+import { UiIcon } from '@shared/components/ui-icon/ui-icon.component';
 import { EventsService } from '@modules/events/services';
 import {
   CreateIngredientRequest,
@@ -80,6 +81,7 @@ const STATUS_NONE = 'sin_estado';
     Textarea,
     ImgFadeDirective,
     TranslatePipe,
+    UiIcon,
   ],
   providers: [ConfirmationService, ServerUrlPipe],
   templateUrl: './asset-edit-dialog.html',

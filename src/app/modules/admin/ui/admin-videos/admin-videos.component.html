@@ -20,7 +20,8 @@
     <div class="flex items-center gap-2">
       <input
         pInputText
-        type="text"
+        type="search"
+        name="video-filter"
         [attr.aria-label]="'ADMIN.VIDEOS.FILTER_ARIA' | translate"
         [ngModel]="search()"
         (ngModelChange)="search.set($event)"
@@ -70,6 +71,7 @@
               class="relative aspect-video cursor-pointer overflow-hidden bg-scrim"
               (click)="openPlayer(v)"
               (keydown.enter)="openPlayer(v)"
+              (keydown.space)="$event.preventDefault(); openPlayer(v)"
               tabindex="0"
               role="button"
               [attr.aria-label]="

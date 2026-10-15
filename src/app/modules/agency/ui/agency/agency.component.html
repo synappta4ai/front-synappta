@@ -653,6 +653,8 @@
                             <img
                               [src]="ref.url | serverUrl"
                               [alt]="ref.filename"
+                              width="480"
+                              height="360"
                               loading="lazy"
                               decoding="async"
                               class="h-full w-full object-cover"
@@ -686,6 +688,8 @@
                   <img
                     [src]="scene.boardImageUrl"
                     [alt]="'AGENCY.STUDIO.P3_BOARD_ALT' | translate: { title: scene.title }"
+                    width="1280"
+                    height="720"
                     loading="lazy"
                     decoding="async"
                     class="mb-4 w-full cursor-pointer rounded-xl border border-surface-border bg-surface transition hover:border-accent"
@@ -1068,6 +1072,8 @@
                           <img
                             [src]="scene.boardImageUrl"
                             [alt]="'AGENCY.STUDIO.P4_BOARD_ALT' | translate: { title: scene.title }"
+                            width="224"
+                            height="128"
                             loading="lazy"
                             decoding="async"
                             class="block h-16 w-28 rounded-lg object-cover"
@@ -1331,6 +1337,8 @@
                                       [src]="res.url | serverUrl"
                                       [alt]="res.name"
                                       class="h-8 w-8 rounded object-cover"
+                                      width="64"
+                                      height="64"
                                       loading="lazy"
                                       decoding="async"
                                     />
@@ -1608,6 +1616,8 @@
                                           [src]="res.url | serverUrl"
                                           [alt]="res.name"
                                           class="h-8 w-8 rounded object-cover"
+                                          width="64"
+                                          height="64"
                                           loading="lazy"
                                           decoding="async"
                                         />
@@ -1771,9 +1781,7 @@
               <span class="text-xs font-bold text-ink-on-dark">{{
                 'AGENCY.STUDIO.BOARD_VINETAS' | translate
               }}</span>
-              <ul
-                class="m-0 flex list-disc flex-col gap-1 pl-5 text-sm text-ink-muted-on-dark"
-              >
+              <ul class="m-0 flex list-disc flex-col gap-1 pl-5 text-sm text-ink-muted-on-dark">
                 @for (v of board.vinetas; track $index) {
                   <li>
                     @if (v.tipo_toma) {
@@ -1789,8 +1797,7 @@
               @if (board.fotos_faltantes; as faltantes) {
                 @if (faltantes.length) {
                   <small class="text-ink-muted-on-dark">{{
-                    'AGENCY.STUDIO.BOARD_MISSING_PHOTOS'
-                      | translate: { list: faltantes.join(', ') }
+                    'AGENCY.STUDIO.BOARD_MISSING_PHOTOS' | translate: { list: faltantes.join(', ') }
                   }}</small>
                 }
               }
@@ -1819,6 +1826,8 @@
                     <img
                       [src]="ref.url | serverUrl"
                       [alt]="ref.filename"
+                      width="480"
+                      height="360"
                       loading="lazy"
                       decoding="async"
                       class="h-full w-full object-cover"
@@ -1846,6 +1855,8 @@
             <img
               [src]="scene.boardImageUrl"
               [alt]="'AGENCY.STUDIO.BOARD_CURRENT_ALT' | translate"
+              width="1280"
+              height="720"
               loading="lazy"
               decoding="async"
               class="w-full cursor-pointer rounded-xl border border-surface-border transition hover:border-accent"
@@ -1917,6 +1928,8 @@
                 class="reel-thumb"
                 [src]="take.url | serverUrl"
                 [alt]="take.title"
+                width="320"
+                height="180"
                 loading="lazy"
                 decoding="async"
               />
@@ -2140,9 +2153,10 @@
         type="button"
         class="agency-chat-close"
         [title]="'AGENCY.STUDIO.CHAT_CLOSE' | translate"
+        [attr.aria-label]="'AGENCY.STUDIO.CHAT_CLOSE' | translate"
         (click)="toggleChat()"
       >
-        <i class="md md-close"></i>
+        <ui-icon name="md-close" />
       </button>
     </header>
 
@@ -2161,9 +2175,15 @@
         <div class="agency-chat-tool" [class.error]="act.status === 'error'">
           <span class="agency-chat-tool-icon" aria-hidden="true">
             @switch (act.status) {
-              @case ('running') { … }
-              @case ('ok') { ✓ }
-              @case ('error') { ✗ }
+              @case ('running') {
+                …
+              }
+              @case ('ok') {
+                ✓
+              }
+              @case ('error') {
+                ✗
+              }
             }
           </span>
           <span class="agency-chat-tool-name">{{ act.name }}</span>
@@ -2199,7 +2219,7 @@
         icon="md md-send"
         [disabled]="chatBusy() || !chatDraft().trim()"
         (onClick)="sendChat()"
-        [attr.aria-label]="'AGENCY.STUDIO.CHAT_SEND_ARIA' | translate: { agent: agentLabel() }"
+        [ariaLabel]="'AGENCY.STUDIO.CHAT_SEND_ARIA' | translate: { agent: agentLabel() }"
       />
     </form>
   </aside>
