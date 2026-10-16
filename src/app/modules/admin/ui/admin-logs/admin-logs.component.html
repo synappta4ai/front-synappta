@@ -20,7 +20,8 @@
     <div class="flex items-center gap-2">
       <input
         pInputText
-        type="text"
+        type="search"
+        name="task-filter"
         [attr.aria-label]="'ADMIN.LOGS.FILTER_ARIA' | translate"
         [ngModel]="taskIdFilter()"
         (ngModelChange)="taskIdFilter.set($event)"
@@ -198,6 +199,7 @@
                 icon="md md-visibility"
                 size="small"
                 text
+                [ariaLabel]="'ADMIN.LOGS.VIEW_DETAIL' | translate"
                 [pTooltip]="'ADMIN.LOGS.VIEW_DETAIL' | translate"
                 showDelay="400"
                 tooltipPosition="left"
@@ -241,6 +243,7 @@
             icon="md md-chevron_left"
             size="small"
             severity="secondary"
+            [ariaLabel]="'ADMIN.LOGS.PREV_PAGE' | translate"
             [pTooltip]="'ADMIN.LOGS.PREV_PAGE' | translate"
             showDelay="400"
             [disabled]="!hasPrev()"
@@ -250,6 +253,7 @@
             icon="md md-chevron_right"
             size="small"
             severity="secondary"
+            [ariaLabel]="'ADMIN.LOGS.NEXT_PAGE' | translate"
             [pTooltip]="'ADMIN.LOGS.NEXT_PAGE' | translate"
             showDelay="400"
             [disabled]="!hasNext()"

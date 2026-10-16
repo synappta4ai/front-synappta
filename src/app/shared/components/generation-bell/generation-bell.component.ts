@@ -6,6 +6,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 
@@ -22,7 +23,7 @@ import { StudioTake } from '@modules/studio/interfaces';
 /**
  * Navbar notification bell: shows a popover with the events (videos/images)
  * currently being generated and their live percentage. Clicking an item
- * opens the /events page with that take focused.
+ * opens the /studio/events page with that take focused.
  */
 @Component({
   selector: 'app-generation-bell',
@@ -34,6 +35,7 @@ import { StudioTake } from '@modules/studio/interfaces';
     Tooltip,
     ServerUrlPipe,
     CountUpDirective,
+    DecimalPipe,
     TranslatePipe,
   ],
   templateUrl: './generation-bell.component.html',

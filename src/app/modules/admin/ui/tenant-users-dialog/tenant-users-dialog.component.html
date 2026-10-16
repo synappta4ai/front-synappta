@@ -171,33 +171,71 @@
   @if (mode() === 'new') {
     <div class="new-form">
       <div class="field">
-        <label>{{ 'ADMIN.USERS.USERNAME_LABEL' | translate }}</label>
+        <label for="tenant-user-username">{{ 'ADMIN.USERS.USERNAME_LABEL' | translate }}</label>
         <input
           pInputText
+          id="tenant-user-username"
           type="text"
+          name="username"
+          autocomplete="username"
+          spellcheck="false"
           [(ngModel)]="form.username"
           [placeholder]="'ADMIN.USERS.USERNAME_PLACEHOLDER' | translate"
         />
       </div>
       <div class="field">
-        <label>{{ 'ADMIN.USERS.PASSWORD_LABEL' | translate }}</label>
-        <input pInputText type="password" [(ngModel)]="form.password" />
+        <label for="tenant-user-password">{{ 'ADMIN.USERS.PASSWORD_LABEL' | translate }}</label>
+        <input
+          pInputText
+          id="tenant-user-password"
+          type="password"
+          name="password"
+          autocomplete="new-password"
+          [(ngModel)]="form.password"
+        />
       </div>
       <div class="field">
-        <label>{{ 'ADMIN.USERS.NAME_LABEL' | translate }}</label>
-        <input pInputText type="text" [(ngModel)]="form.name" />
+        <label for="tenant-user-name">{{ 'ADMIN.USERS.NAME_LABEL' | translate }}</label>
+        <input
+          pInputText
+          id="tenant-user-name"
+          type="text"
+          name="given-name"
+          autocomplete="given-name"
+          [(ngModel)]="form.name"
+        />
       </div>
       <div class="field">
-        <label>{{ 'ADMIN.USERS.SURNAME_LABEL' | translate }}</label>
-        <input pInputText type="text" [(ngModel)]="form.surname" />
+        <label for="tenant-user-surname">{{ 'ADMIN.USERS.SURNAME_LABEL' | translate }}</label>
+        <input
+          pInputText
+          id="tenant-user-surname"
+          type="text"
+          name="family-name"
+          autocomplete="family-name"
+          [(ngModel)]="form.surname"
+        />
       </div>
       <div class="field">
-        <label>{{ 'ADMIN.USERS.EMAIL_LABEL' | translate }}</label>
-        <input pInputText type="email" [(ngModel)]="form.email" />
+        <label for="tenant-user-email">{{ 'ADMIN.USERS.EMAIL_LABEL' | translate }}</label>
+        <input
+          pInputText
+          id="tenant-user-email"
+          type="email"
+          name="email"
+          autocomplete="email"
+          spellcheck="false"
+          [(ngModel)]="form.email"
+        />
       </div>
       <div class="field">
-        <label>{{ 'ADMIN.USERS.ROLE_LABEL' | translate }}</label>
-        <select class="role-select" [ngModel]="form.role" (ngModelChange)="form.role = $event">
+        <label for="tenant-user-role">{{ 'ADMIN.USERS.ROLE_LABEL' | translate }}</label>
+        <select
+          id="tenant-user-role"
+          class="role-select"
+          [ngModel]="form.role"
+          (ngModelChange)="form.role = $event"
+        >
           @for (role of roleOptions; track role.value) {
             <option [value]="role.value">{{ role.label }}</option>
           }
@@ -219,6 +257,13 @@
           }
         </div>
       </div>
+      <consent-checkboxes
+        [(terms)]="consentTerms"
+        [(privacy)]="consentPrivacy"
+        [submitTick]="consentTick()"
+        idPrefix="tenant-user-consent"
+      />
+      <p class="consent-admin-note">{{ 'CONSENT.ADMIN_NOTE' | translate }}</p>
       <p-button
         [label]="'ADMIN.USERS.CREATE_BUTTON' | translate"
         icon="md md-person_add"
@@ -229,10 +274,12 @@
   } @else {
     <div class="existing-form">
       <div class="field">
-        <label>{{ 'ADMIN.USERS.SEARCH_LABEL' | translate }}</label>
+        <label for="tenant-user-search">{{ 'ADMIN.USERS.SEARCH_LABEL' | translate }}</label>
         <input
           pInputText
-          type="text"
+          id="tenant-user-search"
+          type="search"
+          name="user-search"
           [ngModel]="search()"
           (ngModelChange)="onSearchChange($event)"
           [placeholder]="'ADMIN.USERS.SEARCH_PLACEHOLDER' | translate"

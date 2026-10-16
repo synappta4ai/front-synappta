@@ -1,0 +1,63 @@
+/* Banner de cookies: fijo abajo, compacto, sin bloquear la navegación. */
+
+.cookie-banner {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  left: 16px;
+  z-index: 900;
+  max-width: 44rem;
+  margin-left: auto;
+  padding: 14px 16px;
+  border: 1px solid var(--color-surface-border);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface-2);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+}
+
+.cookie-text,
+.cookie-title {
+  margin: 0 0 10px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--color-ink-on-dark);
+}
+
+.cookie-title {
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.cookie-text a {
+  font-weight: 700;
+  color: var(--color-accent);
+}
+
+.cookie-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.cookie-option {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 8px 0;
+  border-top: 1px solid var(--color-surface-border);
+  font-size: 13px;
+}
+
+.cookie-option label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  cursor: pointer;
+  color: var(--color-ink-on-dark);
+}
+
+.cookie-option label span {
+  color: var(--color-ink-muted-on-dark);
+  font-size: 12.5px;
+}

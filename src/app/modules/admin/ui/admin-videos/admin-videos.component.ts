@@ -16,6 +16,7 @@ import { UserSessionStore } from '@core/store/user.session';
 import { AdminService } from '../../services/admin.service';
 import { GeneratedVideo } from '../../interfaces';
 import { ServerUrlPipe } from '@pipes/server-url.pipe';
+import { formatDurationValue } from '@pipes/format-duration.pipe';
 import { TiltDirective } from '@shared/components/tilt/tilt.directive';
 
 @Component({
@@ -121,10 +122,6 @@ export class AdminVideosComponent {
   }
 
   protected formatDuration(seconds: number): string {
-    if (!seconds || seconds <= 0) return '—';
-    if (seconds < 60) return `${seconds}s`;
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}m ${s}s`;
+    return formatDurationValue(seconds, 's');
   }
 }

@@ -1,0 +1,28 @@
+<p-dialog
+  [visible]="visible()"
+  [modal]="true"
+  [closable]="false"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: 'min(94vw, 30rem)' }"
+  styleClass="consent-gate-dialog"
+>
+  <ng-template #header>
+    <h2 class="consent-gate-title">{{ 'CONSENT.GATE_TITLE' | translate }}</h2>
+  </ng-template>
+  <p class="consent-gate-body">{{ 'CONSENT.GATE_BODY' | translate }}</p>
+  <consent-checkboxes [(terms)]="terms" [(privacy)]="privacy" [submitTick]="submitTick()" />
+  @if (error(); as message) {
+    <p-message severity="error" [text]="message" styleClass="w-full consent-gate-error" />
+  }
+  <ng-template #footer>
+    <p-button
+      [label]="'CONSENT.ACCEPT_BUTTON' | translate"
+      icon="md md-check"
+      [loading]="submitting()"
+      [disabled]="submitting()"
+      (onClick)="accept()"
+      styleClass="w-full"
+    />
+  </ng-template>
+</p-dialog>

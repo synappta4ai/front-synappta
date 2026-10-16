@@ -1,0 +1,23 @@
+<div class="consent-box" role="group" [attr.aria-label]="'CONSENT.GROUP_ARIA' | translate">
+  <div class="consent-row">
+    <p-checkbox [(ngModel)]="terms" [binary]="true" [inputId]="idPrefix() + '-terms'" />
+    <label [for]="idPrefix() + '-terms'">
+      {{ 'CONSENT.TERMS_PREFIX' | translate }}
+      <a [routerLink]="['/legal/terminos']" target="_blank" rel="noopener">{{
+        'CONSENT.TERMS_LINK' | translate
+      }}</a>
+    </label>
+  </div>
+  <div class="consent-row">
+    <p-checkbox [(ngModel)]="privacy" [binary]="true" [inputId]="idPrefix() + '-privacy'" />
+    <label [for]="idPrefix() + '-privacy'">
+      {{ 'CONSENT.PRIVACY_PREFIX' | translate }}
+      <a [routerLink]="['/legal/privacidad']" target="_blank" rel="noopener">{{
+        'CONSENT.PRIVACY_LINK' | translate
+      }}</a>
+    </label>
+  </div>
+  @if (showError()) {
+    <p class="consent-error" role="alert">{{ 'CONSENT.REQUIRED' | translate }}</p>
+  }
+</div>

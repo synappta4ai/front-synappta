@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { catchError, EMPTY, finalize } from 'rxjs';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -23,6 +23,7 @@ import { PageContainerComponent } from '@shared/components/index';
   selector: 'app-events',
   imports: [
     DatePipe,
+    DecimalPipe,
     FormsModule,
     PageContainerComponent,
     Button,

@@ -51,6 +51,7 @@ import {
 import { EventsService } from '@modules/events/services';
 import { Event as Project, Piece } from '@modules/events/interfaces';
 import { PageContainerComponent, ValidatorErrors } from '@shared/components/index';
+import { UiIcon } from '@shared/components/ui-icon/ui-icon.component';
 import { AssetEditDialogComponent } from '@shared/components/asset-edit-dialog/asset-edit-dialog';
 import { AutogrowDirective } from '@shared/components/autogrow/autogrow.directive';
 import { UserSessionStore } from '@core/store/user.session';
@@ -347,6 +348,7 @@ function parseAgentEvent(rawEvent: string): { name: string; data: Record<string,
     ReactiveFormsModule,
     PageContainerComponent,
     ValidatorErrors,
+    UiIcon,
     Tooltip,
     Button,
     Card,
@@ -1257,9 +1259,7 @@ export class AgencyComponent {
         duracion_s: typeof v['duracion_s'] === 'number' ? v['duracion_s'] : undefined,
       })),
       prompt_hoja_storyboard:
-        typeof data['prompt_hoja_storyboard'] === 'string'
-          ? data['prompt_hoja_storyboard']
-          : '',
+        typeof data['prompt_hoja_storyboard'] === 'string' ? data['prompt_hoja_storyboard'] : '',
       fotos_faltantes: Array.isArray(data['fotos_faltantes'])
         ? (data['fotos_faltantes'] as unknown[]).filter(
             (f): f is string => typeof f === 'string' && f.trim() !== '',
@@ -1271,16 +1271,14 @@ export class AgencyComponent {
         if (s.id !== sceneId) return s;
         // Una toma por viñeta; las tomas con imagen ya generada no se
         // reescriben (el dibujo real manda sobre la sugerencia).
-        const shots = this.resizeShots(s, Math.max(artifact.vinetas.length, 1)).map(
-          (sh, i) => {
-            const v = artifact.vinetas[i];
-            if (!v || sh.imageUrl) return sh;
-            const desc = [v.tipo_toma, v.que_se_ve]
-              .filter((p): p is string => !!p && p.trim() !== '')
-              .join(' — ');
-            return desc ? { ...sh, description: desc } : sh;
-          },
-        );
+        const shots = this.resizeShots(s, Math.max(artifact.vinetas.length, 1)).map((sh, i) => {
+          const v = artifact.vinetas[i];
+          if (!v || sh.imageUrl) return sh;
+          const desc = [v.tipo_toma, v.que_se_ve]
+            .filter((p): p is string => !!p && p.trim() !== '')
+            .join(' — ');
+          return desc ? { ...sh, description: desc } : sh;
+        });
         return { ...s, boardArtifact: artifact, shots };
       }),
     );
@@ -1340,10 +1338,8 @@ export class AgencyComponent {
   private applyClipArtifact(sceneId: string, data: Record<string, unknown>): void {
     const notas = data['notas_editor'];
     const artifact: ClipArtifact = {
-      prompt_video:
-        typeof data['prompt_video'] === 'string' ? data['prompt_video'] : '',
-      notas_editor:
-        notas && typeof notas === 'object' ? (notas as Record<string, unknown>) : {},
+      prompt_video: typeof data['prompt_video'] === 'string' ? data['prompt_video'] : '',
+      notas_editor: notas && typeof notas === 'object' ? (notas as Record<string, unknown>) : {},
     };
     this.storyboard.update((scenes) =>
       scenes.map((s) => (s.id === sceneId ? { ...s, clipArtifact: artifact } : s)),
@@ -3238,11 +3234,14 @@ export class AgencyComponent {
     }
   }
 
-  /** Califica una toma del reel ("Buena toma" / "Elegida final"). */
+  /** Califica una toma del reel ("Buena toma" / "Elegida final").
+      Excluyente como en el Studio: solo puede haber una calificación o ninguna. */
   protected rateTake(take: StudioTake, kind: 'good' | 'final'): void {
-    const good = kind === 'good' ? !take.ratingGood : !!take.ratingGood;
-    const final = kind === 'final' ? !take.ratingFinal : !!take.ratingFinal;
-    this.eventsStore.setRating(take.id, good, final);
+    if (kind === 'good') {
+      this.eventsStore.setRating(take.id, !take.ratingGood, false);
+    } else {
+      this.eventsStore.setRating(take.id, false, !take.ratingFinal);
+    }
   }
 
   protected clearRating(take: StudioTake): void {

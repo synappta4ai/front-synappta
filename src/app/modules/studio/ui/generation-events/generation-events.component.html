@@ -60,9 +60,13 @@
           <div
             class="event-card"
             appTilt
+            role="button"
+            tabindex="0"
             [class.selected]="selected() !== null && take.id === selected()!.id"
             [attr.data-id]="take.id"
             (click)="select(take)"
+            (keydown.enter)="select(take)"
+            (keydown.space)="$event.preventDefault(); select(take)"
           >
             @if (take.status === 'succeeded' && take.videoUrl) {
               <video
@@ -95,7 +99,7 @@
                   <div class="progress-fill" [style.--progress]="take.progress / 100 + ''"></div>
                 </div>
                 <div class="card-foot">
-                  <span class="pct">{{ take.progress }}%</span>
+                  <span class="pct">{{ take.progress | number: '1.0-0' }}%</span>
                   <p-button
                     icon="md md-close"
                     [rounded]="true"
@@ -113,12 +117,13 @@
                       · {{ take.duration }}s
                     }
                   </span>
-                  <span class="meta">{{ time(take.createdAt) }}</span>
+                  <span class="meta">{{ take.createdAt | date: 'shortTime' }}</span>
                   <p-button
                     icon="md md-delete"
                     [rounded]="true"
                     [text]="true"
                     severity="secondary"
+                    [ariaLabel]="'STUDIO.EVENTS.DISCARD_TAKE' | translate"
                     (onClick)="discard(take); $event.stopPropagation()"
                   />
                 </div>
@@ -176,4 +181,5 @@
       }
     </div>
   </div>
+  <p-confirmDialog styleClass="custom-confirm-dialog" />
 </div>

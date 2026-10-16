@@ -166,7 +166,7 @@
                     <span class="text-danger">*</span>
                   </label>
                   <p-password
-                    inputId="cred-apikey"
+                    inputId="cred-apikey" autocomplete="new-password"
                     formControlName="api_key"
                     [feedback]="false"
                     [toggleMask]="true"
@@ -185,6 +185,9 @@
                   <input
                     pInputText
                     id="cred-ak"
+                    name="access-key-id"
+                    autocomplete="off"
+                    spellcheck="false"
                     formControlName="access_key_id"
                     [placeholder]="'ADMIN.MODELS.ACCESS_KEY_ID_PLACEHOLDER' | translate"
                     class="w-full"
@@ -198,7 +201,7 @@
                     {{ 'ADMIN.MODELS.SECRET_ACCESS_KEY_LABEL' | translate }}
                   </label>
                   <p-password
-                    inputId="cred-sk"
+                    inputId="cred-sk" autocomplete="new-password"
                     formControlName="secret_access_key"
                     [feedback]="false"
                     [toggleMask]="true"
@@ -216,6 +219,9 @@
                   <input
                     pInputText
                     id="cred-hf-keyid"
+                    name="access-key-id"
+                    autocomplete="off"
+                    spellcheck="false"
                     formControlName="access_key_id"
                     [placeholder]="'ADMIN.MODELS.KEY_ID_PLACEHOLDER' | translate"
                     class="w-full"
@@ -227,7 +233,7 @@
                     <span class="text-danger">*</span>
                   </label>
                   <p-password
-                    inputId="cred-hf-secret"
+                    inputId="cred-hf-secret" autocomplete="new-password"
                     formControlName="secret_access_key"
                     [feedback]="false"
                     [toggleMask]="true"
@@ -246,7 +252,7 @@
                     <span class="text-danger">*</span>
                   </label>
                   <p-password
-                    inputId="cred-apikey"
+                    inputId="cred-apikey" autocomplete="new-password"
                     formControlName="api_key"
                     [feedback]="false"
                     [toggleMask]="true"
@@ -269,6 +275,9 @@
                   <input
                     pInputText
                     id="cred-agent-model"
+                    name="agent-model"
+                    autocomplete="off"
+                    spellcheck="false"
                     formControlName="model"
                     placeholder="anthropic/claude-sonnet-4.5"
                     class="w-full"
@@ -284,6 +293,11 @@
                   <input
                     pInputText
                     id="cred-agent-baseurl"
+                    type="url"
+                    name="base-url"
+                    autocomplete="url"
+                    spellcheck="false"
+                    inputmode="url"
                     formControlName="base_url"
                     placeholder="https://openrouter.ai/api/v1"
                     class="w-full"
@@ -337,6 +351,7 @@
                         severity="danger"
                         size="small"
                         text
+                        [ariaLabel]="'ADMIN.MODELS.DELETE' | translate"
                         [pTooltip]="'ADMIN.MODELS.DELETE' | translate"
                         showDelay="400"
                         tooltipPosition="left"

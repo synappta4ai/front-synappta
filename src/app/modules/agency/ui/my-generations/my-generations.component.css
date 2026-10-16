@@ -6,6 +6,13 @@
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
+  /* Controles siempre a la vista: la página no hace scroll de controles. */
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  padding: 10px 0;
+  background: color-mix(in srgb, var(--color-surface) 88%, transparent);
+  backdrop-filter: blur(10px);
 }
 
 .gen-toolbar__side {
@@ -178,21 +185,105 @@
   }
 }
 
-/* ── Grupos por fecha ──────────────────────────────────────────────────── */
+/* ── Filtro por fecha (chips de día, 7 días) ──────────────────────────── */
+
+.day-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.day-filter .day-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 30px;
+  padding: 3px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  color: var(--color-ink-muted-on-dark);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-surface-border);
+  border-radius: 999px;
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.day-filter .day-chip .md {
+  font-size: 14px;
+}
+
+.day-filter .day-chip:hover {
+  color: var(--color-ink-on-dark);
+  border-color: var(--color-ink-muted-on-dark);
+}
+
+.day-filter .day-chip.active {
+  color: var(--color-on-accent);
+  background: var(--color-accent);
+  border-color: transparent;
+}
+
+.day-filter .day-chip .count {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 14%, transparent);
+}
+
+.day-filter .day-chip:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* ── Grupos por fecha (acordeón) ────────────────────────────────────────── */
 
 .date-group-head {
   display: flex;
   align-items: center;
   gap: 8px;
+  width: 100%;
   margin: 26px 0 14px;
+  padding: 2px;
+  font-family: inherit;
   font-size: 14px;
   font-weight: 700;
   color: var(--color-ink-on-dark);
   letter-spacing: 0.01em;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  border-radius: 8px;
 }
 
 .date-group-head:first-of-type {
   margin-top: 6px;
+}
+
+.date-group-head:hover {
+  color: var(--color-accent);
+}
+
+.date-group-head:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.date-group-chevron {
+  font-size: 18px;
+  color: var(--color-ink-muted-on-dark);
+  transition: transform 0.15s ease;
+}
+
+.date-group-chevron.open {
+  transform: rotate(180deg);
 }
 
 .date-group-count {

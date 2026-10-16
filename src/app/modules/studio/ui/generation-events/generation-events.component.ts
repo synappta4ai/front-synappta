@@ -1,3 +1,4 @@
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
@@ -5,6 +6,8 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { Button } from 'primeng/button';
 import { Tag } from 'primeng/tag';
+import { ConfirmDialog } from 'primeng/confirmdialog';
+import { ConfirmationService } from 'primeng/api';
 
 import { ServerUrlPipe } from '@pipes/server-url.pipe';
 import { GenerationEventsStore } from '@core/store/generation.events';
@@ -21,11 +24,15 @@ type Filter = 'all' | 'active' | 'done';
     RouterLink,
     Button,
     Tag,
+    ConfirmDialog,
     ServerUrlPipe,
     SlidePillDirective,
     TiltDirective,
+    DatePipe,
+    DecimalPipe,
     TranslatePipe,
   ],
+  providers: [ConfirmationService],
   templateUrl: './generation-events.component.html',
   styleUrl: './generation-events.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -33,6 +40,7 @@ type Filter = 'all' | 'active' | 'done';
 export class GenerationEventsComponent {
   protected readonly store = inject(GenerationEventsStore);
   private readonly translate = inject(TranslateService);
+  private readonly confirmationService = inject(ConfirmationService);
 
   protected readonly filter = signal<Filter>('all');
   protected readonly selectedId = signal<string | null>(null);
@@ -66,7 +74,20 @@ export class GenerationEventsComponent {
   }
 
   protected discard(take: StudioTake): void {
-    this.store.remove(take.id);
+    this.confirmationService.confirm({
+      message: this.translate.instant('STUDIO.EVENTS.CONFIRM_DISCARD_MESSAGE'),
+      header: this.translate.instant('STUDIO.EVENTS.CONFIRM_DISCARD_TITLE'),
+      icon: 'md md-warning',
+      acceptButtonProps: {
+        label: this.translate.instant('STUDIO.EVENTS.CONFIRM_DISCARD_ACCEPT'),
+        severity: 'danger',
+      },
+      rejectButtonProps: {
+        label: this.translate.instant('STUDIO.EVENTS.CONFIRM_DISCARD_REJECT'),
+        severity: 'secondary',
+      },
+      accept: () => this.store.remove(take.id),
+    });
   }
 
   protected severity(
@@ -95,9 +116,5 @@ export class GenerationEventsComponent {
       cancelled: this.translate.instant('STUDIO.STATUS_CANCELLED'),
     };
     return labels[status];
-  }
-
-  protected time(ts: number): string {
-    return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
 }

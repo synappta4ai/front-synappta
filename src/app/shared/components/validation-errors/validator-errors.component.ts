@@ -40,6 +40,8 @@ interface CustomError {
  * />
  * ```
  */
+let nextValidatorErrorsId = 0;
+
 @Component({
   selector: 'validator-errors',
   imports: [TranslatePipe],
@@ -63,6 +65,7 @@ export class ValidatorErrors {
   readonly customErrorMessage = input<string>('');
   /** Aumentar tras `markAllAsTouched()` en el submit para re-evaluar el estado del control */
   readonly submitTick = input(0);
+  readonly errorId = `validator-errors-${nextValidatorErrorsId++}`;
 
   readonly errorsDefault = [
     'required',

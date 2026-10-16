@@ -84,6 +84,8 @@
           pInputText
           id="tenant-name"
           type="text"
+          name="organization"
+          autocomplete="organization"
           formControlName="name"
           [placeholder]="'ADMIN.TENANTS.NAME_PLACEHOLDER' | translate"
           class="w-full"
@@ -98,6 +100,9 @@
           pInputText
           id="tenant-slug"
           type="text"
+          name="slug"
+          autocomplete="off"
+          spellcheck="false"
           formControlName="slug"
           [placeholder]="'ADMIN.TENANTS.SLUG_PLACEHOLDER' | translate"
           class="w-full"

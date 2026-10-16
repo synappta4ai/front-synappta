@@ -1,106 +1,110 @@
-@if (errorsDefault.includes(errorKey() ?? '')) {
-  @switch (errorKey()) {
-    @case ('required') {
-      @if (!omitErrors().includes(errorKey() ?? '')) {
+@if (errorKey()) {
+  <div role="alert" [attr.id]="errorId">
+    @if (errorsDefault.includes(errorKey() ?? '')) {
+      @switch (errorKey()) {
+        @case ('required') {
+          @if (!omitErrors().includes(errorKey() ?? '')) {
+            <span class="text-danger text-sm block">
+              {{
+                required()
+                  ? (required() | translate: errorParams())
+                  : ('ALERTS.REQUIRED' | translate: errorParams())
+              }}
+            </span>
+          }
+        }
+        @case ('maxlength') {
+          @if (!omitErrors().includes(errorKey() ?? '')) {
+            <span class="text-danger text-sm block">
+              {{
+                maxlength()
+                  ? (maxlength() | translate: errorParams())
+                  : ('ALERTS.MAJOR' | translate: errorParams())
+              }}
+            </span>
+          }
+        }
+        @case ('minlength') {
+          @if (!omitErrors().includes(errorKey() ?? '')) {
+            <span class="text-danger text-sm block">
+              {{
+                minlength()
+                  ? (minlength() | translate: errorParams())
+                  : ('ALERTS.MINOR' | translate: errorParams())
+              }}
+            </span>
+          }
+        }
+        @case ('pattern') {
+          @if (!omitErrors().includes(errorKey() ?? '')) {
+            <span class="text-danger text-sm block">
+              {{
+                pattern()
+                  ? (pattern() | translate: errorParams())
+                  : ('ALERTS.PATTERN' | translate: errorParams())
+              }}
+            </span>
+          }
+        }
+        @case ('email') {
+          @if (!omitErrors().includes(errorKey() ?? '')) {
+            <span class="text-danger text-sm block">
+              {{
+                email()
+                  ? (email() | translate: errorParams())
+                  : ('ALERTS.INVALID_EMAIL' | translate: errorParams())
+              }}
+            </span>
+          }
+        }
+        @case ('min') {
+          @if (!omitErrors().includes(errorKey() ?? '')) {
+            <span class="text-danger text-sm block">
+              {{
+                min()
+                  ? (min() | translate: errorParams())
+                  : ('ALERTS.MIN_VALUE' | translate: errorParams())
+              }}
+            </span>
+          }
+        }
+        @case ('max') {
+          @if (!omitErrors().includes(errorKey() ?? '')) {
+            <span class="text-danger text-sm block">
+              {{
+                max()
+                  ? (max() | translate: errorParams())
+                  : ('ALERTS.MAX_VALUE' | translate: errorParams())
+              }}
+            </span>
+          }
+        }
+        @case ('unique') {
+          @if (!omitErrors().includes(errorKey() ?? '')) {
+            <span class="text-danger text-sm block">
+              {{
+                unique()
+                  ? (unique() | translate: errorParams())
+                  : ('ALERTS.UNIQUE' | translate: errorParams())
+              }}
+            </span>
+          }
+        }
+      }
+    } @else {
+      @if (errorKey() === customErrorType() && !omitErrors().includes(errorKey() ?? '')) {
         <span class="text-danger text-sm block">
-          {{
-            required()
-              ? (required() | translate: errorParams())
-              : ('ALERTS.REQUIRED' | translate: errorParams())
-          }}
+          {{ customErrorMessage() | translate: errorParams() }}
         </span>
       }
-    }
-    @case ('maxlength') {
-      @if (!omitErrors().includes(errorKey() ?? '')) {
-        <span class="text-danger text-sm block">
-          {{
-            maxlength()
-              ? (maxlength() | translate: errorParams())
-              : ('ALERTS.MAJOR' | translate: errorParams())
-          }}
-        </span>
-      }
-    }
-    @case ('minlength') {
-      @if (!omitErrors().includes(errorKey() ?? '')) {
-        <span class="text-danger text-sm block">
-          {{
-            minlength()
-              ? (minlength() | translate: errorParams())
-              : ('ALERTS.MINOR' | translate: errorParams())
-          }}
-        </span>
-      }
-    }
-    @case ('pattern') {
-      @if (!omitErrors().includes(errorKey() ?? '')) {
-        <span class="text-danger text-sm block">
-          {{
-            pattern()
-              ? (pattern() | translate: errorParams())
-              : ('ALERTS.PATTERN' | translate: errorParams())
-          }}
-        </span>
-      }
-    }
-    @case ('email') {
-      @if (!omitErrors().includes(errorKey() ?? '')) {
-        <span class="text-danger text-sm block">
-          {{
-            email()
-              ? (email() | translate: errorParams())
-              : ('ALERTS.INVALID_EMAIL' | translate: errorParams())
-          }}
-        </span>
-      }
-    }
-    @case ('min') {
-      @if (!omitErrors().includes(errorKey() ?? '')) {
-        <span class="text-danger text-sm block">
-          {{
-            min()
-              ? (min() | translate: errorParams())
-              : ('ALERTS.MIN_VALUE' | translate: errorParams())
-          }}
-        </span>
-      }
-    }
-    @case ('max') {
-      @if (!omitErrors().includes(errorKey() ?? '')) {
-        <span class="text-danger text-sm block">
-          {{
-            max()
-              ? (max() | translate: errorParams())
-              : ('ALERTS.MAX_VALUE' | translate: errorParams())
-          }}
-        </span>
-      }
-    }
-    @case ('unique') {
-      @if (!omitErrors().includes(errorKey() ?? '')) {
-        <span class="text-danger text-sm block">
-          {{
-            unique()
-              ? (unique() | translate: errorParams())
-              : ('ALERTS.UNIQUE' | translate: errorParams())
-          }}
-        </span>
-      }
-    }
-  }
-} @else {
-  @if (errorKey() === customErrorType() && !omitErrors().includes(errorKey() ?? '')) {
-    <span class="text-danger text-sm block">
-      {{ customErrorMessage() | translate: errorParams() }}
-    </span>
-  }
 
-  @for (error of customErrors(); track error.type) {
-    @if (errorKey() === error.type) {
-      <span class="text-danger text-sm block">
-        {{ error.message | translate: errorParams() }}
-      </span>
+      @for (error of customErrors(); track error.type) {
+        @if (errorKey() === error.type) {
+          <span class="text-danger text-sm block">
+            {{ error.message | translate: errorParams() }}
+          </span>
+        }
+      }
     }
-  }
+  </div>
 }

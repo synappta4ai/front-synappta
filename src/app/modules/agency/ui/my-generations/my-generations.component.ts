@@ -1,4 +1,4 @@
-import { DatePipe, DecimalPipe } from '@angular/common';
+import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -15,10 +15,12 @@ import { Select } from 'primeng/select';
 import { Tag } from 'primeng/tag';
 
 import { ServerUrlPipe } from '@pipes/server-url.pipe';
+import { formatDurationValue } from '@pipes/format-duration.pipe';
 import { GenerateRequest, GenerationLog } from '@modules/agency/interfaces';
 import { AgencyService } from '@modules/agency/services';
 import { ImgFadeDirective } from '@shared/components/img-fade/img-fade.directive';
 import { PageContainerComponent } from '@shared/components/page-container/page-container.component';
+import { UiIcon } from '@shared/components/ui-icon/ui-icon.component';
 import { downloadRemoteFile } from '@utils/download-url';
 
 type TypeFilter = 'all' | 'video' | 'image';
@@ -53,10 +55,12 @@ interface DateGroup {
     Message,
     Select,
     Tag,
+    CurrencyPipe,
     DatePipe,
     DecimalPipe,
     ImgFadeDirective,
     TranslatePipe,
+    UiIcon,
   ],
   providers: [ServerUrlPipe],
   templateUrl: './my-generations.component.html',
@@ -81,6 +85,13 @@ export class MyGenerationsComponent {
   protected readonly typeFilter = signal<TypeFilter>('all');
   protected readonly search = signal('');
   protected readonly projectId = signal<string | null>(null);
+  /** Día seleccionado del filtro (epoch medianoche local); null = todos. */
+  protected readonly selectedDay = signal<number | null>(null);
+  /**
+   * Grupo expandido; null = auto (el más reciente), -1 = ninguno.
+   * Acordeón de un solo día abierto para no mostrar una lista interminable.
+   */
+  protected readonly openGroup = signal<number | null>(null);
 
   protected readonly typeOptions: TypeOption[] = [
     { value: 'all', labelKey: 'AGENCY.HISTORY.FILTER_ALL', icon: 'md md-grid_view' },
@@ -157,7 +168,23 @@ export class MyGenerationsComponent {
     }
     this.typeFilter.set(value);
     this.cursorTo = null;
+    this.selectedDay.set(null);
+    this.openGroup.set(null);
     this.load(true);
+  }
+
+  protected toggleDayFilter(ts: number | null): void {
+    this.selectedDay.set(this.selectedDay() === ts ? null : ts);
+  }
+
+  protected isGroupOpen(ts: number, firstTs: number | null): boolean {
+    const open = this.openGroup();
+    const effective = open === null ? firstTs : open === -1 ? null : open;
+    return effective === ts;
+  }
+
+  protected toggleGroup(ts: number, firstTs: number | null): void {
+    this.openGroup.set(this.isGroupOpen(ts, firstTs) ? -1 : ts);
   }
 
   protected onSearch(value: string): void {
@@ -167,6 +194,8 @@ export class MyGenerationsComponent {
   protected clearFilters(): void {
     this.search.set('');
     this.projectId.set(null);
+    this.selectedDay.set(null);
+    this.openGroup.set(null);
     this.changeType('all');
   }
 
@@ -184,7 +213,19 @@ export class MyGenerationsComponent {
   protected readonly filtered = computed(() => {
     const query = this.search().trim().toLowerCase();
     const projectId = this.projectId();
+    const day = this.selectedDay();
     return this.logs().filter((log) => {
+      if (day !== null) {
+        const ts = new Date(log.created_at).getTime();
+        if (Number.isNaN(ts)) {
+          return false;
+        }
+        const start = new Date(ts);
+        const dayTs = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime();
+        if (dayTs !== day) {
+          return false;
+        }
+      }
       if (projectId && log.event_id !== projectId) {
         return false;
       }
@@ -220,6 +261,9 @@ export class MyGenerationsComponent {
     }
     return [...groups.values()].sort((a, b) => b.ts - a.ts);
   });
+
+  /** Epoch del grupo más reciente (día auto-expandido del acordeón). */
+  protected readonly firstGroupTs = computed(() => this.dateGroups()[0]?.ts ?? null);
 
   protected readonly projectOptions = computed<{ label: string; value: string }[]>(() => {
     const noName = this.translate.instant('AGENCY.HISTORY.NO_NAME');
@@ -400,7 +444,7 @@ export class MyGenerationsComponent {
     if (!seconds || seconds <= 0) {
       return '';
     }
-    return `${seconds.toFixed(1)}s`;
+    return formatDurationValue(seconds, 's');
   }
 
   protected promptOf(log: GenerationLog): string {

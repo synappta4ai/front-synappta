@@ -19,6 +19,10 @@ export const routes: Routes = [
         canActivate: [notAuthGuard],
         loadChildren: () => import('@modules/auth/auth.routes').then((m) => m.authRoutes),
       },
+      {
+        path: 'legal',
+        loadChildren: () => import('@modules/legal/legal.routes').then((m) => m.legalRoutes),
+      },
     ],
   },
   {

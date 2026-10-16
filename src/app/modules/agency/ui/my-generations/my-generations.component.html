@@ -29,7 +29,8 @@
         <p-inputicon styleClass="md md-search" />
         <input
           pInputText
-          type="text"
+          type="search"
+          name="search"
           [attr.aria-label]="'AGENCY.HISTORY.SEARCH_ARIA' | translate"
           [placeholder]="'AGENCY.HISTORY.SEARCH_PLACEHOLDER' | translate"
           [ngModel]="search()"
@@ -52,8 +53,7 @@
 
       <span class="total-chip" [title]="'AGENCY.HISTORY.COST_TITLE' | translate">
         <i class="md md-bolt"></i>
-        <strong>{{ totalCost() | number: '1.2-4' }}</strong>
-        <small>USD</small>
+        <strong>{{ totalCost() | currency: 'USD' : 'symbol' : '1.2-4' }}</strong>
         @if (totalCredits() > 0) {
           <em
             >· {{ totalCredits() | number: '1.0-0' }} {{ 'AGENCY.HISTORY.CREDITS' | translate }}</em
@@ -62,6 +62,40 @@
       </span>
     </div>
   </div>
+
+  <!-- Filtro por fecha: al tocar un día se ven solo sus videos -->
+  @if (!loading() && dateGroups().length > 0) {
+    <div
+      class="day-filter"
+      role="group"
+      [attr.aria-label]="'AGENCY.HISTORY.DAY_FILTER_ARIA' | translate"
+    >
+      <button
+        type="button"
+        class="day-chip"
+        [class.active]="selectedDay() === null"
+        [attr.aria-pressed]="selectedDay() === null"
+        (click)="toggleDayFilter(null)"
+      >
+        {{ 'AGENCY.HISTORY.DAY_ALL' | translate }}
+        <span class="count">{{ filtered().length }}</span>
+      </button>
+      @for (group of dateGroups(); track group.ts) {
+        <button
+          type="button"
+          class="day-chip"
+          [class.active]="selectedDay() === group.ts"
+          [attr.aria-pressed]="selectedDay() === group.ts"
+          [title]="group.label"
+          (click)="toggleDayFilter(group.ts)"
+        >
+          <i class="md md-calendar_month" aria-hidden="true"></i>
+          {{ group.label }}
+          <span class="count">{{ group.logs.length }}</span>
+        </button>
+      }
+    </div>
+  }
 
   <!-- Estados -->
   @if (loading()) {
@@ -81,195 +115,234 @@
     </div>
   } @else {
     @for (group of dateGroups(); track group.ts) {
-      <h3 class="date-group-head">
-        {{ group.label }}
+      <button
+        type="button"
+        class="date-group-head"
+        (click)="toggleGroup(group.ts, firstGroupTs())"
+        [attr.aria-expanded]="isGroupOpen(group.ts, firstGroupTs())"
+      >
+        <span>{{ group.label }}</span>
         <span class="date-group-count">{{ group.logs.length }}</span>
-      </h3>
-      <div class="gen-grid">
-        @for (log of group.logs; track log.task_id; let i = $index) {
-          <article
-            class="gen-card"
-            animate.enter="anim-item"
-            [style.animation-delay.ms]="i < 8 ? i * 35 : 280"
-          >
-            <!-- Preview + click abre detalle -->
-            <div
-              class="gen-card__media"
-              role="button"
-              tabindex="0"
-              [attr.aria-label]="'AGENCY.HISTORY.VIEW_DETAIL_ARIA' | translate"
-              (click)="open(log)"
-              (keydown.enter)="open(log)"
+        <i
+          class="md md-expand_more date-group-chevron"
+          [class.open]="isGroupOpen(group.ts, firstGroupTs())"
+          aria-hidden="true"
+        ></i>
+      </button>
+      @if (isGroupOpen(group.ts, firstGroupTs())) {
+        <div class="gen-grid">
+          @for (log of group.logs; track log.task_id; let i = $index) {
+            <article
+              class="gen-card"
+              animate.enter="anim-item"
+              [style.animation-delay.ms]="i < 8 ? i * 35 : 280"
             >
-              @if (hasOutput(log)) {
-                @if (isVideo(log)) {
-                  <video
-                    [src]="absoluteUrl(outputUrl(log))"
-                    preload="metadata"
-                    tabindex="-1"
-                    aria-hidden="true"
-                  ></video>
-                  <span class="gen-card__play" aria-hidden="true"
-                    ><i class="md md-play_arrow"></i
-                  ></span>
-                } @else {
-                  <img
-                    appImgFade
-                    [src]="absoluteUrl(outputUrl(log))"
-                    [alt]="
-                      log.piece_name || log.model_name || ('AGENCY.HISTORY.GENERATION' | translate)
-                    "
-                    loading="lazy"
-                    decoding="async"
-                  />
-                }
-                <span class="gen-card__duration" [title]="'AGENCY.HISTORY.DURATION' | translate">{{
-                  duration(log.video_duration)
-                }}</span>
-              } @else {
-                <div class="gen-card__placeholder">
-                  @if (log.status === 'failed') {
-                    <i class="md md-error"></i>
-                    <span>{{ 'AGENCY.HISTORY.NO_PREVIEW' | translate }}</span>
+              <!-- Preview + click abre detalle -->
+              <div
+                class="gen-card__media"
+                role="button"
+                tabindex="0"
+                [attr.aria-label]="'AGENCY.HISTORY.VIEW_DETAIL_ARIA' | translate"
+                (click)="open(log)"
+                (keydown.enter)="open(log)"
+                (keydown.space)="$event.preventDefault(); open(log)"
+              >
+                @if (hasOutput(log)) {
+                  @if (isVideo(log)) {
+                    <video
+                      [src]="absoluteUrl(outputUrl(log))"
+                      preload="metadata"
+                      tabindex="-1"
+                      aria-hidden="true"
+                    ></video>
+                    <span class="gen-card__play" aria-hidden="true"
+                      ><i class="md md-play_arrow"></i
+                    ></span>
                   } @else {
-                    <i class="md md-hourglass_empty" [class.md-spin]="log.status === 'running'"></i>
-                    <span>{{ 'AGENCY.HISTORY.PROCESSING' | translate }}</span>
+                    <img
+                      appImgFade
+                      [src]="absoluteUrl(outputUrl(log))"
+                      [alt]="
+                        log.piece_name ||
+                        log.model_name ||
+                        ('AGENCY.HISTORY.GENERATION' | translate)
+                      "
+                      width="640"
+                      height="360"
+                      loading="lazy"
+                      decoding="async"
+                    />
                   }
-                </div>
-              }
-              <p-tag
-                [value]="statusKey(log.status) | translate"
-                [severity]="severity(log.status)"
-                styleClass="gen-card__status"
-              />
-            </div>
-
-            <!-- Metadata -->
-            <div class="gen-card__body">
-              <div class="gen-card__head">
-                <p class="gen-card__model" [title]="log.model_name">
-                  {{ log.model_name || ('AGENCY.HISTORY.MODEL_UNKNOWN' | translate) }}
-                </p>
-                @if (log.video_fps && log.video_fps > 0) {
-                  <span class="chip-mini">{{ log.video_fps }} fps</span>
+                  <span
+                    class="gen-card__duration"
+                    [title]="'AGENCY.HISTORY.DURATION' | translate"
+                    >{{ duration(log.video_duration) }}</span
+                  >
+                } @else {
+                  <div class="gen-card__placeholder">
+                    @if (log.status === 'failed') {
+                      <i class="md md-error"></i>
+                      <span>{{ 'AGENCY.HISTORY.NO_PREVIEW' | translate }}</span>
+                    } @else {
+                      <i
+                        class="md md-hourglass_empty"
+                        [class.md-spin]="log.status === 'running'"
+                      ></i>
+                      <span>{{ 'AGENCY.HISTORY.PROCESSING' | translate }}</span>
+                    }
+                  </div>
                 }
+                <p-tag
+                  [value]="statusKey(log.status) | translate"
+                  [severity]="severity(log.status)"
+                  styleClass="gen-card__status"
+                />
               </div>
 
-              <p class="gen-card__project" [title]="log.event_name || ''">
-                <i class="md md-work"></i>
-                <span class="truncate">{{
-                  log.event_name || ('AGENCY.HISTORY.NO_PROJECT' | translate)
-                }}</span>
-                @if (log.piece_code || log.piece_name) {
-                  <span class="gen-card__piece" [title]="log.piece_name || log.piece_code"
-                    >· {{ log.piece_code || log.piece_name }}</span
-                  >
-                }
-              </p>
-
-              <dl class="gen-card__meta">
-                <div>
-                  <dt [title]="'AGENCY.HISTORY.USER' | translate">
-                    <i class="md md-person"></i>{{ 'AGENCY.HISTORY.USER' | translate }}
-                  </dt>
-                  <dd>{{ log.user_display_name || ('AGENCY.HISTORY.YOU' | translate) }}</dd>
+              <!-- Metadata -->
+              <div class="gen-card__body">
+                <div class="gen-card__head">
+                  <p class="gen-card__model" [title]="log.model_name">
+                    {{ log.model_name || ('AGENCY.HISTORY.MODEL_UNKNOWN' | translate) }}
+                  </p>
+                  @if (log.video_fps && log.video_fps > 0) {
+                    <span class="chip-mini">{{ log.video_fps }} fps</span>
+                  }
                 </div>
-                <div>
-                  <dt [title]="'AGENCY.HISTORY.DATE' | translate">
-                    <i class="md md-schedule"></i>{{ 'AGENCY.HISTORY.DATE' | translate }}
-                  </dt>
-                  <dd>{{ log.created_at | date: 'short' }}</dd>
-                </div>
-                <div>
-                  <dt [title]="'AGENCY.HISTORY.COST' | translate">
-                    <i class="md md-bolt"></i>{{ 'AGENCY.HISTORY.COST' | translate }}
-                  </dt>
-                  <dd>{{ cost(log) | number: '1.2-4' }} USD</dd>
-                </div>
-                <div>
-                  <dt [title]="'AGENCY.HISTORY.RESOLUTION' | translate">
-                    <i class="md md-desktop_windows"></i
-                    >{{ 'AGENCY.HISTORY.RESOLUTION' | translate }}
-                  </dt>
-                  <dd>
-                    {{ log.video_resolution || '—' }}
-                    @if (log.video_duration && log.video_duration > 0) {
-                      · {{ duration(log.video_duration) }}
-                    }
-                  </dd>
-                </div>
-              </dl>
 
-              <!-- Acciones -->
-              <div class="gen-card__actions">
-                <button
-                  type="button"
-                  class="log-reuse"
-                  [title]="'AGENCY.HISTORY.REUSE_TITLE' | translate"
-                  [disabled]="!log.request"
-                  (click)="reuse(log)"
-                >
-                  <i class="md md-refresh"></i
-                  ><span>{{ 'AGENCY.HISTORY.REUSE_SHORT' | translate }}</span>
-                </button>
+                <p class="gen-card__project" [title]="log.event_name || ''">
+                  <i class="md md-work"></i>
+                  <span class="truncate">{{
+                    log.event_name || ('AGENCY.HISTORY.NO_PROJECT' | translate)
+                  }}</span>
+                  @if (log.piece_code || log.piece_name) {
+                    <span class="gen-card__piece" [title]="log.piece_name || log.piece_code"
+                      >· {{ log.piece_code || log.piece_name }}</span
+                    >
+                  }
+                </p>
 
-                <p-button
-                  icon="md md-download"
-                  [label]="'AGENCY.HISTORY.DOWNLOAD' | translate"
-                  size="small"
-                  severity="secondary"
-                  [outlined]="true"
-                  [disabled]="!hasOutput(log)"
-                  (onClick)="downloadOutput(log, absoluteUrl(outputUrl(log)))"
-                />
+                <dl class="gen-card__meta">
+                  <div>
+                    <dt [title]="'AGENCY.HISTORY.USER' | translate">
+                      <i class="md md-person"></i>{{ 'AGENCY.HISTORY.USER' | translate }}
+                    </dt>
+                    <dd>{{ log.user_display_name || ('AGENCY.HISTORY.YOU' | translate) }}</dd>
+                  </div>
+                  <div>
+                    <dt [title]="'AGENCY.HISTORY.DATE' | translate">
+                      <i class="md md-schedule"></i>{{ 'AGENCY.HISTORY.DATE' | translate }}
+                    </dt>
+                    <dd>{{ log.created_at | date: 'short' }}</dd>
+                  </div>
+                  <div>
+                    <dt [title]="'AGENCY.HISTORY.COST' | translate">
+                      <i class="md md-bolt"></i>{{ 'AGENCY.HISTORY.COST' | translate }}
+                    </dt>
+                    <dd>{{ cost(log) | currency: 'USD' : 'symbol' : '1.2-4' }}</dd>
+                  </div>
+                  <div>
+                    <dt [title]="'AGENCY.HISTORY.RESOLUTION' | translate">
+                      <i class="md md-desktop_windows"></i
+                      >{{ 'AGENCY.HISTORY.RESOLUTION' | translate }}
+                    </dt>
+                    <dd>
+                      {{ log.video_resolution || '—' }}
+                      @if (log.video_duration && log.video_duration > 0) {
+                        · {{ duration(log.video_duration) }}
+                      }
+                    </dd>
+                  </div>
+                </dl>
 
-                <div
-                  class="log-rating-group"
-                  role="group"
-                  [attr.aria-label]="'AGENCY.HISTORY.RATING_GROUP_ARIA' | translate"
-                >
+                <!-- Acciones -->
+                <div class="gen-card__actions">
                   <button
                     type="button"
-                    class="log-rating-check"
-                    [class.active]="log.rating_good"
-                    [title]="
-                      (log.rating_good ? 'AGENCY.HISTORY.RATE_UNLIKE' : 'AGENCY.HISTORY.RATE_LIKE')
-                        | translate
-                    "
-                    (click)="rate(log, 'good')"
+                    class="log-reuse"
+                    [title]="'AGENCY.HISTORY.REUSE_TITLE' | translate"
+                    [disabled]="!log.request"
+                    (click)="reuse(log)"
                   >
-                    <i class="md md-check"></i>
+                    <i class="md md-refresh"></i
+                    ><span>{{ 'AGENCY.HISTORY.REUSE_SHORT' | translate }}</span>
                   </button>
-                  <button
-                    type="button"
-                    class="log-rating-check"
-                    [class.active]="log.rating_final"
-                    [title]="
-                      (log.rating_final
-                        ? 'AGENCY.HISTORY.RATE_UNFINAL'
-                        : 'AGENCY.HISTORY.RATE_FINAL'
-                      ) | translate
-                    "
-                    (click)="rate(log, 'final')"
+
+                  <p-button
+                    icon="md md-download"
+                    [label]="'AGENCY.HISTORY.DOWNLOAD' | translate"
+                    size="small"
+                    severity="secondary"
+                    [outlined]="true"
+                    [disabled]="!hasOutput(log)"
+                    (onClick)="downloadOutput(log, absoluteUrl(outputUrl(log)))"
+                  />
+
+                  <div
+                    class="log-rating-group"
+                    role="group"
+                    [attr.aria-label]="'AGENCY.HISTORY.RATING_GROUP_ARIA' | translate"
                   >
-                    <i class="md md-check md-double"></i>
-                  </button>
-                  @if (log.rating_good || log.rating_final) {
                     <button
                       type="button"
-                      class="log-rating-clear"
-                      [title]="'AGENCY.HISTORY.RATE_CLEAR' | translate"
-                      (click)="clearRating(log)"
+                      class="log-rating-check"
+                      [class.active]="log.rating_good"
+                      [title]="
+                        (log.rating_good
+                          ? 'AGENCY.HISTORY.RATE_UNLIKE'
+                          : 'AGENCY.HISTORY.RATE_LIKE'
+                        ) | translate
+                      "
+                      [attr.aria-label]="
+                        (log.rating_good
+                          ? 'AGENCY.HISTORY.RATE_UNLIKE'
+                          : 'AGENCY.HISTORY.RATE_LIKE'
+                        ) | translate
+                      "
+                      [attr.aria-pressed]="log.rating_good"
+                      (click)="rate(log, 'good')"
                     >
-                      <i class="md md-close"></i>
+                      <ui-icon name="md-check" />
                     </button>
-                  }
+                    <button
+                      type="button"
+                      class="log-rating-check"
+                      [class.active]="log.rating_final"
+                      [title]="
+                        (log.rating_final
+                          ? 'AGENCY.HISTORY.RATE_UNFINAL'
+                          : 'AGENCY.HISTORY.RATE_FINAL'
+                        ) | translate
+                      "
+                      [attr.aria-label]="
+                        (log.rating_final
+                          ? 'AGENCY.HISTORY.RATE_UNFINAL'
+                          : 'AGENCY.HISTORY.RATE_FINAL'
+                        ) | translate
+                      "
+                      [attr.aria-pressed]="log.rating_final"
+                      (click)="rate(log, 'final')"
+                    >
+                      <ui-icon name="md-check md-double" />
+                    </button>
+                    @if (log.rating_good || log.rating_final) {
+                      <button
+                        type="button"
+                        class="log-rating-clear"
+                        [title]="'AGENCY.HISTORY.RATE_CLEAR' | translate"
+                        [attr.aria-label]="'AGENCY.HISTORY.RATE_CLEAR' | translate"
+                        (click)="clearRating(log)"
+                      >
+                        <ui-icon name="md-close" />
+                      </button>
+                    }
+                  </div>
                 </div>
               </div>
-            </div>
-          </article>
-        }
-      </div>
+            </article>
+          }
+        </div>
+      }
     }
 
     <!-- Paginado incremental -->
@@ -339,6 +412,9 @@
             [src]="absoluteUrl(outputUrl(log))"
             [alt]="log.piece_name || log.model_name || ('AGENCY.HISTORY.GENERATION' | translate)"
             class="viewer-preview"
+            width="1280"
+            height="720"
+            loading="lazy"
             decoding="async"
           />
         }

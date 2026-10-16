@@ -1,13 +1,14 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { RouterLink, RouterOutlet } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 
 import { CONTACT_EMAIL, CONTACT_SOCIALS } from '@constants/contact.constants';
 import { LanguageService, AppLang } from '@services/language.service';
+import { CookieBannerComponent } from '@shared/components/cookie-banner/cookie-banner.component';
 
 @Component({
   selector: 'layout',
-  imports: [RouterOutlet, TranslatePipe],
+  imports: [RouterLink, RouterOutlet, CookieBannerComponent, TranslatePipe],
   templateUrl: './public-layout.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

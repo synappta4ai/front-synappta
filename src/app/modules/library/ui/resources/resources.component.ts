@@ -19,6 +19,7 @@ import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
 
 import { ServerUrlPipe } from '@pipes/server-url.pipe';
+import { formatBytesValue } from '@pipes/format-bytes.pipe';
 import {
   AssetSectionKey,
   assetMatchesSection,
@@ -283,13 +284,7 @@ export class ResourcesComponent {
   }
 
   protected formatSize(size: number | null): string {
-    if (!size || size <= 0) {
-      return '—';
-    }
-    if (size < 1024 * 1024) {
-      return `${Math.round(size / 1024)} KB`;
-    }
-    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+    return formatBytesValue(size);
   }
 
   protected ingTypeLabel(type: string | null): string {

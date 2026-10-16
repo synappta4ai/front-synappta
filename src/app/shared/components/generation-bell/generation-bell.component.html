@@ -39,7 +39,7 @@
 
   <div class="pop-list">
     @for (take of visible(); track take.id) {
-      <a routerLink="/events" class="pop-item" [class.pop-unread]="store.isUnread(take.id)">
+      <a routerLink="/studio/events" class="pop-item" [class.pop-unread]="store.isUnread(take.id)">
         @if (take.status === 'succeeded' && take.videoUrl) {
           <video
             class="pop-thumb"
@@ -63,7 +63,7 @@
           <span class="pop-title-row">
             <span class="pop-model">{{ take.modelDisplayName }}</span>
             <p-tag
-              [value]="take.progress + '%'"
+              [value]="(take.progress | number: '1.0-0') + '%'"
               [severity]="severity(take.status)"
               styleClass="text-xs"
             />
@@ -82,7 +82,7 @@
     }
   </div>
 
-  <a routerLink="/events" class="pop-footer">
+  <a routerLink="/studio/events" class="pop-footer">
     {{ 'SHARED.BELL.VIEW_ALL' | translate }} <i class="md md-arrow_forward"></i>
   </a>
 </p-popover>

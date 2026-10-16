@@ -86,6 +86,7 @@
       } @else {
         <textarea
           id="pose-prompt"
+          name="pose-prompt"
           rows="8"
           [ngModel]="editedPrompt()"
           (ngModelChange)="editedPrompt.set($event)"
@@ -102,6 +103,8 @@
       <input
         id="pose-name"
         type="text"
+        name="character-name"
+        autocomplete="off"
         [ngModel]="characterName()"
         (ngModelChange)="characterName.set($event)"
         [placeholder]="'TOOLS.CHARACTER_NAME_PLACEHOLDER' | translate"
@@ -112,6 +115,7 @@
       </label>
       <textarea
         id="pose-desc"
+        name="character-description"
         rows="2"
         [ngModel]="characterDesc()"
         (ngModelChange)="characterDesc.set($event)"
@@ -131,6 +135,7 @@
         accept="image/png,image/jpeg"
         multiple
         class="hidden"
+        [attr.aria-label]="'TOOLS.REFS_LABEL' | translate"
         (change)="onRefsPicked($event)"
         [attr.aria-label]="'TOOLS.REFS_ADD' | translate"
       />
@@ -152,7 +157,10 @@
               <img
                 [src]="ref.thumbnail_url ?? ref.url | serverUrl"
                 [alt]="ref.filename"
+                width="320"
+                height="320"
                 loading="lazy"
+                decoding="async"
               />
               <button
                 type="button"
@@ -160,7 +168,7 @@
                 (click)="removeRef(ref.id)"
                 [attr.aria-label]="ref.filename"
               >
-                <i class="md md-close"></i>
+                <ui-icon name="md-close" />
               </button>
             </div>
           }
@@ -200,7 +208,14 @@
       } @else {
         <div class="pose-canvas">
           @for (output of result(); track output.url) {
-            <img [src]="output.url | serverUrl" alt="{{ 'TOOLS.RESULT_TITLE' | translate }}" />
+            <img
+              [src]="output.url | serverUrl"
+              alt="{{ 'TOOLS.RESULT_TITLE' | translate }}"
+              width="768"
+              height="768"
+              loading="lazy"
+              decoding="async"
+            />
           }
         </div>
         <div class="mt-2 flex flex-wrap items-center gap-3">

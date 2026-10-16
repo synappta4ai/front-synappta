@@ -79,6 +79,8 @@
                 appImgFade
                 [src]="absoluteUrl(item.url)"
                 [alt]="item.filename ?? ''"
+                width="1024"
+                height="768"
                 loading="lazy"
                 decoding="async"
                 [style.transform]="
@@ -118,7 +120,10 @@
               <img
                 [src]="absoluteUrl(item.thumbnail_url || item.url)"
                 [alt]="item.filename ?? ''"
+                width="320"
+                height="320"
                 loading="lazy"
+                decoding="async"
                 (error)="markThumbBroken(item.file_id)"
               />
             } @else {
@@ -222,6 +227,8 @@
         <input
           pInputText
           id="el-name"
+          name="element-name"
+          autocomplete="off"
           [ngModel]="editName()"
           (ngModelChange)="editName.set($event)"
           [placeholder]="'LIBRARY.EDIT.NAME_PLACEHOLDER' | translate"
@@ -237,6 +244,8 @@
           <input
             pInputText
             id="el-version"
+            name="element-version"
+            autocomplete="off"
             [ngModel]="editVersion()"
             (ngModelChange)="editVersion.set($event)"
             placeholder="v1"
@@ -278,6 +287,9 @@
             <input
               pInputText
               id="el-id"
+              name="element-id"
+              autocomplete="off"
+              spellcheck="false"
               [ngModel]="editElementId()"
               class="pl-7!"
               (ngModelChange)="editElementId.set($event)"
@@ -291,7 +303,7 @@
             [attr.aria-label]="'LIBRARY.EDIT.REGEN_ID' | translate"
             (click)="resetElementId()"
           >
-            <i class="md md-rotate_left"></i>
+            <ui-icon name="md-rotate_left" />
           </button>
         </div>
         <span class="field__hint">
@@ -309,6 +321,7 @@
           [ngModel]="editDescription()"
           (ngModelChange)="editDescription.set($event)"
           id="el-desc"
+          name="element-description"
           [rows]="3"
           [placeholder]="'LIBRARY.EDIT.DESCRIPTION_PLACEHOLDER' | translate"
           class="w-full"
@@ -323,6 +336,8 @@
           <div class="prop-row">
             <input
               pInputText
+              name="prop-key"
+              autocomplete="off"
               [placeholder]="'LIBRARY.EDIT.PROP_KEY' | translate"
               [ngModel]="row.key"
               (ngModelChange)="updatePropKey($index, $event)"
@@ -330,6 +345,8 @@
             />
             <input
               pInputText
+              name="prop-value"
+              autocomplete="off"
               [placeholder]="'LIBRARY.EDIT.PROP_VALUE' | translate"
               [ngModel]="row.value"
               (ngModelChange)="updatePropValue($index, $event)"
@@ -342,7 +359,7 @@
               [attr.aria-label]="'LIBRARY.EDIT.PROP_REMOVE_ARIA' | translate: { n: $index + 1 }"
               (click)="removeProp($index)"
             >
-              <i class="md md-close"></i>
+              <ui-icon name="md-close" />
             </button>
           </div>
         }

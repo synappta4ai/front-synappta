@@ -27,6 +27,8 @@
             pInputText
             id="new-event"
             type="text"
+            name="event-name"
+            autocomplete="off"
             [(ngModel)]="newName"
             placeholder="{{ 'EVENTS.NAME_PLACEHOLDER' | translate }}"
             class="w-full"
@@ -127,7 +129,7 @@
               </span>
             </td>
             <td class="text-center">
-              <p-tag [value]="(event.program_count ?? 0).toString()" severity="info" />
+              <p-tag [value]="((event.program_count ?? 0) | number: '1.0-0') ?? ''" severity="info" />
             </td>
             <td>
               <span class="text-sm text-ink-muted-on-dark">

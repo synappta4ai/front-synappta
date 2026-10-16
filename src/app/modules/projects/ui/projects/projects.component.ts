@@ -1,3 +1,4 @@
+import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -29,6 +30,7 @@ import type { AssetSectionKey, FileAsset } from '@modules/library/interfaces';
 type ResourceFilter = 'all' | AssetSectionKey | 'other';
 import { ServerUrlPipe } from '@core/pipes/server-url.pipe';
 import { AssetPickerDialogComponent, PageContainerComponent } from '@shared/components/index';
+import { UiIcon } from '@shared/components/ui-icon/ui-icon.component';
 
 const SECTION_LABEL_KEYS: Record<AssetSectionKey, string> = {
   character: 'PROJECTS.FILTERS.CHARACTER',
@@ -40,6 +42,7 @@ const SECTION_LABEL_KEYS: Record<AssetSectionKey, string> = {
   selector: 'app-projects',
   imports: [
     FormsModule,
+    DatePipe,
     TranslatePipe,
     PageContainerComponent,
     Button,
@@ -59,6 +62,7 @@ const SECTION_LABEL_KEYS: Record<AssetSectionKey, string> = {
     AssetPickerDialogComponent,
     ServerUrlPipe,
     Tooltip,
+    UiIcon,
   ],
   providers: [ConfirmationService],
   templateUrl: './projects.component.html',
@@ -354,12 +358,6 @@ export class ProjectsComponent {
     this.brokenThumbs.update((set) => new Set(set).add(id));
   }
 
-  protected logDate(log: GenerationLog): string {
-    return new Date(log.created_at).toLocaleDateString(undefined, {
-      day: '2-digit',
-      month: 'short',
-    });
-  }
 
   /** Alterna la calificación de una generación (una o ninguna, como el
       studio): parche optimista + persistencia en el backend. */

@@ -1,0 +1,14 @@
+<article class="legal-doc" animate.enter="anim-page">
+  <a routerLink="/" class="legal-back"
+    ><i class="md md-arrow_back" aria-hidden="true"></i> {{ 'LEGAL.BACK_HOME' | translate }}</a
+  >
+  <h1>{{ titleKey() | translate }}</h1>
+  <p class="legal-updated">{{ updatedKey() | translate }}</p>
+  @for (section of sections(); track section.titleKey) {
+    <section>
+      <h2>{{ section.titleKey | translate }}</h2>
+      <p>{{ section.bodyKey | translate }}</p>
+    </section>
+  }
+  <p class="legal-note">{{ 'LEGAL.DRAFT_NOTE' | translate }}</p>
+</article>

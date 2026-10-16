@@ -47,12 +47,12 @@
             | translate
         "
         showDelay="400"
+        [attr.aria-label]="
+          (selectedProject() ? 'STUDIO.PROJECT_ASSIGNED_TITLE' : 'STUDIO.PROJECT_ASSIGN_TITLE')
+            | translate
+        "
       >
-        <i
-          class="md"
-          [class.md-check_circle]="selectedProject()"
-          [class.md-work]="!selectedProject()"
-        ></i>
+        <ui-icon [name]="selectedProject() ? 'md-check_circle' : 'md-work'" />
       </button>
     </div>
 
@@ -103,6 +103,8 @@
                         class="slot-img"
                         [src]="thumb"
                         [alt]="slot.label | translate"
+                        width="480"
+                        height="480"
                         loading="lazy"
                         decoding="async"
                         (error)="onThumbError($event)"
@@ -117,13 +119,14 @@
                       type="button"
                       class="slot-clear"
                       [title]="'STUDIO.REMOVE_REF' | translate"
+                      [attr.aria-label]="'STUDIO.REMOVE_REF' | translate"
                       [pTooltip]="'STUDIO.REMOVE_REF' | translate"
                       showDelay="400"
                       (click)="
                         $event.preventDefault(); $event.stopPropagation(); clearSlot(slot.key)
                       "
                     >
-                      <i class="md md-close"></i>
+                      <ui-icon name="md-close" />
                     </button>
                   } @else {
                     <i class="md md-add slot-plus mb-3"></i>
@@ -135,6 +138,7 @@
                     type="file"
                     accept="image/png,image/jpeg"
                     hidden
+                    [attr.aria-label]="slot.label | translate"
                     (change)="onSlotPicked($event, slot.key)"
                   />
                 </label>
@@ -163,6 +167,7 @@
                     [class.selected]="selectedAssetIds().has(asset.id)"
                     role="button"
                     tabindex="0"
+                    [attr.aria-pressed]="selectedAssetIds().has(asset.id)"
                     (click)="toggleAsset(asset.id)"
                     (keydown.enter)="toggleAsset(asset.id)"
                     (keydown.space)="$event.preventDefault(); toggleAsset(asset.id)"
@@ -172,6 +177,8 @@
                       appImgFade
                       [src]="asset.thumbnail_url || asset.url | serverUrl"
                       [alt]="asset.filename"
+                      width="480"
+                      height="360"
                       loading="lazy"
                       decoding="async"
                       (error)="onThumbError($event)"
@@ -181,11 +188,12 @@
                       type="button"
                       class="asset-remove"
                       [title]="'STUDIO.REMOVE_FROM_LIST' | translate"
+                      [attr.aria-label]="'STUDIO.REMOVE_FROM_LIST' | translate"
                       [pTooltip]="'STUDIO.REMOVE_FROM_LIST' | translate"
                       showDelay="400"
                       (click)="$event.stopPropagation(); removeAsset(asset.id)"
                     >
-                      <i class="md md-close"></i>
+                      <ui-icon name="md-close" />
                     </button>
                     <button
                       type="button"
@@ -224,6 +232,8 @@
         <textarea
           #promptTextarea
           pTextarea
+          name="prompt"
+          [attr.aria-label]="'STUDIO.PROMPT_ARIA' | translate"
           [ngModel]="prompt()"
           (ngModelChange)="onPromptInput($event)"
           (keydown)="onMentionKeydown($event)"
@@ -253,6 +263,8 @@
                     class="mention-thumb"
                     [src]="assetThumbUrl(asset.id)"
                     [alt]="asset.filename"
+                    width="68"
+                    height="68"
                     loading="lazy"
                     decoding="async"
                   />
@@ -266,6 +278,8 @@
                       class="mention-thumb"
                       [src]="thumb"
                       [alt]="row.label"
+                      width="68"
+                      height="68"
                       loading="lazy"
                       decoding="async"
                     />
@@ -297,6 +311,8 @@
                 class="mention-chip-thumb"
                 [src]="assetThumbUrl(asset.id)"
                 [alt]="asset.filename"
+                width="68"
+                height="68"
                 loading="lazy"
                 decoding="async"
               />
@@ -305,9 +321,10 @@
                 type="button"
                 class="mention-chip-x"
                 [title]="'STUDIO.REMOVE_MENTION' | translate"
+                [attr.aria-label]="'STUDIO.REMOVE_MENTION' | translate"
                 (click)="removeMention(asset)"
               >
-                <i class="md md-close"></i>
+                <ui-icon name="md-close" />
               </button>
             </span>
           }
@@ -321,6 +338,8 @@
                   class="mention-chip-thumb"
                   [src]="thumb"
                   [alt]="mentionLabelOf(ing)"
+                  width="68"
+                  height="68"
                   loading="lazy"
                   decoding="async"
                 />
@@ -343,9 +362,10 @@
                 type="button"
                 class="mention-chip-x"
                 [title]="'STUDIO.REMOVE_MENTION' | translate"
+                [attr.aria-label]="'STUDIO.REMOVE_MENTION' | translate"
                 (click)="removeMention(ing)"
               >
-                <i class="md md-close"></i>
+                <ui-icon name="md-close" />
               </button>
             </span>
           }
@@ -355,6 +375,9 @@
         <input
           type="text"
           class="negative-input"
+          name="negative-prompt"
+          autocomplete="off"
+          [attr.aria-label]="'STUDIO.NEGATIVE_PLACEHOLDER' | translate"
           [placeholder]="'STUDIO.NEGATIVE_PLACEHOLDER' | translate"
           [ngModel]="negativePrompt()"
           (ngModelChange)="negativePrompt.set($event)"
@@ -434,6 +457,7 @@
         <input
           type="range"
           class="duration-range"
+          [attr.aria-label]="'STUDIO.DURATION_LABEL' | translate"
           [min]="durationRange().min"
           [max]="durationRange().max"
           [step]="durationRange().step"
@@ -459,7 +483,7 @@
               (click)="closePreview()"
               [attr.aria-label]="'STUDIO.CLOSE' | translate"
             >
-              <i class="md md-close"></i>
+              <ui-icon name="md-close" />
             </button>
           </div>
           <!-- <p>{{ asset | json }}</p> -->
@@ -469,7 +493,14 @@
             (click)="openFullscreen(asset)"
             [title]="'STUDIO.ENLARGE' | translate: { name: asset.filename }"
           >
-            <img [src]="asset.url || asset.thumbnail_url | serverUrl" [alt]="asset.filename" />
+            <img
+              [src]="asset.url || asset.thumbnail_url | serverUrl"
+              [alt]="asset.filename"
+              width="480"
+              height="360"
+              loading="lazy"
+              decoding="async"
+            />
           </button>
           <small class="asset-pop-hint muted">{{ 'STUDIO.FULLSCREEN_HINT' | translate }}</small>
         </div>
@@ -488,7 +519,13 @@
       [breakpoints]="{ '960px': '95vw' }"
     >
       @if (fullscreenAsset(); as asset) {
-        <div class="asset-fullscreen" (click)="closeFullscreen()">
+        <div
+          class="asset-fullscreen"
+          role="dialog"
+          aria-modal="true"
+          (click)="closeFullscreen()"
+          (keydown.escape)="closeFullscreen()"
+        >
           @let name = asset?.ingredients?.[0]?.name ?? asset.filename;
           <img [src]="asset.url | serverUrl" [alt]="name" (click)="$event.stopPropagation()" />
           <div class="asset-fullscreen-meta">
@@ -566,6 +603,10 @@
         <input
           type="text"
           class="seed-input"
+          name="seed"
+          autocomplete="off"
+          inputmode="numeric"
+          [attr.aria-label]="'STUDIO.SEED_PLACEHOLDER' | translate"
           [placeholder]="'STUDIO.SEED_PLACEHOLDER' | translate"
           [ngModel]="seed()"
           (ngModelChange)="seed.set($event)"
@@ -573,7 +614,11 @@
       </div>
     }
 
-    <span [pTooltip]="'STUDIO.GENERATE_HINT' | translate" showDelay="400" class="grid">
+    <span
+      [pTooltip]="'STUDIO.GENERATE_HINT' | translate"
+      showDelay="400"
+      class="grid generate-wrap"
+    >
       <button
         type="button"
         class="generate-btn"
@@ -638,6 +683,10 @@
                   [src]="take.videoUrl | serverUrl"
                   [alt]="take.prompt"
                   class="viewer-media"
+                  width="1280"
+                  height="720"
+                  loading="lazy"
+                  decoding="async"
                   animate.enter="anim-item"
                 />
               }
@@ -737,9 +786,13 @@
                 [title]="
                   (take.ratingGood ? 'STUDIO.RATING_GOOD_REMOVE' : 'STUDIO.RATING_GOOD') | translate
                 "
+                [attr.aria-label]="
+                  (take.ratingGood ? 'STUDIO.RATING_GOOD_REMOVE' : 'STUDIO.RATING_GOOD') | translate
+                "
+                [attr.aria-pressed]="take.ratingGood"
                 (click)="toggleGood(take)"
               >
-                <i class="md md-check"></i>
+                <ui-icon name="md-check" />
               </button>
               <button
                 type="button"
@@ -749,9 +802,14 @@
                   (take.ratingFinal ? 'STUDIO.RATING_FINAL_REMOVE' : 'STUDIO.RATING_FINAL')
                     | translate
                 "
+                [attr.aria-label]="
+                  (take.ratingFinal ? 'STUDIO.RATING_FINAL_REMOVE' : 'STUDIO.RATING_FINAL')
+                    | translate
+                "
+                [attr.aria-pressed]="take.ratingFinal"
                 (click)="toggleFinal(take)"
               >
-                <i class="md md-check md-double"></i>
+                <ui-icon name="md-check md-double" />
               </button>
               @if (take.ratingGood || take.ratingFinal) {
                 <button
@@ -808,77 +866,38 @@
   <aside class="studio-right">
     <div class="reel-head">
       <span><i class="md md-movie"></i> {{ 'STUDIO.REEL_TITLE' | translate }}</span>
-      @if (sessionLabel()) {
-        <!-- <span class="session-chip" [title]="'Sesión del ' + sessionLabel()">
-          <i class="md md-history"></i>
-          {{ sessionLabel() }}
-          <button
-            type="button"
-            class="session-clear"
-            (click)="clearSession()"
-            aria-label="Volver al reel en vivo"
-          >
-            <i class="md md-close"></i>
-          </button>
-        </span> -->
-      }
       @if (!selectedProject()) {
-        <div class="reel-day-select">
+        <div class="day-chips" role="group" [attr.aria-label]="'STUDIO.DAY_ARIA' | translate">
           <button
             type="button"
-            class="reel-day-trigger"
-            (click)="toggleDayMenu()"
-            [attr.aria-expanded]="dayMenuOpen()"
-            aria-haspopup="listbox"
-            [attr.aria-label]="'STUDIO.DAY_ARIA' | translate"
-            [title]="'STUDIO.DAYS_TOOLTIP' | translate"
+            class="day-chip"
+            [class.active]="!sessionDate()"
+            [attr.aria-pressed]="!sessionDate()"
+            (click)="pickDay(null)"
           >
-            <span>{{ sessionLabel() || ('STUDIO.HISTORY' | translate) }}</span>
-            <i class="md md-expand_more" [class.open]="dayMenuOpen()"></i>
+            <span>{{ 'STUDIO.REEL_LIVE' | translate }}</span>
           </button>
-          @if (dayMenuOpen()) {
-            <div
-              class="reel-day-panel"
-              role="listbox"
-              (scroll)="onDayPanelScroll($event)"
-              (click)="$event.stopPropagation()"
+          @for (d of visibleHistoryDays(); track d.key) {
+            <button
+              type="button"
+              class="day-chip"
+              [class.active]="sessionDate() === d.key"
+              [attr.aria-pressed]="sessionDate() === d.key"
+              [title]="d.label"
+              (click)="pickDay(d.key)"
             >
-              <button
-                type="button"
-                class="reel-day-option"
-                role="option"
-                [class.active]="!sessionDate()"
-                [attr.aria-selected]="!sessionDate()"
-                (click)="pickDay(null)"
-              >
-                <span>{{ 'STUDIO.REEL_LIVE' | translate }}</span>
-              </button>
-              @for (d of visibleDayOptions(); track d.key) {
-                <button
-                  type="button"
-                  class="reel-day-option"
-                  role="option"
-                  [class.active]="sessionDate() === d.key"
-                  [attr.aria-selected]="sessionDate() === d.key"
-                  (click)="pickDay(d.key)"
-                >
-                  <span>{{ d.label }}</span>
-                  <span class="reel-day-count">{{ d.count }}</span>
-                </button>
-              }
-              @if (loadingDays() && visibleDayOptions().length === 0) {
-                <div class="reel-day-hint">{{ 'STUDIO.LOADING_DAYS' | translate }}</div>
-              } @else if (visibleDayOptions().length === 0) {
-                <div class="reel-day-hint">{{ 'STUDIO.NO_DAYS' | translate }}</div>
-              }
-              @if (loadingDays() && visibleDayOptions().length > 0) {
-                <div class="reel-day-hint">{{ 'STUDIO.LOADING_MORE' | translate }}</div>
-              }
-            </div>
+              <span>{{ d.label }}</span>
+              <span class="day-chip-count">{{ d.count }}</span>
+            </button>
+          }
+          @if (loadingDays()) {
+            <span class="reel-day-hint">{{ 'STUDIO.LOADING_DAYS' | translate }}</span>
+          } @else if (visibleHistoryDays().length === 0) {
+            <span class="reel-day-hint">{{ 'STUDIO.NO_DAYS' | translate }}</span>
           }
         </div>
       }
-      <p-tag [value]="takes().length.toString()" severity="secondary" />
+      <p-tag [value]="(takes().length | number: '1.0-0') ?? ''" severity="secondary" />
     </div>
     @if (reelGroups().length === 0) {
       <p class="muted small pad">
@@ -895,167 +914,201 @@
     <div class="reel-list">
       @for (group of reelGroups(); track group.key) {
         <div class="reel-day">
-          <div class="reel-day-head">
+          <button
+            type="button"
+            class="reel-day-head"
+            (click)="toggleDayGroup(group.key, firstGroupKey())"
+            [attr.aria-expanded]="isDayOpen(group.key, firstGroupKey())"
+            [attr.aria-label]="group.label"
+          >
             <span>{{ group.label }}</span>
-            <span class="muted small">{{ group.takes.length }}</span>
-          </div>
-          @for (take of group.takes; track take.id; let reelIdx = $index) {
-            <div
-              class="take-card w-full"
-              role="button"
-              tabindex="0"
-              appTilt
-              animate.enter="anim-item"
-              [style.animation-delay.ms]="reelIdx < 8 ? reelIdx * 35 : 280"
-              [class.selected]="take.id === selectedTakeId()"
-              (click)="openTakeDetail(take)"
-              (keydown.enter)="openTakeDetail(take)"
-            >
-              <div class="w-full">
-                <div class="flex w-full">
-                  @if (take.status === 'succeeded' && take.videoUrl) {
-                    <video
-                      class="take-thumb"
-                      animate.enter="anim-item"
-                      [src]="take.videoUrl | serverUrl"
-                      preload="metadata"
-                      muted
-                    ></video>
-                  } @else {
-                    <div class="take-thumb placeholder">
-                      <i
-                        class="md"
-                        [class.md-spin]="take.status === 'running'"
-                        [class.md-autorenew]="take.status === 'running'"
-                      ></i>
-                    </div>
-                  }
-                  <div class="take-info px-2">
-                    <div class="flex justify-between">
-                      <p class="take-title truncate">{{ take.modelDisplayName }}</p>
-                      <span class="small muted time">{{ formatTime(take.createdAt) }}</span>
-                    </div>
-                    @if (take.eventName) {
-                      <p class="take-project truncate">
-                        <i class="md md-folder_open"></i> {{ take.eventName }}
-                      </p>
+            <span class="reel-day-meta">
+              <span class="muted small">{{ group.takes.length }}</span>
+              <i
+                class="md md-expand_more"
+                [class.open]="isDayOpen(group.key, firstGroupKey())"
+                aria-hidden="true"
+              ></i>
+            </span>
+          </button>
+          @if (isDayOpen(group.key, firstGroupKey())) {
+            @for (take of group.takes; track take.id; let reelIdx = $index) {
+              <div
+                class="take-card w-full"
+                role="button"
+                tabindex="0"
+                appTilt
+                animate.enter="anim-item"
+                [style.animation-delay.ms]="reelIdx < 8 ? reelIdx * 35 : 280"
+                [class.selected]="take.id === selectedTakeId()"
+                (click)="openTakeDetail(take)"
+                (keydown.enter)="openTakeDetail(take)"
+              >
+                <div class="w-full">
+                  <div class="flex w-full">
+                    @if (take.status === 'succeeded' && take.videoUrl) {
+                      <video
+                        class="take-thumb"
+                        animate.enter="anim-item"
+                        [src]="take.videoUrl | serverUrl"
+                        preload="metadata"
+                        muted
+                      ></video>
+                    } @else {
+                      <div class="take-thumb placeholder">
+                        <i
+                          class="md"
+                          [class.md-spin]="take.status === 'running'"
+                          [class.md-autorenew]="take.status === 'running'"
+                        ></i>
+                      </div>
                     }
-                    <p class="take-sub muted small truncate">{{ take.prompt }}</p>
+                    <div class="take-info px-2">
+                      <div class="flex justify-between">
+                        <p class="take-title truncate">{{ take.modelDisplayName }}</p>
+                        <span class="small muted time">{{ formatTime(take.createdAt) }}</span>
+                      </div>
+                      @if (take.eventName) {
+                        <p class="take-project truncate">
+                          <i class="md md-folder_open"></i> {{ take.eventName }}
+                        </p>
+                      }
+                      <p class="take-sub muted small truncate">{{ take.prompt }}</p>
+                    </div>
                   </div>
-                </div>
 
-                <div class="take-foot">
-                  <p-tag
-                    [value]="takeStatusLabel(take.status)"
-                    [severity]="takeStatusSeverity(take.status)"
-                    styleClass="text-xs"
-                  />
-                  @if (take.status === 'running' || take.status === 'queued') {
-                    <span class="small muted">{{ take.progress }}%</span>
-                    <p-button
-                      icon="md md-close"
-                      [rounded]="true"
-                      [text]="true"
-                      severity="secondary"
-                      styleClass="w-6 h-6"
-                      (onClick)="cancelTake(take)"
-                      [pTooltip]="'STUDIO.CANCEL' | translate"
-                      showDelay="400"
+                  <div class="take-foot">
+                    <p-tag
+                      [value]="takeStatusLabel(take.status)"
+                      [severity]="takeStatusSeverity(take.status)"
+                      styleClass="text-xs"
                     />
-                  }
-                  @if (take.status === 'succeeded' || take.status === 'failed') {
-                    <div
-                      class="rating-group"
-                      role="group"
-                      [attr.aria-label]="'STUDIO.RATING_ARIA' | translate"
-                    >
-                      <button
-                        type="button"
-                        class="rating-check"
-                        [class.active]="take.ratingGood"
-                        [title]="
-                          (take.ratingGood ? 'STUDIO.RATING_GOOD_REMOVE' : 'STUDIO.RATING_GOOD')
-                            | translate
-                        "
-                        (click)="toggleGood(take); $event.stopPropagation()"
+                    @if (take.status === 'running' || take.status === 'queued') {
+                      <span class="small muted">{{ take.progress }}%</span>
+                      <p-button
+                        icon="md md-close"
+                        [rounded]="true"
+                        [text]="true"
+                        severity="secondary"
+                        styleClass="w-6 h-6"
+                        (onClick)="cancelTake(take)"
+                        [ariaLabel]="'STUDIO.CANCEL' | translate"
+                        [pTooltip]="'STUDIO.CANCEL' | translate"
+                        showDelay="400"
+                      />
+                    }
+                    @if (take.status === 'succeeded' || take.status === 'failed') {
+                      <div
+                        class="rating-group"
+                        role="group"
+                        [attr.aria-label]="'STUDIO.RATING_ARIA' | translate"
                       >
-                        <i class="md md-check"></i>
-                      </button>
-                      <button
-                        type="button"
-                        class="rating-check"
-                        [class.active]="take.ratingFinal"
-                        [title]="
-                          (take.ratingFinal ? 'STUDIO.RATING_FINAL_REMOVE' : 'STUDIO.RATING_FINAL')
-                            | translate
-                        "
-                        (click)="toggleFinal(take); $event.stopPropagation()"
-                      >
-                        <i class="md md-check md-double"></i>
-                      </button>
-                      @if (take.ratingGood || take.ratingFinal) {
                         <button
                           type="button"
-                          class="rating-clear"
-                          [title]="'STUDIO.RATING_CLEAR' | translate"
-                          (click)="clearRating(take); $event.stopPropagation()"
+                          class="rating-check"
+                          [class.active]="take.ratingGood"
+                          [title]="
+                            (take.ratingGood ? 'STUDIO.RATING_GOOD_REMOVE' : 'STUDIO.RATING_GOOD')
+                              | translate
+                          "
+                          [attr.aria-label]="
+                            (take.ratingGood ? 'STUDIO.RATING_GOOD_REMOVE' : 'STUDIO.RATING_GOOD')
+                              | translate
+                          "
+                          [attr.aria-pressed]="take.ratingGood"
+                          (click)="toggleGood(take); $event.stopPropagation()"
                         >
-                          {{ 'STUDIO.CLEAR' | translate }}
+                          <ui-icon name="md-check" />
                         </button>
-                      }
-                    </div>
-                    <button
-                      type="button"
-                      class="rating-redo"
-                      [title]="'STUDIO.REUSE_TITLE' | translate"
-                      [disabled]="submitting()"
-                      (click)="reuse(take); $event.stopPropagation()"
-                    >
-                      <i class="md md-refresh"></i>
-                      <span>{{ 'STUDIO.REUSE' | translate }}</span>
-                    </button>
-                  }
-                  @if (hasCost(take)) {
-                    <span class="take-cost">
-                      @if ((take.costUsd ?? 0) > 0) {
-                        <span
-                          tooltipPosition="top"
-                          showDelay="300"
-                          [pTooltip]="'STUDIO.COST_USD_TOOLTIP' | translate"
-                          >{{ formatCostUsd(take.costUsd!) }}</span
+                        <button
+                          type="button"
+                          class="rating-check"
+                          [class.active]="take.ratingFinal"
+                          [title]="
+                            (take.ratingFinal
+                              ? 'STUDIO.RATING_FINAL_REMOVE'
+                              : 'STUDIO.RATING_FINAL'
+                            ) | translate
+                          "
+                          [attr.aria-label]="
+                            (take.ratingFinal
+                              ? 'STUDIO.RATING_FINAL_REMOVE'
+                              : 'STUDIO.RATING_FINAL'
+                            ) | translate
+                          "
+                          [attr.aria-pressed]="take.ratingFinal"
+                          (click)="toggleFinal(take); $event.stopPropagation()"
                         >
-                      }
-                      @if ((take.costCredits ?? 0) > 0) {
-                        <span
-                          tooltipPosition="top"
-                          showDelay="300"
-                          [pTooltip]="'STUDIO.COST_CREDITS_TOOLTIP' | translate"
-                          class="cost-credits"
-                          >{{ formatCredits(take.costCredits!) }}</span
-                        >
-                      }
-                    </span>
-                  }
+                          <ui-icon name="md-check md-double" />
+                        </button>
+                        @if (take.ratingGood || take.ratingFinal) {
+                          <button
+                            type="button"
+                            class="rating-clear"
+                            [title]="'STUDIO.RATING_CLEAR' | translate"
+                            (click)="clearRating(take); $event.stopPropagation()"
+                          >
+                            {{ 'STUDIO.CLEAR' | translate }}
+                          </button>
+                        }
+                      </div>
+                      <button
+                        type="button"
+                        class="rating-redo"
+                        [title]="'STUDIO.REUSE_TITLE' | translate"
+                        [disabled]="submitting()"
+                        (click)="reuse(take); $event.stopPropagation()"
+                      >
+                        <i class="md md-refresh"></i>
+                        <span>{{ 'STUDIO.REUSE' | translate }}</span>
+                      </button>
+                    }
+                    @if (hasCost(take)) {
+                      <span class="take-cost">
+                        @if ((take.costUsd ?? 0) > 0) {
+                          <span
+                            tooltipPosition="top"
+                            showDelay="300"
+                            [pTooltip]="'STUDIO.COST_USD_TOOLTIP' | translate"
+                            >{{ formatCostUsd(take.costUsd!) }}</span
+                          >
+                        }
+                        @if ((take.costCredits ?? 0) > 0) {
+                          <span
+                            tooltipPosition="top"
+                            showDelay="300"
+                            [pTooltip]="'STUDIO.COST_CREDITS_TOOLTIP' | translate"
+                            class="cost-credits"
+                            >{{ formatCredits(take.costCredits!) }}</span
+                          >
+                        }
+                      </span>
+                    }
 
-                  @if (take.refImages?.length) {
-                    <div class="ref-strip ml-auto">
-                      @for (ref of take.refImages!.slice(0, 4); track ref.id) {
-                        <img
-                          class="ref-thumb"
-                          [src]="refThumbUrl(ref.id)"
-                          [alt]="ref.name"
-                          [title]="ref.name"
-                          (error)="onThumbError($event)"
-                        />
-                      }
-                      @if (take.refImages!.length > 4) {
-                        <span class="ref-more muted">+{{ take.refImages!.length - 4 }}</span>
-                      }
-                    </div>
-                  }
+                    @if (take.refImages?.length) {
+                      <div class="ref-strip ml-auto">
+                        @for (ref of take.refImages!.slice(0, 4); track ref.id) {
+                          <img
+                            class="ref-thumb"
+                            [src]="refThumbUrl(ref.id)"
+                            [alt]="ref.name"
+                            [title]="ref.name"
+                            width="96"
+                            height="96"
+                            loading="lazy"
+                            decoding="async"
+                            (error)="onThumbError($event)"
+                          />
+                        }
+                        @if (take.refImages!.length > 4) {
+                          <span class="ref-more muted">+{{ take.refImages!.length - 4 }}</span>
+                        }
+                      </div>
+                    }
+                  </div>
                 </div>
               </div>
-            </div>
+            }
           }
         </div>
       }
@@ -1064,7 +1117,7 @@
     <div class="queue-head">
       <span><i class="md md-list"></i> {{ 'STUDIO.QUEUE_TITLE' | translate }}</span>
       <p-tag
-        [value]="activeTakes().length.toString()"
+        [value]="(activeTakes().length | number: '1.0-0') ?? ''"
         [severity]="activeTakes().length ? 'info' : 'secondary'"
       />
     </div>
@@ -1346,9 +1399,13 @@
                 [title]="
                   (dt.ratingGood ? 'STUDIO.RATING_GOOD_REMOVE' : 'STUDIO.RATING_GOOD') | translate
                 "
+                [attr.aria-label]="
+                  (dt.ratingGood ? 'STUDIO.RATING_GOOD_REMOVE' : 'STUDIO.RATING_GOOD') | translate
+                "
+                [attr.aria-pressed]="dt.ratingGood"
                 (click)="toggleGood(dt)"
               >
-                <i class="md md-check"></i>
+                <ui-icon name="md-check" />
               </button>
               <button
                 type="button"
@@ -1358,9 +1415,14 @@
                   (dt.ratingFinal ? 'STUDIO.RATING_FINAL_REMOVE' : 'STUDIO.RATING_FINAL')
                     | translate
                 "
+                [attr.aria-label]="
+                  (dt.ratingFinal ? 'STUDIO.RATING_FINAL_REMOVE' : 'STUDIO.RATING_FINAL')
+                    | translate
+                "
+                [attr.aria-pressed]="dt.ratingFinal"
                 (click)="toggleFinal(dt)"
               >
-                <i class="md md-check md-double"></i>
+                <ui-icon name="md-check md-double" />
               </button>
               @if (dt.ratingGood || dt.ratingFinal) {
                 <button

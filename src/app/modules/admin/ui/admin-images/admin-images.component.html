@@ -40,7 +40,8 @@
         <p-inputicon styleClass="md md-search" />
         <input
           pInputText
-          type="text"
+          type="search"
+          name="image-search"
           [attr.aria-label]="'ADMIN.IMAGES.SEARCH_ARIA' | translate"
           [ngModel]="search()"
           (ngModelChange)="search.set($event)"
@@ -118,6 +119,7 @@
             appTilt
             (click)="openViewer(img)"
             (keydown.enter)="openViewer(img)"
+            (keydown.space)="$event.preventDefault(); openViewer(img)"
             tabindex="0"
             role="button"
             [attr.aria-label]="img.event_name || img.task_id"
@@ -127,6 +129,8 @@
                 appImgFade
                 [src]="outputUrl(img) | serverUrl"
                 [alt]="img.event_name || img.task_id"
+                width="480"
+                height="480"
                 loading="lazy"
                 decoding="async"
                 class="h-full w-full object-cover transition-transform group-hover:scale-[1.03]"
@@ -281,6 +285,8 @@
                     appImgFade
                     [src]="assetThumb(asset) | serverUrl"
                     [alt]="asset.filename"
+                    width="480"
+                    height="480"
                     loading="lazy"
                     decoding="async"
                     class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.05]"
@@ -432,6 +438,9 @@
           appImgFade
           [src]="outputUrl(sel) | serverUrl"
           [alt]="selectedName()"
+          width="1280"
+          height="720"
+          loading="lazy"
           decoding="async"
           class="max-h-[70vh] w-full rounded-xl object-contain"
         />
@@ -483,6 +492,9 @@
             appImgFade
             [src]="sel.url | serverUrl"
             [alt]="sel.filename"
+            width="1280"
+            height="720"
+            loading="lazy"
             decoding="async"
             class="max-h-[70vh] w-full rounded-xl object-contain"
           />
