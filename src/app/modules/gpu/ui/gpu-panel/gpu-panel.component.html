@@ -2,16 +2,16 @@
   <!-- ─── Encabezado ──────────────────────────────────────── -->
   <header class="flex flex-wrap items-center justify-between gap-4">
     <div>
-      <h1 class="text-2xl font-semibold text-surface-900 dark:text-surface-0">
+      <h1 class="text-2xl font-semibold text-ink-on-dark">
         {{ 'GPU.TITLE' | translate }}
       </h1>
-      <p class="mt-1 text-sm text-surface-500 dark:text-surface-400">
+      <p class="mt-1 text-sm text-ink-muted-on-dark">
         {{ 'GPU.SUBTITLE' | translate }}
       </p>
     </div>
     <div class="flex items-center gap-3">
       @if (onlineCount() > 0) {
-        <span class="text-sm text-surface-500 dark:text-surface-400">
+        <span class="text-sm text-ink-muted-on-dark">
           {{ 'GPU.ONLINE_COUNT' | translate: { count: onlineCount() } }}
         </span>
       }
@@ -42,7 +42,7 @@
         <div class="flex h-full flex-col gap-2">
           <span class="step-number">1</span>
           <h2 class="font-medium">{{ 'GPU.STEPS.DOWNLOAD.TITLE' | translate }}</h2>
-          <p class="text-sm text-surface-500 dark:text-surface-400">
+          <p class="text-sm text-ink-muted-on-dark">
             {{ 'GPU.STEPS.DOWNLOAD.BODY' | translate }}
           </p>
           <p-button
@@ -58,7 +58,7 @@
         <div class="flex h-full flex-col gap-2">
           <span class="step-number">2</span>
           <h2 class="font-medium">{{ 'GPU.STEPS.INSTALL.TITLE' | translate }}</h2>
-          <p class="text-sm text-surface-500 dark:text-surface-400">
+          <p class="text-sm text-ink-muted-on-dark">
             {{ 'GPU.STEPS.INSTALL.BODY' | translate }}
           </p>
         </div>
@@ -67,7 +67,7 @@
         <div class="flex h-full flex-col gap-2">
           <span class="step-number">3</span>
           <h2 class="font-medium">{{ 'GPU.STEPS.PAIR.TITLE' | translate }}</h2>
-          <p class="text-sm text-surface-500 dark:text-surface-400">
+          <p class="text-sm text-ink-muted-on-dark">
             {{ 'GPU.STEPS.PAIR.BODY' | translate }}
           </p>
           <p-button
@@ -94,11 +94,14 @@
   <section class="mt-10" aria-label="{{ 'GPU.MODELS.TITLE' | translate }}">
     <div class="flex flex-wrap items-end justify-between gap-3">
       <div>
-        <h2 class="text-lg font-semibold text-surface-900 dark:text-surface-0">
+        <h2 class="text-lg font-semibold text-ink-on-dark">
           {{ 'GPU.MODELS.TITLE' | translate }}
         </h2>
-        <p class="mt-1 text-sm text-surface-500 dark:text-surface-400">
-          {{ 'GPU.MODELS.SUBTITLE' | translate: { ready: readyModelCount(), total: displayedModels().length } }}
+        <p class="mt-1 text-sm text-ink-muted-on-dark">
+          {{
+            'GPU.MODELS.SUBTITLE'
+              | translate: { ready: readyModelCount(), total: displayedModels().length }
+          }}
         </p>
       </div>
       <div class="flex items-center gap-2">
@@ -156,23 +159,27 @@
         <ng-template #header>
           <tr>
             <th>{{ 'GPU.MODELS.COL_MODEL' | translate }}</th>
-            <th style="width: 16%" class="text-center">{{ 'GPU.MODELS.COL_STATUS' | translate }}</th>
+            <th style="width: 16%" class="text-center">
+              {{ 'GPU.MODELS.COL_STATUS' | translate }}
+            </th>
             <th style="width: 28%">{{ 'GPU.MODELS.COL_SIZE' | translate }}</th>
-            <th style="width: 24%" class="text-right">{{ 'GPU.MODELS.COL_ACTIONS' | translate }}</th>
+            <th style="width: 24%" class="text-right">
+              {{ 'GPU.MODELS.COL_ACTIONS' | translate }}
+            </th>
           </tr>
         </ng-template>
         <ng-template #body let-model>
           <tr>
             <td>
-              <p class="font-medium text-surface-900 dark:text-surface-0">
+              <p class="font-medium text-ink-on-dark">
                 {{ model.display_name || model.name }}
               </p>
-              <p class="text-xs text-surface-500 dark:text-surface-400">
+              <p class="text-xs text-ink-muted-on-dark">
                 {{ model.name }} · {{ model.modality || model.downloaded?.mode || '—' }} ·
                 {{ model.downloaded?.family || model.downloaded?.engine || '—' }}
               </p>
               @if (model.downloaded?.download_error) {
-                <p class="mt-1 text-xs text-red-500">
+                <p class="mt-1 text-xs text-danger">
                   {{ model.downloaded.download_error }}
                 </p>
               }
@@ -201,20 +208,20 @@
             <td>
               @if (model.downloaded?.downloading) {
                 <p-progressbar [value]="downloadProgress(model)" />
-                <p class="mt-1 text-xs text-surface-500 dark:text-surface-400">
+                <p class="mt-1 text-xs text-ink-muted-on-dark">
                   {{ downloadProgress(model) | number: '1.0-0' }}% ·
                   {{ formatSize(model.downloaded?.size_bytes ?? 0) }}
                 </p>
               } @else if ((model.downloaded?.size_bytes ?? 0) > 0) {
                 <span class="text-sm">{{ formatSize(model.downloaded?.size_bytes ?? 0) }}</span>
               } @else if (bridgeMode() && (model.downloaded?.vram_gb ?? 0) > 0) {
-                <span class="text-sm text-surface-500 dark:text-surface-400">
+                <span class="text-sm text-ink-muted-on-dark">
                   {{ 'GPU.MODELS.VRAM_REQ' | translate: { gb: model.downloaded?.vram_gb } }}
                 </span>
               } @else if (bridgeMode()) {
-                <span class="text-sm text-surface-500 dark:text-surface-400">—</span>
+                <span class="text-sm text-ink-muted-on-dark">—</span>
               } @else {
-                <span class="text-sm text-surface-500 dark:text-surface-400">
+                <span class="text-sm text-ink-muted-on-dark">
                   {{ 'GPU.MODELS.NOT_DOWNLOADED' | translate }}
                 </span>
               }
@@ -223,7 +230,7 @@
               @if (bridgeMode()) {
                 <div class="flex flex-wrap justify-end gap-2">
                   @if (model.downloaded?.downloading) {
-                    <span class="text-sm text-surface-500 dark:text-surface-400">
+                    <span class="text-sm text-ink-muted-on-dark">
                       {{ 'GPU.MODELS.DOWNLOADING' | translate }}…
                     </span>
                   } @else if (!model.downloaded?.available && model.worker_id) {
@@ -234,51 +241,54 @@
                       [loading]="isModelBusy(model, 'download')"
                       [disabled]="modelBusy() !== null"
                       (onClick)="bridgeDownload(model)"
-                      pTooltip="{{ 'GPU.MODELS.DOWNLOAD_BRIDGE_TOOLTIP' | translate: { worker: model.worker_name } }}"
+                      pTooltip="{{
+                        'GPU.MODELS.DOWNLOAD_BRIDGE_TOOLTIP'
+                          | translate: { worker: model.worker_name }
+                      }}"
                     />
                   } @else {
-                    <span class="text-sm text-surface-500 dark:text-surface-400">—</span>
+                    <span class="text-sm text-ink-muted-on-dark">—</span>
                   }
                 </div>
               } @else {
-              <div class="flex flex-wrap justify-end gap-2">
-                @if (model.downloaded?.downloading) {
-                  <p-button
-                    size="small"
-                    severity="secondary"
-                    icon="md md-cancel"
-                    [label]="'GPU.MODELS.CANCEL' | translate"
-                    [loading]="isModelBusy(model, 'cancel')"
-                    [disabled]="modelBusy() !== null"
-                    (onClick)="cancelDownload(model)"
-                  />
-                } @else {
-                  @if (!model.downloaded?.available) {
+                <div class="flex flex-wrap justify-end gap-2">
+                  @if (model.downloaded?.downloading) {
                     <p-button
                       size="small"
-                      icon="md md-download"
-                      [label]="
-                        (model.downloaded?.download_error
-                          ? ('GPU.MODELS.RETRY' | translate)
-                          : ('GPU.MODELS.DOWNLOAD' | translate))
-                      "
-                      [loading]="isModelBusy(model, 'download')"
+                      severity="secondary"
+                      icon="md md-cancel"
+                      [label]="'GPU.MODELS.CANCEL' | translate"
+                      [loading]="isModelBusy(model, 'cancel')"
                       [disabled]="modelBusy() !== null"
-                      (onClick)="startDownload(model)"
+                      (onClick)="cancelDownload(model)"
+                    />
+                  } @else {
+                    @if (!model.downloaded?.available) {
+                      <p-button
+                        size="small"
+                        icon="md md-download"
+                        [label]="
+                          model.downloaded?.download_error
+                            ? ('GPU.MODELS.RETRY' | translate)
+                            : ('GPU.MODELS.DOWNLOAD' | translate)
+                        "
+                        [loading]="isModelBusy(model, 'download')"
+                        [disabled]="modelBusy() !== null"
+                        (onClick)="startDownload(model)"
+                      />
+                    }
+                    <p-button
+                      size="small"
+                      severity="danger"
+                      [outlined]="true"
+                      icon="md md-delete"
+                      [label]="'GPU.MODELS.DELETE' | translate"
+                      [loading]="isModelBusy(model, 'delete')"
+                      [disabled]="modelBusy() !== null"
+                      (onClick)="deleteDownload(model)"
                     />
                   }
-                  <p-button
-                    size="small"
-                    severity="danger"
-                    [outlined]="true"
-                    icon="md md-delete"
-                    [label]="'GPU.MODELS.DELETE' | translate"
-                    [loading]="isModelBusy(model, 'delete')"
-                    [disabled]="modelBusy() !== null"
-                    (onClick)="deleteDownload(model)"
-                  />
-                }
-              </div>
+                </div>
               }
             </td>
           </tr>
@@ -300,7 +310,7 @@
                     <p-tag [value]="'v' + worker.version" severity="info" />
                   }
                 </h2>
-                <p class="text-sm text-surface-500 dark:text-surface-400">
+                <p class="text-sm text-ink-muted-on-dark">
                   {{ worker.gpu_name || 'GPU.UNKNOWN' | translate }}
                 </p>
               </div>
@@ -320,15 +330,15 @@
             </div>
 
             <dl class="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-              <dt class="text-surface-500 dark:text-surface-400">{{ 'GPU.FIELDS.VRAM' | translate }}</dt>
+              <dt class="text-ink-muted-on-dark">{{ 'GPU.FIELDS.VRAM' | translate }}</dt>
               <dd>{{ vramGb(worker.vram_total_mb) }}</dd>
-              <dt class="text-surface-500 dark:text-surface-400">{{ 'GPU.FIELDS.OS' | translate }}</dt>
+              <dt class="text-ink-muted-on-dark">{{ 'GPU.FIELDS.OS' | translate }}</dt>
               <dd>{{ worker.os || '—' }}</dd>
-              <dt class="text-surface-500 dark:text-surface-400">{{ 'GPU.FIELDS.VERSION' | translate }}</dt>
+              <dt class="text-ink-muted-on-dark">{{ 'GPU.FIELDS.VERSION' | translate }}</dt>
               <dd>{{ worker.version || '—' }}</dd>
-              <dt class="text-surface-500 dark:text-surface-400">{{ 'GPU.FIELDS.MODELS' | translate }}</dt>
+              <dt class="text-ink-muted-on-dark">{{ 'GPU.FIELDS.MODELS' | translate }}</dt>
               <dd>{{ worker.models.length || 0 }}</dd>
-              <dt class="text-surface-500 dark:text-surface-400">{{ 'GPU.FIELDS.LAST_SEEN' | translate }}</dt>
+              <dt class="text-ink-muted-on-dark">{{ 'GPU.FIELDS.LAST_SEEN' | translate }}</dt>
               <dd>{{ worker.last_heartbeat | date: 'shortTime' }}</dd>
             </dl>
 
@@ -371,13 +381,15 @@
         </span>
         <p-button
           icon="md md-content_copy"
-          [label]="codeCopied() ? ('GPU.PAIRING.COPIED' | translate) : ('GPU.PAIRING.COPY' | translate)"
+          [label]="
+            codeCopied() ? ('GPU.PAIRING.COPIED' | translate) : ('GPU.PAIRING.COPY' | translate)
+          "
           [text]="true"
           (onClick)="copyCode()"
         />
       </div>
 
-      <p class="text-sm text-surface-500 dark:text-surface-400">
+      <p class="text-sm text-ink-muted-on-dark">
         {{ 'GPU.PAIRING.EXPIRES' | translate: { seconds: secondsLeft() } }}
       </p>
 

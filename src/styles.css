@@ -88,6 +88,9 @@
 .md-auto_fix_high::before {
   content: 'auto_fix_high';
 }
+.md-autorenew::before {
+  content: 'autorenew';
+}
 .md-block::before {
   content: 'block';
 }
@@ -259,6 +262,12 @@
 }
 .md-remove::before {
   content: 'remove';
+}
+.md-rotate_90::before {
+  content: 'rotate_90_degrees_ccw';
+}
+.md-rotate_left::before {
+  content: 'rotate_left';
 }
 .md-save::before {
   content: 'save';
@@ -626,7 +635,7 @@ input {
   background: var(--color-accent);
   border: 1px solid var(--color-accent);
   color: var(--color-on-accent);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: var(--space-3) var(--space-4);
   font-family: inherit;
   font-size: 0.75rem;
@@ -676,9 +685,9 @@ input {
 /* Contrast: acciones neutras claras (p. ej. cerrar visores) */
 .p-button.p-button-contrast:not(:disabled) {
   /* En claro: pastilla oscura con texto claro (en .dark se restaura abajo). */
-  background: #1e1e1e;
-  border-color: #1e1e1e;
-  color: #f5f5f5;
+  background: var(--color-scrim);
+  border-color: var(--color-scrim);
+  color: var(--color-ink-on-scrim);
 }
 
 .dark .p-button.p-button-contrast:not(:disabled) {
@@ -828,7 +837,7 @@ input {
 }
 
 .p-dialog {
-  border-radius: 24px;
+  border-radius: var(--radius-2xl);
   border: 1px solid var(--color-surface-border);
   background: var(--color-surface);
   color: var(--color-ink-on-dark);
@@ -864,7 +873,7 @@ input {
 .p-dialog .p-dialog-header-actions .p-dialog-close-button {
   width: 2.25rem;
   height: 2.25rem;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   color: var(--color-ink-muted-on-dark);
 }
 
@@ -904,7 +913,7 @@ input {
 
 .p-inputtext,
 .p-textarea {
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--color-surface-border-strong);
   padding: var(--space-3) var(--space-4);
   font-family: inherit;
@@ -947,7 +956,7 @@ input {
    PrimeNG: tablas
    ============================================ */
 .p-datatable {
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   overflow: hidden;
   border: 1px solid var(--color-surface-border);
   color: var(--color-ink-on-dark);
@@ -1018,9 +1027,9 @@ input {
 .p-tag.p-tag-info {
   /* En claro: el tinte lavado no lee sobre el gris (1.1:1) — pastilla
      teñida oscura con texto claro (5.2:1). En .dark se restaura abajo. */
-  background: color-mix(in srgb, var(--color-info) 55%, #1e1e1e);
-  color: #f5f5f5;
-  border-color: color-mix(in srgb, var(--color-info) 55%, #1e1e1e);
+  background: color-mix(in srgb, var(--color-info) 55%, var(--color-scrim));
+  color: var(--color-ink-on-scrim);
+  border-color: color-mix(in srgb, var(--color-info) 55%, var(--color-scrim));
 }
 
 .dark .p-tag.p-tag-info {
@@ -1032,9 +1041,9 @@ input {
 .p-tag.p-tag-danger {
   /* En claro: pastilla teñida oscura con texto claro (5.7:1).
      En .dark se restaura abajo. */
-  background: color-mix(in srgb, var(--color-danger) 55%, #1e1e1e);
-  color: #f5f5f5;
-  border-color: color-mix(in srgb, var(--color-danger) 55%, #1e1e1e);
+  background: color-mix(in srgb, var(--color-danger) 55%, var(--color-scrim));
+  color: var(--color-ink-on-scrim);
+  border-color: color-mix(in srgb, var(--color-danger) 55%, var(--color-scrim));
 }
 
 .dark .p-tag.p-tag-danger {
@@ -1046,9 +1055,9 @@ input {
 .p-tag.p-tag-warn {
   /* En claro: pastilla teñida oscura con texto claro (4.9:1).
      En .dark se restaura abajo. */
-  background: color-mix(in srgb, var(--color-warning) 50%, #1e1e1e);
-  color: #f5f5f5;
-  border-color: color-mix(in srgb, var(--color-warning) 50%, #1e1e1e);
+  background: color-mix(in srgb, var(--color-warning) 50%, var(--color-scrim));
+  color: var(--color-ink-on-scrim);
+  border-color: color-mix(in srgb, var(--color-warning) 50%, var(--color-scrim));
 }
 
 .dark .p-tag.p-tag-warn {
@@ -1059,9 +1068,9 @@ input {
 
 .p-tag.p-tag-contrast {
   /* En claro: pastilla oscura con texto claro (en .dark se restaura abajo). */
-  background: #1e1e1e;
-  color: #f5f5f5;
-  border-color: #1e1e1e;
+  background: var(--color-scrim);
+  color: var(--color-ink-on-scrim);
+  border-color: var(--color-scrim);
 }
 
 .dark .p-tag.p-tag-contrast {
@@ -1161,7 +1170,7 @@ input {
    PrimeNG: select
    ============================================ */
 .p-select {
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   min-height: 2.75rem;
   background: var(--color-surface-2);
   color: var(--color-ink-on-dark);
@@ -1209,7 +1218,7 @@ input {
 .p-select-overlay {
   background: var(--color-surface) !important;
   border: 1px solid var(--color-surface-border) !important;
-  border-radius: 16px !important;
+  border-radius: var(--radius-xl) !important;
   box-shadow: none !important;
   color: var(--color-ink-on-dark) !important;
 }
@@ -1223,7 +1232,7 @@ input {
   padding: var(--space-2) var(--space-4);
   color: var(--color-ink-on-dark) !important;
   font-size: 0.75rem;
-  border-radius: 12px !important;
+  border-radius: var(--radius-lg) !important;
   margin: 2px 6px !important;
   transition: background-color 0.12s ease;
 }
@@ -1278,7 +1287,7 @@ input {
   background: var(--color-surface-2) !important;
   border: 1px solid var(--color-surface-border-strong) !important;
   color: var(--color-ink-on-dark) !important;
-  border-radius: 12px !important;
+  border-radius: var(--radius-lg) !important;
   width: calc(100% - var(--space-4));
   font-size: 0.75rem;
 }
@@ -1351,13 +1360,13 @@ input {
   background: var(--color-surface);
   color: var(--color-ink-on-dark);
   border: 1px solid var(--color-surface-border);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   box-shadow: none;
 }
 
 .theme-popover.p-popover {
   padding: 0;
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
 }
 
 .theme-popover.p-popover .p-popover-content {
@@ -1489,7 +1498,7 @@ input {
 .p-menubar.p-menubar-mobile .p-menubar-root-list {
   background: var(--color-surface);
   border: 1px solid var(--color-surface-border);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   box-shadow: none;
   padding: var(--space-2);
   gap: 2px !important;
@@ -1500,7 +1509,7 @@ input {
 
 .p-menubar.p-menubar-mobile .p-menubar-item-content {
   min-height: 44px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1515,7 +1524,7 @@ input {
   border: 1px solid var(--color-surface-border) !important;
   color: var(--color-ink-on-dark) !important;
   box-shadow: none !important;
-  border-radius: 16px !important;
+  border-radius: var(--radius-xl) !important;
 }
 
 .gen-bell-popover .p-popover-content {
@@ -1555,7 +1564,7 @@ input {
 .gen-bell-popover .pop-live .dot {
   width: 7px;
   height: 7px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--color-accent);
   animation: gen-bell-pulse 1.6s ease-in-out infinite;
 }
@@ -1599,7 +1608,7 @@ input {
 .gen-bell-popover .pop-thumb {
   width: 74px;
   height: 42px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   object-fit: cover;
   background: var(--color-scrim);
   flex-shrink: 0;
@@ -1650,7 +1659,7 @@ input {
 
 .gen-bell-popover .pop-track {
   height: 4px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--color-surface-border);
   overflow: hidden;
   display: block;
@@ -1711,7 +1720,7 @@ app-generation-events ::-webkit-scrollbar-track {
 .studio-shell ::-webkit-scrollbar-thumb,
 app-generation-events ::-webkit-scrollbar-thumb {
   background: var(--color-secondary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 2px solid transparent;
 }
 
@@ -1732,7 +1741,7 @@ app-generation-events {
 .studio-shell .p-select {
   background: var(--st-bg) !important;
   border: 1px solid var(--color-surface-border-strong) !important;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 .studio-shell .p-select:not(.p-disabled):hover {
@@ -1758,7 +1767,7 @@ app-generation-events {
   padding: 0 !important;
   box-sizing: border-box;
   font-size: 12px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 .prompt-foot .p-select .p-select-label {
@@ -1787,7 +1796,7 @@ app-generation-events {
 .asset-popover.p-popover {
   background: var(--color-surface) !important;
   border: 1px solid var(--color-surface-border) !important;
-  border-radius: 16px !important;
+  border-radius: var(--radius-xl) !important;
   box-shadow: none !important;
   width: 260px !important;
 }
@@ -1825,7 +1834,7 @@ app-generation-events {
   align-items: center;
   justify-content: center;
   border: none;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--color-surface-2);
   color: var(--color-ink-muted-on-dark);
   font-size: 10px;
@@ -1841,7 +1850,7 @@ app-generation-events {
 .asset-pop-imgbtn {
   padding: 0;
   border: 1px solid var(--color-surface-border);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   cursor: zoom-in;
   background: var(--color-surface-2);
@@ -1888,7 +1897,7 @@ app-generation-events {
   max-width: 90vw;
   max-height: 82vh;
   object-fit: contain;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 .asset-fullscreen-meta {
@@ -1897,7 +1906,7 @@ app-generation-events {
   gap: 10px;
   max-width: 90vw;
   padding: 6px 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--color-surface);
   border: 1px solid var(--color-surface-border);
   color: var(--color-ink-on-dark);
@@ -1908,7 +1917,7 @@ app-generation-events {
 .duration-popover.p-popover {
   background: var(--color-surface) !important;
   border: 1px solid var(--color-surface-border) !important;
-  border-radius: 16px !important;
+  border-radius: var(--radius-xl) !important;
   box-shadow: none !important;
   color: var(--color-ink-on-dark) !important;
   width: 240px !important;
@@ -1946,7 +1955,7 @@ app-generation-events {
   appearance: none;
   -webkit-appearance: none;
   background: var(--color-surface-border-strong);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   outline: none;
   cursor: pointer;
 }
@@ -1994,13 +2003,13 @@ app-admin-console .mx-auto > .p-tabs .p-tablist {
 app-admin-console .mx-auto > .p-tabs .p-tablist-tab-list {
   background: var(--color-surface);
   border: 1px solid var(--color-surface-border);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   padding: 5px;
   gap: 6px;
 }
 
 app-admin-console .mx-auto > .p-tabs .p-tab {
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 9px 18px;
   min-height: 40px;
   font-size: 12px;
@@ -2043,7 +2052,7 @@ p-selectbutton:has(.section-toggle) {
   gap: 4px;
   background: var(--color-surface);
   border: 1px solid var(--color-surface-border);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   padding: 4px;
 }
 
@@ -2051,7 +2060,7 @@ p-selectbutton:has(.section-toggle) {
   border: none !important;
   background: transparent !important;
   color: var(--color-ink-muted-on-dark) !important;
-  border-radius: 12px !important;
+  border-radius: var(--radius-lg) !important;
   font-size: 12px;
   font-weight: 700;
   padding: 9px 16px;
@@ -2090,7 +2099,7 @@ p-selectbutton:has(.section-toggle) {
 .asset-picker-dialog {
   background: var(--color-surface);
   border: 1px solid var(--color-surface-border);
-  border-radius: 24px;
+  border-radius: var(--radius-2xl);
   overflow: hidden;
 }
 
@@ -2141,13 +2150,13 @@ main:has(> app-pose-sheet) {
   padding: 4px;
   background: var(--color-surface-2);
   border: 1px solid var(--color-surface-border);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 .projects-tabs .p-tab {
   padding: 6px 16px;
   border: 0;
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   font-size: 12px;
   font-weight: 700;
   color: var(--color-ink-muted-on-dark);
@@ -2202,7 +2211,7 @@ main:has(> app-pose-sheet) {
     color 0.15s ease,
     border-color 0.15s ease,
     background 0.15s ease;
-  border-radius: 12px 12px 0 0;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
 .projects-tabs .type-tab:hover:not(.active) {
@@ -2227,7 +2236,7 @@ main:has(> app-pose-sheet) {
   font-weight: 700;
   color: var(--color-ink-on-dark);
   background: var(--color-secondary);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   padding: 1px 8px;
 }
 
@@ -2248,7 +2257,7 @@ main:has(> app-pose-sheet) {
   gap: 4px;
   max-width: calc(100% - 12px);
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: color-mix(in srgb, var(--color-scrim) 62%, transparent);
   backdrop-filter: blur(4px);
   color: var(--color-ink-on-scrim);
@@ -2275,8 +2284,8 @@ main:has(> app-pose-sheet) {
   width: 28px;
   height: 28px;
   border: 0;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.55);
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--color-scrim) 55%, transparent);
   color: var(--color-ink-on-dark);
   cursor: pointer;
   transition: background-color 120ms ease;
@@ -2297,7 +2306,7 @@ main:has(> app-pose-sheet) {
   display: inline-flex;
   align-items: stretch;
   border: 1px solid var(--color-surface-border);
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   background: var(--color-surface-2);
 }
@@ -2376,7 +2385,7 @@ main:has(> app-pose-sheet) {
   gap: 5px;
   padding: 3px 12px;
   border: 1px solid var(--color-surface-border);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: transparent;
   color: var(--color-ink-on-dark);
   font-size: 10px;
@@ -2422,7 +2431,7 @@ main:has(> app-pose-sheet) {
 .studio-shell .panel {
   background: var(--st-panel);
   border: 1px solid var(--st-line);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   padding: 8px;
 }
 
@@ -2472,7 +2481,7 @@ main:has(> app-pose-sheet) {
   align-items: center;
   justify-content: center;
   width: 36px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--color-secondary);
   background: var(--color-secondary);
   color: var(--color-ink);
@@ -2510,7 +2519,7 @@ main:has(> app-pose-sheet) {
   justify-content: center;
   gap: 6px;
   padding: 6px 0;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--color-secondary);
   background: var(--color-secondary);
   color: var(--color-ink);
@@ -2550,7 +2559,7 @@ main:has(> app-pose-sheet) {
   width: 100%;
   background: var(--st-bg);
   border: 1px solid var(--color-surface-border-strong);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   color: var(--st-text);
   padding: 10px;
   font-size: 14px;
@@ -2620,7 +2629,7 @@ main:has(> app-pose-sheet) {
   word-wrap: break-word;
   overflow: hidden;
   pointer-events: none;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   /* Reserva el gutter del scroll como el textarea: si aparece la barra,
      el overlay no queda más ancho y el espejo no se desfasa. */
   scrollbar-gutter: stable;
@@ -2645,8 +2654,8 @@ main:has(> app-pose-sheet) {
    textarea o el caret se desfasa (el overlay quedaría más ancho). */
 .studio-shell .mention-token {
   background: color-mix(in srgb, var(--st-accent) 38%, var(--color-surface-2));
-  color: #141414;
-  border-radius: 5px;
+  color: var(--color-on-accent);
+  border-radius: var(--radius-sm);
   padding: 0;
   font-weight: inherit;
   box-decoration-break: clone;
@@ -2668,7 +2677,7 @@ main:has(> app-pose-sheet) {
   padding: 6px;
   background: var(--st-panel);
   border: 1px solid var(--color-surface-border-strong);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   box-shadow: none;
 }
 
@@ -2693,7 +2702,7 @@ main:has(> app-pose-sheet) {
   width: 100%;
   padding: 6px;
   border: none;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: transparent;
   color: var(--st-text);
   cursor: pointer;
@@ -2707,7 +2716,7 @@ main:has(> app-pose-sheet) {
 .studio-shell .mention-thumb {
   width: 34px;
   height: 34px;
-  border-radius: 7px;
+  border-radius: var(--radius-md);
   object-fit: cover;
   background: var(--st-bg);
   flex-shrink: 0;
@@ -2733,7 +2742,7 @@ main:has(> app-pose-sheet) {
   font-weight: 700;
   color: var(--st-text-2);
   background: var(--st-bg);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   padding: 2px 8px;
 }
 
@@ -2748,7 +2757,7 @@ main:has(> app-pose-sheet) {
   justify-content: center;
   width: 34px;
   height: 34px;
-  border-radius: 7px;
+  border-radius: var(--radius-md);
   flex-shrink: 0;
   font-size: 14px;
   background: var(--st-bg);
@@ -2809,7 +2818,7 @@ main:has(> app-pose-sheet) {
   align-items: center;
   gap: 6px;
   padding: 3px 6px 3px 4px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   border: 1px solid var(--color-surface-border-strong);
   background: var(--st-bg);
 }
@@ -2817,7 +2826,7 @@ main:has(> app-pose-sheet) {
 .studio-shell .mention-chip-thumb {
   width: 20px;
   height: 20px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   object-fit: cover;
 }
 
@@ -2838,7 +2847,7 @@ main:has(> app-pose-sheet) {
   width: 16px;
   height: 16px;
   border: none;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: transparent;
   color: var(--st-muted);
   cursor: pointer;
@@ -2883,7 +2892,7 @@ main:has(> app-pose-sheet) {
   width: 100%;
   padding: 9px 12px;
   margin-bottom: 12px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   border: 1px dashed var(--color-surface-border-strong);
   background: transparent;
   color: var(--st-text);
@@ -2924,7 +2933,7 @@ main:has(> app-pose-sheet) {
   justify-content: center;
   width: 26px;
   height: 26px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   border: 1px dashed var(--color-surface-border-strong);
   cursor: pointer;
   color: var(--st-text-2);
@@ -2946,7 +2955,7 @@ main:has(> app-pose-sheet) {
   justify-content: center;
   gap: 3px;
   border: 1px solid var(--st-line);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: var(--st-bg);
   cursor: pointer;
   overflow: hidden;
@@ -3025,7 +3034,7 @@ main:has(> app-pose-sheet) {
   align-items: center;
   justify-content: center;
   border: none;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: color-mix(in srgb, var(--color-scrim) 80%, transparent);
   color: var(--color-ink-on-scrim);
   font-size: 11px;
@@ -3080,7 +3089,7 @@ main:has(> app-pose-sheet) {
   gap: 6px;
   margin: 0 0 8px;
   padding: 6px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid color-mix(in srgb, var(--color-danger) 40%, transparent);
   background: color-mix(in srgb, var(--color-danger) 14%, var(--color-surface));
   color: var(--st-err);
@@ -3096,7 +3105,7 @@ main:has(> app-pose-sheet) {
 .studio-shell .asset-thumb {
   position: relative;
   aspect-ratio: 1;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   border: 2px solid var(--st-line);
   padding: 0;
@@ -3145,7 +3154,7 @@ main:has(> app-pose-sheet) {
   align-items: center;
   justify-content: center;
   border: none;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: color-mix(in srgb, var(--color-scrim) 80%, transparent);
   color: var(--color-ink-on-scrim);
   font-size: 13px;
@@ -3182,7 +3191,7 @@ main:has(> app-pose-sheet) {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--st-accent);
   color: var(--color-on-accent);
   font-size: 7px;
@@ -3218,7 +3227,7 @@ main:has(> app-pose-sheet) {
   align-items: center;
   justify-content: center;
   border: none;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: color-mix(in srgb, var(--color-scrim) 80%, transparent);
   color: var(--color-ink-on-scrim);
   font-size: 11px;
@@ -3252,7 +3261,7 @@ main:has(> app-pose-sheet) {
   gap: 5px;
   padding: 0 10px;
   height: 32px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--color-surface-border-strong);
   background: var(--st-bg);
   color: var(--st-text-2);
@@ -3274,7 +3283,7 @@ main:has(> app-pose-sheet) {
 /* El resto del select (fondo, borde, label, dropdown) lo pisa el bloque
    global `.studio-shell .p-select` de más arriba; solo el radio queda acá. */
 .studio-shell .p-select {
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 .studio-shell .p-message {
@@ -3301,7 +3310,7 @@ main:has(> app-pose-sheet) {
   width: 15px;
   max-height: 13px;
   border: 1.5px solid currentColor;
-  border-radius: 2.5px;
+  border-radius: 2var (--radius-sm);
   opacity: 0.85;
   flex-shrink: 0;
 }
@@ -3313,7 +3322,7 @@ main:has(> app-pose-sheet) {
   justify-content: center;
   gap: 8px;
   padding: 10px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   border: none;
   background: var(--color-accent);
   color: var(--color-on-accent);
@@ -3377,7 +3386,7 @@ main:has(> app-pose-sheet) {
   min-height: 240px;
   /* El lienzo no debe empujar la página: máx ~viewport menos header/meta. */
   max-height: calc(100dvh - 130px);
-  border-radius: 24px;
+  border-radius: var(--radius-2xl);
   /* border: 1px solid var(--st-line); */
   /* background: var(--color-surface); */
   display: flex;
@@ -3393,7 +3402,7 @@ main:has(> app-pose-sheet) {
   width: min(100cqw, calc(100cqh * var(--canvas-ar)));
   max-width: 100%;
   max-height: 100%;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: var(--color-scrim);
   box-shadow: 0 0 0 1px var(--st-line);
   display: flex;
@@ -3456,7 +3465,7 @@ main:has(> app-pose-sheet) {
   width: 260px;
   max-width: 80%;
   height: 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--st-line);
   overflow: hidden;
 }
@@ -3506,7 +3515,7 @@ main:has(> app-pose-sheet) {
   display: flex;
   gap: 10px;
   padding: 8px;
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   border: 1px solid var(--st-line);
   background: var(--st-panel);
   cursor: pointer;
@@ -3535,7 +3544,7 @@ main:has(> app-pose-sheet) {
 .studio-shell .take-thumb {
   width: 96px;
   height: 54px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   object-fit: cover;
   background: var(--st-bg);
   flex-shrink: 0;
@@ -3610,7 +3619,7 @@ main:has(> app-pose-sheet) {
   color: var(--color-ink);
   background: var(--st-panel-2, rgba(255, 255, 255, 0.06));
   border: 1px solid var(--st-line, rgba(255, 255, 255, 0.1));
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   padding: 1px 8px;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
@@ -3641,7 +3650,7 @@ main:has(> app-pose-sheet) {
   justify-content: center;
   width: 26px;
   height: 26px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--st-line, rgba(255, 255, 255, 0.1));
   background: transparent;
   color: var(--color-ink-muted);
@@ -3671,7 +3680,7 @@ main:has(> app-pose-sheet) {
   aspect-ratio: var(--canvas-ar, 1.7778);
   max-height: 52vh;
   width: 100%;
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   overflow: hidden;
   background: rgba(0, 0, 0, 0.35);
   display: flex;
@@ -3740,7 +3749,7 @@ main:has(> app-pose-sheet) {
   font-size: 11px;
   font-weight: 500;
   padding: 2px 6px;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   background: var(--st-panel-2, rgba(255, 255, 255, 0.06));
   border: 1px solid var(--st-line, rgba(255, 255, 255, 0.1));
 }
@@ -3751,7 +3760,7 @@ main:has(> app-pose-sheet) {
   flex-direction: column;
   gap: 4px;
   border: 1px solid var(--st-line, rgba(255, 255, 255, 0.1));
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: var(--st-panel-2, rgba(255, 255, 255, 0.06));
 }
 
@@ -3828,7 +3837,7 @@ main:has(> app-pose-sheet) {
   color: var(--st-accent);
   background: color-mix(in srgb, var(--st-accent) 14%, transparent);
   border: 1px solid color-mix(in srgb, var(--st-accent) 35%, transparent);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   padding: 2px 6px;
   white-space: nowrap;
 }
@@ -3869,7 +3878,7 @@ main:has(> app-pose-sheet) {
   color: var(--st-text-2);
   background: var(--st-panel-2);
   border: 1px solid var(--st-line);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   cursor: pointer;
   transition:
     color 120ms ease,
@@ -3891,7 +3900,7 @@ main:has(> app-pose-sheet) {
 .studio-shell .day-chip-count {
   font-size: 10px;
   font-weight: 700;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   padding: 1px 6px;
   background: color-mix(in srgb, currentColor 14%, transparent);
 }
@@ -3935,7 +3944,7 @@ main:has(> app-pose-sheet) {
 .studio-shell .ref-thumb {
   width: 22px;
   height: 22px;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   object-fit: cover;
   border: 1px solid var(--st-line);
   background: var(--st-bg);
@@ -3951,7 +3960,7 @@ main:has(> app-pose-sheet) {
   display: inline-flex;
   align-items: stretch;
   border: 1px solid var(--st-line);
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   background: var(--st-panel-2);
 }
@@ -4031,7 +4040,7 @@ main:has(> app-pose-sheet) {
   align-items: center;
   gap: 4px;
   border: 1px solid var(--st-line);
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
   background: var(--st-panel-2);
   color: var(--st-muted);
   font-size: 9px;
@@ -4080,7 +4089,7 @@ main:has(> app-pose-sheet) {
   align-items: center;
   gap: 8px;
   padding: 8px 10px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--st-line);
   background: var(--st-panel);
   font-size: 12px;
@@ -4139,7 +4148,7 @@ main:has(> app-pose-sheet) {
 /* ── Modal de proyecto: contraste en tema oscuro ───────────────
    El overlay se monta en body: global, sin encapsular. */
 .studio-project-dialog {
-  border-radius: 24px;
+  border-radius: var(--radius-2xl);
   overflow: hidden;
 }
 
@@ -4170,7 +4179,7 @@ main:has(> app-pose-sheet) {
 .studio-project-dialog .p-select {
   background: var(--st-panel);
   border: 1px solid var(--st-line);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 .studio-project-dialog .p-select:not(.p-disabled):hover {
@@ -4312,14 +4321,14 @@ main:has(> app-pose-sheet) {
   position: relative;
   overflow: hidden;
   background: var(--color-surface-hover);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .skel-light {
   position: relative;
   overflow: hidden;
   background: color-mix(in srgb, var(--color-ink) 10%, transparent);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .skel::after,
@@ -4348,7 +4357,7 @@ main:has(> app-pose-sheet) {
 .skel-avatar {
   width: 40px;
   height: 40px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
 }
 
 /* ============================================
@@ -4412,7 +4421,7 @@ main:has(> app-pose-sheet) {
 }
 
 .seg-pill.nav-pill {
-  border-radius: 999px;
+  border-radius: var(--radius-full);
 }
 
 .seg-on .p-menubar-item-link.p-menubar-item-link-active,
@@ -4585,7 +4594,7 @@ main:has(> app-pose-sheet) {
 .pulse-dot {
   width: 8px;
   height: 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--color-accent);
   position: relative;
   flex-shrink: 0;
@@ -4617,7 +4626,7 @@ main:has(> app-pose-sheet) {
   display: inline-flex;
   align-items: center;
   padding: 1px 6px;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   background: var(--color-surface-2);
   border: 1px solid var(--color-surface-border-strong);
   border-bottom-width: 2px;
@@ -4661,7 +4670,7 @@ main:has(> app-pose-sheet) {
   border: 1px solid var(--color-surface-border) !important;
   color: var(--color-ink-on-dark) !important;
   box-shadow: none !important;
-  border-radius: 16px !important;
+  border-radius: var(--radius-xl) !important;
 }
 
 .agency-reel-popover .p-popover-content {
@@ -4701,7 +4710,7 @@ main:has(> app-pose-sheet) {
 .agency-reel-popover .reel-live .dot {
   width: 7px;
   height: 7px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--color-accent);
   animation: agency-reel-pulse 1.6s ease-in-out infinite;
 }
@@ -4742,7 +4751,7 @@ main:has(> app-pose-sheet) {
 .agency-reel-popover .reel-thumb {
   width: 74px;
   height: 42px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   object-fit: cover;
   background: var(--color-scrim);
   flex-shrink: 0;
@@ -4803,7 +4812,7 @@ main:has(> app-pose-sheet) {
 .agency-reel-popover .reel-track {
   display: block;
   height: 4px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--color-surface-border);
   overflow: hidden;
 }
@@ -4832,7 +4841,7 @@ main:has(> app-pose-sheet) {
   align-items: center;
   gap: 6px;
   padding: 4px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   border: 1px solid var(--color-surface-border);
   background: var(--color-surface-2);
   color: var(--color-ink-on-dark);
@@ -4891,7 +4900,7 @@ main:has(> app-pose-sheet) {
   width: 52px;
   height: 52px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--color-accent);
   color: var(--color-on-accent);
   cursor: pointer;
@@ -4920,7 +4929,7 @@ main:has(> app-pose-sheet) {
   width: min(380px, calc(100vw - 32px));
   height: min(520px, calc(100vh - 140px));
   border: 1px solid var(--color-surface-border);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   background: var(--color-background);
   box-shadow: 0 12px 40px rgb(0 0 0 / 30%);
   opacity: 0;
@@ -4953,6 +4962,20 @@ main:has(> app-pose-sheet) {
   color: var(--color-ink-on-dark);
 }
 
+/* Transparencia IA: el interlocutor se identifica como asistente artificial. */
+.agency-chat-ai {
+  display: inline-block;
+  vertical-align: 1px;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--color-accent) 16%, transparent);
+  color: var(--color-accent);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
 .agency-chat-sub {
   font-size: 11px;
   color: var(--color-ink-muted-on-dark);
@@ -4965,7 +4988,7 @@ main:has(> app-pose-sheet) {
   width: 30px;
   height: 30px;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: transparent;
   color: var(--color-ink-muted-on-dark);
   cursor: pointer;
@@ -4996,7 +5019,7 @@ main:has(> app-pose-sheet) {
 .agency-chat-msg {
   max-width: 85%;
   padding: 8px 12px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   font-size: 13px;
   line-height: 1.4;
   white-space: pre-wrap;
@@ -5026,7 +5049,7 @@ main:has(> app-pose-sheet) {
 .agency-chat-msg.typing span {
   width: 6px;
   height: 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--color-ink-muted-on-dark);
   animation: agency-chat-blink 1.2s infinite ease-in-out;
 }
@@ -5049,15 +5072,15 @@ main:has(> app-pose-sheet) {
   max-width: 100%;
   padding: 4px 10px;
   border: 1px solid var(--color-surface-border);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   font-size: 12px;
   color: var(--color-ink-muted-on-dark);
   background: transparent;
 }
 
 .agency-chat-tool.error {
-  border-color: var(--color-danger, #e05d5d);
-  color: var(--color-danger, #e05d5d);
+  border-color: var(--color-danger);
+  color: var(--color-danger);
 }
 
 .agency-chat-tool-icon {
