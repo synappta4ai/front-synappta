@@ -1,4 +1,4 @@
-export const CONTACT_EMAIL = 'ledzerrodriguez@gmail.com';
+export const CONTACT_EMAIL = 'sinappta@gmail.com';
 
 export interface SocialLink {
   label: string;

@@ -19,6 +19,7 @@ import { Tag } from 'primeng/tag';
 
 import { AdminService } from '../../services/admin.service';
 import { PermissionDef, PlatformUser, Tenant, TenantMember } from '../../interfaces';
+import { ConsentCheckboxesComponent } from '@shared/components/consent-checkboxes/consent-checkboxes.component';
 
 /** Nombres de rol por nivel (solo lectura; el 0 nunca se asigna desde acá). */
 const ROLE_NAMES: Record<number, string> = {
@@ -37,7 +38,16 @@ const ASSIGNABLE_ROLES = [1, 2, 3].map((value) => ({
 
 @Component({
   selector: 'app-tenant-users-dialog',
-  imports: [FormsModule, TranslatePipe, Dialog, Button, InputText, Message, Tag],
+  imports: [
+    FormsModule,
+    TranslatePipe,
+    Dialog,
+    Button,
+    InputText,
+    Message,
+    Tag,
+    ConsentCheckboxesComponent,
+  ],
   templateUrl: './tenant-users-dialog.component.html',
   styleUrls: ['./tenant-users-dialog.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -68,6 +78,10 @@ export class TenantUsersDialogComponent {
 
   /** Pestaña del formulario de alta: nuevo usuario global o existente. */
   protected readonly mode = signal<'new' | 'existing'>('new');
+  /** Aceptaciones declaradas por el admin (el titular confirma en su primer ingreso). */
+  protected readonly consentTerms = signal(false);
+  protected readonly consentPrivacy = signal(false);
+  protected readonly consentTick = signal(0);
   protected readonly form = {
     username: '',
     password: '',
@@ -181,8 +195,13 @@ export class TenantUsersDialogComponent {
   protected createNew(): void {
     const id = this.tenantId();
     if (!id || this.saving()) return;
+    this.consentTick.update((v) => v + 1);
     if (!this.form.username.trim() || this.form.password.length < 8) {
       this.error.set(this.translate.instant('ADMIN.USERS.ERRORS.CREATE_VALIDATION'));
+      return;
+    }
+    if (!(this.consentTerms() && this.consentPrivacy())) {
+      this.error.set(this.translate.instant('CONSENT.REQUIRED'));
       return;
     }
     this.saving.set(true);
@@ -216,6 +235,8 @@ export class TenantUsersDialogComponent {
         this.form.surname = '';
         this.form.email = '';
         this.form.perms = {};
+        this.consentTerms.set(false);
+        this.consentPrivacy.set(false);
         this.loadMembers();
       });
   }

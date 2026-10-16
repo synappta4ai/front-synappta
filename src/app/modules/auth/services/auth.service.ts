@@ -4,7 +4,15 @@ import { Observable, tap } from 'rxjs';
 import { UserSessionStore } from '@core/store/user.session';
 import { unwrap } from '@utils/unwrap-api-response';
 
-import { LoginRequest, RegisterRequest, TokenResponse, UpdateAvatarRequest, User } from '../interfaces';
+import {
+  AcceptConsentRequest,
+  Consent,
+  LoginRequest,
+  RegisterRequest,
+  TokenResponse,
+  UpdateAvatarRequest,
+  User,
+} from '../interfaces';
 import { AuthApiRepository } from '../repositories';
 
 @Injectable({ providedIn: 'root' })
@@ -43,5 +51,15 @@ export class AuthService {
 
   logout(): void {
     this.sessionStore.logout();
+  }
+
+  /** Registra una aceptación legal del usuario en sesión. */
+  acceptConsent(payload: AcceptConsentRequest): Observable<Consent> {
+    return unwrap(this.authApiRepository.acceptConsent(payload));
+  }
+
+  /** Lista las aceptaciones legales del usuario en sesión. */
+  listMyConsents(): Observable<Consent[]> {
+    return unwrap(this.authApiRepository.listMyConsents());
   }
 }

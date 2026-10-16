@@ -11,12 +11,20 @@ import {
 import { NgxUiLoaderModule, NgxUiLoaderService } from 'ngx-ui-loader';
 
 import { NavBarComponent } from '@shared/components/nav-bar/nav-bar.component';
+import { ConsentGateComponent } from '@shared/components/consent-gate/consent-gate.component';
+import { CookieBannerComponent } from '@shared/components/cookie-banner/cookie-banner.component';
 
 const ROUTE_LOADER_TASK = 'private-route';
 
 @Component({
   selector: 'app-private-layout',
-  imports: [RouterOutlet, NavBarComponent, NgxUiLoaderModule],
+  imports: [
+    RouterOutlet,
+    NavBarComponent,
+    ConsentGateComponent,
+    CookieBannerComponent,
+    NgxUiLoaderModule,
+  ],
   templateUrl: './private-layout.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

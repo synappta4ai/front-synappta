@@ -257,6 +257,13 @@
           }
         </div>
       </div>
+      <consent-checkboxes
+        [(terms)]="consentTerms"
+        [(privacy)]="consentPrivacy"
+        [submitTick]="consentTick()"
+        idPrefix="tenant-user-consent"
+      />
+      <p class="consent-admin-note">{{ 'CONSENT.ADMIN_NOTE' | translate }}</p>
       <p-button
         [label]="'ADMIN.USERS.CREATE_BUTTON' | translate"
         icon="md md-person_add"
