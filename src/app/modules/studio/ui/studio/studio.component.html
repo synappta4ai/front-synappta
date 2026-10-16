@@ -866,20 +866,6 @@
   <aside class="studio-right">
     <div class="reel-head">
       <span><i class="md md-movie"></i> {{ 'STUDIO.REEL_TITLE' | translate }}</span>
-      @if (sessionLabel()) {
-        <!-- <span class="session-chip" [title]="'Sesión del ' + sessionLabel()">
-          <i class="md md-history"></i>
-          {{ sessionLabel() }}
-          <button
-            type="button"
-            class="session-clear"
-            (click)="clearSession()"
-            aria-label="Volver al reel en vivo"
-          >
-            <i class="md md-close"></i>
-          </button>
-        </span> -->
-      }
       @if (!selectedProject()) {
         <div class="day-chips" role="group" [attr.aria-label]="'STUDIO.DAY_ARIA' | translate">
           <button

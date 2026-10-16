@@ -984,12 +984,6 @@ export class StudioComponent {
   /** Clave del grupo más reciente (día auto-expandido del acordeón). */
   protected readonly firstGroupKey = computed(() => this.reelGroups()[0]?.key ?? null);
 
-  /** Etiqueta de la sesión activa ("Hoy", "Ayer" o fecha corta). */
-  protected readonly sessionLabel = computed(() => {
-    const session = this.sessionDate();
-    return session ? this.dayLabel(session) : '';
-  });
-
   /** Clave local YYYY-MM-DD de un timestamp. */
   protected dayKey(ts: number): string {
     const d = new Date(ts);

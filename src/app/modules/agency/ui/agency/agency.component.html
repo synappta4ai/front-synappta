@@ -362,6 +362,7 @@
         >
           <p-button
             [label]="'AGENCY.STUDIO.BACK' | translate"
+            icon="md md-arrow_back"
             severity="secondary"
             text
             (onClick)="prevPhase()"
@@ -748,6 +749,7 @@
       <div class="flex items-center justify-between gap-3 border-t border-surface-border pt-4 mt-6">
         <p-button
           [label]="'AGENCY.STUDIO.BACK' | translate"
+          icon="md md-arrow_back"
           severity="secondary"
           text
           (onClick)="prevPhase()"
@@ -1328,8 +1330,14 @@
                                 <button
                                   type="button"
                                   class="flex items-center gap-2 rounded-lg border border-surface-border bg-surface-2 px-2 py-1 text-xs text-ink-muted-on-dark transition hover:border-accent hover:text-ink-on-dark"
-                                  [attr.aria-label]="'Editar elemento ' + res.name"
-                                  [title]="'Editar elemento: ' + res.name"
+                                  [attr.aria-label]="
+                                    'AGENCY.STUDIO.EDIT_ELEMENT_ARIA'
+                                      | translate: { name: res.name }
+                                  "
+                                  [title]="
+                                    'AGENCY.STUDIO.EDIT_ELEMENT_TITLE'
+                                      | translate: { name: res.name }
+                                  "
                                   (click)="openAssetEditor(res.id)"
                                 >
                                   @if (res.url) {
@@ -1607,8 +1615,14 @@
                                     <button
                                       type="button"
                                       class="flex items-center gap-2 rounded-lg border border-surface-border bg-surface-2 px-2 py-1 text-xs text-ink-muted-on-dark transition hover:border-accent hover:text-ink-on-dark"
-                                      [attr.aria-label]="'Editar elemento ' + res.name"
-                                      [title]="'Editar elemento: ' + res.name"
+                                      [attr.aria-label]="
+                                        'AGENCY.STUDIO.EDIT_ELEMENT_ARIA'
+                                          | translate: { name: res.name }
+                                      "
+                                      [title]="
+                                        'AGENCY.STUDIO.EDIT_ELEMENT_TITLE'
+                                          | translate: { name: res.name }
+                                      "
                                       (click)="openAssetEditor(res.id)"
                                     >
                                       @if (res.url) {
@@ -1680,6 +1694,7 @@
       <div class="flex items-center justify-between gap-3 border-t border-surface-border pt-4 mt-6">
         <p-button
           [label]="'AGENCY.STUDIO.BACK' | translate"
+          icon="md md-arrow_back"
           severity="secondary"
           text
           (onClick)="prevPhase()"
@@ -2146,7 +2161,10 @@
   >
     <header class="agency-chat-head">
       <div>
-        <p class="agency-chat-title">{{ agentLabel() }}</p>
+        <p class="agency-chat-title">
+          {{ agentLabel() }}
+          <span class="agency-chat-ai">{{ 'AGENCY.STUDIO.CHAT_AI_BADGE' | translate }}</span>
+        </p>
         <p class="agency-chat-sub">{{ 'AGENCY.STUDIO.CHAT_SUBTITLE' | translate }}</p>
       </div>
       <button
