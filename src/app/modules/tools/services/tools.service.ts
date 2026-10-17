@@ -17,10 +17,14 @@ import { StudioService } from '@modules/studio/services';
 import { environment } from '@env/environment';
 
 import {
+  LOCATION_MODEL_NAMES,
+  LOCATION_PIECE_CODE,
+  LOCATION_SYSTEM_ASSET,
   POSE_SHEET_MODEL_NAMES,
   POSE_SHEET_PIECE_CODE,
   POSE_SHEET_RATIO,
   POSE_SHEET_VARIANTS,
+  LocationView,
   PoseSheetVariant,
 } from '../interfaces';
 import { ToolsApiRepository } from '../repositories';
@@ -111,6 +115,89 @@ export class ToolsService {
 
   trackPoseSheet(taskId: string): Observable<StatusResponse> {
     return this.agencyService.pollTaskUntilDone('image', taskId);
+  }
+
+  /** System prompt por defecto de la locación (editable por el usuario). */
+  loadLocationPrompt(): Observable<string> {
+    return this.repository.getSystemPrompt(LOCATION_SYSTEM_ASSET);
+  }
+
+  /** Mismos modelos que la hoja de poses (Soul 2 texto puro + Nano Banana con refs). */
+  listLocationModels(): Observable<AiModel[]> {
+    return this.agencyService
+      .listModelsByModality('image')
+      .pipe(map((models) => models.filter((m) => LOCATION_MODEL_NAMES.includes(m.name))));
+  }
+
+  /** Anchor proyecto/pieza para los logs (idempotente por piece code). */
+  ensureLocationAnchor(projectName: string): Observable<PoseSheetAnchor> {
+    return this.studioService.ensureTakeSlot(projectName, LOCATION_PIECE_CODE);
+  }
+
+  generateLocation(request: {
+    model: string;
+    prompt: string;
+    ratio: string;
+    resolution: string;
+    referenceIds: { id: string; name: string }[];
+    eventId: string;
+    pieceId: string;
+    pieceCode: string;
+  }): Observable<GenerateResponse> {
+    const content: ContentItem[] = [
+      ...request.referenceIds.map((ref): ContentItem => ({
+        type: 'image',
+        id: ref.id,
+        name: ref.name,
+      })),
+      { type: 'text', text: request.prompt },
+    ];
+    const payload: GenerateRequest = {
+      model: request.model,
+      content,
+      ratio: request.ratio,
+      resolution: request.resolution,
+      event_id: request.eventId,
+      piece_id: request.pieceId,
+      piece_code: request.pieceCode,
+      generation_number: ++this.sequence,
+    };
+    return this.agencyService.generate('image', payload);
+  }
+
+  trackLocation(taskId: string): Observable<StatusResponse> {
+    return this.agencyService.pollTaskUntilDone('image', taskId);
+  }
+
+  /**
+   * Guarda la vista generada en Recursos como locación: descarga el output,
+   * lo sube a la biblioteca (images), crea el ingrediente location y lo
+   * vincula. Así queda disponible como contexto en toda la app.
+   */
+  saveLocationAsIngredient(request: {
+    outputUrl: string;
+    name: string;
+    description?: string;
+    eventId: string;
+  }): Observable<SaveCharacterResult> {
+    return from(this.downloadOutput(request.outputUrl, request.name)).pipe(
+      mergeMap((file) => this.libraryService.uploadFile(file, 'images', request.eventId)),
+      mergeMap((asset) =>
+        this.libraryService
+          .createIngredient({
+            type: 'location',
+            name: request.name,
+            description: request.description,
+          })
+          .pipe(
+            mergeMap((ingredient) =>
+              this.libraryService
+                .addIngredientFile(ingredient.id, { file_id: asset.id })
+                .pipe(map(() => ({ file: asset, ingredient }))),
+            ),
+          ),
+      ),
+    );
   }
 
   /**

@@ -1657,6 +1657,138 @@ input {
   white-space: nowrap;
 }
 
+/* ── Popover HERRAMIENTAS (navbar) ───────────────────────────────
+   Global a propósito: el overlay del popover vive fuera del componente
+   y el CSS encapsulado no lo alcanza (misma razón que gen-bell-popover). */
+.tools-popover {
+  width: 360px;
+  padding: 0 !important;
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-surface-border) !important;
+  color: var(--color-ink-on-dark) !important;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+  border-radius: var(--radius-xl) !important;
+}
+
+.tools-popover .p-popover-content {
+  padding: 6px;
+}
+
+.tools-popover .p-popover-arrow {
+  border-bottom-color: var(--color-surface-border) !important;
+}
+
+.tools-popover .pop-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-ink-muted-on-dark);
+}
+
+.tools-popover .pop-head i {
+  color: var(--color-accent);
+  margin-right: 6px;
+}
+
+.tools-popover .pop-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+.tools-popover .pop-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  color: inherit;
+  transition: background-color 0.12s ease;
+}
+
+.tools-popover .pop-item:hover {
+  background: var(--color-surface-hover);
+}
+
+.tools-popover .pop-item:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Herramienta activa: resaltada como la fila seleccionada. */
+.tools-popover .pop-item.active {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.tools-popover .pop-item.active .pop-model,
+.tools-popover .pop-item.active .pop-prompt,
+.tools-popover .pop-item.active .pop-go {
+  color: var(--color-on-accent);
+}
+
+.tools-popover .pop-item.active .pop-thumb.icon {
+  background: color-mix(in srgb, var(--color-on-accent) 18%, transparent);
+  color: var(--color-on-accent);
+}
+
+.tools-popover .pop-thumb {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-lg);
+  background: var(--color-scrim);
+  flex-shrink: 0;
+}
+
+.tools-popover .pop-thumb.icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-accent);
+}
+
+.tools-popover .pop-thumb.icon i {
+  font-size: 20px;
+}
+
+.tools-popover .pop-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.tools-popover .pop-model {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-ink-on-dark);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tools-popover .pop-prompt {
+  font-size: 12px;
+  color: var(--color-ink-muted-on-dark);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.tools-popover .pop-go {
+  color: var(--color-ink-muted-on-dark);
+  flex-shrink: 0;
+}
+
 .gen-bell-popover .pop-track {
   height: 4px;
   border-radius: var(--radius-full);
