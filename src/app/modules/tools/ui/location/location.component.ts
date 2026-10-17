@@ -360,7 +360,11 @@ export class LocationComponent implements OnInit {
     setTimeout(() => this.generating.set(false), wait);
   }
 
-  /** Guarda todas las vistas generadas en un mismo recurso de locación. */
+  /**
+   * Guarda todas las vistas generadas en un mismo recurso de locación. No se
+   * cancela al desmontar el componente: si el usuario navega mientras sube,
+   * el recurso quedaría creado a medias.
+   */
   protected saveResults(): void {
     const anchor = this.anchor;
     const photos = this.results();
@@ -377,10 +381,7 @@ export class LocationComponent implements OnInit {
         eventId: anchor.project.id,
         photos: photos.map((p) => ({ outputUrl: p.output.url, viewLabel: p.viewLabel })),
       })
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        finalize(() => this.saving.set(false)),
-      )
+      .pipe(finalize(() => this.saving.set(false)))
       .subscribe({
         next: ({ ingredient }) => this.savedName.set(ingredient.name),
         error: (err: unknown) => this.error.set(err instanceof Error ? err.message : String(err)),

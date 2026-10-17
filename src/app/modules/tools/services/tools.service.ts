@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
-import { from, Observable } from 'rxjs';
-import { concatMap, map, mergeMap, toArray } from 'rxjs/operators';
+import { from, Observable, of, throwError } from 'rxjs';
+import { catchError, concatMap, map, mergeMap, toArray } from 'rxjs/operators';
 
 import { AgencyService } from '@modules/agency/services';
 import {
@@ -187,10 +187,14 @@ export class ToolsService {
   }
 
   /**
-   * Guarda la locación generada en Recursos: crea el ingrediente location una
-   * sola vez y le vincula una imagen por vista elegida. El nombre de cada
-   * archivo es "<nombre> ∕ <vista>", así todas las vistas quedan agrupadas en
-   * el mismo recurso.
+   * Guarda la locación generada en Recursos: un mismo ingrediente location
+   * con una imagen por vista elegida. El nombre de cada archivo es
+   * "<nombre> ∕ <vista>", así todas las vistas quedan agrupadas en el mismo
+   * recurso.
+   *
+   * Primero descarga y sube todas las vistas (una que falle se omite y el
+   * resto sigue) y recién después crea el recurso: si una descarga se corta
+   * antes de tiempo no queda un ingrediente vacío.
    */
   saveLocationViewsAsIngredient(request: {
     name: string;
@@ -198,32 +202,46 @@ export class ToolsService {
     eventId: string;
     photos: readonly { outputUrl: string; viewLabel: string }[];
   }): Observable<SaveLocationResult> {
-    return this.libraryService
-      .createIngredient({
-        type: 'location',
-        name: request.name,
-        description: request.description,
-      })
-      .pipe(
-        mergeMap((ingredient) =>
-          from(request.photos).pipe(
-            concatMap((photo) =>
-              from(
-                this.fetchAsFile(photo.outputUrl, locationFileName(request.name, photo.viewLabel)),
-              ).pipe(
-                mergeMap((file) => this.libraryService.uploadFile(file, 'images', request.eventId)),
-                mergeMap((asset) =>
+    const failures: string[] = [];
+    return from(request.photos).pipe(
+      concatMap((photo) =>
+        from(
+          this.fetchAsFile(photo.outputUrl, locationFileName(request.name, photo.viewLabel)),
+        ).pipe(
+          mergeMap((file) => this.libraryService.uploadFile(file, 'images', request.eventId)),
+          catchError((err: unknown) => {
+            failures.push(err instanceof Error ? err.message : String(err));
+            return of(null);
+          }),
+        ),
+      ),
+      toArray(),
+      map((assets) => assets.filter((asset): asset is FileAsset => asset !== null)),
+      mergeMap((assets) => {
+        if (assets.length === 0) {
+          return throwError(() => new Error(failures[0] ?? 'no views could be saved'));
+        }
+        return this.libraryService
+          .createIngredient({
+            type: 'location',
+            name: request.name,
+            description: request.description,
+          })
+          .pipe(
+            mergeMap((ingredient) =>
+              from(assets).pipe(
+                concatMap((asset) =>
                   this.libraryService
                     .addIngredientFile(ingredient.id, { file_id: asset.id })
                     .pipe(map(() => asset)),
                 ),
+                toArray(),
+                map((files) => ({ ingredient, files })),
               ),
             ),
-            toArray(),
-            map((files) => ({ ingredient, files })),
-          ),
-        ),
-      );
+          );
+      }),
+    );
   }
 
   /**
