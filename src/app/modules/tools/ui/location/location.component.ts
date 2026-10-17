@@ -13,8 +13,8 @@ import {
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { finalize, forkJoin } from 'rxjs';
-import { mergeMap } from 'rxjs/operators';
+import { Observable, defer, finalize, forkJoin, from, of } from 'rxjs';
+import { catchError, concatMap, map, mergeMap, tap } from 'rxjs/operators';
 
 import { Button } from 'primeng/button';
 import { Message } from 'primeng/message';
@@ -38,6 +38,7 @@ import {
   LOCATION_VIEWS,
   LocationRatioOption,
   LocationView,
+  LocationViewDef,
   TOOLS_LOADING_POSTER,
   TOOLS_LOADING_VIDEO,
 } from '../../interfaces';
@@ -47,6 +48,12 @@ const REF_MAX_BYTES = 10 * 1024 * 1024;
 const REF_MIME_TYPES: readonly string[] = ['image/png', 'image/jpeg'];
 const MIN_LOADING_MS = 650;
 const PROGRESS_EXPECTED_MS = 75_000;
+
+/** Una vista generada: el output del back y la vista a la que corresponde. */
+interface LocationViewResult {
+  output: StatusOutput;
+  viewLabel: string;
+}
 
 /**
  * Locación (Herramientas): genera con Gemini 3 Pro Image una vista de cámara
@@ -92,7 +99,7 @@ export class LocationComponent implements OnInit {
     () => this.models().find((m) => m.name === this.selectedModel()) ?? null,
   );
 
-  protected readonly view = signal<LocationView>(LOCATION_DEFAULT_VIEW);
+  protected readonly selectedViews = signal<readonly LocationView[]>([LOCATION_DEFAULT_VIEW]);
 
   /** Formato de salida: el usuario puede cambiarlo; el default es 16:9 / 2K. */
   protected readonly ratio = signal<string>(LOCATION_DEFAULT_RATIO);
@@ -152,8 +159,11 @@ export class LocationComponent implements OnInit {
 
   protected readonly generating = signal(false);
   protected readonly progress = signal<number | null>(null);
+  protected readonly totalViews = signal(0);
+  protected readonly currentView = signal(1);
+  protected readonly failedViews = signal(0);
   protected readonly error = signal<string | null>(null);
-  protected readonly result = signal<readonly StatusOutput[]>([]);
+  protected readonly results = signal<readonly LocationViewResult[]>([]);
 
   private progressTimer: ReturnType<typeof setInterval> | null = null;
   private anchor: PoseSheetAnchor | null = null;
@@ -178,11 +188,20 @@ export class LocationComponent implements OnInit {
     this.loadPrompt();
   }
 
-  protected onViewChange(view: LocationView): void {
-    if (view === this.view()) {
+  protected isViewSelected(view: LocationView): boolean {
+    return this.selectedViews().includes(view);
+  }
+
+  /** Alterna una vista de cámara; siempre queda al menos una seleccionada. */
+  protected toggleView(view: LocationView): void {
+    const current = this.selectedViews();
+    if (current.includes(view)) {
+      if (current.length > 1) {
+        this.selectedViews.set(current.filter((v) => v !== view));
+      }
       return;
     }
-    this.view.set(view);
+    this.selectedViews.set([...current, view]);
   }
 
   /** Cambio de ratio: ignora valores no soportados por el modelo elegido. */
@@ -229,8 +248,8 @@ export class LocationComponent implements OnInit {
 
   protected generate(): void {
     const model = this.selectedModel();
-    const prompt = this.composePrompt();
-    if (!model || !prompt.trim() || this.generating()) {
+    const views = this.selectedViews();
+    if (!model || views.length === 0 || this.generating()) {
       return;
     }
     const startedAt = Date.now();
@@ -238,63 +257,73 @@ export class LocationComponent implements OnInit {
     this.progress.set(null);
     this.startProgressRamp();
     this.error.set(null);
-    this.result.set([]);
+    this.results.set([]);
     this.savedName.set(null);
+    this.failedViews.set(0);
+    this.totalViews.set(views.length);
+    this.currentView.set(1);
     this.toolsService
       .ensureLocationAnchor(this.translate.instant('TOOLS.ANCHOR_LOCATION'))
       .pipe(
         mergeMap((anchor) => {
           this.anchor = anchor;
-          return this.toolsService.generateLocation({
-            model,
-            prompt,
-            ratio: this.ratio(),
-            resolution: this.resolution(),
-            referenceIds: this.refs().map((r) => ({ id: r.id, name: r.filename })),
-            eventId: anchor.project.id,
-            pieceId: anchor.piece.id,
-            pieceCode: LOCATION_PIECE_CODE,
-          });
-        }),
-        mergeMap((gen) => {
-          // El modelo de imagen es sincrónico: la respuesta del POST ya trae
-          // el resultado, así que lo mostramos sin esperar al polling.
-          this.applyOutputs(gen.outputs ?? []);
-          return this.toolsService.trackLocation(gen.taskId);
+          // Una generación por vista, en serie: el modelo de imagen es
+          // sincrónico (cada POST bloquea hasta devolver la imagen).
+          return from(views).pipe(
+            concatMap((view, index) => this.generateView(view, index, model, anchor)),
+          );
         }),
         takeUntilDestroyed(this.destroyRef),
         finalize(() => this.finishLoading(startedAt)),
       )
       .subscribe({
-        next: (status) => {
-          if (
-            typeof status.progress_percent === 'number' &&
-            status.progress_percent > (this.progress() ?? 0)
-          ) {
-            this.progress.set(status.progress_percent);
-          }
-          if (status.status === 'succeeded' || status.status === 'completed') {
-            this.applyOutputs(status.outputs ?? []);
-          } else if (status.status === 'failed' || status.status === 'cancelled') {
-            this.error.set(status.error ?? status.status);
-          }
-        },
+        complete: () => this.saveResults(),
         error: (err: unknown) => this.error.set(err instanceof Error ? err.message : String(err)),
       });
   }
 
-  /** Muestra el resultado (guardado automático incluido) de forma idempotente. */
-  private applyOutputs(outputs: readonly StatusOutput[]): void {
+  /**
+   * Genera una vista. Si falla, se registra y la cola sigue con la siguiente
+   * (así las vistas que sí salieron se guardan igual).
+   */
+  private generateView(
+    view: LocationView,
+    index: number,
+    model: string,
+    anchor: PoseSheetAnchor,
+  ): Observable<void> {
+    return defer(() => {
+      this.currentView.set(index + 1);
+      this.startProgressRamp();
+      const viewLabel = this.translate.instant(this.viewDef(view).labelKey);
+      return this.toolsService
+        .generateLocation({
+          model,
+          prompt: this.composePrompt(view),
+          ratio: this.ratio(),
+          resolution: this.resolution(),
+          referenceIds: this.refs().map((r) => ({ id: r.id, name: r.filename })),
+          eventId: anchor.project.id,
+          pieceId: anchor.piece.id,
+          pieceCode: LOCATION_PIECE_CODE,
+        })
+        .pipe(
+          tap((gen) => this.applyOutput(gen.outputs ?? [], viewLabel)),
+          map(() => undefined),
+          catchError((err: unknown) => {
+            this.failedViews.update((n) => n + 1);
+            this.error.set(err instanceof Error ? err.message : String(err));
+            return of(undefined);
+          }),
+        );
+    });
+  }
+
+  private applyOutput(outputs: readonly StatusOutput[], viewLabel: string): void {
     if (outputs.length === 0) {
       return;
     }
-    this.result.set(outputs);
-    this.progress.set(100);
-    // Guardado automático en Recursos como locación; el botón manual queda
-    // como reintento si el auto-guardado falla.
-    if (outputs[0]?.url && !this.savedName() && !this.saving()) {
-      this.saveAsLocation();
-    }
+    this.results.update((list) => [...list, ...outputs.map((output) => ({ output, viewLabel }))]);
   }
 
   /**
@@ -322,6 +351,7 @@ export class LocationComponent implements OnInit {
 
   private finishLoading(startedAt: number): void {
     this.stopProgressRamp();
+    this.progress.set(100);
     const wait = Math.max(0, MIN_LOADING_MS - (Date.now() - startedAt));
     if (wait === 0) {
       this.generating.set(false);
@@ -330,21 +360,22 @@ export class LocationComponent implements OnInit {
     setTimeout(() => this.generating.set(false), wait);
   }
 
-  protected saveAsLocation(): void {
-    const output = this.result()[0];
+  /** Guarda todas las vistas generadas en un mismo recurso de locación. */
+  protected saveResults(): void {
     const anchor = this.anchor;
-    if (!output?.url || !anchor || this.saving()) {
+    const photos = this.results();
+    if (!anchor || photos.length === 0 || this.savedName() || this.saving()) {
       return;
     }
     this.saving.set(true);
     this.error.set(null);
     const fallback = `Location ${new Date().toLocaleDateString()}`;
     this.toolsService
-      .saveLocationAsIngredient({
-        outputUrl: output.url,
+      .saveLocationViewsAsIngredient({
         name: this.locationName().trim() || fallback,
         description: this.locationDesc().trim() || undefined,
         eventId: anchor.project.id,
+        photos: photos.map((p) => ({ outputUrl: p.output.url, viewLabel: p.viewLabel })),
       })
       .pipe(
         takeUntilDestroyed(this.destroyRef),
@@ -373,14 +404,13 @@ export class LocationComponent implements OnInit {
       });
   }
 
-  private viewInstruction(): string {
-    const view = LOCATION_VIEWS.find((v) => v.key === this.view());
-    return view ? this.translate.instant(view.instructionKey) : '';
+  private viewDef(view: LocationView): LocationViewDef {
+    return LOCATION_VIEWS.find((v) => v.key === view) ?? LOCATION_VIEWS[0];
   }
 
-  private composePrompt(): string {
+  private composePrompt(view: LocationView): string {
     const parts = [this.editedPrompt().trim()];
-    const instruction = this.viewInstruction().trim();
+    const instruction = this.translate.instant(this.viewDef(view).instructionKey).trim();
     if (instruction) {
       parts.push(instruction);
     }

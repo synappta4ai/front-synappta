@@ -108,6 +108,22 @@
   border-radius: 12px;
 }
 
+/* Varias vistas generadas: mosaico de dos columnas en lugar de una sola. */
+.pose-canvas.multi {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-auto-rows: minmax(0, 1fr);
+  align-items: center;
+  justify-items: center;
+  gap: 8px;
+  overflow: auto;
+}
+
+.pose-canvas.multi img {
+  width: 100%;
+  height: 100%;
+}
+
 .pose-empty {
   display: flex;
   flex-direction: column;

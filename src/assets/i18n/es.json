@@ -65,6 +65,7 @@
     "RATIO_LABEL": "Relación de aspecto",
     "RESOLUTION_LABEL": "Resolución",
     "VIEW_LABEL": "Vista de cámara",
+    "VIEW_MULTI_HINT": "Podés elegir una o varias vistas: se genera una imagen por vista y se guardan juntas en la misma locación.",
     "VIEW_ELEVATED_CORNER": "Elevada de esquina",
     "VIEW_ELEVATED_CORNER_PROMPT": "Vista elevada desde una esquina superior, plano general que establece toda la locación",
     "VIEW_RIGHT": "Lateral derecha",
@@ -90,6 +91,7 @@
     "LOCATION_REFS_EMPTY": "Sin referencias: se genera desde texto.",
     "SAVE_LOCATION": "Guardar en Recursos como locación",
     "SAVED_LOCATION": "Guardado en Recursos como locación.",
+    "VIEWS_PARTIAL": "{{ok}} de {{total}} vistas generadas.",
     "ANCHOR_LOCATION": "Locación"
   },
   "SHARED": {

@@ -47,13 +47,15 @@
       <div class="panel-head">
         <span><i class="md md-videocam"></i> {{ 'TOOLS.VIEW_LABEL' | translate }}</span>
       </div>
+      <p class="muted small mb-2">{{ 'TOOLS.VIEW_MULTI_HINT' | translate }}</p>
       <div class="pose-variant-grid" role="group" aria-label="{{ 'TOOLS.VIEW_LABEL' | translate }}">
         @for (v of views; track v.key) {
           <button
             type="button"
             class="pose-variant"
-            [class.active]="view() === v.key"
-            (click)="onViewChange(v.key)"
+            [class.active]="isViewSelected(v.key)"
+            [attr.aria-pressed]="isViewSelected(v.key)"
+            (click)="toggleView(v.key)"
           >
             <strong>{{ v.labelKey | translate }}</strong>
           </button>
@@ -235,7 +237,10 @@
         (onClick)="generate()"
       />
       @if (generating() && progress() !== null) {
-        <p-tag [value]="progress() + '%'" severity="info" />
+        <p-tag
+          [value]="currentView() + '/' + totalViews() + ' · ' + progress() + '%'"
+          severity="info"
+        />
       }
     </div>
   </aside>
@@ -268,16 +273,16 @@
             <span class="muted small">{{ 'TOOLS.GENERATING' | translate }}</span>
           </div>
         </div>
-      } @else if (result().length === 0) {
+      } @else if (results().length === 0) {
         <div class="pose-empty">
           <i class="md md-place"></i>
           <span>{{ 'TOOLS.LOCATION_DESC' | translate }}</span>
         </div>
       } @else {
-        <div class="pose-canvas">
-          @for (output of result(); track output.url) {
+        <div class="pose-canvas" [class.multi]="results().length > 1">
+          @for (item of results(); track item.output.url) {
             <img
-              [src]="output.url | serverUrl"
+              [src]="item.output.url | serverUrl"
               alt="{{ 'TOOLS.RESULT_TITLE' | translate }}"
               width="1280"
               height="720"
@@ -287,6 +292,14 @@
           }
         </div>
         <div class="mt-2 flex flex-wrap items-center gap-3">
+          @if (failedViews() > 0) {
+            <p-message
+              severity="warn"
+              [text]="
+                'TOOLS.VIEWS_PARTIAL' | translate: { ok: results().length, total: totalViews() }
+              "
+            />
+          }
           @if (!savedName()) {
             <p-button
               [label]="
@@ -295,7 +308,7 @@
               icon="md md-place"
               [loading]="saving()"
               [disabled]="saving()"
-              (onClick)="saveAsLocation()"
+              (onClick)="saveResults()"
             />
           } @else {
             <p-message severity="success" [text]="'TOOLS.SAVED_LOCATION' | translate" />

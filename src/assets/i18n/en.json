@@ -65,6 +65,7 @@
     "RATIO_LABEL": "Aspect ratio",
     "RESOLUTION_LABEL": "Resolution",
     "VIEW_LABEL": "Camera view",
+    "VIEW_MULTI_HINT": "Pick one or more views: one image is generated per view and they are saved together in the same location.",
     "VIEW_ELEVATED_CORNER": "Elevated corner",
     "VIEW_ELEVATED_CORNER_PROMPT": "Elevated view from an upper corner, wide shot establishing the whole location",
     "VIEW_RIGHT": "Right side",
@@ -90,6 +91,7 @@
     "LOCATION_REFS_EMPTY": "No references: generates from text.",
     "SAVE_LOCATION": "Save to Library as location",
     "SAVED_LOCATION": "Saved to Library as location.",
+    "VIEWS_PARTIAL": "{{ok}} of {{total}} views generated.",
     "ANCHOR_LOCATION": "Location"
   },
   "SHARED": {
