@@ -127,8 +127,7 @@
   font-size: 28px;
 }
 
-/* Estado de carga del visor: animación (animation.mp4) + % superpuesto. Con
-   prefers-reduced-motion se congela el póster en lugar del video. */
+/* Estado de carga del visor: animación (animation.mp4) + % superpuesto. */
 .pose-loading {
   position: relative;
   display: flex;
@@ -145,15 +144,6 @@
 .pose-loading-media {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-.pose-loading-poster {
-  position: absolute;
-  inset: 0;
-  display: none;
   width: 100%;
   height: 100%;
   object-fit: contain;
@@ -176,16 +166,6 @@
   font-size: 26px;
   font-weight: 700;
   color: var(--color-ink-on-dark);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .pose-loading-media {
-    display: none;
-  }
-
-  .pose-loading-poster {
-    display: block;
-  }
 }
 
 .pose-refs {
