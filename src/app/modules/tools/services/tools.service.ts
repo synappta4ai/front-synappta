@@ -73,7 +73,7 @@ export class ToolsService {
     return this.repository.getSystemPrompt(def.asset);
   }
 
-  /** Solo Soul 2 + Nano Banana Pro (nombres exactos del catálogo). */
+  /** Solo Nano Banana Pro (nombre exacto del catálogo). */
   listPoseSheetModels(): Observable<AiModel[]> {
     return this.agencyService
       .listModelsByModality('image')
@@ -122,7 +122,7 @@ export class ToolsService {
     return this.repository.getSystemPrompt(LOCATION_SYSTEM_ASSET);
   }
 
-  /** Mismos modelos que la hoja de poses (Soul 2 texto puro + Nano Banana con refs). */
+  /** Mismo modelo que la hoja de poses (Nano Banana Pro, acepta referencias). */
   listLocationModels(): Observable<AiModel[]> {
     return this.agencyService
       .listModelsByModality('image')

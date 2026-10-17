@@ -26,13 +26,10 @@ export const POSE_SHEET_VARIANTS: readonly PoseSheetVariantDef[] = [
 
 /**
  * Modelos ofrecidos en la Hoja de poses. Nombres exactos del catálogo del
- * back (GET /models): Soul 2 (texto puro) y Nano Banana Pro (acepta
- * referencias). La API es intercambiable por tenant vía credenciales.
+ * back (GET /models): Nano Banana Pro (acepta referencias). La API es
+ * intercambiable por tenant vía credenciales.
  */
-export const POSE_SHEET_MODEL_NAMES: readonly string[] = [
-  'higgsfield-soul-2-standard',
-  'gemini-3-pro-image-preview',
-];
+export const POSE_SHEET_MODEL_NAMES: readonly string[] = ['gemini-3-pro-image-preview'];
 
 /** Tríptico horizontal (frente / perfil / cuerpo entero). */
 export const POSE_SHEET_RATIO = '3:2';
@@ -85,14 +82,10 @@ export const LOCATION_VIEWS: readonly LocationViewDef[] = [
 export const LOCATION_DEFAULT_VIEW: LocationView = 'elevated-corner';
 
 /**
- * Modelos ofrecidos en Locación. Mismos que Hoja de poses: Soul 2 es
- * texto puro (sin referencias) y Nano Banana Pro acepta las imágenes
+ * Modelos ofrecidos en Locación. Nano Banana Pro acepta las imágenes
  * subidas para recrear vistas desde otros ángulos.
  */
-export const LOCATION_MODEL_NAMES: readonly string[] = [
-  'higgsfield-soul-2-standard',
-  'gemini-3-pro-image-preview',
-];
+export const LOCATION_MODEL_NAMES: readonly string[] = ['gemini-3-pro-image-preview'];
 
 /** Opción de relación de aspecto para el desplegable (w/h dibujan el swatch). */
 export interface LocationRatioOption {
@@ -102,9 +95,9 @@ export interface LocationRatioOption {
 }
 
 /**
- * Relaciones de aspecto ofrecidas en Locación (unión de las que soportan
- * Soul 2 y Gemini 3 Pro Image). El desplegable muestra solo las que declare
- * el modelo elegido; este catálogo aporta el rótulo y el recuadro proporcional.
+ * Relaciones de aspecto posibles en Locación. El desplegable muestra solo las
+ * que declare el modelo elegido; este catálogo aporta el rótulo y el recuadro
+ * proporcional.
  */
 export const LOCATION_RATIO_OPTIONS: readonly LocationRatioOption[] = [
   { value: '16:9', w: 16, h: 9 },
@@ -146,3 +139,7 @@ export const LOCATION_PIECE_CODE = 'TOOLS-LOCATION';
 
 /** System prompt por defecto de la locación (servido en /assets). */
 export const LOCATION_SYSTEM_ASSET = './assets/tools/location.system.md';
+
+/** Animación de carga compartida por las herramientas (servida en /assets). */
+export const TOOLS_LOADING_VIDEO = './assets/tools/animation.mp4';
+export const TOOLS_LOADING_POSTER = './assets/tools/carga-poster.jpeg';

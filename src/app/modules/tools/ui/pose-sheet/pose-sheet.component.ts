@@ -2,10 +2,13 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
   OnInit,
   computed,
+  effect,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -24,14 +27,21 @@ import { LibraryService } from '@modules/library/services';
 import { ServerUrlPipe } from '@pipes/server-url.pipe';
 import { UiIcon } from '@shared/components/ui-icon/ui-icon.component';
 
-import { POSE_SHEET_PIECE_CODE, POSE_SHEET_VARIANTS, PoseSheetVariant } from '../../interfaces';
+import {
+  POSE_SHEET_PIECE_CODE,
+  POSE_SHEET_VARIANTS,
+  PoseSheetVariant,
+  TOOLS_LOADING_POSTER,
+  TOOLS_LOADING_VIDEO,
+} from '../../interfaces';
 import { PoseSheetAnchor, ToolsService } from '../../services';
 
 const REF_MAX_BYTES = 10 * 1024 * 1024;
 const REF_MIME_TYPES: readonly string[] = ['image/png', 'image/jpeg'];
+const MIN_LOADING_MS = 650;
 
 /**
- * Hoja de poses (Herramientas): genera con Soul 2 o Nano Banana Pro una hoja
+ * Hoja de poses (Herramientas): genera con Gemini 3 Pro Image una hoja
  * estructurada del personaje y la guarda en Recursos como ingrediente
  * character. Las instrucciones son visibles y editables por el usuario.
  */
@@ -48,17 +58,29 @@ export class PoseSheetComponent implements OnInit {
   private readonly translate = inject(TranslateService);
   private readonly destroyRef = inject(DestroyRef);
 
+  private readonly loadingMedia = viewChild<ElementRef<HTMLVideoElement>>('loadingMediaRef');
+
+  constructor() {
+    effect(() => {
+      const video = this.loadingMedia()?.nativeElement;
+      if (!video || !this.generating()) {
+        return;
+      }
+      video.muted = true;
+      video.currentTime = 0;
+      void video.play().catch(() => undefined);
+    });
+  }
+
   protected readonly variants = POSE_SHEET_VARIANTS;
+  protected readonly loadingVideo = TOOLS_LOADING_VIDEO;
+  protected readonly loadingPoster = TOOLS_LOADING_POSTER;
 
   protected readonly models = signal<AiModel[]>([]);
   protected readonly loadingModels = signal(true);
   protected readonly selectedModel = signal('');
   protected readonly activeModel = computed(
     () => this.models().find((m) => m.name === this.selectedModel()) ?? null,
-  );
-  /** Soul 2 es texto puro: avisa si hay referencias que el modelo ignorará. */
-  protected readonly soulSelected = computed(() =>
-    (this.activeModel()?.name ?? '').toLowerCase().includes('soul'),
   );
 
   protected readonly variant = signal<PoseSheetVariant>('body');
@@ -144,6 +166,7 @@ export class PoseSheetComponent implements OnInit {
     if (!model || !prompt.trim() || this.generating()) {
       return;
     }
+    const startedAt = Date.now();
     this.generating.set(true);
     this.progress.set(null);
     this.error.set(null);
@@ -165,7 +188,7 @@ export class PoseSheetComponent implements OnInit {
         }),
         mergeMap((gen) => this.toolsService.trackPoseSheet(gen.taskId)),
         takeUntilDestroyed(this.destroyRef),
-        finalize(() => this.generating.set(false)),
+        finalize(() => this.finishLoading(startedAt)),
       )
       .subscribe({
         next: (status) => {
@@ -186,6 +209,15 @@ export class PoseSheetComponent implements OnInit {
         },
         error: (err: unknown) => this.error.set(err instanceof Error ? err.message : String(err)),
       });
+  }
+
+  private finishLoading(startedAt: number): void {
+    const wait = Math.max(0, MIN_LOADING_MS - (Date.now() - startedAt));
+    if (wait === 0) {
+      this.generating.set(false);
+      return;
+    }
+    setTimeout(() => this.generating.set(false), wait);
   }
 
   protected saveAsCharacter(): void {

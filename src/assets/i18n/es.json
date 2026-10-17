@@ -35,7 +35,6 @@
     "MODEL_PLACEHOLDER": "Elige el modelo",
     "LOADING_CATALOG": "Cargando catálogo…",
     "NO_MODELS": "No hay modelos de hoja de poses disponibles. Revisa las credenciales en Admin.",
-    "SOUL_REFS_HINT": "Soul 2 genera solo desde texto; si subiste referencias usa Nano Banana Pro.",
     "VARIANT_LABEL": "Tipo de hoja",
     "VARIANT_BODY": "Cuerpo completo",
     "VARIANT_BODY_DESC": "Frente, perfil y cuerpo entero",

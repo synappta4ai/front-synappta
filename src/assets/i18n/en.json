@@ -35,7 +35,6 @@
     "MODEL_PLACEHOLDER": "Choose the model",
     "LOADING_CATALOG": "Loading catalog…",
     "NO_MODELS": "No pose-sheet models available. Check credentials in Admin.",
-    "SOUL_REFS_HINT": "Soul 2 generates from text only; if you uploaded references use Nano Banana Pro.",
     "VARIANT_LABEL": "Sheet type",
     "VARIANT_BODY": "Full body",
     "VARIANT_BODY_DESC": "Front, profile and full body",

@@ -2252,16 +2252,19 @@ p-selectbutton:has(.section-toggle) {
    ═══════════════════════════════════════════════════════════════ */
 
 /* ── Lienzo: main estira al Studio ───────────────────────────── */
-/* Solo cuando aloja al studio, main se vuelve flex-column para que
-   el host llene el área bajo la navbar hasta el borde inferior del
-   viewport, sin depender de la altura exacta de la navbar. El min-height
-   garantiza que no quede una franja vacía cuando el contenido es más
-   bajo que la ventana (64px ≈ altura de la navbar). */
+/* Solo cuando aloja al studio, main se vuelve flex-column y se
+   topa a la altura del viewport bajo la navbar (64px). Con
+   min-height:0 + overflow:hidden las columnas scrollean por dentro
+   y la página nunca hace scroll hacia abajo. */
 main:has(> app-studio),
-main:has(> app-pose-sheet) {
+main:has(> app-pose-sheet),
+main:has(> app-location) {
   display: flex;
   flex-direction: column;
-  min-height: calc(100dvh - 64px);
+  flex: 1 1 auto;
+  height: calc(100dvh - 64px);
+  min-height: 0;
+  overflow: hidden;
 }
 
 /* Los hosts de p-dialog cuelgan del grid del shell; display:contents los
