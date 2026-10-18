@@ -4,7 +4,7 @@ import { App } from './app/app';
 import { appConfig } from './app/app.config';
 
 initializeFaro({
-  url: 'http://localhost:4318/collect',
+  url: 'https://metrics-dev.synappta.cloud', 
   app: {
     name: 'synapta-front',
     version: '1.0.0',
