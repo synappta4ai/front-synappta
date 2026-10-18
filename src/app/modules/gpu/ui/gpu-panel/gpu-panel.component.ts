@@ -105,11 +105,6 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
     this.load();
     // Refresco periódico: la lista es el "panel de estado" de las GPUs.
     this.refreshTimer = setInterval(() => this.load(true), 10_000);
-    this.probarError();
-  }
-
-  probarError() {
-    throw new Error('Prueba GlitchTip desde Angular ' + new Date().toISOString());
   }
 
   ngOnDestroy(): void {
