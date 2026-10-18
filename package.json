@@ -31,6 +31,7 @@
     "@angular/platform-server": "^22.1.6",
     "@angular/router": "^22.1.6",
     "@angular/ssr": "^22.1.7",
+    "@grafana/faro-web-sdk": "^2.12.1",
     "@ngrx/signals": "^22.0.0",
     "@ngx-translate/core": "^18.0.0",
     "@ngx-translate/http-loader": "^18.0.0",
