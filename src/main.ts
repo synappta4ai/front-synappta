@@ -1,15 +1,19 @@
 import { bootstrapApplication } from '@angular/platform-browser';
-import { initializeFaro } from '@grafana/faro-web-sdk';
-import { App } from './app/app';
+import { ErrorHandler } from '@angular/core';
+import * as Sentry from '@sentry/angular';
+import { App } from './app/app.component';
 import { appConfig } from './app/app.config';
 
-initializeFaro({
-  url: 'https://metrics-dev.synappta.cloud', 
-  app: {
-    name: 'synapta-front',
-    version: '1.0.0',
-    environment: 'development',
-  },
+Sentry.init({
+  dsn: 'https://b14dff5afbdb4b0b9bf605ee9bb5f414@glitchtip.synappta.cloud/1',
+  tracesSampleRate: 0.01,
+  autoSessionTracking: false,
 });
 
-bootstrapApplication(App, appConfig).catch((err) => console.error(err));
+bootstrapApplication(App, {
+  ...appConfig,
+  providers: [
+    ...appConfig.providers,
+    { provide: ErrorHandler, useValue: Sentry.createErrorHandler() },
+  ],
+}).catch((err) => console.error(err));
