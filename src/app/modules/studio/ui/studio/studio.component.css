@@ -76,15 +76,68 @@
   opacity: 1;
 }
 
-/* Responsive: apilar en pantallas angostas */
+/* Responsive: apilar en pantallas angostas.
+   Acá el shell crece con el contenido y scrollea la página, no las
+   columnas: con grid-template-rows en 1fr y overflow-y propio, la
+   columna izquierda (modo + Referencias) se quedaba sin alto libre y
+   colapsaba a 0px, invisible. */
 @media (max-width: 1100px) {
+  :host {
+    min-height: 0;
+    padding: 12px 14px;
+  }
+
   .studio-shell {
-    grid-template-columns: 1fr;
+    /* minmax(0, 1fr) y no 1fr: la columna única tampoco debe crecer al
+       min-content de su contenido (una fila larga desbordaba a 7000px). */
+    grid-template-columns: minmax(0, 1fr);
+    /* Filas por contenido: sin esto la primera fila hereda minmax(0, 1fr)
+       y se queda con el espacio que sobra (0 cuando el contenido excede
+       el alto del viewport). */
+    grid-template-rows: auto;
     height: auto;
+    gap: 12px;
+  }
+
+  .studio-shell .studio-left,
+  .studio-shell .studio-right,
+  .studio-shell .studio-center {
+    /* overflow visible (scrollea la página) + min-width 0: sin el 0, el
+       mínimo automático de la columna vuelve a empujar el ancho. */
+    overflow: visible;
+    min-width: 0;
+    min-height: 0;
+    padding-right: 0;
+  }
+
+  /* El visor deja de estirarse: el stage toma la forma del aspect ratio del
+     lienzo (16:9, 9:16, …) y se topa a un porcentaje del viewport. Antes el
+     flex:1 en una columna sin alto dejaba una franja vacía enorme y el
+     lienzo chico en el medio. */
+  .studio-shell .viewer {
+    flex: 0 0 auto;
+    height: auto;
+    min-height: 0;
+    max-height: 56dvh;
+    aspect-ratio: var(--canvas-ar);
   }
 
   .col-gutter {
     display: none;
+  }
+
+  /* El reel en una línea sola: título + chips + contador no caben y
+     apretaban los chips contra el borde. */
+  .studio-shell .reel-head {
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+}
+
+@media (max-width: 640px) {
+  .studio-shell .take-thumb {
+    width: 76px;
+    height: 44px;
   }
 }
 
