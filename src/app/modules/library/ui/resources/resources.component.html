@@ -83,7 +83,7 @@
       <div class="skel skel-text" aria-hidden="true"></div>
       <div class="skel skel-text" aria-hidden="true"></div>
     </div>
-  } @else if (filteredFiles().length === 0) {
+  } @else if (filteredGroups().length === 0) {
     <div class="empty-state">
       <div class="empty-icon">
         <i class="md md-inbox"></i>
@@ -93,7 +93,8 @@
     </div>
   } @else {
     <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
-      @for (file of filteredFiles(); track file.id; let i = $index) {
+      @for (group of filteredGroups(); track group.key; let i = $index) {
+        @let file = group.primary;
         <div
           class="resource-card"
           role="button"
@@ -146,12 +147,51 @@
                 <i class="md md-work"></i>{{ file.project_ids!.length }}
               </span>
             }
+            @if (group.files.length > 1) {
+              <span
+                class="overlay-badge overlay-badge--top"
+                [title]="'LIBRARY.GROUP_TITLE' | translate: { count: group.files.length }"
+              >
+                <i class="md md-collections"></i>{{ group.files.length }}
+              </span>
+            }
           </div>
           <div class="resource-card__body">
             <p class="resource-card__name" [title]="file.filename">{{ file.filename }}</p>
-            @if (file.ingredients?.length) {
+            @if (group.files.length > 1) {
+              <div class="group-strip">
+                @for (item of group.files.slice(0, groupThumbsVisible); track item.id) {
+                  <button
+                    type="button"
+                    class="group-strip__item"
+                    [title]="item.filename"
+                    [attr.aria-label]="'LIBRARY.VIEW_ARIA' | translate: { name: item.filename }"
+                    (click)="$event.stopPropagation(); openViewer(item)"
+                  >
+                    @if (item.mime_type?.startsWith('image/') && !brokenThumbs().has(item.id)) {
+                      <img
+                        appImgFade
+                        [src]="item.thumbnail_url || item.url | serverUrl"
+                        [alt]="item.filename"
+                        width="48"
+                        height="48"
+                        loading="lazy"
+                        decoding="async"
+                        (error)="markThumbBroken(item.id)"
+                      />
+                    } @else {
+                      <i class="md md-image"></i>
+                    }
+                  </button>
+                }
+                @if (group.files.length > groupThumbsVisible) {
+                  <span class="group-strip__more">+{{ group.files.length - groupThumbsVisible }}</span>
+                }
+              </div>
+            }
+            @if (group.ingredients.length) {
               <div class="ing-row">
-                @for (ing of file.ingredients; track ing.id) {
+                @for (ing of group.ingredients; track ing.id) {
                   <span class="ing-chip" [title]="ingTypeLabel(ing.type) + ': ' + ing.name">
                     {{ ingTypeLabel(ing.type) }}: {{ ing.name }}
                   </span>

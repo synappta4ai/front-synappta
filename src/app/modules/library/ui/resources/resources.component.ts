@@ -24,6 +24,7 @@ import {
   AssetSectionKey,
   assetMatchesSection,
   FileAsset,
+  FileIngredientRef,
   FileListFilters,
 } from '@modules/library/interfaces';
 import { LibraryService } from '@modules/library/services';
@@ -40,6 +41,22 @@ interface ResOption {
   labelKey: string;
   icon: string;
 }
+
+/**
+ * Card de la galería. Los recursos que comparten un ingrediente (personaje,
+ * locación, prop) se muestran juntos: `files` son todas sus imágenes y
+ * `primary` es la más reciente, la que representa la card.
+ */
+interface ResourceGroup {
+  key: string;
+  primary: FileAsset;
+  files: FileAsset[];
+  /** Ingredientes del grupo, sin repetir (un archivo puede tener varios). */
+  ingredients: FileIngredientRef[];
+}
+
+/** Cuántos mini iconos entran en la card antes de resumir con "+N". */
+const GROUP_THUMBS_VISIBLE = 5;
 
 @Component({
   selector: 'app-resources',
@@ -191,6 +208,80 @@ export class ResourcesComponent {
     }
   }
 
+  protected readonly groupThumbsVisible = GROUP_THUMBS_VISIBLE;
+
+  /**
+   * Agrupa por ingrediente: dos recursos del mismo personaje/locación/prop
+   * caen en una sola card. Un archivo sin ingredientes queda solo, y si dos
+   * grupos comparten ingrediente (archivos con dos refs) se unen también.
+   */
+  private groupFiles(files: FileAsset[]): ResourceGroup[] {
+    const parent = files.map((_, index) => index);
+    const find = (start: number): number => {
+      let index = start;
+      while (parent[index] !== index) {
+        parent[index] = parent[parent[index]];
+        index = parent[index];
+      }
+      return index;
+    };
+    const union = (a: number, b: number): void => {
+      const rootA = find(a);
+      const rootB = find(b);
+      if (rootA !== rootB) {
+        parent[rootB] = rootA;
+      }
+    };
+
+    const owner = new Map<string, number>();
+    files.forEach((file, index) => {
+      for (const ref of file.ingredients ?? []) {
+        const first = owner.get(ref.id);
+        if (first === undefined) {
+          owner.set(ref.id, index);
+        } else {
+          union(first, index);
+        }
+      }
+    });
+
+    const byRoot = new Map<number, ResourceGroup>();
+    for (let index = 0; index < files.length; index += 1) {
+      const file = files[index];
+      const root = find(index);
+      let group = byRoot.get(root);
+      if (!group) {
+        group = { key: `file:${file.id}`, primary: file, files: [], ingredients: [] };
+        byRoot.set(root, group);
+      }
+      group.files.push(file);
+    }
+
+    // El endpoint devuelve los archivos más nuevos primero: el primero del
+    // grupo (y por lo tanto su miniatura) es el recurso más reciente.
+    return [...byRoot.values()].map((group) => {
+      const ingredients: FileIngredientRef[] = [];
+      const seen = new Set<string>();
+      for (const file of group.files) {
+        for (const ref of file.ingredients ?? []) {
+          if (!seen.has(ref.id)) {
+            seen.add(ref.id);
+            ingredients.push(ref);
+          }
+        }
+      }
+      const first = ingredients[0];
+      return {
+        ...group,
+        ingredients,
+        key: first ? `ing:${first.id}` : group.key,
+      };
+    });
+  }
+
+  /** Una card por ingrediente (o recurso suelto) de la página actual. */
+  protected readonly groups = computed(() => this.groupFiles(this.files()));
+
   protected readonly counts = computed<Record<ResFilter, number>>(() => {
     const counts: Record<ResFilter, number> = {
       all: 0,
@@ -202,7 +293,7 @@ export class ResourcesComponent {
       props: 0,
       other: 0,
     };
-    for (const file of this.files()) {
+    for (const group of this.groups()) {
       counts.all += 1;
       for (const key of [
         'images',
@@ -213,7 +304,7 @@ export class ResourcesComponent {
         'props',
         'other',
       ] as const) {
-        if (this.matchesFilter(file, key)) {
+        if (group.files.some((file) => this.matchesFilter(file, key))) {
           counts[key] += 1;
         }
       }
@@ -221,11 +312,14 @@ export class ResourcesComponent {
     return counts;
   });
 
-  protected readonly filteredFiles = computed(() => {
+  /** Cards que pasan el filtro activo (entra si alguno de sus archivos entra). */
+  protected readonly filteredGroups = computed(() => {
     const filter = this.filter();
     return filter === 'all'
-      ? this.files()
-      : this.files().filter((file) => this.matchesFilter(file, filter));
+      ? this.groups()
+      : this.groups().filter((group) =>
+          group.files.some((file) => this.matchesFilter(file, filter)),
+        );
   });
 
   // ── Subida ───────────────────────────────────────────────────────────────

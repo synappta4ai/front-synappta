@@ -615,6 +615,7 @@
     "EMPTY_TITLE": "No resources",
     "EMPTY_HINT": "No files were found with the current classification or search. Upload images, videos or audio to get started.",
     "VIEW_ARIA": "View {{name}}",
+    "GROUP_TITLE": "{{count}} resources of the same ingredient",
     "DOWNLOAD": "Download",
     "DOWNLOAD_ARIA": "Download resource",
     "PREV": "Previous",
