@@ -61,6 +61,20 @@ import { ServerUrlPipe } from '@core/pipes';
 import { LibraryService } from '@modules/library/services';
 import { FileAsset } from '@modules/library/interfaces';
 import { environment } from '@env/environment';
+import {
+  addPhotoFiles,
+  missingPhotosForPrompt,
+  parseSuggestedPhotos,
+  pendingRequiredPhotos,
+  photoFileCount,
+  ReferenceImage,
+  referenceImagesForPrompt,
+  referenceTagLines,
+  removePhotoFile,
+  RequiredPhoto,
+  taggedPhotosForPrompt,
+  TaggedPhoto,
+} from './agency-photos';
 
 type WorkflowPhase = 'input' | 'angles' | 'storyboard' | 'scenes';
 
@@ -126,13 +140,6 @@ interface SalesAngle {
   title: string;
   description: string;
   selected: boolean;
-}
-
-/** Foto de referencia subida al store: su file id se adjunta a la generación. */
-interface ReferenceImage {
-  id: string;
-  filename: string;
-  url: string | null;
 }
 
 /** Viñeta del artefacto storyboard (paso 2, contrato validado en el back). */
@@ -427,6 +434,14 @@ export class AgencyComponent {
       this.agent() === 'real_estate' ? 'AGENCY.STUDIO.STEP_ANGLES' : 'AGENCY.STUDIO.STEP_PROMPTS',
     );
   });
+  /** Etiqueta del botón de análisis del paso 1: el inmobiliario genera
+   *  ángulos; el comercial y el de cine generan prompts de escena. */
+  protected readonly generateLabelKey = computed(() =>
+    this.agent() === 'real_estate'
+      ? 'AGENCY.STUDIO.P1_GENERATE'
+      : 'AGENCY.STUDIO.P1_GENERATE_PROMPTS',
+  );
+
   /** Sustantivo en minúscula para las frases del flujo. */
   protected readonly anglesNoun = computed(() => {
     this.translate.currentLang();
@@ -435,12 +450,27 @@ export class AgencyComponent {
     );
   });
 
-  protected readonly phases = computed<{ key: WorkflowPhase; name: string }[]>(() => [
-    { key: 'input', name: this.translate.instant('AGENCY.STUDIO.PHASE_DOCUMENTATION') },
-    { key: 'angles', name: this.anglesStepName() },
-    { key: 'storyboard', name: this.translate.instant('AGENCY.STUDIO.PHASE_STORYBOARD') },
-    { key: 'scenes', name: this.translate.instant('AGENCY.STUDIO.PHASE_SCENES') },
-  ]);
+  /**
+   * El comercial publicitario no pasa por Storyboard: sus prompts del paso 1
+   * ya son escenas filmables del spot y las imágenes de referencia entran en
+   * el paso 1, así que el flujo va Documentación → Prompts → Escenas.
+   */
+  protected readonly isCommercial = computed(() => this.agent() === 'commercial');
+
+  protected readonly phases = computed<{ key: WorkflowPhase; name: string }[]>(() => {
+    const phases: { key: WorkflowPhase; name: string }[] = [
+      { key: 'input', name: this.translate.instant('AGENCY.STUDIO.PHASE_DOCUMENTATION') },
+      { key: 'angles', name: this.anglesStepName() },
+    ];
+    if (!this.isCommercial()) {
+      phases.push({
+        key: 'storyboard',
+        name: this.translate.instant('AGENCY.STUDIO.PHASE_STORYBOARD'),
+      });
+    }
+    phases.push({ key: 'scenes', name: this.translate.instant('AGENCY.STUDIO.PHASE_SCENES') });
+    return phases;
+  });
 
   protected readonly phaseIndex = computed(() =>
     this.phases().findIndex((p) => p.key === this.currentPhase()),
@@ -692,6 +722,20 @@ export class AgencyComponent {
     );
   }
 
+  /**
+   * Avance al paso 2. Generar se puede siempre que el brief esté completo;
+   * avanzar, en cambio, espera las imágenes que el experto marcó como
+   * imprescindibles (con la salida explícita del usuario).
+   */
+  protected get canAdvanceToPrompts(): boolean {
+    if (!this.canProceedToAngles) return false;
+    if (!this.isCommercial()) return true;
+    return (
+      this.angles().length > 0 &&
+      (this.stepPhotosSkipped() || this.pendingStepPhotos().length === 0)
+    );
+  }
+
   protected get selectedAnglesCount(): number {
     return this.angles().filter((a) => a.selected).length;
   }
@@ -702,6 +746,23 @@ export class AgencyComponent {
   protected readonly extractingBrief = signal(false);
   /** Aviso del último folleto cargado (nombre + caracteres). */
   protected readonly briefNote = signal<string | null>(null);
+
+  // ─── Imágenes que el experto pide antes de pasar a los prompts ────────
+
+  /** `fotos_sugeridas` del paso 1, con lo que el usuario fue subiendo. */
+  protected readonly stepPhotos = signal<RequiredPhoto[]>([]);
+  /** El usuario decidió seguir sin las imágenes que faltan. */
+  protected readonly stepPhotosSkipped = signal(false);
+  /** Panel "qué subir" desplegado en el paso 1. */
+  protected readonly stepPhotosOpen = signal(false);
+  /** Sugerencias con una subida en curso (spinner del botón). */
+  protected readonly uploadingPhotoIds = signal<string[]>([]);
+
+  /** Imprescindibles sin archivo: bloquean el avance al paso 2. */
+  protected readonly pendingStepPhotos = computed(() => pendingRequiredPhotos(this.stepPhotos()));
+
+  /** Archivos distintos ya cargados, para el contador del panel. */
+  protected readonly stepPhotosCount = computed(() => photoFileCount(this.stepPhotos()));
 
   /** Sube folletos (PDF/DOCX/TXT/MD), extrae su texto y lo appendee a la
    *  descripción: la información general del proyecto vive en el folleto. */
@@ -755,15 +816,102 @@ export class AgencyComponent {
     control.markAsTouched();
   }
 
+  // ─── Paso 1: imágenes de referencia de los prompts ────────────────────
+
+  /** Fotos de un prompt, en orden de subida y con su tag `@imageN`. */
+  protected taggedStepPhotos(promptId: string): TaggedPhoto[] {
+    return taggedPhotosForPrompt(this.stepPhotos(), promptId);
+  }
+
+  /** Lo que todavía hay que pedirle al usuario para ese prompt. */
+  protected missingStepPhotos(promptId: string): RequiredPhoto[] {
+    return missingPhotosForPrompt(this.stepPhotos(), promptId);
+  }
+
+  /** Tag `@imageN` con el que el prompt referencia un archivo subido. */
+  protected photoTag(photo: RequiredPhoto, fileId: string): string {
+    return this.taggedStepPhotos(photo.promptId).find((item) => item.file.id === fileId)?.tag ?? '';
+  }
+
+  /** Prompt al que sirve una sugerencia (el experto puede no precisarlo). */
+  protected photoPromptLabel(photo: RequiredPhoto): string {
+    const angle = this.angles().find((a) => a.id === photo.promptId);
+    return angle?.title || this.translate.instant('AGENCY.STUDIO.P1_PHOTOS_ANY_PROMPT');
+  }
+
+  protected photoPriorityLabel(priority: RequiredPhoto['priority']): string {
+    return this.translate.instant(`AGENCY.STUDIO.P1_PHOTOS_PRIORITY_${priority.toUpperCase()}`);
+  }
+
+  protected toggleStepPhotos(): void {
+    this.stepPhotosOpen.update((open) => !open);
+  }
+
+  protected isUploadingPhoto(photoId: string): boolean {
+    return this.uploadingPhotoIds().includes(photoId);
+  }
+
+  /** Sube las imágenes elegidas y las engancha a esa sugerencia. */
+  protected onStepPhotoFiles(photoId: string, event: Event): void {
+    const input = event.target as HTMLInputElement | null;
+    const files = Array.from(input?.files ?? []);
+    if (input) input.value = '';
+    if (!files.length) return;
+    this.uploadingPhotoIds.update((ids) => (ids.includes(photoId) ? ids : [...ids, photoId]));
+    let pending = files.length;
+    const done = () => {
+      pending -= 1;
+      if (pending > 0) return;
+      this.uploadingPhotoIds.update((ids) => ids.filter((id) => id !== photoId));
+      this.persistWorkflow();
+    };
+    for (const file of files) {
+      this.libraryService
+        .uploadFile(file, 'images', this.selectedProjectId() ?? undefined)
+        .subscribe({
+          next: (asset) => {
+            if (asset?.id) {
+              this.stepPhotos.update((photos) =>
+                addPhotoFiles(photos, photoId, [
+                  { id: asset.id, filename: asset.filename, url: asset.url },
+                ]),
+              );
+            }
+            done();
+          },
+          error: () => {
+            this.error.set(
+              this.translate.instant('AGENCY.STUDIO.ERRORS.UPLOAD', { name: file.name }),
+            );
+            done();
+          },
+        });
+    }
+  }
+
+  protected removeStepPhoto(photoId: string, fileId: string): void {
+    this.stepPhotos.update((photos) => removePhotoFile(photos, photoId, fileId));
+    this.persistWorkflow();
+  }
+
+  /** Escape explícito: seguir a los prompts sin las imágenes que faltan. */
+  protected skipStepPhotos(): void {
+    this.stepPhotosSkipped.set(true);
+    this.persistWorkflow();
+  }
+
   protected get canProceedToStoryboard(): boolean {
     return this.selectedAnglesCount > 0;
   }
 
   /** Todas las escenas tienen su hoja de storyboard cargada y aprobada:
-   *  es la condición para entrar al paso Escenas. */
+   *  es la condición para entrar al paso Escenas. El comercial no genera
+   *  hojas: con sus escenas armadas ya puede filmar. */
   protected get canProceedToScenes(): boolean {
     const scenes = this.storyboard();
-    return scenes.length > 0 && scenes.every((s) => !!s.boardImageUrl && !!s.approved);
+    if (scenes.length === 0) return false;
+    if (this.isCommercial()) return true;
+    return scenes.every((s) => !!s.boardImageUrl && !!s.approved);
   }
 
   /** Escenas sin storyboard aprobado (o sin imagen cargada). */
@@ -789,9 +937,10 @@ export class AgencyComponent {
       case 'input':
         return true;
       case 'angles':
-        return this.canProceedToAngles;
+        return this.canAdvanceToPrompts;
       case 'storyboard':
-        return this.canProceedToStoryboard;
+        // El comercial no tiene este paso: la lista de fases ya lo excluye.
+        return !this.isCommercial() && this.canProceedToStoryboard;
       case 'scenes':
         return this.canProceedToScenes;
     }
@@ -820,24 +969,24 @@ export class AgencyComponent {
   }
 
   protected nextPhase(): void {
-    const phases: WorkflowPhase[] = ['input', 'angles', 'storyboard', 'scenes'];
+    // Las fases dependen del experto: el comercial salta Storyboard.
+    const phases = this.phases().map((phase) => phase.key);
     const currentIndex = phases.indexOf(this.currentPhase());
-    if (currentIndex < phases.length - 1) {
-      const next = phases[currentIndex + 1];
-      if (next === 'scenes' && !this.canProceedToScenes) {
-        this.error.set(this.translate.instant('AGENCY.STUDIO.ERRORS.SCENES_BLOCKED'));
-        return;
-      }
-      this.currentPhase.set(next);
-      if (next === 'scenes') this.ensureVideoPrompts();
-      this.focusPhaseHeading();
-      // Cada avance se guarda en el proyecto (evita reprocesos).
-      this.persistWorkflow();
+    if (currentIndex < 0 || currentIndex >= phases.length - 1) return;
+    const next = phases[currentIndex + 1];
+    if (next === 'scenes' && !this.canProceedToScenes) {
+      this.error.set(this.translate.instant('AGENCY.STUDIO.ERRORS.SCENES_BLOCKED'));
+      return;
     }
+    this.currentPhase.set(next);
+    if (next === 'scenes') this.ensureVideoPrompts();
+    this.focusPhaseHeading();
+    // Cada avance se guarda en el proyecto (evita reprocesos).
+    this.persistWorkflow();
   }
 
   protected prevPhase(): void {
-    const phases: WorkflowPhase[] = ['input', 'angles', 'storyboard', 'scenes'];
+    const phases = this.phases().map((phase) => phase.key);
     const currentIndex = phases.indexOf(this.currentPhase());
     if (currentIndex > 0) {
       this.currentPhase.set(phases[currentIndex - 1]);
@@ -883,9 +1032,10 @@ export class AgencyComponent {
       description: raw.description.trim(),
     };
     this.projectDescription.set(`${values.name} en ${values.venue}. ${values.description}`);
-    // Inmobiliaria pide un número fijo; con los otros agentes el experto
-    // define cuántos necesita (tope 10 para no recortar su respuesta).
-    const fixed = this.agent() === 'real_estate';
+    // Inmobiliaria y comercial piden un número fijo (ángulos o escenas del
+    // spot); el de cine deja que el experto defina cuántos necesita (tope 10
+    // para no recortar su respuesta).
+    const fixed = this.agent() === 'real_estate' || this.agent() === 'commercial';
     const count = fixed
       ? Number((this.form.getRawValue() as { anglesCount?: number }).anglesCount) || 3
       : 10;
@@ -893,6 +1043,9 @@ export class AgencyComponent {
 
     this.loading.set(true);
     this.error.set(null);
+    // Cada generación trae su propia lista de imágenes a pedir: la salida de
+    // emergencia del usuario se rearma (lo ya subido se conserva por fila).
+    this.stepPhotosSkipped.set(false);
 
     // Proyecto elegido → actualiza sus datos; si no, crea (o reutiliza y
     // completa los datos de) el proyecto con el mismo nombre.
@@ -927,6 +1080,15 @@ export class AgencyComponent {
       )
       .subscribe((anglesList) => {
         this.angles.set(anglesList);
+        if (this.isCommercial() && this.stepPhotos().length > 0) {
+          // El experto pidió imágenes para los prompts: se resuelven acá,
+          // en el paso 1, y recién después se avanza (los prompts del paso 2
+          // salen con esas imágenes tagueadas).
+          this.stepPhotosOpen.set(true);
+          this.error.set(null);
+          this.persistWorkflow();
+          return;
+        }
         // Tanto al crear uno nuevo como al elegir uno existente se avanza
         // directo a la creación de ángulos de venta.
         this.currentPhase.set('angles');
@@ -992,16 +1154,51 @@ export class AgencyComponent {
     }));
   }
 
-  /** Avanza al paso Storyboard: conserva las escenas ya armadas (con sus
-   *  fotos, hojas y aprobaciones) y solo crea las dos escenas plantilla
-   *  para los ángulos nuevos. Así volver atrás y pulsar Siguiente no revive
-   *  escenas eliminadas ni pisa el avance. */
+  /** Avanza al paso Storyboard (o directo a Escenas en el comercial):
+   *  conserva las escenas ya armadas (con sus fotos, hojas y aprobaciones) y
+   *  solo crea las escenas de los ángulos nuevos. Así volver atrás y pulsar
+   *  Siguiente no revive escenas eliminadas ni pisa el avance. */
   protected generateStoryboard(): void {
     const selectedAngles = this.angles().filter((a) => a.selected);
     const previous = this.storyboard();
-    const scenes = selectedAngles.flatMap((angle) => this.scenesForAngle(angle, previous));
+    const scenes = this.isCommercial()
+      ? selectedAngles.map((angle) => this.sceneForPrompt(angle, previous))
+      : selectedAngles.flatMap((angle) => this.scenesForAngle(angle, previous));
     this.storyboard.set(this.renumberScenes(scenes));
     this.nextPhase();
+  }
+
+  /**
+   * Escena del comercial publicitario: el prompt del paso 1 ya es una escena
+   * filmable del spot, así que no pasa por la hoja de storyboard. Las fotos
+   * subidas en el paso 1 quedan como referencias visuales del video (con su
+   * tag) y no hay aprobación intermedia que pedir.
+   */
+  private sceneForPrompt(angle: SalesAngle, previous: StoryboardScene[]): StoryboardScene {
+    const kept = previous.find((s) => s.angleId === angle.id);
+    const references = referenceImagesForPrompt(this.stepPhotos(), angle.id);
+    if (kept) {
+      // Lo ya generado (prompts, videos, tomas) no se pisa: solo se refresca
+      // el texto del prompt y las imágenes del paso 1.
+      return {
+        ...kept,
+        angleTitle: angle.title,
+        title: angle.title,
+        description: angle.description,
+        references,
+        refsApproved: true,
+      };
+    }
+    return {
+      id: `scene-${angle.id}`,
+      angleId: angle.id,
+      angleTitle: angle.title,
+      title: angle.title,
+      description: angle.description,
+      references,
+      refsApproved: true,
+      shots: [],
+    };
   }
 
   /** Escenas de un ángulo: las ya existentes se conservan (se actualiza el
@@ -1357,6 +1554,14 @@ export class AgencyComponent {
     return Object.entries(notas)
       .filter(([, v]) => typeof v === 'string' && v.trim() !== '')
       .map(([key, value]) => ({ key, value: String(value) }));
+  }
+
+  /** Líneas `@imageN` de las referencias de la escena, contando la hoja de
+   *  storyboard como `@image1` cuando existe: el mismo número que se lee en
+   *  el paso 2 y el que viaja al modelo. */
+  private sceneReferenceTagLines(scene: StoryboardScene): string[] {
+    const refs = this.referencesOfScene(scene.id).filter((ref) => ref.id !== scene.boardFileId);
+    return referenceTagLines({ board: !!scene.boardFileId, references: refs });
   }
 
   /** Narrativa de las fotos reales subidas para el ángulo de la escena:
@@ -1759,7 +1964,9 @@ export class AgencyComponent {
       raw.description,
       agent === 'real_estate'
         ? `Generá ${count} ángulos de venta y detené el flujo ahí.`
-        : 'Generá los ángulos necesarios para comunicar el guion (máximo 10) y detené el flujo ahí.',
+        : agent === 'commercial'
+          ? `Generá ${count} prompts de escena, uno por escena del spot, y detené el flujo ahí.`
+          : 'Generá los ángulos necesarios para comunicar el guion (máximo 10) y detené el flujo ahí.',
     ].join(' ');
     const token = this.session.token();
     const controller = new AbortController();
@@ -1768,11 +1975,17 @@ export class AgencyComponent {
     const timer = setTimeout(() => controller.abort(), 120_000);
     // Cantidad exacta solo donde el contrato la exige (inmobiliaria);
     // los otros expertos deciden cuántos prompts necesita el guion.
+    // El contrato del paso 1 (docs/agente-*.md) declara estos datos como
+    // ENTRADA: sin `cantidad_prompts`/`registro` el experto los pregunta en
+    // vez de devolver el artefacto (y sin artefacto no hay prompts ni lista
+    // de imágenes que pedir).
     const payload: Record<string, unknown> = {
       nombre_proyecto: raw.propertyName,
       ubicacion: raw.location,
       contexto: raw.description,
       ...(agent === 'real_estate' ? { cantidad_angulos: count } : {}),
+      ...(agent === 'commercial' ? { cantidad_prompts: count } : {}),
+      ...(agent === 'cinema' ? { registro: 'cine' } : agent === 'commercial' ? { registro: 'comercial' } : {}),
     };
 
     return new Observable<SalesAngle[]>((subscriber) => {
@@ -1839,6 +2052,11 @@ export class AgencyComponent {
                   kind === 'sales_angles'
                     ? this.anglesFromAgent(data, count)
                     : this.promptsToAngles(data);
+                // El experto comercial devuelve además qué imágenes necesita
+                // cada prompt (fotos_sugeridas): se piden antes del paso 2.
+                if (kind === 'scene_prompts') {
+                  this.applySuggestedPhotos(data);
+                }
                 if (mapped.length > 0) {
                   // Solo resultados reales: si el experto devolvió menos
                   // de los pedidos se muestran esos, sin plantillas.
@@ -1881,6 +2099,23 @@ export class AgencyComponent {
         })
         .finally(() => clearTimeout(timer));
     });
+  }
+
+  /**
+   * Guarda las fotos sugeridas del paso 1 conservando lo que el usuario ya
+   * subió: las filas se identifican por prompt+índice, así una regeneración
+   * no le borra las imágenes cargadas. Solo aplica al comercial, que es el
+   * flujo que resuelve las referencias antes de los prompts.
+   */
+  private applySuggestedPhotos(data: Record<string, unknown>): void {
+    if (!this.isCommercial()) return;
+    const previous = this.stepPhotos();
+    this.stepPhotos.set(
+      parseSuggestedPhotos(data).map((photo) => ({
+        ...photo,
+        files: previous.find((kept) => kept.id === photo.id)?.files ?? [],
+      })),
+    );
   }
 
   /** Escena/prompt del paso 1 → tarjeta del wizard (comercial y cine
@@ -1943,6 +2178,9 @@ export class AgencyComponent {
       angles: this.angles(),
       storyboard: this.storyboard(),
       projectDescription: this.projectDescription(),
+      // Imágenes pedidas por el experto en el paso 1 y lo que el usuario subió.
+      stepPhotos: this.stepPhotos(),
+      stepPhotosSkipped: this.stepPhotosSkipped(),
     };
     const project = this.projects().find((p) => p.id === id);
     let base: Record<string, unknown> = {};
@@ -2085,13 +2323,48 @@ export class AgencyComponent {
     if (typeof agency['projectDescription'] === 'string') {
       this.projectDescription.set(String(agency['projectDescription']));
     }
+    this.stepPhotos.set(this.restoreStepPhotos(agency['stepPhotos']));
+    this.stepPhotosSkipped.set(agency['stepPhotosSkipped'] === true);
     const phase = agency['phase'];
-    if (typeof phase === 'string' && this.phases().some((p) => p.key === phase)) {
-      this.currentPhase.set(phase as WorkflowPhase);
+    if (typeof phase === 'string') {
+      const keys = this.phases().map((p) => p.key) as string[];
+      // Un comercial guardado en Storyboard cae en Prompts: su flujo ya no
+      // tiene ese paso.
+      const fallback: WorkflowPhase = phase === 'storyboard' ? 'angles' : 'input';
+      this.currentPhase.set(keys.includes(phase) ? (phase as WorkflowPhase) : fallback);
     }
     // Los prompts restaurados montan sus textareas en este ciclo: recalcula
     // las alturas para que el texto cargado se vea completo (sin scroll).
     this.autogrowAll();
+  }
+
+  /** Avance guardado de las imágenes del paso 1 (tolerante a basura). */
+  private restoreStepPhotos(raw: unknown): RequiredPhoto[] {
+    if (!Array.isArray(raw)) return [];
+    return raw.flatMap((entry) => {
+      if (!entry || typeof entry !== 'object') return [];
+      const row = entry as Partial<RequiredPhoto>;
+      if (!row.id || !row.description) return [];
+      const files = Array.isArray(row.files)
+        ? row.files.filter(
+            (file): file is ReferenceImage => !!file && typeof file.id === 'string' && !!file.id,
+          )
+        : [];
+      return [
+        {
+          id: row.id,
+          promptId: row.promptId ?? '',
+          type: row.type ?? 'sin_definir',
+          description: row.description,
+          reason: row.reason ?? '',
+          priority:
+            row.priority === 'imprescindible' || row.priority === 'recomendada'
+              ? row.priority
+              : 'opcional',
+          files,
+        },
+      ];
+    });
   }
 
   // ─── Ajustes sobre cada generación ─────────────────────────────────
@@ -2440,9 +2713,21 @@ export class AgencyComponent {
           ]
         : [
             `ESCENA "${scene.title}"${scene.angleTitle ? ` — ángulo "${scene.angleTitle}"` : ''}: ${scene.description}`,
-            'Referencia visual: hoja de storyboard guía (imagen adjunta). Animar la secuencia respetando encuadres, iluminación y estilo de las viñetas.',
+            // El comercial no dibuja hoja: sus referencias son las fotos del
+            // paso 1, que van tagueadas más abajo.
+            ...(scene.boardFileId
+              ? [
+                  'Referencia visual: hoja de storyboard guía (imagen adjunta). Animar la secuencia respetando encuadres, iluminación y estilo de las viñetas.',
+                ]
+              : []),
           ];
-    const references = this.referenceNarrative(scene);
+    const tagLines = this.sceneReferenceTagLines(scene);
+    if (tagLines.length) {
+      lines.push(`Referencias visuales adjuntas: ${tagLines.join(' ')}`);
+    }
+    // Las sugerencias por keywords del flujo inmobiliario no aplican al
+    // comercial, que ya trae la descripción exacta de cada foto.
+    const references = this.isCommercial() ? null : this.referenceNarrative(scene);
     if (references) lines.push(references);
     const allTags = [tags, this.slugTags([scene.angleTitle, scene.title])]
       .filter((t) => t.trim() !== '')
@@ -2836,15 +3121,20 @@ export class AgencyComponent {
     if (scene.boardFileId) {
       content.push({ type: 'image', id: scene.boardFileId, name: `storyboard-${scene.id}.png` });
     }
+    const realReferences = this.referencesOfScene(scene.id).filter(
+      (ref) => ref.id !== scene.boardFileId,
+    );
     // Fotos reales del ángulo: solo cuando el modelo expone ruta
     // multi-referencia verificada, para no sacarlo de su ruta i2v de
     // imagen única (donde la hoja dejaría de adjuntarse).
     if (model.reference_endpoint) {
-      for (const ref of this.referencesOfScene(scene.id)) {
-        if (ref.id !== scene.boardFileId) {
-          content.push({ type: 'image', id: ref.id, name: ref.filename });
-        }
+      for (const ref of realReferences) {
+        content.push({ type: 'image', id: ref.id, name: ref.filename });
       }
+    } else if (!scene.boardFileId && realReferences.length > 0) {
+      // Comercial sin hoja y modelo de imagen única: la primera foto subida
+      // en el paso 1 es el ancla visual del clip.
+      content.push({ type: 'image', id: realReferences[0].id, name: realReferences[0].filename });
     }
     // Slot único por prompt (escenas 1..N, tomas 101..N): así no se pisan
     // entre sí al guardarse en la pieza (SaveGeneration desactiva el mismo nro).
