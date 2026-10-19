@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
-import { from, Observable } from 'rxjs';
-import { map, mergeMap } from 'rxjs/operators';
+import { from, Observable, of, throwError } from 'rxjs';
+import { catchError, concatMap, map, mergeMap, toArray } from 'rxjs/operators';
 
 import { AgencyService } from '@modules/agency/services';
 import {
@@ -17,10 +17,14 @@ import { StudioService } from '@modules/studio/services';
 import { environment } from '@env/environment';
 
 import {
+  LOCATION_MODEL_NAMES,
+  LOCATION_PIECE_CODE,
+  LOCATION_SYSTEM_ASSET,
   POSE_SHEET_MODEL_NAMES,
   POSE_SHEET_PIECE_CODE,
   POSE_SHEET_RATIO,
   POSE_SHEET_VARIANTS,
+  LocationView,
   PoseSheetVariant,
 } from '../interfaces';
 import { ToolsApiRepository } from '../repositories';
@@ -33,6 +37,27 @@ export interface PoseSheetAnchor {
 export interface SaveCharacterResult {
   file: FileAsset;
   ingredient: Ingredient;
+}
+
+export interface SaveLocationResult {
+  ingredient: Ingredient;
+  files: FileAsset[];
+}
+
+/**
+ * Nombre de archivo de una vista de locación: "<nombre> ∕ <vista>". Se usa el
+ * division slash (U+2215) en lugar de "/" porque `filepath.Base` de Go recorta
+ * el nombre en el primer "/" real del multipart; U+2215 se ve idéntico.
+ */
+function locationFileName(name: string, viewLabel: string): string {
+  const clean = (value: string): string =>
+    value
+      .replace(/[\\/]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  const base = clean(name) || 'Location';
+  const view = clean(viewLabel);
+  return view ? `${base} \u2215 ${view}` : base;
 }
 
 /** Nombre de archivo seguro a partir del nombre del personaje. */
@@ -69,7 +94,7 @@ export class ToolsService {
     return this.repository.getSystemPrompt(def.asset);
   }
 
-  /** Solo Soul 2 + Nano Banana Pro (nombres exactos del catálogo). */
+  /** Solo Nano Banana Pro (nombre exacto del catálogo). */
   listPoseSheetModels(): Observable<AiModel[]> {
     return this.agencyService
       .listModelsByModality('image')
@@ -113,6 +138,112 @@ export class ToolsService {
     return this.agencyService.pollTaskUntilDone('image', taskId);
   }
 
+  /** System prompt por defecto de la locación (editable por el usuario). */
+  loadLocationPrompt(): Observable<string> {
+    return this.repository.getSystemPrompt(LOCATION_SYSTEM_ASSET);
+  }
+
+  /** Mismo modelo que la hoja de poses (Nano Banana Pro, acepta referencias). */
+  listLocationModels(): Observable<AiModel[]> {
+    return this.agencyService
+      .listModelsByModality('image')
+      .pipe(map((models) => models.filter((m) => LOCATION_MODEL_NAMES.includes(m.name))));
+  }
+
+  /** Anchor proyecto/pieza para los logs (idempotente por piece code). */
+  ensureLocationAnchor(projectName: string): Observable<PoseSheetAnchor> {
+    return this.studioService.ensureTakeSlot(projectName, LOCATION_PIECE_CODE);
+  }
+
+  generateLocation(request: {
+    model: string;
+    prompt: string;
+    ratio: string;
+    resolution: string;
+    referenceIds: { id: string; name: string }[];
+    eventId: string;
+    pieceId: string;
+    pieceCode: string;
+  }): Observable<GenerateResponse> {
+    const content: ContentItem[] = [
+      ...request.referenceIds.map((ref): ContentItem => ({
+        type: 'image',
+        id: ref.id,
+        name: ref.name,
+      })),
+      { type: 'text', text: request.prompt },
+    ];
+    const payload: GenerateRequest = {
+      model: request.model,
+      content,
+      ratio: request.ratio,
+      resolution: request.resolution,
+      event_id: request.eventId,
+      piece_id: request.pieceId,
+      piece_code: request.pieceCode,
+      generation_number: ++this.sequence,
+    };
+    return this.agencyService.generate('image', payload);
+  }
+
+  /**
+   * Guarda la locación generada en Recursos: un mismo ingrediente location
+   * con una imagen por vista elegida. El nombre de cada archivo es
+   * "<nombre> ∕ <vista>", así todas las vistas quedan agrupadas en el mismo
+   * recurso.
+   *
+   * Primero descarga y sube todas las vistas (una que falle se omite y el
+   * resto sigue) y recién después crea el recurso: si una descarga se corta
+   * antes de tiempo no queda un ingrediente vacío.
+   */
+  saveLocationViewsAsIngredient(request: {
+    name: string;
+    description?: string;
+    eventId: string;
+    photos: readonly { outputUrl: string; viewLabel: string }[];
+  }): Observable<SaveLocationResult> {
+    const failures: string[] = [];
+    return from(request.photos).pipe(
+      concatMap((photo) =>
+        from(
+          this.fetchAsFile(photo.outputUrl, locationFileName(request.name, photo.viewLabel)),
+        ).pipe(
+          mergeMap((file) => this.libraryService.uploadFile(file, 'images', request.eventId)),
+          catchError((err: unknown) => {
+            failures.push(err instanceof Error ? err.message : String(err));
+            return of(null);
+          }),
+        ),
+      ),
+      toArray(),
+      map((assets) => assets.filter((asset): asset is FileAsset => asset !== null)),
+      mergeMap((assets) => {
+        if (assets.length === 0) {
+          return throwError(() => new Error(failures[0] ?? 'no views could be saved'));
+        }
+        return this.libraryService
+          .createIngredient({
+            type: 'location',
+            name: request.name,
+            description: request.description,
+          })
+          .pipe(
+            mergeMap((ingredient) =>
+              from(assets).pipe(
+                concatMap((asset) =>
+                  this.libraryService
+                    .addIngredientFile(ingredient.id, { file_id: asset.id })
+                    .pipe(map(() => asset)),
+                ),
+                toArray(),
+                map((files) => ({ ingredient, files })),
+              ),
+            ),
+          );
+      }),
+    );
+  }
+
   /**
    * Guarda la hoja generada en Recursos como personaje: descarga el output,
    * lo sube a la biblioteca (images), crea el ingrediente character y lo
@@ -144,7 +275,11 @@ export class ToolsService {
     );
   }
 
-  private async downloadOutput(url: string, name: string): Promise<File> {
+  private downloadOutput(url: string, name: string): Promise<File> {
+    return this.fetchAsFile(url, slugifyFileName(name));
+  }
+
+  private async fetchAsFile(url: string, fileName: string): Promise<File> {
     const absolute = /^https?:\/\//i.test(url) ? url : `${this.apiOrigin}${url}`;
     const res = await fetch(absolute);
     if (!res.ok) {
@@ -152,7 +287,7 @@ export class ToolsService {
     }
     const blob = await res.blob();
     const ext = blob.type.includes('png') ? 'png' : 'jpg';
-    return new File([blob], `${slugifyFileName(name)}.${ext}`, {
+    return new File([blob], `${fileName}.${ext}`, {
       type: blob.type || 'image/png',
     });
   }

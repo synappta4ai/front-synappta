@@ -2,10 +2,13 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
   OnInit,
   computed,
+  effect,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -24,14 +27,22 @@ import { LibraryService } from '@modules/library/services';
 import { ServerUrlPipe } from '@pipes/server-url.pipe';
 import { UiIcon } from '@shared/components/ui-icon/ui-icon.component';
 
-import { POSE_SHEET_PIECE_CODE, POSE_SHEET_VARIANTS, PoseSheetVariant } from '../../interfaces';
+import {
+  POSE_SHEET_PIECE_CODE,
+  POSE_SHEET_VARIANTS,
+  PoseSheetVariant,
+  TOOLS_LOADING_POSTER,
+  TOOLS_LOADING_VIDEO,
+} from '../../interfaces';
 import { PoseSheetAnchor, ToolsService } from '../../services';
 
 const REF_MAX_BYTES = 10 * 1024 * 1024;
 const REF_MIME_TYPES: readonly string[] = ['image/png', 'image/jpeg'];
+const MIN_LOADING_MS = 650;
+const PROGRESS_EXPECTED_MS = 75_000;
 
 /**
- * Hoja de poses (Herramientas): genera con Soul 2 o Nano Banana Pro una hoja
+ * Hoja de poses (Herramientas): genera con Gemini 3 Pro Image una hoja
  * estructurada del personaje y la guarda en Recursos como ingrediente
  * character. Las instrucciones son visibles y editables por el usuario.
  */
@@ -48,17 +59,30 @@ export class PoseSheetComponent implements OnInit {
   private readonly translate = inject(TranslateService);
   private readonly destroyRef = inject(DestroyRef);
 
+  private readonly loadingMedia = viewChild<ElementRef<HTMLVideoElement>>('loadingMediaRef');
+
+  constructor() {
+    effect(() => {
+      const video = this.loadingMedia()?.nativeElement;
+      if (!video || !this.generating()) {
+        return;
+      }
+      video.muted = true;
+      video.currentTime = 0;
+      void video.play().catch(() => undefined);
+    });
+    this.destroyRef.onDestroy(() => this.stopProgressRamp());
+  }
+
   protected readonly variants = POSE_SHEET_VARIANTS;
+  protected readonly loadingVideo = TOOLS_LOADING_VIDEO;
+  protected readonly loadingPoster = TOOLS_LOADING_POSTER;
 
   protected readonly models = signal<AiModel[]>([]);
   protected readonly loadingModels = signal(true);
   protected readonly selectedModel = signal('');
   protected readonly activeModel = computed(
     () => this.models().find((m) => m.name === this.selectedModel()) ?? null,
-  );
-  /** Soul 2 es texto puro: avisa si hay referencias que el modelo ignorará. */
-  protected readonly soulSelected = computed(() =>
-    (this.activeModel()?.name ?? '').toLowerCase().includes('soul'),
   );
 
   protected readonly variant = signal<PoseSheetVariant>('body');
@@ -78,6 +102,7 @@ export class PoseSheetComponent implements OnInit {
   protected readonly error = signal<string | null>(null);
   protected readonly result = signal<readonly StatusOutput[]>([]);
 
+  private progressTimer: ReturnType<typeof setInterval> | null = null;
   private anchor: PoseSheetAnchor | null = null;
   protected readonly saving = signal(false);
   protected readonly savedName = signal<string | null>(null);
@@ -144,8 +169,10 @@ export class PoseSheetComponent implements OnInit {
     if (!model || !prompt.trim() || this.generating()) {
       return;
     }
+    const startedAt = Date.now();
     this.generating.set(true);
     this.progress.set(null);
+    this.startProgressRamp();
     this.error.set(null);
     this.result.set([]);
     this.savedName.set(null);
@@ -163,29 +190,78 @@ export class PoseSheetComponent implements OnInit {
             pieceCode: POSE_SHEET_PIECE_CODE,
           });
         }),
-        mergeMap((gen) => this.toolsService.trackPoseSheet(gen.taskId)),
+        mergeMap((gen) => {
+          // El modelo de imagen es sincrónico: la respuesta del POST ya trae
+          // el resultado, así que lo mostramos sin esperar al polling.
+          this.applyOutputs(gen.outputs ?? []);
+          return this.toolsService.trackPoseSheet(gen.taskId);
+        }),
         takeUntilDestroyed(this.destroyRef),
-        finalize(() => this.generating.set(false)),
+        finalize(() => this.finishLoading(startedAt)),
       )
       .subscribe({
         next: (status) => {
-          if (typeof status.progress_percent === 'number') {
+          if (
+            typeof status.progress_percent === 'number' &&
+            status.progress_percent > (this.progress() ?? 0)
+          ) {
             this.progress.set(status.progress_percent);
           }
           if (status.status === 'succeeded' || status.status === 'completed') {
-            const outputs = status.outputs ?? [];
-            this.result.set(outputs);
-            // Guardado automático en Recursos como personaje; el botón
-            // manual queda como reintento si el auto-guardado falla.
-            if (outputs[0]?.url && !this.savedName() && !this.saving()) {
-              this.saveAsCharacter();
-            }
+            this.applyOutputs(status.outputs ?? []);
           } else if (status.status === 'failed' || status.status === 'cancelled') {
             this.error.set(status.error ?? status.status);
           }
         },
         error: (err: unknown) => this.error.set(err instanceof Error ? err.message : String(err)),
       });
+  }
+
+  /** Muestra el resultado (guardado automático incluido) de forma idempotente. */
+  private applyOutputs(outputs: readonly StatusOutput[]): void {
+    if (outputs.length === 0) {
+      return;
+    }
+    this.result.set(outputs);
+    this.progress.set(100);
+    // Guardado automático en Recursos como personaje; el botón manual queda
+    // como reintento si el auto-guardado falla.
+    if (outputs[0]?.url && !this.savedName() && !this.saving()) {
+      this.saveAsCharacter();
+    }
+  }
+
+  /**
+   * Los modelos de imagen no reportan progreso incremental (el back solo lo
+   * estima para video), así que avanzamos el porcentaje en el cliente hasta
+   * acercarse al 95%; el 100 solo lo confirma el estado terminal.
+   */
+  private startProgressRamp(): void {
+    this.stopProgressRamp();
+    const startedAt = Date.now();
+    this.progress.set(1);
+    this.progressTimer = setInterval(() => {
+      const ratio = (Date.now() - startedAt) / PROGRESS_EXPECTED_MS;
+      const pct = Math.min(95, Math.round(3 + 92 * (1 - Math.exp(-1.5 * ratio))));
+      this.progress.set(pct);
+    }, 400);
+  }
+
+  private stopProgressRamp(): void {
+    if (this.progressTimer !== null) {
+      clearInterval(this.progressTimer);
+      this.progressTimer = null;
+    }
+  }
+
+  private finishLoading(startedAt: number): void {
+    this.stopProgressRamp();
+    const wait = Math.max(0, MIN_LOADING_MS - (Date.now() - startedAt));
+    if (wait === 0) {
+      this.generating.set(false);
+      return;
+    }
+    setTimeout(() => this.generating.set(false), wait);
   }
 
   protected saveAsCharacter(): void {

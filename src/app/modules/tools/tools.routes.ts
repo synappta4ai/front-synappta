@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 
+import { LocationComponent } from './ui/location/location.component';
 import { PoseSheetComponent } from './ui/pose-sheet/pose-sheet.component';
 
 /**
@@ -10,6 +11,10 @@ export const toolsRoutes: Routes = [
   {
     path: 'pose-sheet',
     component: PoseSheetComponent,
+  },
+  {
+    path: 'location',
+    component: LocationComponent,
   },
   {
     path: '',

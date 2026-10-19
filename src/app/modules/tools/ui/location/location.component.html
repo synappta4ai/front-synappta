@@ -1,0 +1,320 @@
+<div class="studio-shell h-full" animate.enter="anim-page">
+  <!-- ══════════ Columna: parámetros ══════════ -->
+  <aside class="studio-left">
+    <p class="project-caption" [title]="'TOOLS.LOCATION_DESC' | translate">
+      <i class="md md-place"></i> {{ 'TOOLS.LOCATION' | translate }}
+    </p>
+
+    @if (error()) {
+      <p-message severity="error" [text]="error()!" />
+    }
+
+    <div class="panel">
+      <div class="panel-head">
+        <span><i class="md md-image"></i> {{ 'TOOLS.MODEL_LABEL' | translate }}</span>
+      </div>
+      @if (loadingModels()) {
+        <p class="muted small">{{ 'TOOLS.LOADING_CATALOG' | translate }}</p>
+      } @else if (models().length === 0) {
+        <p class="muted small">{{ 'TOOLS.NO_MODELS' | translate }}</p>
+      } @else {
+        <p-select
+          id="location-model"
+          [ngModel]="selectedModel()"
+          (ngModelChange)="selectedModel.set($event)"
+          [options]="models()"
+          optionLabel="display_name"
+          optionValue="name"
+          [placeholder]="'TOOLS.MODEL_PLACEHOLDER' | translate"
+          [showClear]="false"
+          class="w-full"
+          appendTo="body"
+        >
+          <ng-template #item let-m>
+            <div class="flex items-center justify-between gap-2 w-full">
+              <div class="min-w-0">
+                <p class="font-bold truncate">{{ m.display_name ?? m.name }}</p>
+                <p class="text-xs opacity-60 truncate">{{ m.name }}</p>
+              </div>
+              <p-tag [value]="m.credential_provider" severity="info" styleClass="text-xs" />
+            </div>
+          </ng-template>
+        </p-select>
+      }
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <span><i class="md md-videocam"></i> {{ 'TOOLS.VIEW_LABEL' | translate }}</span>
+      </div>
+      <p class="muted small mb-2">{{ 'TOOLS.VIEW_MULTI_HINT' | translate }}</p>
+      <div class="pose-variant-grid" role="group" aria-label="{{ 'TOOLS.VIEW_LABEL' | translate }}">
+        @for (v of views; track v.key) {
+          <button
+            type="button"
+            class="pose-variant"
+            [class.active]="isViewSelected(v.key)"
+            [attr.aria-pressed]="isViewSelected(v.key)"
+            (click)="toggleView(v.key)"
+          >
+            <strong>{{ v.labelKey | translate }}</strong>
+          </button>
+        }
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <span><i class="md md-grid_view"></i> {{ 'TOOLS.FORMAT_LABEL' | translate }}</span>
+      </div>
+      <label for="location-ratio" class="muted small mb-1 block">
+        {{ 'TOOLS.RATIO_LABEL' | translate }}
+      </label>
+      <p-select
+        inputId="location-ratio"
+        [ngModel]="ratio()"
+        (ngModelChange)="onRatioChange($event)"
+        [options]="visibleRatioOptions()"
+        optionLabel="value"
+        optionValue="value"
+        [showClear]="false"
+        class="w-full"
+        appendTo="body"
+      >
+        <ng-template pTemplate="selectedItem" let-opt>
+          <span class="ratio-inline">
+            <span class="ratio-screen" [style.aspect-ratio]="opt.w + '/' + opt.h"></span>
+            {{ opt.value }}
+          </span>
+        </ng-template>
+        <ng-template #item let-opt>
+          <span class="ratio-inline">
+            <span class="ratio-screen" [style.aspect-ratio]="opt.w + '/' + opt.h"></span>
+            {{ opt.value }}
+          </span>
+        </ng-template>
+      </p-select>
+      <label for="location-resolution" class="muted small mt-2 mb-1 block">
+        {{ 'TOOLS.RESOLUTION_LABEL' | translate }}
+      </label>
+      <p-select
+        inputId="location-resolution"
+        [ngModel]="resolution()"
+        (ngModelChange)="resolution.set($event)"
+        [options]="resolutionOptions()"
+        [showClear]="false"
+        class="w-full"
+        appendTo="body"
+      >
+        <ng-template pTemplate="selectedItem" let-opt>
+          <span class="ratio-inline"
+            ><i class="md md-desktop_windows foot-icon"></i> {{ opt }}</span
+          >
+        </ng-template>
+        <ng-template #item let-opt>
+          <span class="ratio-inline"
+            ><i class="md md-desktop_windows foot-icon"></i> {{ opt }}</span
+          >
+        </ng-template>
+      </p-select>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <label for="location-prompt">{{ 'TOOLS.PROMPT_LABEL' | translate }}</label>
+        <p-button
+          [label]="'TOOLS.RESET_DEFAULT' | translate"
+          icon="md md-refresh"
+          [text]="true"
+          size="small"
+          [disabled]="!promptDirty()"
+          (onClick)="resetPrompt()"
+        />
+      </div>
+      @if (loadingPrompt()) {
+        <p class="muted small">{{ 'TOOLS.LOADING_PROMPT' | translate }}</p>
+      } @else {
+        <textarea
+          id="location-prompt"
+          name="location-prompt"
+          rows="8"
+          [ngModel]="editedPrompt()"
+          (ngModelChange)="editedPrompt.set($event)"
+          class="pose-textarea pose-prompt"
+        ></textarea>
+      }
+      <p class="muted small mt-1">{{ 'TOOLS.PROMPT_HINT' | translate }}</p>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <span><i class="md md-place"></i> {{ 'TOOLS.LOCATION_NAME_LABEL' | translate }}</span>
+      </div>
+      <input
+        id="location-name"
+        type="text"
+        name="location-name"
+        autocomplete="off"
+        [ngModel]="locationName()"
+        (ngModelChange)="locationName.set($event)"
+        [placeholder]="'TOOLS.LOCATION_NAME_PLACEHOLDER' | translate"
+        class="pose-input"
+      />
+      <label for="location-desc" class="muted small mt-2 mb-1 block">
+        {{ 'TOOLS.LOCATION_DESC_LABEL' | translate }}
+      </label>
+      <textarea
+        id="location-desc"
+        name="location-description"
+        rows="2"
+        [ngModel]="locationDesc()"
+        (ngModelChange)="locationDesc.set($event)"
+        [placeholder]="'TOOLS.LOCATION_DESC_PLACEHOLDER' | translate"
+        class="pose-textarea"
+      ></textarea>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <span><i class="md md-photo_library"></i> {{ 'TOOLS.REFS_LABEL' | translate }}</span>
+      </div>
+      <p class="muted small">{{ 'TOOLS.LOCATION_REFS_HINT' | translate }}</p>
+      <input
+        #refsInput
+        type="file"
+        accept="image/png,image/jpeg"
+        multiple
+        class="hidden"
+        [attr.aria-label]="'TOOLS.REFS_ADD' | translate"
+        (change)="onRefsPicked($event)"
+      />
+      <p-button
+        [label]="'TOOLS.REFS_ADD' | translate"
+        icon="md md-upload"
+        severity="secondary"
+        size="small"
+        class="mt-2"
+        [loading]="uploadingRefs()"
+        (onClick)="refsInput.click()"
+      />
+      @if (refs().length === 0) {
+        <p class="muted small mt-2">{{ 'TOOLS.LOCATION_REFS_EMPTY' | translate }}</p>
+      } @else {
+        <div class="pose-refs">
+          @for (ref of refs(); track ref.id) {
+            <div class="pose-ref">
+              <img
+                [src]="ref.thumbnail_url ?? ref.url | serverUrl"
+                [alt]="ref.filename"
+                width="320"
+                height="320"
+                loading="lazy"
+                decoding="async"
+              />
+              <button
+                type="button"
+                class="pose-ref-clear"
+                (click)="removeRef(ref.id)"
+                [attr.aria-label]="ref.filename"
+              >
+                <ui-icon name="md-close" />
+              </button>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="pose-generate-bar">
+      <p-button
+        [label]="
+          generating() ? ('TOOLS.GENERATING' | translate) : ('TOOLS.GENERATE_LOCATION' | translate)
+        "
+        icon="md md-auto_fix_high"
+        [loading]="generating()"
+        [disabled]="!selectedModel() || generating()"
+        styleClass="w-full"
+        (onClick)="generate()"
+      />
+      @if (generating() && progress() !== null) {
+        <p-tag
+          [value]="currentView() + '/' + totalViews() + ' · ' + progress() + '%'"
+          severity="info"
+        />
+      }
+    </div>
+  </aside>
+
+  <!-- ══════════ Visor: resultado ══════════ -->
+  <div class="studio-center">
+    <div class="panel pose-viewer">
+      <div class="panel-head">
+        <span><i class="md md-visibility"></i> {{ 'TOOLS.RESULT_TITLE' | translate }}</span>
+        @if (savedName()) {
+          <p-tag [value]="savedName()!" severity="success" styleClass="text-xs" />
+        }
+      </div>
+      @if (generating()) {
+        <div class="pose-loading" role="status" [attr.aria-label]="'TOOLS.GENERATING' | translate">
+          <video
+            #loadingMediaRef
+            class="pose-loading-media"
+            [src]="loadingVideo"
+            [poster]="loadingPoster"
+            autoplay
+            loop
+            [muted]="true"
+            playsinline
+            preload="auto"
+            aria-hidden="true"
+          ></video>
+          <div class="pose-loading-progress">
+            <span class="pose-loading-pct">{{ progress() ?? 0 }}%</span>
+            <span class="muted small">{{ 'TOOLS.GENERATING' | translate }}</span>
+          </div>
+        </div>
+      } @else if (results().length === 0) {
+        <div class="pose-empty">
+          <i class="md md-place"></i>
+          <span>{{ 'TOOLS.LOCATION_DESC' | translate }}</span>
+        </div>
+      } @else {
+        <div class="pose-canvas" [class.multi]="results().length > 1">
+          @for (item of results(); track item.output.url) {
+            <img
+              [src]="item.output.url | serverUrl"
+              alt="{{ 'TOOLS.RESULT_TITLE' | translate }}"
+              width="1280"
+              height="720"
+              loading="lazy"
+              decoding="async"
+            />
+          }
+        </div>
+        <div class="mt-2 flex flex-wrap items-center gap-3">
+          @if (failedViews() > 0) {
+            <p-message
+              severity="warn"
+              [text]="
+                'TOOLS.VIEWS_PARTIAL' | translate: { ok: results().length, total: totalViews() }
+              "
+            />
+          }
+          @if (!savedName()) {
+            <p-button
+              [label]="
+                saving() ? ('TOOLS.SAVING' | translate) : ('TOOLS.SAVE_LOCATION' | translate)
+              "
+              icon="md md-place"
+              [loading]="saving()"
+              [disabled]="saving()"
+              (onClick)="saveResults()"
+            />
+          } @else {
+            <p-message severity="success" [text]="'TOOLS.SAVED_LOCATION' | translate" />
+          }
+        </div>
+      }
+    </div>
+  </div>
+</div>

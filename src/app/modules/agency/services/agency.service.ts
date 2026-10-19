@@ -26,7 +26,7 @@ import {
 import { AgencyApiRepository } from '../repositories';
 import { unwrap } from '@utils/unwrap-api-response';
 
-const TERMINAL_STATUSES: readonly string[] = ['succeeded', 'failed', 'cancelled'];
+const TERMINAL_STATUSES: readonly string[] = ['succeeded', 'completed', 'failed', 'cancelled'];
 
 @Injectable({ providedIn: 'root' })
 export class AgencyService {

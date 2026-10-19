@@ -1,4 +1,4 @@
-<div class="studio-shell" animate.enter="anim-page">
+<div class="studio-shell h-full" animate.enter="anim-page">
   <!-- ══════════ Columna: parámetros ══════════ -->
   <aside class="studio-left">
     <p class="project-caption" [title]="'TOOLS.POSE_SHEET_DESC' | translate">
@@ -40,9 +40,6 @@
             </div>
           </ng-template>
         </p-select>
-      }
-      @if (soulSelected() && refs().length > 0) {
-        <p-message severity="warn" [text]="'TOOLS.SOUL_REFS_HINT' | translate" class="mt-2 block" />
       }
     </div>
 
@@ -200,7 +197,26 @@
           <p-tag [value]="savedName()!" severity="success" styleClass="text-xs" />
         }
       </div>
-      @if (result().length === 0) {
+      @if (generating()) {
+        <div class="pose-loading" role="status" [attr.aria-label]="'TOOLS.GENERATING' | translate">
+          <video
+            #loadingMediaRef
+            class="pose-loading-media"
+            [src]="loadingVideo"
+            [poster]="loadingPoster"
+            autoplay
+            loop
+            [muted]="true"
+            playsinline
+            preload="auto"
+            aria-hidden="true"
+          ></video>
+          <div class="pose-loading-progress">
+            <span class="pose-loading-pct">{{ progress() ?? 0 }}%</span>
+            <span class="muted small">{{ 'TOOLS.GENERATING' | translate }}</span>
+          </div>
+        </div>
+      } @else if (result().length === 0) {
         <div class="pose-empty">
           <i class="md md-person"></i>
           <span>{{ 'TOOLS.POSE_SHEET_DESC' | translate }}</span>

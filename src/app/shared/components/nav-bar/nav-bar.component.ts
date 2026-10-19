@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, viewChild } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 import { MenuItem } from 'primeng/api';
 import { Menubar } from 'primeng/menubar';
 import { Popover } from 'primeng/popover';
@@ -16,6 +16,7 @@ import { SlidePillDirective } from '../slide-pill/slide-pill.directive';
   selector: 'app-nav-bar',
   imports: [
     RouterLink,
+    RouterLinkActive,
     NgOptimizedImage,
     ServerUrlPipe,
     GenerationBellComponent,
@@ -26,7 +27,6 @@ import { SlidePillDirective } from '../slide-pill/slide-pill.directive';
     TranslatePipe,
   ],
   templateUrl: './nav-bar.component.html',
-  styleUrl: './nav-bar.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NavBarComponent {
@@ -44,6 +44,12 @@ export class NavBarComponent {
         description: t('TOOLS.POSE_SHEET_DESC'),
         icon: 'md md-person',
         routerLink: '/tools/pose-sheet',
+      },
+      {
+        label: t('TOOLS.LOCATION'),
+        description: t('TOOLS.LOCATION_DESC'),
+        icon: 'md md-place',
+        routerLink: '/tools/location',
       },
     ];
   });
