@@ -37,6 +37,7 @@
     "@primeuix/styled": "^0.7.4",
     "@primeuix/themes": "^2.0.3",
     "@primeuix/utils": "^0.7.2",
+    "@sentry/angular": "^11.8.0",
     "express": "^5.1.0",
     "motion": "^13.5.0",
     "ngx-ui-loader": "^19.0.0",

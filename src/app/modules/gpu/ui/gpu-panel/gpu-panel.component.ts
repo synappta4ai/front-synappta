@@ -26,11 +26,7 @@ import { Tooltip } from 'primeng/tooltip';
 import { formatBytesValue } from '@pipes/format-bytes.pipe';
 
 import { GpuService } from '../../services/gpu.service';
-import {
-  GpuWorker,
-  ManagedWorkerModel,
-  PairingCode,
-} from '../../interfaces/gpu.interface';
+import { GpuWorker, ManagedWorkerModel, PairingCode } from '../../interfaces/gpu.interface';
 
 /**
  * Panel "Tu GPU": el administrador del tenant empareja las máquinas con GPU
@@ -100,9 +96,7 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
   protected readonly codeCopied = signal(false);
 
   /** Workers online ahora (heartbeat reciente). El back ya calcula `online`. */
-  protected readonly onlineCount = computed(
-    () => this.workers().filter((w) => w.online).length,
-  );
+  protected readonly onlineCount = computed(() => this.workers().filter((w) => w.online).length);
 
   private refreshTimer: ReturnType<typeof setInterval> | null = null;
   private countdownTimer: ReturnType<typeof setInterval> | null = null;
@@ -133,7 +127,7 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
             this.error.set(this.translate.instant('GPU.ERRORS.LOAD'));
           }
           return EMPTY;
-          }),
+        }),
         finalize(() => this.loading.set(false)),
       )
       .subscribe((workers) => {
@@ -210,7 +204,7 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
       }
     }
     return out;
-  });  /** ¿Se muestra el catálogo del bridge porque el central no responde? */
+  }); /** ¿Se muestra el catálogo del bridge porque el central no responde? */
   protected readonly showingBridgeCatalog = computed(
     () =>
       this.modelsError() !== null &&
@@ -238,8 +232,7 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
 
   /** Lo que ve la tabla: gestión central o snapshot del bridge. */
   protected readonly displayedModels = computed<ManagedWorkerModel[]>(() => {
-    const list =
-      this.workerModels().length > 0 ? this.workerModels() : this.bridgeFallbackModels();
+    const list = this.workerModels().length > 0 ? this.workerModels() : this.bridgeFallbackModels();
     if (!this.bridgeMode()) return list;
     const index = this.workerIndex();
     return list.map((model) => {
@@ -258,8 +251,9 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
   /** Modelos listos para generar (disponibles y sin descarga en curso). */
   protected readonly readyModelCount = computed(
     () =>
-      this.displayedModels().filter((model) => model.downloaded?.available && !model.downloaded.downloading)
-        .length,
+      this.displayedModels().filter(
+        (model) => model.downloaded?.available && !model.downloaded.downloading,
+      ).length,
   );
 
   protected isModelBusy(model: ManagedWorkerModel, action: string): boolean {
@@ -311,8 +305,15 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
       message: this.translate.instant('GPU.MODELS.DELETE_ALL_CONFIRM'),
       header: this.translate.instant('GPU.MODELS.DELETE_ALL'),
       icon: 'md md-warning',
-      acceptButtonProps: { label: this.translate.instant('GPU.MODELS.DELETE_ALL'), severity: 'danger' },
-      rejectButtonProps: { label: this.translate.instant('GPU.REVOKE_CANCEL'), severity: 'secondary', outlined: true },
+      acceptButtonProps: {
+        label: this.translate.instant('GPU.MODELS.DELETE_ALL'),
+        severity: 'danger',
+      },
+      rejectButtonProps: {
+        label: this.translate.instant('GPU.REVOKE_CANCEL'),
+        severity: 'secondary',
+        outlined: true,
+      },
       accept: () => {
         this.bulkDeleting.set(true);
         this.modelsError.set(null);
@@ -344,16 +345,25 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
   /** El borrado libera disco: se confirma porque no se puede deshacer. */
   protected deleteDownload(model: ManagedWorkerModel): void {
     this.confirmationService.confirm({
-      message: this.translate.instant('GPU.MODELS.DELETE_CONFIRM', { name: model.display_name || model.name }),
+      message: this.translate.instant('GPU.MODELS.DELETE_CONFIRM', {
+        name: model.display_name || model.name,
+      }),
       header: this.translate.instant('GPU.MODELS.DELETE'),
       icon: 'md md-warning',
       acceptButtonProps: { label: this.translate.instant('GPU.MODELS.DELETE'), severity: 'danger' },
-      rejectButtonProps: { label: this.translate.instant('GPU.REVOKE_CANCEL'), severity: 'secondary', outlined: true },
+      rejectButtonProps: {
+        label: this.translate.instant('GPU.REVOKE_CANCEL'),
+        severity: 'secondary',
+        outlined: true,
+      },
       accept: () => this.runModelOperation(model, 'delete'),
     });
   }
 
-  private runModelOperation(model: ManagedWorkerModel, action: 'download' | 'cancel' | 'delete'): void {
+  private runModelOperation(
+    model: ManagedWorkerModel,
+    action: 'download' | 'cancel' | 'delete',
+  ): void {
     if (this.modelBusy()) return;
     this.modelBusy.set(`${action}:${model.name}`);
     this.modelsError.set(null);
@@ -453,7 +463,11 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
       header: this.translate.instant('GPU.REVOKE'),
       icon: 'md md-warning',
       acceptButtonProps: { label: this.translate.instant('GPU.REVOKE'), severity: 'danger' },
-      rejectButtonProps: { label: this.translate.instant('GPU.REVOKE_CANCEL'), severity: 'secondary', outlined: true },
+      rejectButtonProps: {
+        label: this.translate.instant('GPU.REVOKE_CANCEL'),
+        severity: 'secondary',
+        outlined: true,
+      },
       accept: () => {
         this.gpuService
           .revokeWorker(worker.id)
