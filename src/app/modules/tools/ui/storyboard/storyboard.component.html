@@ -1,0 +1,301 @@
+<div class="studio-shell h-full" animate.enter="anim-page">
+  <aside class="studio-left">
+    <p class="project-caption" [title]="'TOOLS.STORYBOARD_DESC' | translate">
+      <i class="md md-movie"></i> {{ 'TOOLS.STORYBOARD' | translate }}
+    </p>
+
+    @if (error()) {
+      <p-message severity="error" [text]="error()!" />
+    }
+
+    <div class="panel">
+      <div class="panel-head">
+        <span>
+          <i class="md md-grid_view"></i>
+          {{ 'TOOLS.STORYBOARD_PANELS_LABEL' | translate }}
+        </span>
+        <span class="storyboard-ratio">{{ sheetRatio }}</span>
+      </div>
+      <p class="muted small mb-2">{{ 'TOOLS.STORYBOARD_PANELS_HINT' | translate }}</p>
+      <div
+        class="storyboard-panels"
+        role="group"
+        [attr.aria-label]="'TOOLS.STORYBOARD_PANELS_LABEL' | translate"
+      >
+        @for (option of panelOptions; track option.count) {
+          <button
+            type="button"
+            class="storyboard-panel-option"
+            [class.active]="panelCount() === option.count"
+            [attr.aria-pressed]="panelCount() === option.count"
+            [attr.aria-label]="
+              'TOOLS.STORYBOARD_PANELS_COUNT' | translate: { count: option.count }
+            "
+            (click)="selectPanelCount(option.count)"
+          >
+            <span class="storyboard-panel-option__count">{{ option.count }}</span>
+            <span
+              class="storyboard-panel-option__grid"
+              [style.grid-template-columns]="'repeat(' + option.columns + ', minmax(0, 1fr))'"
+              aria-hidden="true"
+            >
+              @for (cell of option.cells; track cell) {
+                <span></span>
+              }
+            </span>
+          </button>
+        }
+      </div>
+      <p class="storyboard-grid-note">
+        <span>
+          {{
+            'TOOLS.STORYBOARD_GRID'
+              | translate: { columns: activePanel().columns, rows: activePanel().rows }
+          }}
+        </span>
+        <span>{{ 'TOOLS.STORYBOARD_PANELS_COUNT' | translate: { count: panelCount() } }}</span>
+      </p>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <label for="storyboard-prompt">{{ 'TOOLS.STORYBOARD_PROMPT_LABEL' | translate }}</label>
+      </div>
+      <textarea
+        id="storyboard-prompt"
+        class="pose-textarea storyboard-story"
+        rows="7"
+        [ngModel]="storyPrompt()"
+        (ngModelChange)="storyPrompt.set($event)"
+        [placeholder]="'TOOLS.STORYBOARD_PROMPT_PLACEHOLDER' | translate"
+      ></textarea>
+      <p class="muted small mt-2">{{ 'TOOLS.STORYBOARD_PROMPT_HINT' | translate }}</p>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <span><i class="md md-image"></i> {{ 'TOOLS.STORYBOARD_REFS_LABEL' | translate }}</span>
+        <p-button
+          [label]="'TOOLS.REFS_ADD' | translate"
+          icon="md md-upload"
+          severity="secondary"
+          size="small"
+          [text]="true"
+          [loading]="uploadingRefs()"
+          (onClick)="refsInput.click()"
+        />
+      </div>
+      <input
+        #refsInput
+        type="file"
+        accept="image/png,image/jpeg"
+        multiple
+        class="hidden"
+        [attr.aria-label]="'TOOLS.REFS_ADD' | translate"
+        (change)="onRefsPicked($event)"
+      />
+      <p class="muted small">{{ 'TOOLS.STORYBOARD_REFS_HINT' | translate }}</p>
+      @if (uploadingRefs()) {
+        <p class="muted small mt-2">{{ 'TOOLS.STORYBOARD_UPLOADING' | translate }}</p>
+      }
+      @if (refs().length === 0) {
+        <p class="muted small mt-2">{{ 'TOOLS.STORYBOARD_REFS_EMPTY' | translate }}</p>
+      } @else {
+        <div class="storyboard-refs">
+          @for (ref of refs(); track ref.asset.id) {
+            <figure class="storyboard-ref">
+              <div class="storyboard-ref__thumb">
+                @if (refImageSource(ref); as source) {
+                  <img
+                    [src]="source | serverUrl"
+                    [alt]="ref.asset.filename"
+                    loading="lazy"
+                    decoding="async"
+                    (error)="onRefImageError(ref)"
+                  />
+                } @else {
+                  <span class="storyboard-ref__fallback">
+                    <i class="md md-image" aria-hidden="true"></i>
+                    <span>{{ 'TOOLS.STORYBOARD_REF_PREVIEW_FAILED' | translate }}</span>
+                  </span>
+                }
+                <button
+                  type="button"
+                  class="storyboard-ref__remove"
+                  (click)="removeRef(ref.asset.id)"
+                  [attr.aria-label]="'TOOLS.STORYBOARD_REMOVE_REF' | translate"
+                >
+                  <ui-icon name="md-close" />
+                </button>
+              </div>
+              <figcaption>
+                <span class="storyboard-ref__name" [title]="ref.asset.filename">
+                  {{ ref.asset.filename }}
+                </span>
+                <select
+                  class="storyboard-ref__kind"
+                  [value]="ref.kind"
+                  (change)="setRefKind(ref.asset.id, $any($event.target).value)"
+                  [attr.aria-label]="
+                    'TOOLS.STORYBOARD_REF_KIND_ARIA' | translate: { name: ref.asset.filename }
+                  "
+                >
+                  @for (kind of refKinds; track kind.key) {
+                    <option [value]="kind.key">{{ kind.labelKey | translate }}</option>
+                  }
+                </select>
+              </figcaption>
+            </figure>
+          }
+        </div>
+      }
+    </div>
+
+    <details class="storyboard-advanced">
+      <summary>
+        <span>
+          <i class="md md-auto_fix_high"></i>
+          {{ 'TOOLS.STORYBOARD_ADVANCED' | translate }}
+        </span>
+        <i class="md md-expand_more" aria-hidden="true"></i>
+      </summary>
+      <div class="panel">
+        <div class="panel-head">
+          <span>{{ 'TOOLS.STORYBOARD_SYSTEM_LABEL' | translate }}</span>
+          <p-button
+            [label]="'TOOLS.RESET_DEFAULT' | translate"
+            icon="md md-refresh"
+            [text]="true"
+            size="small"
+            [disabled]="!systemDirty()"
+            (onClick)="resetSystemPrompt()"
+          />
+        </div>
+        <p class="muted small mb-2">{{ 'TOOLS.STORYBOARD_ADVANCED_HINT' | translate }}</p>
+        <textarea
+          id="storyboard-system"
+          class="pose-textarea storyboard-system"
+          rows="9"
+          [ngModel]="systemPrompt()"
+          (ngModelChange)="systemPrompt.set($event)"
+        ></textarea>
+      </div>
+    </details>
+
+    <div class="panel">
+      <div class="panel-head">
+        <span><i class="md md-image"></i> {{ 'TOOLS.MODEL_LABEL' | translate }}</span>
+      </div>
+      @if (loadingModels()) {
+        <p class="muted small">{{ 'TOOLS.LOADING_CATALOG' | translate }}</p>
+      } @else if (models().length === 0) {
+        <p class="muted small">{{ 'TOOLS.STORYBOARD_NO_MODELS' | translate }}</p>
+      } @else {
+        <p-select
+          id="storyboard-model"
+          [ngModel]="selectedModel()"
+          (ngModelChange)="selectedModel.set($event)"
+          [options]="models()"
+          optionLabel="display_name"
+          optionValue="name"
+          [placeholder]="'TOOLS.MODEL_PLACEHOLDER' | translate"
+          [showClear]="false"
+          class="w-full"
+          appendTo="body"
+        >
+          <ng-template #item let-m>
+            <div class="flex items-center justify-between gap-2 w-full">
+              <div class="min-w-0">
+                <p class="font-bold truncate">{{ m.display_name ?? m.name }}</p>
+                <p class="text-xs opacity-60 truncate">{{ m.name }}</p>
+              </div>
+              <p-tag [value]="m.credential_provider" severity="info" styleClass="text-xs" />
+            </div>
+          </ng-template>
+        </p-select>
+      }
+    </div>
+
+    <div class="pose-generate-bar">
+      <p-button
+        [label]="
+          generating()
+            ? ('TOOLS.GENERATING' | translate)
+            : ('TOOLS.STORYBOARD_GENERATE' | translate)
+        "
+        icon="md md-movie"
+        [loading]="generating()"
+        [disabled]="!canGenerate()"
+        styleClass="w-full"
+        (onClick)="generate()"
+      />
+      <p class="muted small text-center">
+        {{ 'TOOLS.STORYBOARD_META' | translate: { count: panelCount(), ratio: sheetRatio } }}
+      </p>
+    </div>
+  </aside>
+
+  <div class="studio-center">
+    <div class="panel pose-viewer">
+      <div class="panel-head">
+        <span><i class="md md-visibility"></i> {{ 'TOOLS.STORYBOARD_RESULT_TITLE' | translate }}</span>
+        @if (result().length > 0) {
+          <p-tag
+            [value]="
+              'TOOLS.STORYBOARD_META'
+                | translate: { count: generatedPanelCount(), ratio: sheetRatio }
+            "
+            severity="success"
+            styleClass="text-xs"
+          />
+        }
+      </div>
+
+      @if (generating()) {
+        <div class="pose-loading" role="status" [attr.aria-label]="'TOOLS.GENERATING' | translate">
+          <video
+            #loadingMediaRef
+            class="pose-loading-media"
+            [src]="loadingVideo"
+            [poster]="loadingPoster"
+            autoplay
+            loop
+            [muted]="true"
+            playsinline
+            preload="auto"
+            aria-hidden="true"
+          ></video>
+          <div class="pose-loading-progress">
+            <span class="pose-loading-pct">{{ progress() ?? 0 }}%</span>
+            <span class="muted small">{{ 'TOOLS.GENERATING' | translate }}</span>
+          </div>
+        </div>
+      } @else if (result().length === 0) {
+        <div class="pose-empty">
+          <i class="md md-movie"></i>
+          <span>{{ 'TOOLS.STORYBOARD_DESC' | translate }}</span>
+        </div>
+      } @else {
+        <div class="pose-canvas">
+          @for (output of result(); track $index) {
+            <img
+              [src]="output.url | serverUrl"
+              [alt]="'TOOLS.STORYBOARD_RESULT_ALT' | translate"
+              width="1280"
+              height="720"
+              decoding="async"
+            />
+          }
+        </div>
+        <div class="viewer-actions">
+          <p-button
+            [label]="'TOOLS.STORYBOARD_DOWNLOAD' | translate"
+            icon="md md-download"
+            severity="secondary"
+            (onClick)="download()"
+          />
+        </div>
+      }
+    </div>
+  </div>
+</div>

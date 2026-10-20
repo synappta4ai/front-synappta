@@ -140,6 +140,71 @@ export const LOCATION_PIECE_CODE = 'TOOLS-LOCATION';
 /** System prompt por defecto de la locación (servido en /assets). */
 export const LOCATION_SYSTEM_ASSET = './assets/tools/location.system.md';
 
+/** Tipo de referencia del storyboard: define cómo se inyecta en el prompt. */
+export type StoryboardRefKind = 'character' | 'location' | 'prop';
+
+export interface StoryboardRefKindDef {
+  key: StoryboardRefKind;
+  labelKey: string;
+  promptLabel: string;
+}
+
+export const STORYBOARD_REF_KINDS: readonly StoryboardRefKindDef[] = [
+  {
+    key: 'character',
+    labelKey: 'TOOLS.STORYBOARD_REF_KIND_CHARACTER',
+    promptLabel: 'CHARACTER',
+  },
+  {
+    key: 'location',
+    labelKey: 'TOOLS.STORYBOARD_REF_KIND_LOCATION',
+    promptLabel: 'LOCATION',
+  },
+  {
+    key: 'prop',
+    labelKey: 'TOOLS.STORYBOARD_REF_KIND_PROP',
+    promptLabel: 'PROP',
+  },
+];
+
+/** Opción de cantidad de viñetas y su cuadrícula horizontal. */
+export interface StoryboardPanelOption {
+  count: number;
+  columns: number;
+  rows: number;
+  cells: readonly number[];
+}
+
+const storyboardCells = (count: number): readonly number[] =>
+  Array.from({ length: count }, (_, index) => index);
+
+export const STORYBOARD_PANEL_OPTIONS: readonly StoryboardPanelOption[] = [
+  { count: 4, columns: 2, rows: 2, cells: storyboardCells(4) },
+  { count: 6, columns: 3, rows: 2, cells: storyboardCells(6) },
+  { count: 8, columns: 4, rows: 2, cells: storyboardCells(8) },
+];
+
+export const STORYBOARD_DEFAULT_PANEL_COUNT = 6;
+
+/** Gemini Pro/Flash: modelos de imagen que aceptan varias referencias. */
+export const STORYBOARD_MODEL_NAMES: readonly string[] = [
+  'gemini-3-pro-image-preview',
+  'gemini-3.1-flash-image-preview',
+];
+
+/**
+ * Hoja horizontal 3:2 (soportada por Gemini Pro Image). Cada viñeta interna
+ * se dibuja como un marco 16:9; la hoja completa deja aire para cabeceras y
+ * líneas de guion.
+ */
+export const STORYBOARD_RATIO = '3:2';
+
+/** Anchor de proyecto/pieza para los logs del back (idempotente por código). */
+export const STORYBOARD_PIECE_CODE = 'TOOLS-STORYBOARD';
+
+/** System prompt por defecto del storyboard (servido en /assets). */
+export const STORYBOARD_SYSTEM_ASSET = './assets/tools/storyboard.system.md';
+
 /** Animación de carga compartida por las herramientas (servida en /assets). */
 export const TOOLS_LOADING_VIDEO = './assets/tools/animation.mp4';
 export const TOOLS_LOADING_POSTER = './assets/tools/carga-poster.jpeg';

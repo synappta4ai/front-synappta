@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 
 import { LocationComponent } from './ui/location/location.component';
 import { PoseSheetComponent } from './ui/pose-sheet/pose-sheet.component';
+import { StoryboardComponent } from './ui/storyboard/storyboard.component';
 
 /**
  * Herramientas del cliente. Rutas abiertas a cualquier usuario autenticado
@@ -15,6 +16,10 @@ export const toolsRoutes: Routes = [
   {
     path: 'location',
     component: LocationComponent,
+  },
+  {
+    path: 'storyboard',
+    component: StoryboardComponent,
   },
   {
     path: '',
