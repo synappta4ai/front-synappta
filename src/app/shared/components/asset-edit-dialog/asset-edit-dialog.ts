@@ -330,6 +330,14 @@ export class AssetEditDialogComponent {
     this.rotation.set(0);
   }
 
+  /** Deja seleccionada la imagen indicada (p. ej. la recién subida). */
+  private focusFile(fileId: string): void {
+    const index = this.elementFiles().findIndex((file) => file.file_id === fileId);
+    if (index >= 0) {
+      this.setActive(index);
+    }
+  }
+
   protected rotatePreview(): void {
     this.rotation.update((deg) => (deg + 90) % 360);
   }
@@ -374,10 +382,23 @@ export class AssetEditDialogComponent {
       if (!id || !asset?.id) {
         throw new Error('missing ingredient');
       }
-      if (!this.linkedFileIds().has(asset.id)) {
+      // El recurso que se está editando también es una imagen del elemento.
+      // Sin este vínculo, al crear el elemento sobre la marcha solo quedaba
+      // la imagen recién subida y la primera (la del recurso) desaparecía.
+      // Se relee el elemento antes de vincular para no duplicar un archivo
+      // que ya estaba asociado.
+      await this.loadElementFiles(id);
+      const linked = new Set(this.linkedFileIds());
+      const base = this.selected();
+      if (base && !linked.has(base.id)) {
+        await lastValueFrom(this.libraryService.addIngredientFile(id, { file_id: base.id }));
+        linked.add(base.id);
+      }
+      if (!linked.has(asset.id)) {
         await lastValueFrom(this.libraryService.addIngredientFile(id, { file_id: asset.id }));
       }
       await this.loadElementFiles(id);
+      this.focusFile(asset.id);
       this.changed.emit();
     } catch {
       this.error.set(this.translate.instant('LIBRARY.EDIT.ERRORS.ADD_IMAGE'));

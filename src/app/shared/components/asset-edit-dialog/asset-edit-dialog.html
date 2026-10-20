@@ -61,40 +61,29 @@
         </button>
       </div>
 
+      <!-- Visualizador principal: solo la imagen activa; el reel de abajo
+           cambia cuál se ve. -->
       <div class="edit-stage">
-        @for (item of displayFiles(); track item.file_id; let i = $index) {
-          <button
-            type="button"
-            class="edit-cell"
-            [class.active]="activeFile()?.file_id === item.file_id"
-            [title]="item.filename ?? ''"
-            [attr.aria-label]="
-              'LIBRARY.EDIT.VIEW_ARIA'
-                | translate: { name: item.filename ?? ('LIBRARY.EDIT.IMAGE_FALLBACK' | translate) }
-            "
-            (click)="setActive(i)"
-          >
-            @if (item.mime_type?.startsWith('image/') && !brokenThumbs().has(item.file_id)) {
+        @if (activeFile(); as active) {
+          <div class="edit-stage__frame">
+            @if (active.mime_type?.startsWith('image/') && !brokenThumbs().has(active.file_id)) {
               <img
                 appImgFade
-                [src]="absoluteUrl(item.url)"
-                [alt]="item.filename ?? ''"
+                [src]="absoluteUrl(active.url)"
+                [alt]="active.filename ?? ''"
                 width="1024"
                 height="768"
-                loading="lazy"
                 decoding="async"
-                [style.transform]="
-                  activeFile()?.file_id === item.file_id ? 'rotate(' + rotation() + 'deg)' : ''
-                "
-                (error)="markThumbBroken(item.file_id)"
+                [style.transform]="'rotate(' + rotation() + 'deg)'"
+                (error)="markThumbBroken(active.file_id)"
               />
             } @else {
-              <span class="edit-cell__fallback">
+              <span class="edit-stage__fallback">
                 <i class="md md-image"></i>
               </span>
             }
-          </button>
-        } @empty {
+          </div>
+        } @else {
           <div class="edit-empty">
             <i class="md md-image"></i>
             <p>{{ 'LIBRARY.EDIT.NO_IMAGES' | translate }}</p>
