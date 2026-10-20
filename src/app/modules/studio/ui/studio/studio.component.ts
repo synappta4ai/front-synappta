@@ -13,7 +13,7 @@ import {
 } from '@angular/core';
 import { DatePipe, DecimalPipe, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { catchError, EMPTY, finalize } from 'rxjs';
+import { catchError, EMPTY, finalize, forkJoin, of } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { Button } from 'primeng/button';
@@ -755,6 +755,9 @@ export class StudioComponent {
     const removedIds = new Set(
       isAsset ? [target.id] : this.assetsOfIngredient(target).map((a) => a.id),
     );
+    // Quitar la mención también la saca de las refs del reuso: no debe viajar
+    // al generar por el solo hecho de venir de la toma original.
+    this.reusedRefIds.update((ids) => ids.filter((id) => !removedIds.has(id)));
     this.selectedAssetIds.update((prev) => {
       const next = new Set(prev);
       for (const id of removedIds) {
@@ -808,7 +811,13 @@ export class StudioComponent {
     this.libraryService
       .listIngredients()
       .pipe(catchError(() => EMPTY))
-      .subscribe((ings) => this.ingredients.set(ings));
+      .subscribe((ings) => {
+        this.ingredients.set(ings);
+        // Un reuso puede setear el prompt antes de que llegue el catálogo: los
+        // @ recién ahora resuelven a sus ingredientes/recursos.
+        this.syncMentionsFromText();
+        this.syncSelectionWithMentions();
+      });
   }
 
   // ─── Proyecto (centralización de recursos) ──────────────
@@ -1281,6 +1290,10 @@ export class StudioComponent {
       proyecto y el historial por día cede prioridad (se limpia la sesión). */
   protected onProjectChange(projectId: string | null): void {
     this.selectedProjectId.set(projectId);
+    // Cambio manual de proyecto: se descarta cualquier reuso pendiente.
+    this.pendingReuseRefs = null;
+    // Cambiar de proyecto descarta las refs restauradas por un reuso previo.
+    this.reusedRefIds.set([]);
     this.selectedAssetIds.set(new Set());
     this.refSlots.update((slots) => ({ ...slots, character: null, location: null, props: null }));
     this.eventsStore.clearSession();
@@ -1332,17 +1345,80 @@ export class StudioComponent {
       .listFilesPaginated({ page: 1, pageSize: 200, event_id: eventId })
       .pipe(
         catchError(() => EMPTY),
-        finalize(() => this.loadingAssets.set(false)),
+        finalize(() => {
+          this.loadingAssets.set(false);
+          // Si la carga falló, el reuso pendiente no debe aplicar en la próxima.
+          this.pendingReuseRefs = null;
+        }),
       )
       .subscribe((pageData) => {
         const files = [...(pageData.items ?? [])] as FileAsset[];
         this.assets.set(files);
-        this.autoAssignRefs(files);
+        // Un reuso trae sus propias referencias por id: mandan sobre las que
+        // el proyecto tenga asignadas (no se pisan con autoAssignRefs).
+        if (this.pendingReuseRefs?.length) {
+          this.restorePendingReuseRefs(files);
+        } else {
+          this.autoAssignRefs(files);
+        }
         // Con la lista definitiva de recursos, re-resolver los @ del prompt
         // (p.ej. un REUSAR que cambió de proyecto antes de que llegaran).
         this.syncMentionsFromText();
         this.syncSelectionWithMentions();
       });
+  }
+
+  /**
+   * Restaura las referencias del request reusado POR ID (no por los @ del
+   * texto): así el video rehecho conserva personajes, locaciones y props
+   * aunque el catálogo @ todavía no haya cargado o el proyecto no las tenga
+   * asignadas (en ese caso se piden a la biblioteca).
+   */
+  private restorePendingReuseRefs(files: FileAsset[]): void {
+    const refs = this.pendingReuseRefs;
+    this.pendingReuseRefs = null;
+    if (!refs?.length) {
+      return;
+    }
+    const known = new Set([...files, ...this.assets()].map((a) => a.id));
+    const missing = refs.filter((r) => !known.has(r.id));
+    if (missing.length === 0) {
+      this.applyReuseRefs(refs);
+      return;
+    }
+    forkJoin(
+      missing.map((r) => this.libraryService.getFile(r.id).pipe(catchError(() => of(null)))),
+    ).subscribe((extra) => {
+      const found = extra.filter((a): a is FileAsset => !!a);
+      if (found.length) {
+        this.assets.update((list) => [
+          ...list,
+          ...found.filter((a) => !list.some((x) => x.id === a.id)),
+        ]);
+      }
+      this.applyReuseRefs(refs);
+    });
+  }
+
+  /** Selecciona y ubica en los slots las refs restauradas (orden del request). */
+  private applyReuseRefs(refs: { id: string }[]): void {
+    const byId = new Map(this.assets().map((a) => [a.id, a]));
+    const picked = refs.map((r) => byId.get(r.id)).filter((a): a is FileAsset => !!a);
+    if (!picked.length) {
+      return;
+    }
+    this.reusedRefIds.set(picked.map((a) => a.id));
+    this.selectedAssetIds.set(new Set(picked.slice(0, this.maxSelectedRefs).map((a) => a.id)));
+    const slots = { ...this.refSlots() };
+    REF_SLOT_DEFS.forEach((slot, i) => {
+      if (picked[i]) {
+        slots[slot.key] = picked[i].id;
+      }
+    });
+    this.refSlots.set(slots);
+    // Las refs restauradas se muestran sin que el usuario tenga que abrir el panel.
+    this.showAssetGallery.set(true);
+    this.refsAutoOpened = true;
   }
 
   /**
@@ -1407,6 +1483,7 @@ export class StudioComponent {
   /** Quita la miniatura de la lista local (sin borrar el asset en el backend). */
   protected removeAsset(assetId: string): void {
     this.assets.update((list) => list.filter((a) => a.id !== assetId));
+    this.reusedRefIds.update((ids) => ids.filter((id) => id !== assetId));
     const next = new Set(this.selectedAssetIds());
     if (next.delete(assetId)) {
       this.selectedAssetIds.set(next);
@@ -1649,7 +1726,15 @@ export class StudioComponent {
     // (sin tokens @) porque el backend compila el prompt del texto puro.
     // Los ingredientes citados expanden a TODOS sus recursos.
     this.syncMentionsFromText();
-    const mentions = [...this.mentionedAssets()];
+    // Primero las refs del request reusado (mismo orden y esencia del video
+    // base), después las menciones @: así un reuso conserva sus referencias
+    // aunque los @ del texto ya no resuelvan contra el catálogo actual.
+    const mentions: FileAsset[] = [...this.reusedRefAssets()];
+    for (const asset of this.mentionedAssets()) {
+      if (!mentions.some((a) => a.id === asset.id)) {
+        mentions.push(asset);
+      }
+    }
     for (const ing of this.mentionedIngredients()) {
       for (const asset of this.assetsOfIngredient(ing)) {
         if (!mentions.some((a) => a.id === asset.id)) {
@@ -1910,6 +1995,20 @@ export class StudioComponent {
   /** Reuso pendiente desde /projects (request guardado en sessionStorage). */
   private readonly pendingReuse = signal<{ req: GenerateRequest; prompt: string } | null>(null);
 
+  /** Refs del request reusado pendientes de resolver (ids de la biblioteca). */
+  private pendingReuseRefs: { id: string; name: string }[] | null = null;
+
+  /** Ids de las refs restauradas por el último reuso: se reenvían al generar. */
+  private readonly reusedRefIds = signal<string[]>([]);
+
+  /** Recursos restaurados por el último reuso, en el orden del request. */
+  private readonly reusedRefAssets = computed(() => {
+    const byId = new Map(this.assets().map((a) => [a.id, a]));
+    return this.reusedRefIds()
+      .map((id) => byId.get(id))
+      .filter((a): a is FileAsset => !!a);
+  });
+
   /** Reusar: carga el request original de la toma en el studio (prompt,
       modelo, formato, seed y proyecto) sin generar nada, para que el
       usuario ajuste lo que necesite y lance la generación manualmente. */
@@ -1935,12 +2034,23 @@ export class StudioComponent {
     if (model) {
       this.selectedModel.set(model);
     }
+    // Referencias originales del request: se restauran POR ID al cargar los
+    // recursos (no dependen de que los @ del texto resuelvan contra el
+    // catálogo actual). Sin esto el video rehecho perdía personajes/props.
+    const refs = (req.content ?? [])
+      .filter((c) => c.type === 'image' && !!c.id)
+      .map((c) => ({ id: String(c.id), name: c.name ?? String(c.id) }));
     // Proyecto de la generación original (si tuvo uno y sigue existiendo):
     // onProjectChange recarga SUS recursos (slots + selección) y limpia la
     // sesión de día.
     const eventId = req.event_id || '';
     if (eventId && this.projects().some((p) => p.id === eventId)) {
       this.onProjectChange(eventId);
+      // Después del cambio (que descarta pendientes): esta carga los aplica.
+      this.pendingReuseRefs = refs;
+    } else if (refs.length) {
+      // Sin proyecto: los recursos ya cargados alcanzan (o se piden por id).
+      this.restorePendingReuseRefs(this.assets());
     }
     // Los @ del prompt restauran los recursos citados: menciones, selección
     // y slots (al llegar los assets del proyecto se re-resuelven solos).
