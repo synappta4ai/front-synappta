@@ -16,6 +16,8 @@ import {
   TenantCredential,
   TenantMember,
   TenantModel,
+  TenantStorageConfig,
+  TenantStorageConfigRequest,
   TenantUser,
   UpdateTenantPermissionsRequest,
   UpsertTenantCredentialRequest,
@@ -71,6 +73,23 @@ export class AdminService {
   /** Importa credenciales desde el archivo de exportación. */
   importTenantCredentials(id: number, file: File): Observable<{ imported: number }> {
     return unwrap(this.adminApiRepository.importTenantCredentials(id, file));
+  }
+
+  // ─── Per-tenant object storage (platform superadmin) ───
+
+  getTenantStorage(id: number): Observable<TenantStorageConfig> {
+    return unwrap(this.adminApiRepository.getTenantStorage(id));
+  }
+
+  saveTenantStorage(
+    id: number,
+    payload: TenantStorageConfigRequest,
+  ): Observable<TenantStorageConfig> {
+    return unwrap(this.adminApiRepository.saveTenantStorage(id, payload));
+  }
+
+  deleteTenantStorage(id: number): Observable<null> {
+    return unwrap(this.adminApiRepository.deleteTenantStorage(id));
   }
 
   listTenantUsers(id: number): Observable<TenantUser[]> {

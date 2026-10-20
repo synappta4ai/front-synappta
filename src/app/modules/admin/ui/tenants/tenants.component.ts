@@ -9,6 +9,7 @@ import { Card } from 'primeng/card';
 import { InputText } from 'primeng/inputtext';
 import { TableModule } from 'primeng/table';
 import { Tag } from 'primeng/tag';
+import { Tooltip } from 'primeng/tooltip';
 import { Message } from 'primeng/message';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { ConfirmationService } from 'primeng/api';
@@ -18,6 +19,7 @@ import { Tenant } from '../../interfaces';
 import { PageContainerComponent } from '@shared/components/index';
 import { CountUpDirective } from '@shared/components/count-up/count-up.directive';
 import { TenantUsersDialogComponent } from '../tenant-users-dialog/tenant-users-dialog.component';
+import { TenantStorageDialogComponent } from '../tenant-storage-dialog/tenant-storage-dialog.component';
 
 @Component({
   selector: 'app-admin-tenants',
@@ -30,10 +32,12 @@ import { TenantUsersDialogComponent } from '../tenant-users-dialog/tenant-users-
     InputText,
     TableModule,
     Tag,
+    Tooltip,
     Message,
     ConfirmDialog,
     CountUpDirective,
     TenantUsersDialogComponent,
+    TenantStorageDialogComponent,
     TranslatePipe,
   ],
   providers: [ConfirmationService],
@@ -53,6 +57,9 @@ export class TenantsComponent {
 
   /** Tenant cuyo diálogo de usuarios está abierto (null = cerrado). */
   protected readonly usersTenant = signal<Tenant | null>(null);
+
+  /** Tenant cuyo diálogo de bucket está abierto (null = cerrado). */
+  protected readonly storageTenant = signal<Tenant | null>(null);
 
   /** Formulario de creación de tenants. */
   protected readonly form = this.formBuilder.group({
@@ -117,6 +124,15 @@ export class TenantsComponent {
 
   protected closeUsers(): void {
     this.usersTenant.set(null);
+  }
+
+  /** Credenciales del bucket (S3/MinIO) del tenant. */
+  protected openStorage(tenant: Tenant): void {
+    this.storageTenant.set(tenant);
+  }
+
+  protected closeStorage(): void {
+    this.storageTenant.set(null);
   }
 
   protected confirmDeactivate(tenant: Tenant): void {

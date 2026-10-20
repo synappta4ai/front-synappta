@@ -15,9 +15,10 @@ import {
   ServerCommsPage,
   Tenant,
   TenantCredential,
-  TenantMember,
-  TenantModel,
-  TenantUser,
+  TenantMember,	TenantModel,
+	TenantStorageConfig,
+	TenantStorageConfigRequest,
+	TenantUser,
   UpdateTenantPermissionsRequest,
   UpsertTenantCredentialRequest,
 } from '../interfaces';
@@ -75,6 +76,26 @@ export class AdminApiRepository {
     return this.http.delete<ApiResponse<null>>(
       `${this.apiUrl}/tenants/${id}/credentials/${provider}`,
     );
+  }
+
+  // ─── Per-tenant object storage (platform superadmin) ───
+
+  getTenantStorage(id: number): Observable<ApiResponse<TenantStorageConfig>> {
+    return this.http.get<ApiResponse<TenantStorageConfig>>(`${this.apiUrl}/tenants/${id}/storage`);
+  }
+
+  saveTenantStorage(
+    id: number,
+    payload: TenantStorageConfigRequest,
+  ): Observable<ApiResponse<TenantStorageConfig>> {
+    return this.http.put<ApiResponse<TenantStorageConfig>>(
+      `${this.apiUrl}/tenants/${id}/storage`,
+      payload,
+    );
+  }
+
+  deleteTenantStorage(id: number): Observable<ApiResponse<null>> {
+    return this.http.delete<ApiResponse<null>>(`${this.apiUrl}/tenants/${id}/storage`);
   }
 
   /** Usuarios miembros de un tenant (para el selector de logs/modelos). */

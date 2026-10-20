@@ -218,6 +218,16 @@
                   [disabled]="!tenant.active"
                   (onClick)="openUsers(tenant)"
                 />
+                <p-button
+                  [label]="'ADMIN.TENANTS.STORAGE' | translate"
+                  icon="md md-storage"
+                  size="small"
+                  text
+                  [pTooltip]="'ADMIN.TENANTS.STORAGE_HINT' | translate"
+                  tooltipPosition="top"
+                  [disabled]="!tenant.active"
+                  (onClick)="openStorage(tenant)"
+                />
                 @if (tenant.active) {
                   <p-button
                     [label]="'ADMIN.TENANTS.DEACTIVATE' | translate"
@@ -260,4 +270,6 @@
     (closed)="closeUsers()"
     (tenantPermissionsChanged)="onTenantPermissionsChanged($event)"
   />
+
+  <app-tenant-storage-dialog [tenant]="storageTenant()" (closed)="closeStorage()" />
 </app-page-container>

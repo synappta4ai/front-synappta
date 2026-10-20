@@ -236,3 +236,32 @@ export interface GeneratedVideosPage {
 export type GeneratedImagesPage = GeneratedVideosPage;
 export type GeneratedImage = GeneratedMedia;
 export type GeneratedVideo = GeneratedMedia;
+
+/**
+ * Bucket (S3/MinIO) del tenant, tal como lo devuelve la API. `configured`
+ * false significa que el tenant guarda sus archivos en el disco local.
+ * Los secretos nunca llegan en claro: solo la máscara y `has_secret`.
+ */
+export interface TenantStorageConfig {
+  configured: boolean;
+  endpoint?: string;
+  bucket?: string;
+  region?: string;
+  public_base?: string;
+  enabled: boolean;
+  access_key_id?: string;
+  has_secret: boolean;
+  updated_at?: string;
+}
+
+/** Payload para guardar el bucket de un tenant (credenciales cifradas). */
+export interface TenantStorageConfigRequest {
+  endpoint: string;
+  bucket: string;
+  region?: string;
+  /** Se puede omitir al actualizar: el back conserva la guardada. */
+  access_key_id?: string;
+  secret_access_key?: string;
+  public_base?: string;
+  enabled?: boolean;
+}
