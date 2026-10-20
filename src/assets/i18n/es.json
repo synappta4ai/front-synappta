@@ -855,7 +855,7 @@
       "P1_REFS_TITLE": "Fotos de referencia",
       "P1_REFS_SUBTITLE": "Subí las fotos reales antes de generar: cada una recibe un tag (@nombre) para insertar en los prompts.",
       "P1_REFS_COUNT": "{{count}} foto(s)",
-      "P1_REFS_UPLOAD": "Subir fotos",
+      "P1_REFS_UPLOAD": "Subir fotos de referencia",
       "P1_REFS_UPLOAD_ARIA": "Subir fotos de referencia",
       "P1_REFS_KIND_PENDING": "Elegí el tipo de cada foto para continuar.",
       "P1_REFS_KIND_ARIA": "Tipo de la foto {{name}}",

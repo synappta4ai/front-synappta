@@ -65,16 +65,9 @@
       </ng-template>
 
       <form [formGroup]="form" class="flex flex-col gap-6" novalidate>
-        <div
-          [class]="
-            'grid items-start gap-6 ' +
-            (isCommercial()
-              ? 'lg:grid-cols-[minmax(0,240px)_minmax(0,1fr)_minmax(0,340px)]'
-              : 'lg:grid-cols-[minmax(0,240px)_minmax(0,1fr)]')
-          "
-        >
-          <div class="flex min-w-0 flex-col gap-3 lg:col-start-1 lg:row-start-1">
-          <div class="flex max-w-[240px] flex-col gap-2">
+        <div class="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          <div class="contents">
+          <div class="flex min-w-0 flex-col gap-2">
             <label for="propertyName" class="text-xs font-bold text-ink-on-dark">
               {{ 'AGENCY.STUDIO.P1_NAME_LABEL' | translate }} <span class="text-danger">*</span>
             </label>
@@ -98,7 +91,7 @@
               [submitTick]="submitted()"
             />
           </div>
-          <div class="flex max-w-[240px] flex-col gap-2">
+          <div class="flex min-w-0 flex-col gap-2">
             <label for="location" class="text-xs font-bold text-ink-on-dark">
               {{ 'AGENCY.STUDIO.P1_LOCATION_LABEL' | translate }} <span class="text-danger">*</span>
             </label>
@@ -121,7 +114,7 @@
               [submitTick]="submitted()"
             />
           </div>
-          <div class="flex max-w-[240px] flex-col gap-2">
+          <div class="flex min-w-0 flex-col gap-2 lg:col-start-1 lg:row-start-2">
             <label for="agencyAgent" class="text-xs font-bold text-ink-on-dark">
               {{ 'AGENCY.STUDIO.P1_AGENT_LABEL' | translate }}
             </label>
@@ -141,7 +134,7 @@
               tooltipPosition="top"
             />
           </div>
-          <div class="flex max-w-[240px] flex-col gap-2">
+          <div class="flex min-w-0 flex-col gap-2 lg:col-start-3 lg:row-start-1">
             <label for="agencyTextModel" class="text-xs font-bold text-ink-on-dark">
               {{ 'AGENCY.STUDIO.P1_BRAIN_LABEL' | translate }}
             </label>
@@ -162,7 +155,7 @@
             />
           </div>
           @if (agent() === 'real_estate' || agent() === 'commercial') {
-            <div class="flex max-w-[240px] flex-col gap-2">
+            <div class="flex min-w-0 flex-col gap-2 lg:col-start-2 lg:row-start-2">
               <label for="anglesCount" class="text-xs font-bold text-ink-on-dark">
                 {{
                   (agent() === 'real_estate'
@@ -188,9 +181,10 @@
               }}</small>
             </div>
           }
+          </div>
         </div>
 
-        <div class="flex min-w-0 flex-col gap-2 lg:col-start-2 lg:row-start-1">
+        <div class="flex min-w-0 flex-col gap-2">
           <label for="description" class="text-xs font-bold text-ink-on-dark">
             {{ 'AGENCY.STUDIO.P1_CONTEXT_LABEL' | translate }} <span class="text-danger">*</span>
           </label>
@@ -198,7 +192,7 @@
             pTextarea
             id="description"
             formControlName="description"
-            rows="6"
+            rows="4"
             [placeholder]="descriptionPlaceholder()"
             class="w-full"
             [attr.aria-invalid]="
@@ -207,7 +201,21 @@
             "
             aria-describedby="agency-description-errors"
           ></textarea>
-          <div class="flex flex-wrap items-center gap-2">
+          <validator-errors
+            id="agency-description-errors"
+            [control]="form.get('description')"
+            [label]="'AGENCY.STUDIO.P1_CONTEXT_LABEL' | translate"
+            [submitTick]="submitted()"
+          />
+          <small class="text-ink-muted-on-dark">{{
+            'AGENCY.STUDIO.P1_CONTEXT_HINT' | translate
+          }}</small>
+        </div>
+
+        <div
+          class="grid gap-4 border-t border-surface-border pt-5 md:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-start"
+        >
+          <div class="flex min-w-0 flex-col gap-1.5">
             <input
               #briefInput
               type="file"
@@ -221,44 +229,136 @@
             <p-button
               [label]="'AGENCY.STUDIO.P1_BRIEF_BUTTON' | translate"
               icon="md md-upload"
-              severity="secondary"
-              text
-              size="small"
+              size="large"
+              [fluid]="true"
               [loading]="extractingBrief()"
               [disabled]="extractingBrief()"
               (onClick)="briefInput.click()"
             />
-            <span class="text-xs text-ink-muted-on-dark">{{
+            <small class="text-center text-xs text-ink-muted-on-dark">{{
               'AGENCY.STUDIO.P1_BRIEF_HINT' | translate
-            }}</span>
+            }}</small>
+            @if (briefNote(); as note) {
+              <p-message severity="success" [text]="note" styleClass="w-full" />
+            }
           </div>
-          @if (briefNote(); as note) {
-            <p-message severity="success" [text]="note" styleClass="w-full" />
+
+          @if (isCommercial()) {
+            <div class="flex min-w-0 flex-col gap-1.5">
+              <input
+                #projectPhotoInput
+                type="file"
+                accept="image/*"
+                multiple
+                class="hidden"
+                tabindex="-1"
+                [attr.aria-label]="'AGENCY.STUDIO.P1_REFS_UPLOAD_ARIA' | translate"
+                (change)="onProjectPhotoFiles($event)"
+              />
+              <p-button
+                [label]="'AGENCY.STUDIO.P1_REFS_UPLOAD' | translate"
+                icon="md md-upload"
+                size="large"
+                [fluid]="true"
+                [loading]="uploadingProjectPhotos()"
+                [disabled]="uploadingProjectPhotos()"
+                (onClick)="projectPhotoInput.click()"
+              />
+              <small class="text-center text-xs text-ink-muted-on-dark">{{
+                'AGENCY.STUDIO.P1_REFS_SUBTITLE' | translate
+              }}</small>
+            </div>
           }
-          <validator-errors
-            id="agency-description-errors"
-            [control]="form.get('description')"
-            [label]="'AGENCY.STUDIO.P1_CONTEXT_LABEL' | translate"
-            [submitTick]="submitted()"
-          />
-          <small class="text-ink-muted-on-dark">{{
-            'AGENCY.STUDIO.P1_CONTEXT_HINT' | translate
-          }}</small>
+
+          <div class="flex min-w-0 flex-col gap-2 md:col-span-2 lg:col-span-1 lg:items-end">
+            @if (isCommercial() && angles().length > 0) {
+              @if (pendingStepPhotos().length > 0 && !stepPhotosSkipped()) {
+                <small id="prompts-gate-hint" class="text-ink-muted-on-dark">
+                  {{
+                    'AGENCY.STUDIO.P1_PHOTOS_PENDING'
+                      | translate: { count: pendingStepPhotos().length }
+                  }}
+                </small>
+              } @else if (stepPhotosSkipped() && pendingStepPhotos().length > 0) {
+                <small class="text-ink-muted-on-dark">
+                  {{ 'AGENCY.STUDIO.P1_PHOTOS_SKIPPED' | translate }}
+                </small>
+              }
+              <div class="flex flex-wrap items-center gap-2 lg:justify-end">
+                <p-button
+                  type="button"
+                  [label]="generateLabelKey() | translate"
+                  size="small"
+                  [loading]="loading()"
+                  [disabled]="!canProceedToAngles || loading()"
+                  (onClick)="generateAngles()"
+                  styleClass="active:scale-[0.98]"
+                />
+                @if (pendingStepPhotos().length > 0 && !stepPhotosSkipped()) {
+                  <p-button
+                    type="button"
+                    [label]="'AGENCY.STUDIO.P1_PHOTOS_SKIP' | translate"
+                    severity="secondary"
+                    text
+                    size="small"
+                    (onClick)="skipStepPhotos()"
+                  />
+                }
+                <p-button
+                  type="button"
+                  [label]="'AGENCY.STUDIO.P1_TO_PROMPTS' | translate"
+                  icon="md md-arrow_forward"
+                  iconPos="right"
+                  severity="secondary"
+                  [outlined]="true"
+                  size="small"
+                  [attr.aria-describedby]="!canAdvanceToPrompts ? 'prompts-gate-hint' : null"
+                  [disabled]="!canAdvanceToPrompts"
+                  (onClick)="nextPhase()"
+                  styleClass="active:scale-[0.98]"
+                />
+              </div>
+            } @else {
+              <div class="flex flex-wrap items-center gap-2 lg:justify-end">
+                <p-button
+                  type="button"
+                  [label]="generateLabelKey() | translate"
+                  size="small"
+                  [attr.aria-describedby]="
+                    !canProceedToAngles && !loading() ? 'angles-gate-hint' : null
+                  "
+                  [loading]="loading()"
+                  [disabled]="!canProceedToAngles || loading()"
+                  (onClick)="generateAngles()"
+                  styleClass="active:scale-[0.98]"
+                />
+              </div>
+              @if (!canProceedToAngles && !loading()) {
+                <small id="angles-gate-hint" class="text-ink-muted-on-dark">
+                  {{ 'AGENCY.STUDIO.P1_GATE_HINT' | translate }}
+                </small>
+              }
+            }
+          </div>
         </div>
+
+        <p class="text-xs text-ink-muted-on-dark">
+          <i class="md md-info mr-1"></i>
+          @if (inputsLocked()) {
+            {{ 'AGENCY.STUDIO.P1_NOTE_LOCKED' | translate: { noun: anglesNoun() } }}
+          } @else {
+            {{ 'AGENCY.STUDIO.P1_NOTE_NEW' | translate: { noun: anglesNoun() } }}
+          }
+        </p>
 
         <!-- Fotos de referencia subidas antes de generar los prompts -->
         @if (isCommercial()) {
-          <div
-            class="rounded-xl border border-surface-border bg-surface-2 p-3 lg:col-start-3 lg:row-span-2 lg:row-start-1 max-lg:order-4"
-          >
+          <div class="rounded-xl border border-surface-border bg-surface-2 p-4">
             <div class="flex flex-wrap items-center gap-2">
               <i class="md md-photo_library text-lg text-accent"></i>
               <div class="min-w-0 flex-1">
                 <p class="text-sm font-bold text-ink-on-dark">
                   {{ 'AGENCY.STUDIO.P1_REFS_TITLE' | translate }}
-                </p>
-                <p class="text-xs text-ink-muted-on-dark">
-                  {{ 'AGENCY.STUDIO.P1_REFS_SUBTITLE' | translate }}
                 </p>
               </div>
               <span
@@ -278,26 +378,6 @@
                   [class.rotate-180]="projectPhotosOpen()"
                 ></i>
               </button>
-              <input
-                #projectPhotoInput
-                type="file"
-                accept="image/*"
-                multiple
-                class="hidden"
-                tabindex="-1"
-                [attr.aria-label]="'AGENCY.STUDIO.P1_REFS_UPLOAD_ARIA' | translate"
-                (change)="onProjectPhotoFiles($event)"
-              />
-              <p-button
-                [label]="'AGENCY.STUDIO.P1_REFS_UPLOAD' | translate"
-                icon="md md-upload"
-                severity="secondary"
-                text
-                size="small"
-                [loading]="uploadingProjectPhotos()"
-                [disabled]="uploadingProjectPhotos()"
-                (onClick)="projectPhotoInput.click()"
-              />
             </div>
 
             @if (!projectPhotosReady()) {
@@ -309,7 +389,7 @@
             }
 
             @if (projectPhotosOpen() && projectPhotos().length > 0) {
-              <ul class="mt-3 grid grid-cols-2 gap-2">
+              <ul class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                 @for (photo of projectPhotos(); track photo.id) {
                   <li
                     class="relative overflow-hidden rounded-lg border border-surface-border bg-surface"
@@ -369,7 +449,7 @@
         <!-- Imágenes que el experto pide antes de armar los prompts -->
         @if (isCommercial() && stepPhotos().length > 0) {
           <details
-            class="rounded-xl border border-surface-border bg-surface-2 px-4 py-3 lg:col-start-2 lg:row-start-2 max-lg:order-3"
+            class="rounded-xl border border-surface-border bg-surface-2 px-4 py-3"
             [open]="stepPhotosOpen()"
             (toggle)="stepPhotosOpen.set($any($event.target).open)"
           >
@@ -490,81 +570,6 @@
             </ul>
           </details>
         }
-        </div>
-
-        <div class="flex items-center justify-between gap-3 border-t border-surface-border pt-4">
-          <p class="text-sm text-ink-muted-on-dark">
-            <i class="md md-info mr-1"></i>
-            @if (inputsLocked()) {
-              {{ 'AGENCY.STUDIO.P1_NOTE_LOCKED' | translate: { noun: anglesNoun() } }}
-            } @else {
-              {{ 'AGENCY.STUDIO.P1_NOTE_NEW' | translate: { noun: anglesNoun() } }}
-            }
-          </p>
-          <div class="flex shrink-0 flex-col items-end gap-1">
-            @if (isCommercial() && angles().length > 0) {
-              @if (pendingStepPhotos().length > 0 && !stepPhotosSkipped()) {
-                <small id="prompts-gate-hint" class="text-ink-muted-on-dark">
-                  {{
-                    'AGENCY.STUDIO.P1_PHOTOS_PENDING'
-                      | translate: { count: pendingStepPhotos().length }
-                  }}
-                </small>
-              } @else if (stepPhotosSkipped() && pendingStepPhotos().length > 0) {
-                <small class="text-ink-muted-on-dark">
-                  {{ 'AGENCY.STUDIO.P1_PHOTOS_SKIPPED' | translate }}
-                </small>
-              }
-              <div class="flex flex-wrap items-center justify-end gap-2">
-                <p-button
-                  type="button"
-                  [label]="generateLabelKey() | translate"
-                  [loading]="loading()"
-                  [disabled]="!canProceedToAngles || loading()"
-                  (onClick)="generateAngles()"
-                />
-                @if (pendingStepPhotos().length > 0 && !stepPhotosSkipped()) {
-                  <p-button
-                    type="button"
-                    [label]="'AGENCY.STUDIO.P1_PHOTOS_SKIP' | translate"
-                    severity="secondary"
-                    size="small"
-                    (onClick)="skipStepPhotos()"
-                  />
-                }
-                <p-button
-                  type="button"
-                  [label]="'AGENCY.STUDIO.P1_TO_PROMPTS' | translate"
-                  icon="md md-arrow_forward"
-                  iconPos="right"
-                  severity="secondary"
-                  [outlined]="true"
-                  [attr.aria-describedby]="!canAdvanceToPrompts ? 'prompts-gate-hint' : null"
-                  [disabled]="!canAdvanceToPrompts"
-                  (onClick)="nextPhase()"
-                  styleClass="px-6 active:scale-[0.98]"
-                />
-              </div>
-            } @else {
-              <p-button
-                type="button"
-                [label]="generateLabelKey() | translate"
-                [attr.aria-describedby]="
-                  !canProceedToAngles && !loading() ? 'angles-gate-hint' : null
-                "
-                [loading]="loading()"
-                [disabled]="!canProceedToAngles || loading()"
-                (onClick)="generateAngles()"
-                styleClass="px-6 active:scale-[0.98]"
-              />
-              @if (!canProceedToAngles && !loading()) {
-                <small id="angles-gate-hint" class="text-ink-muted-on-dark">
-                  {{ 'AGENCY.STUDIO.P1_GATE_HINT' | translate }}
-                </small>
-              }
-            }
-          </div>
-        </div>
       </form>
     </p-card>
   }

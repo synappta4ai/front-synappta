@@ -818,7 +818,7 @@ export class AgencyComponent {
   /** Panel "qué subir" desplegado en el paso 1. */
   protected readonly stepPhotosOpen = signal(false);
   /** Grilla de fotos de referencia del proyecto desplegada. */
-  protected readonly projectPhotosOpen = signal(true);
+  protected readonly projectPhotosOpen = signal(false);
   /** Sugerencias con una subida en curso (spinner del botón). */
   protected readonly uploadingPhotoIds = signal<string[]>([]);
 
@@ -1039,6 +1039,7 @@ export class AgencyComponent {
     const files = Array.from(input?.files ?? []);
     if (input) input.value = '';
     if (!files.length) return;
+    this.projectPhotosOpen.set(true);
     this.uploadingProjectPhotos.set(true);
     let pending = files.length;
     const done = () => {
