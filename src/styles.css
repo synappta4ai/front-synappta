@@ -2748,7 +2748,8 @@ main:has(> app-location) {
   outline: none;
   resize: none;
   /* Crece con el contenido (el overlay espejo, inset 0, lo sigue);
-     en navegadores sin soporte queda fijo con scroll (fallback). */
+     en navegadores sin soporte queda fijo con scroll (fallback). Al llegar a
+     max-height scrollea por dentro y appScrollMirror arrastra al overlay. */
   field-sizing: content;
   overflow-x: hidden;
   overflow-y: auto;
@@ -2797,10 +2798,17 @@ main:has(> app-location) {
   /* Reserva el gutter del scroll como el textarea: si aparece la barra,
      el overlay no queda más ancho y el espejo no se desfasa. */
   scrollbar-gutter: stable;
+  /* El scroll interno no se ve, pero se escribe: la directiva appScrollMirror
+     copia el scrollTop del textarea acá cuando el prompt supera max-height
+     (si no, se edita una parte del texto y se ve otra). */
 }
 
 .studio-shell .prompt-wrap .prompt-input {
   position: relative;
+  /* block y no inline-block: el hueco de línea del inline-block dejaba el
+     wrapper 4px más alto que el textarea y el overlay (inset 0) no calzaba
+     exacto al espejar el scroll. */
+  display: block;
   background: transparent;
   color: transparent;
   caret-color: var(--st-text);

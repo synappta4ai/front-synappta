@@ -49,6 +49,7 @@ import { AssetEditDialogComponent } from '@shared/components/asset-edit-dialog/a
 import { SlidePillDirective } from '@shared/components/slide-pill/slide-pill.directive';
 import { TiltDirective } from '@shared/components/tilt/tilt.directive';
 import { ImgFadeDirective } from '@shared/components/img-fade/img-fade.directive';
+import { ScrollMirrorDirective } from '@shared/components/scroll-mirror/scroll-mirror.directive';
 import { UiIcon } from '@shared/components/ui-icon/ui-icon.component';
 
 interface RatioOption {
@@ -101,6 +102,7 @@ interface MentionRow {
     SlidePillDirective,
     TiltDirective,
     ImgFadeDirective,
+    ScrollMirrorDirective,
     UiIcon,
   ],
   templateUrl: './studio.component.html',
@@ -1944,7 +1946,17 @@ export class StudioComponent {
     // y slots (al llegar los assets del proyecto se re-resuelven solos).
     this.syncMentionsFromText();
     this.syncSelectionWithMentions();
-    setTimeout(() => this.promptTextarea?.focus());
+    // Arrancar al inicio del prompt reusado: con prompts largos el caret caía
+    // al final y el textarea scrolleado, fuera de la vista del overlay.
+    setTimeout(() => {
+      const textarea = this.promptTextarea;
+      if (!textarea) {
+        return;
+      }
+      textarea.focus();
+      textarea.setSelectionRange(0, 0);
+      textarea.scrollTop = 0;
+    });
   }
 
   /** Miniatura pública de una imagen de referencia (asset ya cargado). */

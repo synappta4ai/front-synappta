@@ -228,11 +228,17 @@
       <div class="prompt-wrap">
         <!-- Overlay de resaltado: espeja el texto con los tokens @ válidos
              resaltados detrás del textarea (el textarea es transparente). -->
-        <div class="prompt-overlay" aria-hidden="true" [innerHTML]="mentionOverlayHtml()"></div>
+        <div
+          #promptOverlay
+          class="prompt-overlay"
+          aria-hidden="true"
+          [innerHTML]="mentionOverlayHtml()"
+        ></div>
         <textarea
           #promptTextarea
           pTextarea
           name="prompt"
+          [appScrollMirror]="promptOverlay"
           [attr.aria-label]="'STUDIO.PROMPT_ARIA' | translate"
           [ngModel]="prompt()"
           (ngModelChange)="onPromptInput($event)"

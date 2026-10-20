@@ -15,5 +15,6 @@ export * from './autogrow/autogrow.directive';
 export * from './count-up/count-up.directive';
 export * from './img-fade/img-fade.directive';
 export * from './reveal/reveal.directive';
+export * from './scroll-mirror/scroll-mirror.directive';
 export * from './slide-pill/slide-pill.directive';
 export * from './tilt/tilt.directive';
