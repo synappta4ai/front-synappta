@@ -392,6 +392,15 @@
      tema blanco #7fa8cc no alcanza contraste (grises brillantes). */
   --color-info-ink: #0a3a66;
 
+  /* Tipos de recurso del flujo comercial. En claro son tonos oscuros
+     (texto legible sobre los grises); en .dark se aclaran. */
+  --color-kind-character: #0b3d20;
+  --color-kind-location: #5f2200;
+  --color-kind-props: #12306e;
+  --color-kind-product: #42157f;
+  --color-kind-unknown: #333333;
+  --color-prompt-unknown: #6b1a1a;
+
   --color-disabled: var(--color-secondary);
   --color-disabled-ink: var(--color-choice);
   --color-focus-ring: var(--color-accent);
@@ -460,6 +469,12 @@
   /* En oscuro el azul brillante ya lee bien como texto. */
   --color-info-ink: #7fa8cc;
   --color-danger-strong: #e07a7a;
+  --color-kind-character: #86d9a4;
+  --color-kind-location: #f0b27a;
+  --color-kind-props: #8ab4f8;
+  --color-kind-product: #c4a7f5;
+  --color-kind-unknown: #b0b0b0;
+  --color-prompt-unknown: #e07a7a;
 }
 
 /* ============================================
@@ -5278,4 +5293,155 @@ main:has(> app-location) {
 
 .agency-chat-input textarea {
   resize: none;
+}
+
+/* ============================================
+   Recursos del flujo comercial
+   Color por tipo de foto + editor del prompt con resaltado.
+   ============================================ */
+.photo-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.375rem;
+  border: 1px solid var(--color-surface-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-2);
+  color: var(--color-ink-on-dark);
+  font-size: 0.75rem;
+  line-height: 1rem;
+  transition:
+    border-color 0.2s var(--ease-app),
+    background-color 0.2s var(--ease-app);
+}
+
+.photo-chip:hover {
+  border-color: currentColor;
+}
+
+.photo-chip--character {
+  color: var(--color-kind-character);
+}
+
+.photo-chip--location {
+  color: var(--color-kind-location);
+}
+
+.photo-chip--props {
+  color: var(--color-kind-props);
+}
+
+.photo-chip--product {
+  color: var(--color-kind-product);
+}
+
+.photo-chip--unknown {
+  color: var(--color-kind-unknown);
+}
+
+.photo-chip--assigned {
+  border-color: currentColor;
+  background: color-mix(in srgb, currentColor 20%, var(--color-surface-2));
+  font-weight: 600;
+}
+
+.photo-kind-select .p-select-label {
+  padding: 0.2rem 0.4rem;
+  font-size: 0.7rem;
+  line-height: 1rem;
+}
+
+.photo-kind-select .p-select-dropdown {
+  width: 1.5rem;
+}
+
+.prompt-editor {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--color-surface-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-2);
+  transition:
+    border-color 0.2s var(--ease-app),
+    box-shadow 0.2s var(--ease-app);
+}
+
+.prompt-editor:focus-within {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 1px var(--color-accent);
+}
+
+.prompt-editor__mirror {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  pointer-events: none;
+  scrollbar-width: none;
+}
+
+.prompt-editor__mirror::-webkit-scrollbar {
+  display: none;
+}
+
+.prompt-editor__pre,
+.prompt-editor__input {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  font-family: inherit;
+  font-size: 0.875rem;
+  line-height: 1.625;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+.prompt-editor__pre {
+  min-height: 100%;
+  color: var(--color-ink-on-dark);
+}
+
+.prompt-editor__input {
+  position: relative;
+  display: block;
+  width: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: transparent;
+  caret-color: var(--color-ink-on-dark);
+  resize: none;
+}
+
+.prompt-editor__input::placeholder {
+  color: var(--color-ink-muted-on-dark);
+}
+
+.prompt-editor__input::selection {
+  background: color-mix(in srgb, var(--color-accent) 45%, transparent);
+}
+
+.prompt-tone-character {
+  color: var(--color-kind-character);
+  font-weight: 600;
+}
+
+.prompt-tone-location {
+  color: var(--color-kind-location);
+  font-weight: 600;
+}
+
+.prompt-tone-props {
+  color: var(--color-kind-props);
+  font-weight: 600;
+}
+
+.prompt-tone-product {
+  color: var(--color-kind-product);
+  font-weight: 600;
+}
+
+.prompt-tone-unknown {
+  color: var(--color-prompt-unknown);
+  font-weight: 600;
+  text-decoration: underline wavy;
 }

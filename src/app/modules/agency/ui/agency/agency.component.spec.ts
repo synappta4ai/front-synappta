@@ -8,7 +8,9 @@ import { environment } from '@env/environment';
 import { AiModel, GenerateRequest } from '@modules/agency/interfaces';
 import { Piece } from '@modules/events/interfaces';
 
-import { RequiredPhoto, ReferenceImage } from './agency-photos';
+import { ProjectPhoto, RequiredPhoto, ReferenceImage } from './agency-photos';
+import { ScenePromptArtifact } from './agency-scene-prompt';
+import { PromptSegment } from './agency-prompt-highlight';
 import { AgencyComponent } from './agency.component';
 
 const base = environment.API_URL;
@@ -36,7 +38,7 @@ interface TestScene {
   references?: ReferenceImage[];
   refsApproved?: boolean;
   shots: unknown[];
-  prompts?: { text: string }[];
+  prompts?: { text: string; videoModel?: string | null; ratio?: string | null }[];
 }
 
 /** Internals del componente que el test maneja directamente. */
@@ -45,6 +47,8 @@ interface Internals {
   angles: AnySignal<TestAngle[]>;
   storyboard: AnySignal<TestScene[]>;
   stepPhotos: AnySignal<RequiredPhoto[]>;
+  projectPhotos: AnySignal<ProjectPhoto[]>;
+  models: AnySignal<AiModel[]>;
   stepPhotosSkipped: AnySignal<boolean>;
   currentPhase: AnySignal<string>;
   canAdvanceToPrompts: boolean;
@@ -63,6 +67,15 @@ interface Internals {
     project: { id: string },
     piece: Piece,
   ): GenerateRequest | null;
+  sceneFieldText(slot: {
+    kind: 'location' | 'character' | 'product';
+    description: string;
+  }): string;
+  promptResources(
+    scene: TestScene,
+    prompt: { text: string },
+  ): { id: string; name: string; url: string | null; kind: string | null }[];
+  highlightSegments(artifact: ScenePromptArtifact | null, text: string): PromptSegment[];
 }
 
 function angle(id: string, title: string, selected = true): TestAngle {
@@ -272,6 +285,152 @@ describe('AgencyComponent — flujo comercial publicitario', () => {
       'f1',
       'f2',
     ]);
+  });
+
+  it('adjunta solo las fotos tagueadas por nombre y respeta modelo/ratio de la caja', () => {
+    component.agent.set('commercial');
+    component.projectPhotos.set([
+      { id: 'f1', filename: 'Ivan.jpg', url: null, tag: '@ivan', kind: 'character' },
+      { id: 'f2', filename: 'Tienda.jpg', url: null, tag: '@tienda', kind: 'location' },
+    ]);
+    component.angles.set([angle('P1', 'La cocina')]);
+    component.currentPhase.set('angles');
+    clickGenerateStoryboard();
+    component.generatePrompts();
+
+    component.storyboard.update((scenes) =>
+      scenes.map((scene) => ({
+        ...scene,
+        prompts: (scene.prompts ?? []).map((prompt) => ({
+          ...prompt,
+          text: 'La escena usa @ivan',
+          videoModel: 'video-multi',
+          ratio: '9:16',
+        })),
+      })),
+    );
+
+    const scene = component.storyboard()[0];
+    const project = { id: 'project-1' };
+    const piece = { id: 'piece-1' } as Piece;
+    const fallback = {
+      name: 'video-uno',
+      modality: 'video',
+      defaults: {},
+    } as unknown as AiModel;
+    const own = {
+      name: 'video-multi',
+      modality: 'video',
+      defaults: { ratios: ['9:16', '16:9'] },
+      reference_endpoint: '/generate',
+    } as unknown as AiModel;
+    component.models.set([fallback, own]);
+
+    const payload = component.videoPayloadFor(scene, null, 0, fallback, project, piece);
+    const images = (payload?.content ?? [])
+      .filter((item) => item.type === 'image')
+      .map((item) => String((item as { id?: string }).id ?? ''));
+
+    expect(payload?.model).toBe('video-multi');
+    expect(payload?.ratio).toBe('9:16');
+    expect(images).toEqual(['f1']);
+  });
+
+  it('muestra como recursos solo las fotos tagueadas en cada prompt', () => {
+    component.agent.set('commercial');
+    component.projectPhotos.set([
+      { id: 'f1', filename: 'Ivan.jpg', url: null, tag: '@ivan', kind: 'character' },
+      { id: 'f2', filename: 'Tienda.jpg', url: null, tag: '@tienda', kind: 'location' },
+    ]);
+    const scene: TestScene = {
+      id: 'scene-1',
+      angleId: 'P1',
+      title: 'La cocina',
+      description: '',
+      shots: [],
+      references: [
+        { id: 'f1', filename: 'Ivan.jpg', url: 'ivan.png', note: '@ivan', kind: 'character' },
+        { id: 'f2', filename: 'Tienda.jpg', url: 'tienda.png', note: '@tienda', kind: 'location' },
+      ],
+    };
+    component.storyboard.set([scene]);
+
+    expect(
+      component.promptResources(scene, { text: 'La escena usa @ivan.' }).map((item) => item.id),
+    ).toEqual(['f1']);
+    expect(component.promptResources(scene, { text: 'La escena no usa fotos.' })).toEqual([]);
+  });
+
+  it('sin tags en el prompt no adjunta ninguna foto al video comercial', () => {
+    component.agent.set('commercial');
+    component.projectPhotos.set([
+      { id: 'f1', filename: 'Ivan.jpg', url: null, tag: '@ivan', kind: 'character' },
+    ]);
+    component.angles.set([angle('P1', 'La cocina')]);
+    component.currentPhase.set('angles');
+    clickGenerateStoryboard();
+    component.generatePrompts();
+
+    component.storyboard.update((scenes) =>
+      scenes.map((scene) => ({
+        ...scene,
+        prompts: (scene.prompts ?? []).map((prompt) => ({ ...prompt, text: 'Sin referencias.' })),
+      })),
+    );
+
+    const scene = component.storyboard()[0];
+    const payload = component.videoPayloadFor(
+      scene,
+      null,
+      0,
+      { name: 'video-multi', modality: 'video', defaults: {}, reference_endpoint: '/generate' } as unknown as AiModel,
+      { id: 'project-1' },
+      { id: 'piece-1' } as Piece,
+    );
+    const images = (payload?.content ?? []).filter((item) => item.type === 'image');
+
+    expect(images).toEqual([]);
+  });
+
+  it('colorea el prompt por tipo de recurso y detecta tags desconocidos', () => {
+    component.projectPhotos.set([
+      { id: 'f1', filename: 'Ivan.jpg', url: null, tag: '@ivan', kind: 'character' },
+      { id: 'f2', filename: 'Tienda.jpg', url: null, tag: '@tienda', kind: 'location' },
+    ]);
+    const artifact: ScenePromptArtifact = {
+      locacion: '@tienda',
+      personajes: ['@ivan'],
+      producto_en_escena: 'ninguno',
+    };
+
+    expect(component.highlightSegments(artifact, 'La @tienda recibe a @ivan.')).toEqual([
+      { text: 'La ', tone: 'plain' },
+      { text: '@tienda', tone: 'location' },
+      { text: ' recibe a ', tone: 'plain' },
+      { text: '@ivan', tone: 'character' },
+      { text: '.', tone: 'plain' },
+    ]);
+    expect(component.highlightSegments(null, 'Entra @nadie.')[1]).toEqual({
+      text: '@nadie',
+      tone: 'unknown',
+    });
+  });
+
+  it('deja el tag de una foto subida y envuelve solo los campos sin archivo', () => {
+    component.projectPhotos.set([
+      { id: 'f1', filename: 'Tienda.jpg', url: null, tag: '@tienda', kind: 'location' },
+    ]);
+
+    expect(component.sceneFieldText({ kind: 'location', description: '@tienda' })).toBe('@tienda');
+    expect(
+      component.sceneFieldText({ kind: 'location', description: '@tienda con luz cálida' }),
+    ).toBe('@tienda con luz cálida');
+    expect(component.sceneFieldText({ kind: 'location', description: '@abuelo' })).toContain(
+      'P2_REF_SLOT',
+    );
+    expect(
+      component.sceneFieldText({ kind: 'character', description: 'una madre joven' }),
+    ).toContain('P2_REF_SLOT');
   });
 
   it('el flujo inmobiliario sigue armando sus dos escenas plantilla por ángulo', () => {

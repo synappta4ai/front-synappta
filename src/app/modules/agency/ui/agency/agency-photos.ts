@@ -19,6 +19,8 @@ export interface ReferenceImage {
   role?: string;
   /** Qué representa, en palabras del experto. */
   note?: string;
+  /** Tipo elegido en el paso 1 (color del recurso en el prompt). */
+  kind?: PhotoKind;
 }
 
 /** Prioridad del contrato `fotos_sugeridas`. */
@@ -51,6 +53,96 @@ export interface TaggedPhoto {
 /** Tag de referencia dentro de un prompt: `@image1`, `@image2`… */
 export function imageTag(index: number): string {
   return `@image${index + 1}`;
+}
+
+/** Tipo de una referencia visual subida por el usuario en el paso 1. */
+export type PhotoKind = 'character' | 'product' | 'location' | 'props';
+
+/** Tipos ofrecidos en el selector de cada foto (etiquetas i18n aparte). */
+export const PHOTO_KINDS: readonly PhotoKind[] = ['character', 'location', 'props', 'product'];
+
+/** Foto subida en el paso 1: archivo, tag `@nombre` y tipo elegido. */
+export interface ProjectPhoto {
+  /** File id del store: es lo que se adjunta a la generación. */
+  id: string;
+  filename: string;
+  url: string | null;
+  /** Tag que el usuario inserta en el prompt (`@ivan`). */
+  tag: string;
+  /** Tipo elegido por el usuario; null hasta que lo defina. */
+  kind: PhotoKind | null;
+}
+
+/**
+ * `Ivan.jpg` → `@ivan`. Sin acentos ni espacios y sin repetir un tag ya
+ * usado (`@ivan`, `@ivan-2`, …): el tag viaja en el texto del prompt.
+ */
+export function tagFromFilename(filename: string, used: Iterable<string> = []): string {
+  const base =
+    filename
+      .replace(/\.[^.]+$/, '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'foto';
+  const taken = new Set([...used].map((tag) => tag.replace(/^@/, '')));
+  let tag = base;
+  let n = 2;
+  while (taken.has(tag)) {
+    tag = `${base}-${n}`;
+    n += 1;
+  }
+  return `@${tag}`;
+}
+
+/** Tipo del experto (`fotos_sugeridas[].tipo`) → tipo de la foto subida. */
+export function photoKindFromSuggestion(type: string): PhotoKind | null {
+  switch (type.trim().toLowerCase()) {
+    case 'personaje':
+    case 'character':
+      return 'character';
+    case 'producto':
+    case 'product':
+      return 'product';
+    case 'locacion':
+    case 'ubicacion':
+    case 'location':
+    case 'lugar':
+      return 'location';
+    case 'utileria':
+    case 'props':
+    case 'prop':
+      return 'props';
+    default:
+      return null;
+  }
+}
+
+/** Tipo de la foto → `funcion` que espera `referencias_subidas` del experto. */
+export function photoKindToFuncion(kind: PhotoKind): string {
+  switch (kind) {
+    case 'character':
+      return 'personaje';
+    case 'product':
+      return 'producto';
+    case 'location':
+      return 'locacion';
+    case 'props':
+      return 'utileria';
+  }
+}
+
+/** Tags `@nombre` presentes en el texto de un prompt (sin repetir, en
+ *  minúsculas). Ignora un `@` pegado a una palabra (emails: `a@b`). */
+export function parseTagsFromText(text: string): string[] {
+  const pattern = /(^|[^\w@])@([a-z0-9][a-z0-9-]*)/gi;
+  const tags: string[] = [];
+  let match: RegExpExecArray | null;
+  while ((match = pattern.exec(text)) !== null) {
+    tags.push(`@${match[2].toLowerCase()}`);
+  }
+  return [...new Set(tags)];
 }
 
 function asText(value: unknown): string {
@@ -174,6 +266,7 @@ export function referenceImagesForPrompt(
         ...tagged.file,
         role: tagged.photo.type,
         note: tagged.photo.description,
+        kind: photoKindFromSuggestion(tagged.photo.type) ?? undefined,
       });
     }
   }

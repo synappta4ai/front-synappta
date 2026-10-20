@@ -3,12 +3,16 @@ import {
   imageTag,
   missingPhotosForPrompt,
   parseSuggestedPhotos,
+  parseTagsFromText,
   pendingRequiredPhotos,
   photoFileCount,
+  photoKindFromSuggestion,
+  photoKindToFuncion,
   referenceImagesForPrompt,
   referenceTagLines,
   removePhotoFile,
   RequiredPhoto,
+  tagFromFilename,
   taggedPhotosForPrompt,
 } from './agency-photos';
 
@@ -168,6 +172,7 @@ describe('tags por prompt', () => {
         url: null,
         role: 'locacion',
         note: 'Foto de la cocina',
+        kind: 'location',
       },
       {
         id: 'f2',
@@ -175,6 +180,7 @@ describe('tags por prompt', () => {
         url: null,
         role: 'producto',
         note: 'Envase de frente',
+        kind: 'product',
       },
     ]);
   });
@@ -184,6 +190,45 @@ describe('tags por prompt', () => {
     expect(missingPhotosForPrompt([photo({ id: 'x', promptId: 'P3' })], 'P3').map((p) => p.id)).toEqual([
       'x',
     ]);
+  });
+});
+
+describe('tags de las fotos subidas', () => {
+  it('arma el tag desde el nombre del archivo, sin extensión ni acentos', () => {
+    expect(tagFromFilename('Ivan.jpg')).toBe('@ivan');
+    expect(tagFromFilename('Papá en la tienda.PNG')).toBe('@papa-en-la-tienda');
+    expect(tagFromFilename('  .jpg')).toBe('@foto');
+  });
+
+  it('evita repetir un tag ya usado', () => {
+    expect(tagFromFilename('ivan.jpg', ['@ivan'])).toBe('@ivan-2');
+    expect(tagFromFilename('ivan.jpg', ['@ivan', '@ivan-2'])).toBe('@ivan-3');
+  });
+
+  it('mapea el tipo del experto y el tipo de la foto a la función del contrato', () => {
+    expect(photoKindFromSuggestion('personaje')).toBe('character');
+    expect(photoKindFromSuggestion('producto')).toBe('product');
+    expect(photoKindFromSuggestion('locacion')).toBe('location');
+    expect(photoKindFromSuggestion('utileria')).toBe('props');
+    expect(photoKindFromSuggestion('pose')).toBeNull();
+    expect(photoKindToFuncion('character')).toBe('personaje');
+    expect(photoKindToFuncion('product')).toBe('producto');
+    expect(photoKindToFuncion('location')).toBe('locacion');
+    expect(photoKindToFuncion('props')).toBe('utileria');
+  });
+});
+
+describe('parseTagsFromText', () => {
+  it('extrae los tags @nombre del prompt, sin repetir y en minúsculas', () => {
+    expect(parseTagsFromText('Locación: @papa en @tienda, con @Tienda otra vez')).toEqual([
+      '@papa',
+      '@tienda',
+    ]);
+  });
+
+  it('sin tags devuelve una lista vacía y no corta el texto a mitad', () => {
+    expect(parseTagsFromText('Una escena sin referencias.')).toEqual([]);
+    expect(parseTagsFromText('mail@dominio.com no es un tag válido')).toEqual([]);
   });
 });
 
