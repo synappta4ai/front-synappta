@@ -345,7 +345,7 @@
       "ACCESS_KEY_KEEP": "Dejala vacía para conservar la actual.",
       "SECRET_KEEP": "Dejalo vacío para conservar el guardado.",
       "PUBLIC_BASE": "Base pública (CDN)",
-      "PUBLIC_BASE_HINT": "Opcional: dominio con lectura pública para servir los archivos. Sin esto, las URLs prefirmadas van contra el endpoint.",
+      "PUBLIC_BASE_HINT": "Opcional: dominio con lectura pública (CDN o el propio bucket). Con esto las URLs de los archivos apuntan directo al bucket y no pasan por la API. Sin esto, pasan por la API con redirect firmado.",
       "ENABLED": "Usar el bucket",
       "ENABLED_HINT": "Apagado, el tenant sigue guardando en disco local pero la configuración no se pierde.",
       "PROBE_HINT": "Al guardar se escribe un objeto de prueba en el bucket y se vuelve a leer: si el endpoint o las credenciales no responden, no se guarda nada.",

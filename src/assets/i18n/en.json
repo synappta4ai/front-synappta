@@ -345,7 +345,7 @@
       "ACCESS_KEY_KEEP": "Leave it empty to keep the current one.",
       "SECRET_KEEP": "Leave it empty to keep the stored one.",
       "PUBLIC_BASE": "Public base (CDN)",
-      "PUBLIC_BASE_HINT": "Optional: publicly readable domain used to serve files. Without it, presigned URLs target the endpoint.",
+      "PUBLIC_BASE_HINT": "Optional: publicly readable domain (CDN or the bucket itself). With it, asset URLs point straight at the bucket and skip the API. Without it, they go through the API with a signed redirect.",
       "ENABLED": "Use the bucket",
       "ENABLED_HINT": "Turned off, the tenant keeps storing on local disk without losing the configuration.",
       "PROBE_HINT": "Saving writes a test object to the bucket and reads it back: if the endpoint or the credentials do not answer, nothing is persisted.",
