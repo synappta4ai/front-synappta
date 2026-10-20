@@ -65,16 +65,32 @@ import {
   addPhotoFiles,
   missingPhotosForPrompt,
   parseSuggestedPhotos,
+  parseTagsFromText,
   pendingRequiredPhotos,
+  PHOTO_KINDS,
   photoFileCount,
+  PhotoKind,
+  photoKindFromSuggestion,
+  photoKindToFuncion,
+  ProjectPhoto,
   ReferenceImage,
   referenceImagesForPrompt,
   referenceTagLines,
   removePhotoFile,
   RequiredPhoto,
+  tagFromFilename,
   taggedPhotosForPrompt,
   TaggedPhoto,
 } from './agency-photos';
+import {
+  planScenePrompt,
+  ScenePromptArtifact,
+  ScenePromptPlan,
+  ScenePromptSlot,
+  PromptSlotText,
+  slotRangeForKind,
+} from './agency-scene-prompt';
+import { highlightPrompt, PromptSegment } from './agency-prompt-highlight';
 
 type WorkflowPhase = 'input' | 'angles' | 'storyboard' | 'scenes';
 
@@ -140,6 +156,9 @@ interface SalesAngle {
   title: string;
   description: string;
   selected: boolean;
+  /** Prompt de escena del paso 1 (locación, personajes, beats): la base del
+   *  prompt de video del paso Escenas. Ausente en los flujos sin artefacto. */
+  artifact?: ScenePromptArtifact | null;
 }
 
 /** Viñeta del artefacto storyboard (paso 2, contrato validado en el back). */
@@ -172,6 +191,10 @@ interface VideoPrompt {
   duration?: number | null;
   resolution?: string | null;
   audio?: boolean | null;
+  /** Modelo de video propio de esta caja (null = el modelo del paso 4). */
+  videoModel?: string | null;
+  /** Relación de aspecto propia de esta caja (null/'' = la del paso 4). */
+  ratio?: string | null;
   /** Task id de la generación: habilita calificar e "Ir a estudio" desde la card. */
   taskId?: string | null;
 }
@@ -201,6 +224,8 @@ interface StoryboardScene {
   boardArtifact?: StoryboardArtifact | null;
   /** Artefacto clip_prompt del experto (texto creativo del clip). */
   clipArtifact?: ClipArtifact | null;
+  /** Artefacto `scene_prompts` del paso 1: arma el prompt de la escena. */
+  sceneArtifact?: ScenePromptArtifact | null;
   /** Legado (flujo anterior): video único de la escena. */
   videoUrl?: string | null;
   generatingVideo?: boolean;
@@ -717,9 +742,12 @@ export class AgencyComponent {
     // Los tres campos son obligatorios (proyecto elegido o nuevo): sin los
     // datos completos no se pueden generar ángulos de venta.
     const raw = this.form.getRawValue() as Record<string, unknown>;
-    return ['propertyName', 'location', 'description'].every(
+    const formReady = ['propertyName', 'location', 'description'].every(
       (key) => String(raw[key] ?? '').trim() !== '',
     );
+    // El comercial sube fotos antes de generar: el experto necesita el tipo
+    // de cada una (`referencias_subidas.funcion`).
+    return formReady && (!this.isCommercial() || this.projectPhotosReady());
   }
 
   /**
@@ -732,6 +760,7 @@ export class AgencyComponent {
     if (!this.isCommercial()) return true;
     return (
       this.angles().length > 0 &&
+      this.projectPhotosReady() &&
       (this.stepPhotosSkipped() || this.pendingStepPhotos().length === 0)
     );
   }
@@ -749,12 +778,47 @@ export class AgencyComponent {
 
   // ─── Imágenes que el experto pide antes de pasar a los prompts ────────
 
+  /** Fotos de referencia subidas antes de generar: entrada visual del experto
+   *  y lo que se adjunta a cada escena (tag `@nombre`). */
+  protected readonly projectPhotos = signal<ProjectPhoto[]>([]);
+  /** Subida de referencias visuales en curso. */
+  protected readonly uploadingProjectPhotos = signal(false);
+  /** Tipos del selector de cada foto. */
+  protected readonly photoKindOptions = computed(() => {
+    this.translate.currentLang();
+    const keys: Record<PhotoKind, string> = {
+      character: 'P1_PHOTO_KIND_CHARACTER',
+      product: 'P1_PHOTO_KIND_PRODUCT',
+      location: 'P1_PHOTO_KIND_LOCATION',
+      props: 'P1_PHOTO_KIND_PROPS',
+    };
+    return PHOTO_KINDS.map((kind) => ({
+      label: this.translate.instant(`AGENCY.STUDIO.${keys[kind]}`),
+      value: kind,
+    }));
+  });
+  /** Sin tipo no se puede armar `referencias_subidas` ni avanzar. */
+  protected readonly projectPhotosReady = computed(() =>
+    this.projectPhotos().every((photo) => photo.kind !== null),
+  );
+
+  /** Tipo de cada foto por tag: pinta los tags del prompt con su color. */
+  protected readonly photoKindByTag = computed(() => {
+    const kinds = new Map<string, PhotoKind | null>();
+    for (const photo of this.projectPhotos()) {
+      kinds.set(photo.tag.toLowerCase(), photo.kind);
+    }
+    return kinds;
+  });
+
   /** `fotos_sugeridas` del paso 1, con lo que el usuario fue subiendo. */
   protected readonly stepPhotos = signal<RequiredPhoto[]>([]);
   /** El usuario decidió seguir sin las imágenes que faltan. */
   protected readonly stepPhotosSkipped = signal(false);
   /** Panel "qué subir" desplegado en el paso 1. */
   protected readonly stepPhotosOpen = signal(false);
+  /** Grilla de fotos de referencia del proyecto desplegada. */
+  protected readonly projectPhotosOpen = signal(false);
   /** Sugerencias con una subida en curso (spinner del botón). */
   protected readonly uploadingPhotoIds = signal<string[]>([]);
 
@@ -828,6 +892,82 @@ export class AgencyComponent {
     return missingPhotosForPrompt(this.stepPhotos(), promptId);
   }
 
+  // ─── Paso 2: detalle del prompt del experto ──────────────────────────
+
+  /** Plan de escena del prompt (artefacto del paso 1), o null. */
+  protected scenePlan(angle: SalesAngle): ScenePromptPlan | null {
+    const plan = planScenePrompt(angle.artifact);
+    if (!plan) return null;
+    const hasContent =
+      !!plan.location ||
+      plan.characters.length > 0 ||
+      !!plan.product ||
+      plan.beats.length > 0 ||
+      !!plan.camera.mode ||
+      !!plan.camera.registro ||
+      !!plan.marca;
+    return hasContent ? plan : null;
+  }
+
+  /** Texto del slot de referencia que el usuario reemplaza por un tag. */
+  protected sceneSlotText(slot: ScenePromptSlot): string {
+    return this.translate.instant('AGENCY.STUDIO.P2_REF_SLOT', { value: slot.description });
+  }
+
+  /** Campo visual listo para el prompt: si ya referencia una foto subida
+   *  (`@tag`), se usa tal cual; si no, queda como slot para insertar el tag. */
+  protected sceneFieldText(slot: ScenePromptSlot): string {
+    return this.hasUploadedTag(slot.description) ? slot.description : this.sceneSlotText(slot);
+  }
+
+  private hasUploadedTag(text: string): boolean {
+    const uploaded = new Set(this.projectPhotos().map((photo) => photo.tag.toLowerCase()));
+    return parseTagsFromText(text).some((tag) => uploaded.has(tag.toLowerCase()));
+  }
+
+  /** Color del tipo de recurso (variable CSS del tema). */
+  protected kindColor(kind: PhotoKind | null | undefined): string {
+    return `var(--color-kind-${kind ?? 'unknown'})`;
+  }
+
+  protected photoChipClass(kind: PhotoKind | null, assigned: boolean): string {
+    return `photo-chip photo-chip--${kind ?? 'unknown'}${assigned ? ' photo-chip--assigned' : ''}`;
+  }
+
+  /** La foto ya está insertada en ESTE prompt. */
+  protected isPhotoAssigned(prompt: VideoPrompt, tag: string): boolean {
+    return parseTagsFromText(prompt.text).includes(tag.toLowerCase());
+  }
+
+  /** Texto del prompt partido en tonos: slots del artefacto y tags `@foto`. */
+  protected highlightSegments(
+    artifact: ScenePromptArtifact | null | undefined,
+    text: string,
+  ): PromptSegment[] {
+    const plan = planScenePrompt(artifact ?? null);
+    const slots: PromptSlotText[] = [];
+    if (plan?.location) {
+      slots.push({ kind: 'location', value: this.sceneFieldText(plan.location) });
+    }
+    for (const character of plan?.characters ?? []) {
+      slots.push({ kind: 'character', value: this.sceneFieldText(character) });
+    }
+    if (plan?.product) {
+      slots.push({ kind: 'product', value: this.sceneFieldText(plan.product) });
+    }
+    return highlightPrompt(
+      text,
+      slots.map((slot) => ({ value: slot.value, tone: slot.kind })),
+      this.photoKindByTag(),
+    );
+  }
+
+  /** Mantiene el <pre> espejo en la misma posición que el textarea. */
+  protected syncPromptScroll(input: HTMLTextAreaElement, mirror: HTMLElement): void {
+    mirror.scrollTop = input.scrollTop;
+    mirror.scrollLeft = input.scrollLeft;
+  }
+
   /** Tag `@imageN` con el que el prompt referencia un archivo subido. */
   protected photoTag(photo: RequiredPhoto, fileId: string): string {
     return this.taggedStepPhotos(photo.promptId).find((item) => item.file.id === fileId)?.tag ?? '';
@@ -841,10 +981,6 @@ export class AgencyComponent {
 
   protected photoPriorityLabel(priority: RequiredPhoto['priority']): string {
     return this.translate.instant(`AGENCY.STUDIO.P1_PHOTOS_PRIORITY_${priority.toUpperCase()}`);
-  }
-
-  protected toggleStepPhotos(): void {
-    this.stepPhotosOpen.update((open) => !open);
   }
 
   protected isUploadingPhoto(photoId: string): boolean {
@@ -892,6 +1028,120 @@ export class AgencyComponent {
   protected removeStepPhoto(photoId: string, fileId: string): void {
     this.stepPhotos.update((photos) => removePhotoFile(photos, photoId, fileId));
     this.persistWorkflow();
+  }
+
+  // ─── Paso 1: referencias visuales subidas antes de generar ────────────
+
+  /** Sube las fotos de referencia con su tag `@nombre`; el tipo se elige
+   *  después en cada miniatura (el experto lo necesita como `funcion`). */
+  protected onProjectPhotoFiles(event: Event): void {
+    const input = event.target as HTMLInputElement | null;
+    const files = Array.from(input?.files ?? []);
+    if (input) input.value = '';
+    if (!files.length) return;
+    this.projectPhotosOpen.set(true);
+    this.uploadingProjectPhotos.set(true);
+    let pending = files.length;
+    const done = () => {
+      pending -= 1;
+      if (pending > 0) return;
+      this.uploadingProjectPhotos.set(false);
+      this.persistWorkflow();
+    };
+    for (const file of files) {
+      const tag = tagFromFilename(
+        file.name,
+        this.projectPhotos().map((photo) => photo.tag),
+      );
+      this.libraryService
+        .uploadFile(file, 'images', this.selectedProjectId() ?? undefined)
+        .subscribe({
+          next: (asset) => {
+            if (asset?.id) {
+              this.projectPhotos.update((photos) => [
+                ...photos,
+                {
+                  id: asset.id,
+                  filename: asset.filename ?? file.name,
+                  url: asset.url,
+                  tag,
+                  kind: null,
+                },
+              ]);
+            }
+            done();
+          },
+          error: () => {
+            this.error.set(
+              this.translate.instant('AGENCY.STUDIO.ERRORS.UPLOAD', { name: file.name }),
+            );
+            done();
+          },
+        });
+    }
+  }
+
+  protected setProjectPhotoKind(fileId: string, kind: PhotoKind): void {
+    this.projectPhotos.update((photos) =>
+      photos.map((photo) => (photo.id === fileId ? { ...photo, kind } : photo)),
+    );
+    this.persistWorkflow();
+  }
+
+  protected removeProjectPhoto(fileId: string): void {
+    this.projectPhotos.update((photos) => photos.filter((photo) => photo.id !== fileId));
+    this.persistWorkflow();
+  }
+
+  /** Fotos subidas → referencias de la escena (rol = tipo elegido). */
+  private referenceImagesFromProjectPhotos(): ReferenceImage[] {
+    return this.projectPhotos().map((photo) => ({
+      id: photo.id,
+      filename: photo.filename,
+      url: photo.url,
+      role: photo.kind ? photoKindToFuncion(photo.kind) : 'sin_definir',
+      note: photo.tag,
+      kind: photo.kind ?? undefined,
+    }));
+  }
+
+  /** `referencias_subidas` del contrato del paso 1: archivo + función. */
+  private referenciasSubidas(): { archivo: string; tag: string; descripcion: string; funcion: string }[] {
+    const rows = new Map<
+      string,
+      { archivo: string; tag: string; descripcion: string; funcion: string }
+    >();
+    for (const photo of this.projectPhotos()) {
+      rows.set(photo.id, {
+        archivo: photo.filename,
+        tag: photo.tag,
+        descripcion: '',
+        funcion: photo.kind ? photoKindToFuncion(photo.kind) : 'sin_definir',
+      });
+    }
+    for (const photo of this.stepPhotos()) {
+      for (const file of photo.files) {
+        if (rows.has(file.id)) continue;
+        rows.set(file.id, {
+          archivo: file.filename,
+          tag: tagFromFilename(file.filename, [...rows.values()].map((row) => row.tag)),
+          descripcion: photo.description,
+          funcion: photoKindFromSuggestion(photo.type) ?? photo.type,
+        });
+      }
+    }
+    return [...rows.values()];
+  }
+
+  /** Referencias de una escena: las fotos subidas en el paso 1 (con su tag)
+   *  más lo cargado en las sugerencias del experto, sin repetir archivo. */
+  private referencesForScene(promptId: string): ReferenceImage[] {
+    const byId = new Map<string, ReferenceImage>();
+    for (const ref of this.referenceImagesFromProjectPhotos()) byId.set(ref.id, ref);
+    for (const ref of referenceImagesForPrompt(this.stepPhotos(), promptId)) {
+      if (!byId.has(ref.id)) byId.set(ref.id, ref);
+    }
+    return [...byId.values()];
   }
 
   /** Escape explícito: seguir a los prompts sin las imágenes que faltan. */
@@ -1176,7 +1426,7 @@ export class AgencyComponent {
    */
   private sceneForPrompt(angle: SalesAngle, previous: StoryboardScene[]): StoryboardScene {
     const kept = previous.find((s) => s.angleId === angle.id);
-    const references = referenceImagesForPrompt(this.stepPhotos(), angle.id);
+    const references = this.referencesForScene(angle.id);
     if (kept) {
       // Lo ya generado (prompts, videos, tomas) no se pisa: solo se refresca
       // el texto del prompt y las imágenes del paso 1.
@@ -1187,6 +1437,7 @@ export class AgencyComponent {
         description: angle.description,
         references,
         refsApproved: true,
+        sceneArtifact: angle.artifact ?? null,
       };
     }
     return {
@@ -1197,6 +1448,7 @@ export class AgencyComponent {
       description: angle.description,
       references,
       refsApproved: true,
+      sceneArtifact: angle.artifact ?? null,
       shots: [],
     };
   }
@@ -1985,6 +2237,7 @@ export class AgencyComponent {
       contexto: raw.description,
       ...(agent === 'real_estate' ? { cantidad_angulos: count } : {}),
       ...(agent === 'commercial' ? { cantidad_prompts: count } : {}),
+      ...(agent === 'commercial' ? { referencias_subidas: this.referenciasSubidas() } : {}),
       ...(agent === 'cinema' ? { registro: 'cine' } : agent === 'commercial' ? { registro: 'comercial' } : {}),
     };
 
@@ -2110,8 +2363,22 @@ export class AgencyComponent {
   private applySuggestedPhotos(data: Record<string, unknown>): void {
     if (!this.isCommercial()) return;
     const previous = this.stepPhotos();
+    // Las fotos ya subidas en el paso 1 cubren sugerencias por tipo: no se
+    // vuelven a pedir (se consume una por cada foto del mismo tipo).
+    const available = new Map<PhotoKind, number>();
+    for (const photo of this.projectPhotos()) {
+      if (photo.kind) available.set(photo.kind, (available.get(photo.kind) ?? 0) + 1);
+    }
+    const remaining = parseSuggestedPhotos(data).filter((photo) => {
+      const kind = photoKindFromSuggestion(photo.type);
+      if (!kind) return true;
+      const count = available.get(kind) ?? 0;
+      if (count <= 0) return true;
+      available.set(kind, count - 1);
+      return false;
+    });
     this.stepPhotos.set(
-      parseSuggestedPhotos(data).map((photo) => ({
+      remaining.map((photo) => ({
         ...photo,
         files: previous.find((kept) => kept.id === photo.id)?.files ?? [],
       })),
@@ -2133,6 +2400,9 @@ export class AgencyComponent {
         .filter((v): v is string => typeof v === 'string' && v.trim() !== '')
         .join(' — '),
       selected: false,
+      // Se conserva el prompt completo (locación, personajes, beats): es el
+      // insumo del prompt de video del paso Escenas.
+      artifact: p as unknown as ScenePromptArtifact,
     }));
   }
 
@@ -2181,6 +2451,8 @@ export class AgencyComponent {
       // Imágenes pedidas por el experto en el paso 1 y lo que el usuario subió.
       stepPhotos: this.stepPhotos(),
       stepPhotosSkipped: this.stepPhotosSkipped(),
+      // Fotos de referencia subidas antes de generar (tag + tipo).
+      projectPhotos: this.projectPhotos(),
     };
     const project = this.projects().find((p) => p.id === id);
     let base: Record<string, unknown> = {};
@@ -2220,6 +2492,7 @@ export class AgencyComponent {
       this.videoResolution.set('');
       this.videoAudio.set(true);
       this.agent.set('commercial');
+      this.projectPhotos.set([]);
       return;
     }
     let agency: Record<string, unknown> | null = null;
@@ -2276,6 +2549,7 @@ export class AgencyComponent {
             title: a.title ?? '',
             description: a.description ?? '',
             selected: !!a.selected,
+            artifact: a.artifact ?? null,
           })),
         );
       }
@@ -2314,6 +2588,7 @@ export class AgencyComponent {
             refsApproved: sc.refsApproved ?? false,
             boardArtifact: sc.boardArtifact ?? null,
             clipArtifact: sc.clipArtifact ?? null,
+            sceneArtifact: sc.sceneArtifact ?? null,
             prompts,
             shots,
           };
@@ -2325,6 +2600,7 @@ export class AgencyComponent {
     }
     this.stepPhotos.set(this.restoreStepPhotos(agency['stepPhotos']));
     this.stepPhotosSkipped.set(agency['stepPhotosSkipped'] === true);
+    this.projectPhotos.set(this.restoreProjectPhotos(agency['projectPhotos']));
     const phase = agency['phase'];
     if (typeof phase === 'string') {
       const keys = this.phases().map((p) => p.key) as string[];
@@ -2362,6 +2638,29 @@ export class AgencyComponent {
               ? row.priority
               : 'opcional',
           files,
+        },
+      ];
+    });
+  }
+
+  /** Avance guardado de las fotos de referencia subidas (tolerante a basura). */
+  private restoreProjectPhotos(raw: unknown): ProjectPhoto[] {
+    if (!Array.isArray(raw)) return [];
+    const kinds = new Set<string>(PHOTO_KINDS);
+    return raw.flatMap((entry) => {
+      if (!entry || typeof entry !== 'object') return [];
+      const row = entry as Partial<ProjectPhoto>;
+      if (typeof row.id !== 'string' || !row.id) return [];
+      const filename = typeof row.filename === 'string' ? row.filename : '';
+      const tag = typeof row.tag === 'string' && row.tag ? row.tag : tagFromFilename(filename);
+      const kind = typeof row.kind === 'string' && kinds.has(row.kind) ? (row.kind as PhotoKind) : null;
+      return [
+        {
+          id: row.id,
+          filename,
+          url: typeof row.url === 'string' ? row.url : null,
+          tag,
+          kind,
         },
       ];
     });
@@ -2625,9 +2924,15 @@ export class AgencyComponent {
     return Math.max(Math.min(max, total - index * max), 1);
   }
 
+  /** Cantidad de cajas por escena: el comercial filma una escena por prompt,
+   *  sin partirla en segmentos (cada caja tiene su propia duración). */
+  private promptSegments(): number {
+    return this.isCommercial() ? 1 : this.videoSegmentCount();
+  }
+
   /** Al entrar al paso Escenas cada storyboard aprobado tiene sus prompts. */
   private ensureVideoPrompts(): void {
-    const segments = this.videoSegmentCount();
+    const segments = this.promptSegments();
     const pending = this.storyboard().some(
       (s) =>
         (s.prompts?.length ?? 0) !== segments ||
@@ -2640,7 +2945,7 @@ export class AgencyComponent {
    *  actual (modelo, duración, ratio, resolución). Los videos ya generados se
    *  conservan por índice. */
   protected generatePrompts(): void {
-    const segments = this.videoSegmentCount();
+    const segments = this.promptSegments();
     const tags = this.videoTags().trim();
     const ratio = this.videoRatio();
     const resolution = this.videoResolution();
@@ -2677,6 +2982,8 @@ export class AgencyComponent {
       duration: previous[i]?.duration ?? null,
       resolution: previous[i]?.resolution ?? null,
       audio: previous[i]?.audio ?? null,
+      videoModel: previous[i]?.videoModel ?? null,
+      ratio: previous[i]?.ratio ?? null,
     }));
   }
 
@@ -2703,6 +3010,11 @@ export class AgencyComponent {
       }
       lines.push(this.specLine(this.segmentDuration(index), ratio, resolution));
       return lines.join('\n');
+    }
+    // Comercial: el prompt de la escena se compone del artefacto del experto,
+    // con un slot por foto que el usuario reemplaza por su tag en Escenas.
+    if (!shot && this.isCommercial() && scene.sceneArtifact) {
+      return this.composeCommercialPrompt(scene, index, segments, ratio, resolution);
     }
     const shotIndex = shot ? scene.shots.indexOf(shot) : -1;
     const lines: string[] =
@@ -2733,6 +3045,66 @@ export class AgencyComponent {
       .filter((t) => t.trim() !== '')
       .join(' ');
     if (allTags) lines.push(`Tags de referencia: ${allTags}`);
+    if (segments > 1) {
+      lines.push(
+        `Segmento ${index + 1} de ${segments}: continuidad directa con el segmento anterior, mismo ritmo, encuadre y personajes.`,
+      );
+    }
+    lines.push(this.specLine(this.segmentDuration(index), ratio, resolution));
+    return lines.join('\n');
+  }
+
+  /** Prompt de una escena comercial a partir del artefacto del paso 1: cada
+   *  foto que pide el experto queda como slot "aquí debe ir una foto" para que
+   *  el usuario inserte el tag `@archivo` donde corresponde. */
+  private composeCommercialPrompt(
+    scene: StoryboardScene,
+    index: number,
+    segments: number,
+    ratio: string,
+    resolution: string,
+  ): string {
+    const t = (key: string): string => this.translate.instant(key);
+    const plan = planScenePrompt(scene.sceneArtifact ?? null);
+    const hasContent =
+      !!plan &&
+      (!!plan.location ||
+        plan.characters.length > 0 ||
+        !!plan.product ||
+        plan.beats.length > 0 ||
+        !!plan.camera.mode ||
+        !!plan.camera.registro ||
+        !!plan.marca);
+    const lines: string[] = [
+      `ESCENA "${scene.title}"${scene.angleTitle ? ` — ángulo "${scene.angleTitle}"` : ''}`,
+    ];
+    if (plan && hasContent) {
+      if (plan.summary) lines.push(plan.summary);
+      if (plan.location) {
+        lines.push(`${t('AGENCY.STUDIO.P2_LOCATION')}: ${this.sceneFieldText(plan.location)}`);
+      }
+      if (plan.characters.length) {
+        const people = plan.characters.map((slot) => this.sceneFieldText(slot)).join(' ');
+        lines.push(`${t('AGENCY.STUDIO.P2_CHARACTERS')}: ${people}`);
+      }
+      if (plan.product) {
+        lines.push(`${t('AGENCY.STUDIO.P2_PRODUCT')}: ${this.sceneFieldText(plan.product)}`);
+      }
+      if (plan.beats.length) {
+        lines.push(`${t('AGENCY.STUDIO.C1_ACTION')}:`);
+        for (const beat of plan.beats) {
+          const body = [beat.action, beat.dialogue].filter((part) => part !== '').join(' · ');
+          if (body) lines.push(`- ${body}`);
+        }
+      }
+      const camera = [plan.camera.mode, plan.camera.registro]
+        .filter((part) => part !== '')
+        .join(' · ');
+      if (camera) lines.push(`${t('AGENCY.STUDIO.P2_CAMERA')}: ${camera}`);
+      if (plan.marca) lines.push(`${t('AGENCY.STUDIO.C1_MARCA')}: ${plan.marca}`);
+    } else {
+      lines.push(scene.description);
+    }
     if (segments > 1) {
       lines.push(
         `Segmento ${index + 1} de ${segments}: continuidad directa con el segmento anterior, mismo ritmo, encuadre y personajes.`,
@@ -2781,10 +3153,19 @@ export class AgencyComponent {
     sceneId: string,
     shotId: string | null,
     index: number,
-    patch: { duration?: number; resolution?: string; audio?: boolean },
+    patch: {
+      duration?: number;
+      resolution?: string | null;
+      audio?: boolean;
+      ratio?: string | null;
+      videoModel?: string | null;
+    },
   ): void {
     const prompt = this.promptAt(sceneId, shotId, index);
     if (!prompt) return;
+    const videoModel =
+      patch.videoModel !== undefined ? patch.videoModel : (prompt.videoModel ?? null);
+    const ratio = patch.ratio !== undefined ? patch.ratio : (prompt.ratio ?? null);
     const duration = patch.duration ?? prompt.duration ?? null;
     const resolution =
       patch.resolution !== undefined ? patch.resolution : (prompt.resolution ?? null);
@@ -2794,12 +3175,19 @@ export class AgencyComponent {
       // null/undefined → manda la config global; '' explícito = Automática.
       this.specLine(
         duration ?? this.segmentDuration(index),
-        this.videoRatio(),
+        ratio || this.videoRatio(),
         resolution ?? undefined,
         audio,
       ),
     );
-    this.patchPrompt(sceneId, shotId, index, { duration, resolution, audio, text });
+    this.patchPrompt(sceneId, shotId, index, {
+      duration,
+      resolution,
+      audio,
+      ratio,
+      videoModel,
+      text,
+    });
     this.commitSceneEdit();
   }
 
@@ -2831,6 +3219,61 @@ export class AgencyComponent {
     this.patchPromptSpec(sceneId, shotId, index, { audio: value });
   }
 
+  /** Cambia el modelo de video de una caja: si su ratio/calidad no existen en
+   *  el modelo nuevo, vuelven a "Automática". */
+  protected setPromptModel(
+    sceneId: string,
+    shotId: string | null,
+    index: number,
+    value: string | null,
+  ): void {
+    const prompt = this.promptAt(sceneId, shotId, index);
+    if (!prompt) return;
+    const model = value ? (this.models().find((m) => m.name === value) ?? null) : null;
+    const ratios = model?.defaults?.ratios ?? [];
+    const resolutions = model?.defaults?.resolutions ?? [];
+    this.patchPromptSpec(sceneId, shotId, index, {
+      videoModel: model?.name ?? null,
+      ratio: prompt.ratio && ratios.includes(prompt.ratio) ? prompt.ratio : null,
+      resolution:
+        prompt.resolution && resolutions.includes(prompt.resolution) ? prompt.resolution : null,
+    });
+  }
+
+  protected setPromptRatio(
+    sceneId: string,
+    shotId: string | null,
+    index: number,
+    value: string,
+  ): void {
+    this.patchPromptSpec(sceneId, shotId, index, { ratio: value });
+  }
+
+  /** Modelo de video efectivo de una caja (el propio o el del paso 4). */
+  protected promptModel(prompt: VideoPrompt): AiModel | null {
+    const list = this.models().filter((m) => m.modality === 'video');
+    if (prompt.videoModel) return list.find((m) => m.name === prompt.videoModel) ?? null;
+    return this.activeVideoModel();
+  }
+
+  /** Relaciones de aspecto del modelo propio de la caja. */
+  protected promptRatioOptions(prompt: VideoPrompt): { label: string; value: string }[] {
+    const ratios = this.promptModel(prompt)?.defaults?.ratios ?? [];
+    return [
+      { label: this.translate.instant('AGENCY.STUDIO.MODEL_AUTO_RATIO'), value: '' },
+      ...ratios.map((r) => ({ label: r, value: r })),
+    ];
+  }
+
+  /** Calidades del modelo propio de la caja. */
+  protected promptResolutionOptions(prompt: VideoPrompt): { label: string; value: string }[] {
+    const resolutions = this.promptModel(prompt)?.defaults?.resolutions ?? [];
+    return [
+      { label: this.translate.instant('AGENCY.STUDIO.MODEL_AUTO_RATIO'), value: '' },
+      ...resolutions.map((r) => ({ label: r, value: r })),
+    ];
+  }
+
   /** 'Exclusividad y lujo' → '#exclusividad-y-lujo' */
   private slugTags(values: (string | undefined)[]): string {
     return values
@@ -2860,7 +3303,7 @@ export class AgencyComponent {
     if (!qualityOptions.some((o) => o.value === this.videoResolution())) {
       this.videoResolution.set(qualityOptions[0]?.value ?? '');
     }
-    const segments = this.videoSegmentCount();
+    const segments = this.promptSegments();
     if (this.storyboard().some((s) => (s.prompts?.length ?? 0) !== segments)) {
       this.generatePrompts();
     }
@@ -2899,6 +3342,76 @@ export class AgencyComponent {
           : s,
       ),
     );
+  }
+
+  /** Último textarea de prompt enfocado: es donde se inserta el tag de una
+   *  foto al hacer click en su miniatura. */
+  private activePromptField: {
+    sceneId: string;
+    index: number;
+    el: HTMLTextAreaElement;
+  } | null = null;
+
+  protected rememberPromptField(
+    sceneId: string,
+    index: number,
+    el: HTMLTextAreaElement,
+  ): void {
+    this.activePromptField = { sceneId, index, el };
+  }
+
+  /** Rango `(…)` que envuelve al cursor, si el cursor está dentro de un
+   *  paréntesis (el slot "aquí debe ir una foto"); si no, un punto vacío. */
+  private slotRangeAt(text: string, caret: number): { start: number; end: number } {
+    const open = text.lastIndexOf('(', caret);
+    const close = text.indexOf(')', caret);
+    if (open === -1 || close === -1 || open > close) return { start: caret, end: caret };
+    if (text.slice(open, caret).includes(')')) return { start: caret, end: caret };
+    return { start: open, end: close + 1 };
+  }
+
+  /** Inserta el tag de una foto en el slot de su tipo (personaje/locación/
+   *  producto). Si no hay slot libre, lo inserta en el cursor; props siempre
+   *  se inserta en el cursor. */
+  protected insertProjectPhotoTag(
+    sceneId: string,
+    index: number,
+    tag: string,
+    kind: PhotoKind | null,
+  ): void {
+    const prompt = this.promptAt(sceneId, null, index);
+    if (!prompt) return;
+    const scene = this.storyboard().find((s) => s.id === sceneId);
+    const text = prompt.text;
+    const field =
+      this.activePromptField && this.activePromptField.sceneId === sceneId && this.activePromptField.index === index
+        ? this.activePromptField
+        : null;
+    const caret = field ? (field.el.selectionStart ?? text.length) : text.length;
+    const plan = planScenePrompt(scene?.sceneArtifact ?? null);
+    const slots: PromptSlotText[] = [];
+    if (plan?.location) {
+      slots.push({ kind: 'location', value: this.sceneFieldText(plan.location) });
+    }
+    for (const character of plan?.characters ?? []) {
+      slots.push({ kind: 'character', value: this.sceneFieldText(character) });
+    }
+    if (plan?.product) {
+      slots.push({ kind: 'product', value: this.sceneFieldText(plan.product) });
+    }
+    const slot = slotRangeForKind(text, kind, slots, field ? caret : undefined);
+    const target = slot ?? (plan ? { start: caret, end: caret } : this.slotRangeAt(text, caret));
+    const insert = `${tag} `;
+    const next = `${text.slice(0, target.start)}${insert}${text.slice(target.end)}`;
+    this.patchPrompt(sceneId, null, index, { text: next });
+    this.commitSceneEdit();
+    const pos = target.start + insert.length;
+    if (field) {
+      queueMicrotask(() => {
+        field.el.focus();
+        field.el.setSelectionRange(pos, pos);
+      });
+    }
   }
 
   /** Patch de un prompt concreto (de la escena o de una toma). */
@@ -2950,29 +3463,46 @@ export class AgencyComponent {
     return this.openPromptResources().has(this.promptResourcesKey(sceneId, shotId, index));
   }
 
-  /** Recursos asignados a cualquier prompt de la escena: la hoja de
-   *  storyboard (si su archivo se subió al store) más las fotos de referencia
-   *  de la escena, que quedan como ingredientes del video.
-   *  Espeja el `content` que arma generatePromptVideo. */
-  protected promptResources(scene: StoryboardScene): {
-    id: string;
-    name: string;
-    url: string | null;
-  }[] {
-    const items: { id: string; name: string; url: string | null }[] = [];
+  /** Recursos asignados a un prompt: la hoja de storyboard (si existe) más
+   *  las fotos cuyo tag aparece en ESE prompt. En comercial sólo cuentan las
+   *  fotos tagueadas: una foto subida sin insertar no se adjunta.
+   *  Espeja el `content` que arma videoPayloadFor. */
+  protected promptResources(
+    scene: StoryboardScene,
+    prompt: VideoPrompt,
+  ): { id: string; name: string; url: string | null; kind: PhotoKind | null }[] {
+    const items: { id: string; name: string; url: string | null; kind: PhotoKind | null }[] = [];
     if (scene.boardFileId) {
       items.push({
         id: scene.boardFileId,
         name: `storyboard-${scene.id}.png`,
         url: scene.boardImageUrl ?? null,
+        kind: null,
       });
     }
+    const tags = new Set(parseTagsFromText(prompt.text));
+    const namedTags = [...tags].some((tag) => !/^@image\d+$/.test(tag));
     for (const ref of this.referencesOfScene(scene.id)) {
-      if (ref.id !== scene.boardFileId) {
-        items.push({ id: ref.id, name: ref.filename, url: ref.url });
+      if (ref.id === scene.boardFileId) continue;
+      if (this.isCommercial()) {
+        if (namedTags) {
+          if (!ref.note || !tags.has(ref.note.toLowerCase())) continue;
+        } else if (tags.size === 0) {
+          continue;
+        }
       }
+      items.push({ id: ref.id, name: ref.filename, url: ref.url, kind: ref.kind ?? null });
     }
     return items;
+  }
+
+  /** El modelo elegido adjunta una sola imagen y hay varias tagueadas. */
+  protected promptHasSingleReference(scene: StoryboardScene, prompt: VideoPrompt): boolean {
+    if (this.promptResources(scene, prompt).length <= 1) return false;
+    const model = prompt.videoModel
+      ? (this.models().find((m) => m.name === prompt.videoModel) ?? this.activeVideoModel())
+      : this.activeVideoModel();
+    return !!model && !model.reference_endpoint;
   }
 
   /** Genera el video de un prompt (de la escena o de una toma): texto del
@@ -3008,17 +3538,18 @@ export class AgencyComponent {
         }
         const ratio = payload.ratio ?? '';
         const resolution = payload.resolution ?? '';
+        const takeModel = this.models().find((m) => m.name === payload.model) ?? model;
         // Take en la cola/take reel (paso 4): el popover lo sigue en vivo aunque
         // este botón se resetee, y su estado manda hasta que la tarea resuelva.
         const takeId = `pending_${Date.now()}`;
         this.eventsStore.upsert({
           id: takeId,
           prompt: prompt.text,
-          modelName: model.name,
-          modelDisplayName: model.display_name || model.name,
+          modelName: takeModel.name,
+          modelDisplayName: takeModel.display_name || takeModel.name,
           modelType: 'api',
           ratio,
-          resolution: resolution || model.defaults?.resolutions?.[0] || '',
+          resolution: resolution || takeModel.defaults?.resolutions?.[0] || '',
           duration: payload.duration ?? 0,
           status: 'queued',
           progress: 0,
@@ -3116,7 +3647,12 @@ export class AgencyComponent {
     const target = shotId ? (shotIndex >= 0 ? scene.shots[shotIndex] : null) : scene;
     const prompt = target?.prompts?.[index];
     if (!target || !prompt) return null;
-    const ratio = this.videoRatio() || model.defaults?.ratios?.[0] || '';
+    // Modelo de la caja (si eligió uno propio) o el del paso 4.
+    const boxModel = prompt.videoModel
+      ? (this.models().find((m) => m.name === prompt.videoModel) ?? null)
+      : null;
+    const chosen = boxModel ?? model;
+    const ratio = prompt.ratio || this.videoRatio() || chosen.defaults?.ratios?.[0] || '';
     const content: ContentItem[] = [{ type: 'text', text: prompt.text }];
     if (scene.boardFileId) {
       content.push({ type: 'image', id: scene.boardFileId, name: `storyboard-${scene.id}.png` });
@@ -3124,24 +3660,36 @@ export class AgencyComponent {
     const realReferences = this.referencesOfScene(scene.id).filter(
       (ref) => ref.id !== scene.boardFileId,
     );
+    // Comercial: sólo se adjuntan las fotos cuyo tag aparece en ESTE prompt.
+    // Sin tags no se adjunta ninguna; el tagueo posicional legado (`@image1`)
+    // se mantiene adjuntando todas.
+    const tags = new Set(parseTagsFromText(prompt.text));
+    const namedTags = [...tags].some((tag) => !/^@image\d+$/.test(tag));
+    const sceneReferences = this.isCommercial()
+      ? namedTags
+        ? realReferences.filter((ref) => tags.has((ref.note ?? '').toLowerCase()))
+        : tags.size > 0
+          ? realReferences
+          : []
+      : realReferences;
     // Fotos reales del ángulo: solo cuando el modelo expone ruta
     // multi-referencia verificada, para no sacarlo de su ruta i2v de
     // imagen única (donde la hoja dejaría de adjuntarse).
-    if (model.reference_endpoint) {
-      for (const ref of realReferences) {
+    if (chosen.reference_endpoint) {
+      for (const ref of sceneReferences) {
         content.push({ type: 'image', id: ref.id, name: ref.filename });
       }
-    } else if (!scene.boardFileId && realReferences.length > 0) {
+    } else if (!scene.boardFileId && sceneReferences.length > 0) {
       // Comercial sin hoja y modelo de imagen única: la primera foto subida
       // en el paso 1 es el ancla visual del clip.
-      content.push({ type: 'image', id: realReferences[0].id, name: realReferences[0].filename });
+      content.push({ type: 'image', id: sceneReferences[0].id, name: sceneReferences[0].filename });
     }
     // Slot único por prompt (escenas 1..N, tomas 101..N): así no se pisan
     // entre sí al guardarse en la pieza (SaveGeneration desactiva el mismo nro).
     const generationNumber = shotId ? (shotIndex + 1) * 100 + index + 1 : index + 1;
     const resolution = prompt.resolution ?? this.videoResolution();
     return {
-      model: model.name,
+      model: chosen.name,
       content,
       ...(ratio ? { ratio } : {}),
       duration: prompt.duration ?? this.segmentDuration(index),
