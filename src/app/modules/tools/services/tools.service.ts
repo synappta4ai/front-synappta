@@ -24,6 +24,10 @@ import {
   POSE_SHEET_PIECE_CODE,
   POSE_SHEET_RATIO,
   POSE_SHEET_VARIANTS,
+  STORYBOARD_MODEL_NAMES,
+  STORYBOARD_PIECE_CODE,
+  STORYBOARD_RATIO,
+  STORYBOARD_SYSTEM_ASSET,
   LocationView,
   PoseSheetVariant,
 } from '../interfaces';
@@ -135,6 +139,55 @@ export class ToolsService {
   }
 
   trackPoseSheet(taskId: string): Observable<StatusResponse> {
+    return this.agencyService.pollTaskUntilDone('image', taskId);
+  }
+
+  /** System prompt por defecto del storyboard (editable por el usuario). */
+  loadStoryboardPrompt(): Observable<string> {
+    return this.repository.getSystemPrompt(STORYBOARD_SYSTEM_ASSET);
+  }
+
+  listStoryboardModels(): Observable<AiModel[]> {
+    return this.agencyService
+      .listModelsByModality('image')
+      .pipe(map((models) => models.filter((m) => STORYBOARD_MODEL_NAMES.includes(m.name))));
+  }
+
+  ensureStoryboardAnchor(projectName: string): Observable<PoseSheetAnchor> {
+    return this.studioService.ensureTakeSlot(projectName, STORYBOARD_PIECE_CODE);
+  }
+
+  generateStoryboard(request: {
+    model: string;
+    prompt: string;
+    resolution?: string;
+    referenceIds: { id: string; name: string }[];
+    eventId: string;
+    pieceId: string;
+    pieceCode: string;
+  }): Observable<GenerateResponse> {
+    const content: ContentItem[] = [
+      ...request.referenceIds.map((ref): ContentItem => ({
+        type: 'image',
+        id: ref.id,
+        name: ref.name,
+      })),
+      { type: 'text', text: request.prompt },
+    ];
+    const payload: GenerateRequest = {
+      model: request.model,
+      content,
+      ratio: STORYBOARD_RATIO,
+      ...(request.resolution ? { resolution: request.resolution } : {}),
+      event_id: request.eventId,
+      piece_id: request.pieceId,
+      piece_code: request.pieceCode,
+      generation_number: ++this.sequence,
+    };
+    return this.agencyService.generate('image', payload);
+  }
+
+  trackStoryboard(taskId: string): Observable<StatusResponse> {
     return this.agencyService.pollTaskUntilDone('image', taskId);
   }
 

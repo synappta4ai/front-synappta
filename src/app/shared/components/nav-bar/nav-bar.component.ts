@@ -51,6 +51,12 @@ export class NavBarComponent {
         icon: 'md md-place',
         routerLink: '/tools/location',
       },
+      {
+        label: t('TOOLS.STORYBOARD'),
+        description: t('TOOLS.STORYBOARD_DESC'),
+        icon: 'md md-movie',
+        routerLink: '/tools/storyboard',
+      },
     ];
   });
 
