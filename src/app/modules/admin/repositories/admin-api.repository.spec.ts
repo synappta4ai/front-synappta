@@ -3,6 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 
 import { AdminApiRepository } from './admin-api.repository';
+import { WorkerModel } from '../interfaces';
 import { environment } from '@env/environment';
 
 describe('AdminApiRepository · tenant storage', () => {
@@ -86,5 +87,98 @@ describe('AdminApiRepository · tenant storage', () => {
     const req = httpMock.expectOne(`${base}/tenants/7/storage`);
     expect(req.request.method).toBe('DELETE');
     req.flush({ success: true, message: 'storage config removed', data: null });
+  });
+});
+
+// El back sirve el catálogo del worker con la forma de /models (name +
+// downloaded anidado); la tabla admin consume el modelo plano del worker.
+describe('AdminApiRepository · worker models', () => {
+  let repository: AdminApiRepository;
+  let httpMock: HttpTestingController;
+
+  const base = environment.API_URL;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    }).compileComponents();
+
+    repository = TestBed.inject(AdminApiRepository);
+    httpMock = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    httpMock.verify();
+  });
+
+  it('flattens the worker catalog and keeps the weights path', () => {
+    let models: WorkerModel[] = [];
+    repository.listWorkerModels().subscribe((res) => (models = res.data ?? []));
+
+    const req = httpMock.expectOne(`${base}/worker/models`);
+    expect(req.request.method).toBe('GET');
+    req.flush({
+      success: true,
+      message: 'success',
+      data: [
+        {
+          name: 'SD-1.5',
+          display_name: 'SD 1.5',
+          modality: 'image',
+          type: 'downloaded',
+          downloaded: {
+            mode: 'image',
+            engine: 'diffusers',
+            pipeline: 'sd15',
+            repo: 'org/sd15',
+            steps: 20,
+            vram_gb: 4,
+            family: 'sd',
+            available: true,
+            downloaded: true,
+            downloading: false,
+            download_percent: 100,
+            size_bytes: 6900000000,
+            download_path: '/home/u/.cache/huggingface/hub/models--org--sd15',
+          },
+        },
+      ],
+    });
+
+    expect(models.length).toBe(1);
+    expect(models[0].key).toBe('SD-1.5');
+    expect(models[0].label).toBe('SD 1.5');
+    expect(models[0].downloaded).toBe(true);
+    expect(models[0].download_path).toContain('models--org--sd15');
+  });
+
+  it('leaves a model without weights downloadable', () => {
+    let models: WorkerModel[] = [];
+    repository.listWorkerModels().subscribe((res) => (models = res.data ?? []));
+
+    const req = httpMock.expectOne(`${base}/worker/models`);
+    req.flush({
+      success: true,
+      message: 'success',
+      data: [
+        {
+          name: 'FLUX.1-dev',
+          display_name: 'FLUX.1 dev',
+          downloaded: {
+            mode: 'image',
+            engine: 'diffusers',
+            available: false,
+            downloaded: false,
+            downloading: false,
+            download_percent: 0,
+            size_bytes: 0,
+          },
+        },
+      ],
+    });
+
+    expect(models[0].downloaded).toBe(false);
+    expect(models[0].download_path).toBeNull();
+    expect(models[0].steps).toBe(0);
   });
 });

@@ -1,6 +1,6 @@
 import { HttpClient, HttpResponse } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 
 import { ApiResponse } from '@interfaces/api.interface';
 import { environment } from '@env/environment';
@@ -25,6 +25,58 @@ import {
   WorkerModel,
   WorkerModelState,
 } from '../interfaces';
+
+/**
+ * Entry of the worker catalog as the back serves it: the same nested shape as
+ * `/models` (`name` + `downloaded`), because the worker's gRPC ModelInfo is
+ * mapped once, in the back. The admin table works with the worker's own flat
+ * shape, so the repository flattens it on the way in.
+ */
+interface WorkerModelWire {
+  name: string;
+  display_name?: string | null;
+  modality?: string | null;
+  downloaded?: {
+    mode?: string;
+    engine?: string;
+    pipeline?: string;
+    repo?: string | null;
+    steps?: number;
+    vram_gb?: number;
+    family?: string | null;
+    available?: boolean;
+    downloaded?: boolean;
+    downloading?: boolean;
+    download_percent?: number;
+    size_bytes?: number;
+    download_error?: string | null;
+    download_path?: string | null;
+    notes?: string | null;
+  } | null;
+}
+
+function toWorkerModel(m: WorkerModelWire): WorkerModel {
+  const d = m.downloaded ?? {};
+  return {
+    key: m.name,
+    label: m.display_name ?? m.name,
+    mode: (d.mode ?? '') as WorkerModel['mode'],
+    engine: (d.engine ?? '') as WorkerModel['engine'],
+    pipeline: d.pipeline ?? '',
+    repo: d.repo ?? null,
+    steps: d.steps ?? 0,
+    vram_gb: d.vram_gb ?? 0,
+    family: d.family ?? '',
+    available: d.available ?? false,
+    downloaded: d.downloaded ?? false,
+    downloading: d.downloading ?? false,
+    download_percent: d.download_percent ?? 0,
+    size_bytes: d.size_bytes ?? 0,
+    download_error: d.download_error ?? null,
+    download_path: d.download_path ?? null,
+    notes: d.notes ?? null,
+  };
+}
 
 @Injectable({ providedIn: 'root' })
 export class AdminApiRepository {
@@ -214,7 +266,9 @@ export class AdminApiRepository {
 
   /** Lista todos los modelos del worker con estado de descarga y ruta en disco. */
   listWorkerModels(): Observable<ApiResponse<WorkerModel[]>> {
-    return this.http.get<ApiResponse<WorkerModel[]>>(`${this.apiUrl}/worker/models`);
+    return this.http.get<ApiResponse<WorkerModelWire[]>>(`${this.apiUrl}/worker/models`).pipe(
+      map((res) => ({ ...res, data: (res.data ?? []).map(toWorkerModel) })),
+    );
   }
 
   /** Inicia la descarga de los pesos de un modelo en el worker. */
