@@ -237,11 +237,40 @@
                     [placeholder]="
                       credForm.controls.provider.value === 'gemini'
                         ? ('ADMIN.MODELS.GEMINI_KEY_PLACEHOLDER' | translate)
-                        : ('ADMIN.MODELS.ANTHROPIC_KEY_PLACEHOLDER' | translate)
+                        : credForm.controls.provider.value === 'anthropic'
+                          ? ('ADMIN.MODELS.ANTHROPIC_KEY_PLACEHOLDER' | translate)
+                          : ('ADMIN.MODELS.INFERENCE_KEY_PLACEHOLDER' | translate)
                     "
                     styleClass="w-full"
                     inputStyleClass="w-full"
                   />
+                  @if (isInferenceProvider(credForm.controls.provider.value)) {
+                    <small class="text-ink-muted-on-dark">
+                      {{ 'ADMIN.MODELS.INFERENCE_PROVIDER_HINT' | translate }}
+                    </small>
+                  }
+                </div>
+              }
+
+              @if (showsEndpointId(credForm.controls.provider.value)) {
+                <div class="flex flex-col gap-2">
+                  <label for="cred-endpoint-id" class="text-xs font-bold text-ink-on-dark">
+                    {{ 'ADMIN.MODELS.ENDPOINT_ID_LABEL' | translate }}
+                    <span class="text-danger">*</span>
+                  </label>
+                  <input
+                    pInputText
+                    id="cred-endpoint-id"
+                    name="endpoint-id"
+                    autocomplete="off"
+                    spellcheck="false"
+                    formControlName="endpoint_id"
+                    [placeholder]="'ADMIN.MODELS.ENDPOINT_ID_PLACEHOLDER' | translate"
+                    class="w-full"
+                  />
+                  <small class="text-ink-muted-on-dark">
+                    {{ 'ADMIN.MODELS.ENDPOINT_ID_HINT' | translate }}
+                  </small>
                 </div>
               }
 

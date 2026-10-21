@@ -89,20 +89,60 @@ export class AdminModelsComponent {
     { label: 'OpenRouter', value: 'openrouter', icon: 'md md-smart-toy' },
     { label: 'Ollama', value: 'ollama', icon: 'md md-computer' },
     { label: 'LM Studio', value: 'lmstudio', icon: 'md md-computer' },
+    // Inference providers hospedados: el tenant trae su key y el catálogo
+    // lista en vivo los modelos que esa key alcanza.
+    { label: 'RunPod', value: 'runpod', icon: 'md md-cloud' },
+    { label: 'Together AI', value: 'together', icon: 'md md-hub' },
+    { label: 'DeepInfra', value: 'deepinfra', icon: 'md md-memory' },
+    { label: 'GMI Cloud', value: 'gmi', icon: 'md md-cloud-queue' },
+    { label: 'Baseten', value: 'baseten', icon: 'md md-layers' },
+    { label: 'Vultr', value: 'vultr', icon: 'md md-dns' },
+    { label: 'DigitalOcean', value: 'digitalocean', icon: 'md md-water' },
+    { label: 'CoreWeave', value: 'coreweave', icon: 'md md-grain' },
   ];
 
   /** Servidores OpenAI-compatibles que corre el propio tenant: no llevan API
    *  key y sus modelos se descubren en vivo desde /v1/models. */
   protected readonly localProviders: CredentialProviderType[] = ['ollama', 'lmstudio'];
 
+  /** Nubes de inferencia hospedadas: API key + endpoints OpenAI-compatibles
+   *  (RunPod además lleva el id de su serverless endpoint). */
+  protected readonly inferenceProviders: CredentialProviderType[] = [
+    'runpod',
+    'together',
+    'deepinfra',
+    'gmi',
+    'baseten',
+    'vultr',
+    'digitalocean',
+    'coreweave',
+  ];
+
   protected isLocalProvider(provider: CredentialProviderType | null): boolean {
     return provider !== null && this.localProviders.includes(provider);
   }
 
-  /** La base URL se edita para los LLM hospedados y para los locales (puerto
-   *  propio, túnel, etc.). */
+  /** RunPod publica un endpoint por modelo: el id va en la credencial y el
+   *  modelo aparece como runpod/<endpoint-id>. */
+  protected isRunPod(provider: CredentialProviderType | null): boolean {
+    return provider === 'runpod';
+  }
+
+  protected isInferenceProvider(provider: CredentialProviderType | null): boolean {
+    return provider !== null && this.inferenceProviders.includes(provider);
+  }
+
+  /** La base URL se edita para los LLM hospedados, los locales (puerto
+   *  propio, túnel, etc.) y las nubes de inferencia (gateway/region propia). */
   protected showsBaseURL(provider: CredentialProviderType | null): boolean {
-    return this.showsAgentModel(provider) || this.isLocalProvider(provider);
+    return (
+      this.showsAgentModel(provider) || this.isLocalProvider(provider) || this.isInferenceProvider(provider)
+    );
+  }
+
+  /** RunPod necesita el endpoint id para poder armar el modelo. */
+  protected showsEndpointId(provider: CredentialProviderType | null): boolean {
+    return this.isRunPod(provider);
   }
 
   /** Proveedores LLM: su credencial además lleva el modelo del agente de
@@ -116,6 +156,7 @@ export class AdminModelsComponent {
     api_key: [''],
     model: [''],
     base_url: [''],
+    endpoint_id: [''],
   });
 
   constructor() {
@@ -182,6 +223,23 @@ export class AdminModelsComponent {
     const cred = provider ? this.credentialForProvider(provider) : null;
     this.credForm.controls.model.setValue(cred ? this.modelOf(cred) : '');
     this.credForm.controls.base_url.setValue(cred?.base_url ?? '');
+    this.credForm.controls.endpoint_id.setValue(cred ? this.endpointIdOf(cred) : '');
+  }
+
+  /** Endpoint de RunPod guardado en la credencial (`extra.endpoint_id`). */
+  protected endpointIdOf(cred: TenantCredential): string {
+    try {
+      const extra = JSON.parse(cred.extra ?? '{}') as { endpoint_id?: string };
+      return extra.endpoint_id ?? '';
+    } catch {
+      return '';
+    }
+  }
+
+  /** Endpoint id ya guardado para el proveedor (sin leer el formulario). */
+  private savedEndpointId(provider: CredentialProviderType): string {
+    const cred = this.credentialForProvider(provider);
+    return cred ? this.endpointIdOf(cred) : '';
   }
 
   protected showsAgentModel(provider: CredentialProviderType | null): boolean {
@@ -201,7 +259,7 @@ export class AdminModelsComponent {
       return;
     }
 
-    const { provider, access_key_id, secret_access_key, api_key, model, base_url } =
+    const { provider, access_key_id, secret_access_key, api_key, model, base_url, endpoint_id } =
       this.credForm.getRawValue();
     if (!provider) return;
 
@@ -225,6 +283,12 @@ export class AdminModelsComponent {
       this.error.set(this.translate.instant('ADMIN.MODELS.ERRORS.API_KEY_REQUIRED'));
       return;
     }
+    // RunPod: el endpoint id es lo que convierte la credencial en un modelo
+    // (runpod/<endpoint-id>). Sin él la nube no puede listar nada.
+    if (this.isRunPod(provider) && !endpoint_id.trim() && !this.savedEndpointId(provider)) {
+      this.error.set(this.translate.instant('ADMIN.MODELS.ERRORS.ENDPOINT_ID_REQUIRED'));
+      return;
+    }
 
     const payload: UpsertTenantCredentialRequest = { provider };
     if (api_key.trim()) payload.api_key = api_key.trim();
@@ -234,6 +298,11 @@ export class AdminModelsComponent {
     // agencia; el modelo se envía siempre — `{"model":""}` lo limpia.
     if (this.showsAgentModel(provider)) {
       payload.extra = JSON.stringify({ model: model.trim() });
+    }
+    // Solo se envía cuando hay valor: un extra vacío borraría el endpoint
+    // guardado al editar la base URL.
+    if (this.isRunPod(provider) && endpoint_id.trim()) {
+      payload.extra = JSON.stringify({ endpoint_id: endpoint_id.trim() });
     }
     if (this.showsBaseURL(provider) && base_url.trim()) {
       payload.base_url = base_url.trim();

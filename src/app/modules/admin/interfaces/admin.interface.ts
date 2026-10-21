@@ -23,7 +23,18 @@ export type CredentialProviderType =
   /** Servidores OpenAI-compatibles del propio tenant (Ollama, LM Studio):
    *  no llevan API key, solo base URL, y sus modelos se descubren en vivo. */
   | 'ollama'
-  | 'lmstudio';
+  | 'lmstudio'
+  /** Nubes de inferencia hospedadas: el tenant trae su API key y el catálogo
+   *  lista en vivo los modelos que esa key alcanza. RunPod suma el id de su
+   *  serverless endpoint (un endpoint = un modelo: runpod/<endpoint-id>). */
+  | 'runpod'
+  | 'together'
+  | 'deepinfra'
+  | 'gmi'
+  | 'baseten'
+  | 'vultr'
+  | 'digitalocean'
+  | 'coreweave';
 
 /** Modelo del catálogo anotado con el estado de credenciales del tenant. */
 export interface TenantModel {
