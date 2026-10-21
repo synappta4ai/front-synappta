@@ -22,7 +22,11 @@
           <p class="font-bold truncate">{{ m.display_name ?? m.name }}</p>
           <p class="text-xs opacity-60 truncate">{{ m.name }}</p>
         </div>
-        <p-tag [value]="m.credential_provider" severity="info" styleClass="text-xs" />
+        <p-tag
+          [value]="providerTag(m.credential_provider)"
+          [severity]="isLocalProvider(m.credential_provider) ? 'success' : 'info'"
+          styleClass="text-xs shrink-0"
+        />
       </div>
     </ng-template>
   </p-select>

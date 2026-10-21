@@ -93,7 +93,23 @@ export class AdminModelsComponent {
     { label: 'Anthropic', value: 'anthropic', icon: 'md md-description' },
     { label: 'Higgsfield', value: 'higgsfield', icon: 'md md-inventory_2' },
     { label: 'OpenRouter', value: 'openrouter', icon: 'md md-smart-toy' },
+    { label: 'Ollama', value: 'ollama', icon: 'md md-computer' },
+    { label: 'LM Studio', value: 'lmstudio', icon: 'md md-computer' },
   ];
+
+  /** Servidores OpenAI-compatibles que corre el propio tenant: no llevan API
+   *  key y sus modelos se descubren en vivo desde /v1/models. */
+  protected readonly localProviders: CredentialProviderType[] = ['ollama', 'lmstudio'];
+
+  protected isLocalProvider(provider: CredentialProviderType | null): boolean {
+    return provider !== null && this.localProviders.includes(provider);
+  }
+
+  /** La base URL se edita para los LLM hospedados y para los locales (puerto
+   *  propio, túnel, etc.). */
+  protected showsBaseURL(provider: CredentialProviderType | null): boolean {
+    return this.showsAgentModel(provider) || this.isLocalProvider(provider);
+  }
 
   /** Proveedores LLM: su credencial además lleva el modelo del agente de
    *  agencia (flujo Inmobiliaria), guardado en `extra.model`. */
@@ -236,6 +252,13 @@ export class AdminModelsComponent {
         this.error.set(this.translate.instant('ADMIN.MODELS.ERRORS.HIGGSFIELD_KEYS'));
         return;
       }
+    } else if (this.isLocalProvider(provider)) {
+      // Los servidores locales no autentican: lo único obligatorio es saber
+      // dónde escuchan (la primera vez; después se puede editar el resto).
+      if (!base_url.trim() && !this.credentialForProvider(provider)) {
+        this.error.set(this.translate.instant('ADMIN.MODELS.ERRORS.BASE_URL_REQUIRED'));
+        return;
+      }
     } else if (!api_key.trim() && !this.credentialForProvider(provider)) {
       this.error.set(this.translate.instant('ADMIN.MODELS.ERRORS.API_KEY_REQUIRED'));
       return;
@@ -249,7 +272,9 @@ export class AdminModelsComponent {
     // agencia; el modelo se envía siempre — `{"model":""}` lo limpia.
     if (this.showsAgentModel(provider)) {
       payload.extra = JSON.stringify({ model: model.trim() });
-      if (base_url.trim()) payload.base_url = base_url.trim();
+    }
+    if (this.showsBaseURL(provider) && base_url.trim()) {
+      payload.base_url = base_url.trim();
     }
 
     this.savingCredential.set(true);

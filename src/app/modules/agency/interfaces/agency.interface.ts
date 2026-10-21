@@ -5,7 +5,10 @@ export type CredentialProvider =
   | 'gemini'
   | 'anthropic'
   | 'higgsfield'
-  | 'openrouter';
+  | 'openrouter'
+  /** Servidores OpenAI-compatibles del propio tenant (sin API key). */
+  | 'ollama'
+  | 'lmstudio';
 export type TaskStatus =
   'pending' | 'processing' | 'completed' | 'succeeded' | 'failed' | 'cancelled';
 

@@ -122,6 +122,23 @@ export class ModelSelectComponent implements ControlValueAccessor {
     );
   });
 
+  /** Los servidores que corre el propio tenant llevan chip verde con su
+   *  nombre comercial; el resto conserva el identificador del catálogo. */
+  protected providerTag(provider: CredentialProvider): string {
+    switch (provider) {
+      case 'ollama':
+        return 'Ollama';
+      case 'lmstudio':
+        return 'LM Studio';
+      default:
+        return provider;
+    }
+  }
+
+  protected isLocalProvider(provider: CredentialProvider): boolean {
+    return provider === 'ollama' || provider === 'lmstudio';
+  }
+
   protected readonly loading = computed(() => this.state().status === 'loading');
   protected readonly failed = computed(() => this.state().status === 'error');
   protected readonly empty = computed(

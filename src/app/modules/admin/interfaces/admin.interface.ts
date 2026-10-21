@@ -19,7 +19,11 @@ export type CredentialProviderType =
   | 'gemini'
   | 'anthropic'
   | 'higgsfield'
-  | 'openrouter';
+  | 'openrouter'
+  /** Servidores OpenAI-compatibles del propio tenant (Ollama, LM Studio):
+   *  no llevan API key, solo base URL, y sus modelos se descubren en vivo. */
+  | 'ollama'
+  | 'lmstudio';
 
 /** Modelo del catálogo anotado con el estado de credenciales del tenant. */
 export interface TenantModel {

@@ -245,6 +245,12 @@
                     {{ 'ADMIN.MODELS.HIGGSFIELD_HINT' | translate }}
                   </small>
                 </div>
+              } @else if (isLocalProvider(credForm.controls.provider.value)) {
+                <div class="rounded-xl border border-surface-border bg-surface-2 px-3 py-2">
+                  <small class="text-ink-muted-on-dark">
+                    {{ 'ADMIN.MODELS.LOCAL_PROVIDER_HINT' | translate }}
+                  </small>
+                </div>
               } @else {
                 <div class="flex flex-col gap-2">
                   <label for="cred-apikey" class="text-xs font-bold text-ink-on-dark">
@@ -286,6 +292,9 @@
                     {{ 'ADMIN.MODELS.AGENT_MODEL_HINT' | translate }}
                   </small>
                 </div>
+              }
+
+              @if (showsBaseURL(credForm.controls.provider.value)) {
                 <div class="flex flex-col gap-2">
                   <label for="cred-agent-baseurl" class="text-xs font-bold text-ink-on-dark">
                     {{ 'ADMIN.MODELS.BASE_URL_LABEL' | translate }}
@@ -299,11 +308,21 @@
                     spellcheck="false"
                     inputmode="url"
                     formControlName="base_url"
-                    placeholder="https://openrouter.ai/api/v1"
+                    [placeholder]="
+                      isLocalProvider(credForm.controls.provider.value)
+                        ? (credForm.controls.provider.value === 'lmstudio'
+                            ? 'http://localhost:1234/v1'
+                            : 'http://localhost:11434/v1')
+                        : 'https://openrouter.ai/api/v1'
+                    "
                     class="w-full"
                   />
                   <small class="text-ink-muted-on-dark">
-                    {{ 'ADMIN.MODELS.BASE_URL_HINT' | translate }}
+                    {{ 
+                      isLocalProvider(credForm.controls.provider.value)
+                        ? ('ADMIN.MODELS.LOCAL_BASE_URL_HINT' | translate)
+                        : ('ADMIN.MODELS.BASE_URL_HINT' | translate)
+                    }}
                   </small>
                 </div>
               }
