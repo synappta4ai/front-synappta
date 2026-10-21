@@ -190,6 +190,45 @@ export interface ServerCommsPage {
   total_pages: number;
 }
 
+// ─── Worker model management (brain-master inference worker) ────────────
+
+/** Estado de descarga de un modelo en el worker. */
+export interface WorkerModelState {
+  key: string;
+  state: 'idle' | 'downloading' | 'ready' | 'failed' | 'cancelled' | 'deleted';
+  progress: number;
+  bytes_downloaded: number;
+  total_bytes: number;
+  error: string;
+}
+
+/** Modelo del worker con su estado de descarga y ubicación en disco. */
+export interface WorkerModel {
+  key: string;
+  label: string;
+  mode: 'image' | 'video' | 'tts' | 'audio';
+  engine: 'diffusers' | 'v1_bridge' | 'mock';
+  pipeline: string;
+  repo: string | null;
+  steps: number;
+  vram_gb: number;
+  family: string;
+  available: boolean;
+  downloaded: boolean;
+  downloading: boolean;
+  download_percent: number;
+  size_bytes: number;
+  download_error: string | null;
+  download_path: string | null;
+  notes: string | null;
+}
+
+/** Artefacto generado expuesto por el artifact server del worker. */
+export interface WorkerArtifact {
+  name: string;
+  size_bytes: number;
+}
+
 // ─── Generated videos gallery ────────────────────────────────
 
 /** Output file of a generation (server-relative or absolute URL). */

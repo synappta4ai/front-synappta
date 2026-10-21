@@ -21,6 +21,9 @@ import {
 	TenantUser,
   UpdateTenantPermissionsRequest,
   UpsertTenantCredentialRequest,
+  WorkerArtifact,
+  WorkerModel,
+  WorkerModelState,
 } from '../interfaces';
 
 @Injectable({ providedIn: 'root' })
@@ -205,5 +208,49 @@ export class AdminApiRepository {
     return this.http.get<ApiResponse<GeneratedImagesPage>>(`${this.apiUrl}/agency/images`, {
       params,
     });
+  }
+
+  // ─── Inference worker: model weight management ────────────────────────
+
+  /** Lista todos los modelos del worker con estado de descarga y ruta en disco. */
+  listWorkerModels(): Observable<ApiResponse<WorkerModel[]>> {
+    return this.http.get<ApiResponse<WorkerModel[]>>(`${this.apiUrl}/worker/models`);
+  }
+
+  /** Inicia la descarga de los pesos de un modelo en el worker. */
+  downloadWorkerModel(key: string, cancel = false): Observable<ApiResponse<WorkerModelState>> {
+    return this.http.post<ApiResponse<WorkerModelState>>(
+      `${this.apiUrl}/worker/models/${encodeURIComponent(key)}/download`,
+      { cancel },
+    );
+  }
+
+  /** Cancela la descarga en curso de un modelo en el worker. */
+  cancelWorkerModelDownload(key: string): Observable<ApiResponse<WorkerModelState>> {
+    return this.http.post<ApiResponse<WorkerModelState>>(
+      `${this.apiUrl}/worker/models/${encodeURIComponent(key)}/cancel`,
+      { cancel: true },
+    );
+  }
+
+  /** Borra los pesos en disco de un modelo en el worker. */
+  deleteWorkerModel(key: string): Observable<ApiResponse<WorkerModelState>> {
+    return this.http.delete<ApiResponse<WorkerModelState>>(
+      `${this.apiUrl}/worker/models/${encodeURIComponent(key)}`,
+    );
+  }
+
+  // ─── Inference worker: artifacts (videos / images) ────────────────────
+
+  /** Lista los artefactos disponibles en el artifact server del worker. */
+  listWorkerArtifacts(): Observable<ApiResponse<WorkerArtifact[]>> {
+    return this.http.get<ApiResponse<WorkerArtifact[]>>(`${this.apiUrl}/worker/artifacts`);
+  }
+
+  /** Borra un artefacto del artifact server del worker. */
+  deleteWorkerArtifact(name: string): Observable<ApiResponse<{ deleted: string; ok: boolean }>> {
+    return this.http.delete<ApiResponse<{ deleted: string; ok: boolean }>>(
+      `${this.apiUrl}/worker/artifacts/${encodeURIComponent(name)}`,
+    );
   }
 }

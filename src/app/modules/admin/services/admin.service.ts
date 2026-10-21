@@ -21,6 +21,9 @@ import {
   TenantUser,
   UpdateTenantPermissionsRequest,
   UpsertTenantCredentialRequest,
+  WorkerArtifact,
+  WorkerModel,
+  WorkerModelState,
 } from '../interfaces';
 import { AdminApiRepository } from '../repositories';
 
@@ -136,5 +139,33 @@ export class AdminService {
 
   listGeneratedImages(page = 1, limit = 20, eventId?: string): Observable<GeneratedImagesPage> {
     return unwrap(this.adminApiRepository.listGeneratedImages(page, limit, eventId));
+  }
+
+  // ─── Inference worker: model weight management ────────────────────────
+
+  listWorkerModels(): Observable<WorkerModel[]> {
+    return unwrap(this.adminApiRepository.listWorkerModels());
+  }
+
+  downloadWorkerModel(key: string, cancel = false): Observable<WorkerModelState> {
+    return unwrap(this.adminApiRepository.downloadWorkerModel(key, cancel));
+  }
+
+  cancelWorkerModelDownload(key: string): Observable<WorkerModelState> {
+    return unwrap(this.adminApiRepository.cancelWorkerModelDownload(key));
+  }
+
+  deleteWorkerModel(key: string): Observable<WorkerModelState> {
+    return unwrap(this.adminApiRepository.deleteWorkerModel(key));
+  }
+
+  // ─── Inference worker: artifacts ──────────────────────────────────────
+
+  listWorkerArtifacts(): Observable<WorkerArtifact[]> {
+    return unwrap(this.adminApiRepository.listWorkerArtifacts());
+  }
+
+  deleteWorkerArtifact(name: string): Observable<{ deleted: string; ok: boolean }> {
+    return unwrap(this.adminApiRepository.deleteWorkerArtifact(name));
   }
 }

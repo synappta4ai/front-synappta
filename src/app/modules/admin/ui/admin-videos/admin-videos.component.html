@@ -208,6 +208,93 @@
     }
   }
 
+  <!-- ─── Worker artefacts (videos/imágenes en disco del worker) ─── -->
+  <div class="mt-10" animate.enter="anim-page">
+    <div class="flex items-center gap-3 border-b border-surface-border px-5 py-4">
+      <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
+        <i class="md md-device_hub text-sm text-accent"></i>
+      </div>
+      <div>
+        <h4 class="font-bold text-ink-on-dark">
+          {{ 'ADMIN.VIDEOS.WORKER_ARTIFACTS_TITLE' | translate }}
+        </h4>
+        <p class="text-xs text-ink-muted-on-dark">
+          {{
+            'ADMIN.VIDEOS.WORKER_ARTIFACTS_SUBTITLE' | translate: {
+              count: workerArtifacts().length,
+            }
+          }}
+        </p>
+      </div>
+    </div>
+
+    @if (loadingArtifacts()) {
+      <div class="flex items-center justify-center py-12" aria-busy="true">
+        <p-progressSpinner />
+      </div>
+    } @else if (workerArtifacts().length === 0) {
+      <div
+        class="flex flex-col items-center gap-4 rounded-3xl border border-surface-border bg-surface py-20"
+      >
+        <div class="flex h-16 w-16 items-center justify-center rounded-full bg-surface-2">
+          <i class="md md-device_hub text-3xl text-ink-muted-on-dark"></i>
+        </div>
+        <div class="text-center">
+          <p class="font-bold text-ink-on-dark">
+            {{ 'ADMIN.VIDEOS.WORKER_ARTIFACTS_EMPTY_TITLE' | translate }}
+          </p>
+          <p class="mt-1 text-sm text-ink-muted-on-dark">
+            {{ 'ADMIN.VIDEOS.WORKER_ARTIFACTS_EMPTY_HINT' | translate }}
+          </p>
+        </div>
+      </div>
+    } @else {
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        @for (a of workerArtifacts(); track a.name; let i = $index) {
+          <div
+            animate.enter="anim-item"
+            [style.animation-delay.ms]="i < 8 ? i * 35 : 280"
+            class="group overflow-hidden rounded-2xl border border-surface-border bg-surface transition-shadow hover:border-surface-border-strong"
+          >
+            <div class="p-4">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-bold text-ink-on-dark truncate block">
+                  {{ a.name }}
+                </span>
+                <span class="text-xs text-ink-muted-on-dark">
+                  {{ formatBytes(a.size_bytes) }}
+                </span>
+              </div>
+              <div
+                class="w-full bg-surface-2 rounded-full h-2"
+              >
+                <div
+                  class="bg-accent rounded-full h-2"
+                  [style.width.%]="100"
+                ></div>
+              </div>
+              <div class="mt-3 flex items-center justify-between">
+                <p-button
+                  icon="md md-delete"
+                  severity="danger"
+                  size="small"
+                  text
+                  [loading]="isDeletingArtifact(a.name)"
+                  [disabled]="isDeletingArtifact(a.name)"
+                  [ariaLabel]="'ADMIN.VIDEOS.DELETE' | translate"
+                  [pTooltip]="'ADMIN.VIDEOS.DELETE_ARTIFACT' | translate"
+                  showDelay="400"
+                  tooltipPosition="top"
+                  (onClick)="deleteWorkerArtifact(a.name)"
+                />
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
   <!-- Player dialog -->
   <p-dialog
     [visible]="playerVisible()"

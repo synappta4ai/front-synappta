@@ -18,6 +18,7 @@ import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { Select } from 'primeng/select';
 import { Password } from 'primeng/password';
+import { ProgressSpinner } from 'primeng/progressspinner';
 import { Tooltip } from 'primeng/tooltip';
 
 import { UserSessionStore } from '@core/store/user.session';
@@ -28,6 +29,8 @@ import {
   TenantCredential,
   TenantModel,
   UpsertTenantCredentialRequest,
+  WorkerModel,
+  WorkerModelState,
 } from '../../interfaces';
 
 interface ProviderOption {
@@ -54,6 +57,7 @@ interface TenantOption {
     ConfirmDialog,
     Select,
     Password,
+    ProgressSpinner,
     Tooltip,
     TranslatePipe,
   ],
@@ -86,6 +90,12 @@ export class AdminModelsComponent {
   protected readonly exporting = signal(false);
   protected readonly importing = signal(false);
   protected readonly savedMessage = signal<string | null>(null);
+
+  // ─── Worker models ────────────────────────────────────────────────
+  protected readonly workerModels = signal<WorkerModel[]>([]);
+  protected readonly loadingWorkerModels = signal(false);
+  protected readonly downloading = signal<Record<string, boolean>>({});
+  protected readonly deleting = signal<Record<string, boolean>>({});
 
   protected readonly providerOptions: ProviderOption[] = [
     { label: 'BytePlus', value: 'byteplus', icon: 'md md-videocam' },
@@ -193,11 +203,18 @@ export class AdminModelsComponent {
           return EMPTY;
         }),
       ),
+      workerModels: this.adminService.listWorkerModels().pipe(
+        catchError(() => {
+          this.error.set(this.translate.instant('ADMIN.MODELS.ERRORS.LOAD_WORKER_MODELS'));
+          return EMPTY;
+        }),
+      ),
     })
       .pipe(finalize(() => this.loadingConfig.set(false)))
-      .subscribe(({ models, credentials }) => {
+      .subscribe(({ models, credentials, workerModels }) => {
         this.models.set(models);
         this.credentials.set(credentials);
+        this.workerModels.set(workerModels);
       });
   }
 
@@ -427,5 +444,128 @@ export class AdminModelsComponent {
       default:
         return 'warn';
     }
+  }
+
+  // ─── Worker model actions ─────────────────────────────────────────
+
+  protected isDownloading(key: string): boolean {
+    return !!this.downloading()[key];
+  }
+
+  protected isDeleting(key: string): boolean {
+    return !!this.deleting()[key];
+  }
+
+  protected downloadWorkerModel(model: WorkerModel): void {
+    if (model.downloading || model.downloaded) return;
+
+    this.downloading.update((d) => ({ ...d, [model.key]: true }));
+    this.error.set(null);
+
+    this.adminService
+      .downloadWorkerModel(model.key)
+      .pipe(
+        tap(() => this.loadWorkerModels()),
+        catchError((err: unknown) => {
+          const msg =
+            err && typeof err === 'object' && 'message' in err
+              ? String((err as { message?: unknown }).message)
+              : null;
+          this.error.set(msg || this.translate.instant('ADMIN.MODELS.ERRORS.DOWNLOAD_WORKER_MODEL'));
+          return EMPTY;
+        }),
+        finalize(() => {
+          this.downloading.update((d) => {
+            const { [model.key]: _removed, ...rest } = d;
+            return rest;
+          });
+        }),
+      )
+      .subscribe();
+  }
+
+  protected cancelWorkerModelDownload(model: WorkerModel): void {
+    if (!model.downloading) return;
+
+    this.downloading.update((d) => ({ ...d, [model.key]: true }));
+    this.error.set(null);
+
+    this.adminService
+      .cancelWorkerModelDownload(model.key)
+      .pipe(
+        tap(() => this.loadWorkerModels()),
+        catchError((err: unknown) => {
+          const msg =
+            err && typeof err === 'object' && 'message' in err
+              ? String((err as { message?: unknown }).message)
+              : null;
+          this.error.set(msg || this.translate.instant('ADMIN.MODELS.ERRORS.CANCEL_DOWNLOAD'));
+          return EMPTY;
+        }),
+        finalize(() => {
+          this.downloading.update((d) => {
+            const { [model.key]: _removed, ...rest } = d;
+            return rest;
+          });
+        }),
+      )
+      .subscribe();
+  }
+
+  protected confirmDeleteWorkerModel(model: WorkerModel): void {
+    this.confirmationService.confirm({
+      message: this.translate.instant('ADMIN.MODELS.CONFIRM_DELETE_WORKER_MODEL', {
+        model: model.label || model.key,
+      }),
+      header: this.translate.instant('ADMIN.MODELS.CONFIRM_DELETE_TITLE'),
+      icon: 'md md-warning',
+      acceptLabel: this.translate.instant('ADMIN.MODELS.CONFIRM_DELETE_ACCEPT'),
+      rejectLabel: this.translate.instant('ADMIN.MODELS.CONFIRM_DELETE_REJECT'),
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => {
+        this.deleting.update((d) => ({ ...d, [model.key]: true }));
+        this.error.set(null);
+        this.adminService
+          .deleteWorkerModel(model.key)
+          .pipe(
+            tap(() => this.loadWorkerModels()),
+            catchError((err: unknown) => {
+              const msg =
+                err && typeof err === 'object' && 'message' in err
+                  ? String((err as { message?: unknown }).message)
+                  : null;
+              this.error.set(msg || this.translate.instant('ADMIN.MODELS.ERRORS.DELETE_WORKER_MODEL'));
+              return EMPTY;
+            }),
+            finalize(() => {
+              this.deleting.update((d) => {
+                const { [model.key]: _removed, ...rest } = d;
+                return rest;
+              });
+            }),
+          )
+          .subscribe();
+      },
+    });
+  }
+
+  private loadWorkerModels(): void {
+    this.loadingWorkerModels.set(true);
+    this.adminService
+      .listWorkerModels()
+      .pipe(
+        catchError(() => EMPTY),
+        finalize(() => this.loadingWorkerModels.set(false)),
+      )
+      .subscribe((models) => this.workerModels.set(models));
+  }
+
+  /** Formatea bytes para mostrar en la UI. */
+  protected formatBytes(bytes: number): string {
+    if (!bytes) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   }
 }

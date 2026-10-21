@@ -510,6 +510,30 @@
         "EXPORT_EMPTY": "La exportación vino vacía.",
         "EXPORT": "No se pudieron exportar las credenciales.",
         "IMPORT": "No se pudo importar el archivo de credenciales."
+      },
+      "WORKER_MODELS_TITLE": "Modelos del worker",
+      "WORKER_MODELS_SUBTITLE": "{{count}} modelo(s) con pesos gestionados por el worker",
+      "WORKER_MODELS_EMPTY_TITLE": "Sin modelos del worker",
+      "WORKER_MODELS_EMPTY_HINT": "Descarga modelos desde Hugging Face para usarlos en generación de video e imagen",
+      "COL_MODE": "Modo",
+      "COL_ENGINE": "Motor",
+      "COL_SIZE": "Tamaño",
+      "COL_STATE": "Estado",
+      "COL_ACTIONS": "Acciones",
+      "STATE_READY": "Listo",
+      "STATE_DOWNLOADING": "Descargando",
+      "STATE_FAILED": "Error",
+      "STATE_IDLE": "Inactivo",
+      "DOWNLOAD_MODEL": "Descargar",
+      "CANCEL_DOWNLOAD": "Cancelar",
+      "DELETE_WEIGHTS": "Eliminar pesos",
+      "SHOW_PATH": "Ruta en disco",
+      "CONFIRM_DELETE_WORKER_MODEL": "¿Eliminar los pesos de \"{{model}}\"? No se podrán usar para generar hasta que se descarguen de nuevo.",
+      "ERRORS": {
+        "LOAD_WORKER_MODELS": "No se pudieron cargar los modelos del worker.",
+        "DOWNLOAD_WORKER_MODEL": "No se pudo iniciar la descarga.",
+        "CANCEL_DOWNLOAD": "No se pudo cancelar la descarga.",
+        "DELETE_WORKER_MODEL": "No se pudieron eliminar los pesos."
       }
     },
     "VIDEOS": {
@@ -540,8 +564,17 @@
       "FIELD_TASK_ID": "Task ID",
       "COMPLETION": "completion",
       "ERRORS": {
-        "LOAD": "No se pudieron cargar los videos generados."
-      }
+        "LOAD": "No se pudieron cargar los videos generados.",
+        "LOAD_ARTIFACTS": "No se pudieron cargar los artefactos del worker.",
+        "DELETE_ARTIFACT": "No se pudo eliminar el artefacto."
+      },
+      "WORKER_ARTIFACTS_TITLE": "Artefactos del worker",
+      "WORKER_ARTIFACTS_SUBTITLE": "{{count}} archivo(s) en disco del worker",
+      "WORKER_ARTIFACTS_EMPTY_TITLE": "Sin artefactos del worker",
+      "WORKER_ARTIFACTS_EMPTY_HINT": "Los videos e imágenes generados por el worker aparecerán aquí",
+      "DOWNLOAD": "Descargar",
+      "DELETE": "Eliminar",
+      "DELETE_ARTIFACT": "Eliminar este archivo del disco del worker"
     },
     "IMAGES": {
       "CLOSE": "Cerrar",
