@@ -15,15 +15,17 @@ import {
   ServerCommsPage,
   Tenant,
   TenantCredential,
-  TenantMember,	TenantModel,
-	TenantStorageConfig,
-	TenantStorageConfigRequest,
-	TenantUser,
+  TenantMember,
+  TenantModel,
+  TenantStorageConfig,
+  TenantStorageConfigRequest,
+  TenantUser,
   UpdateTenantPermissionsRequest,
   UpsertTenantCredentialRequest,
   WorkerArtifact,
   WorkerModel,
   WorkerModelState,
+  WorkerStatus,
 } from '../interfaces';
 
 /**
@@ -164,18 +166,29 @@ export class AdminApiRepository {
     return this.http.get<ApiResponse<TenantMember[]>>(`${this.apiUrl}/tenants/${id}/users`);
   }
 
-  createTenantMember(id: number, payload: CreateTenantMemberRequest): Observable<ApiResponse<TenantMember>> {
+  createTenantMember(
+    id: number,
+    payload: CreateTenantMemberRequest,
+  ): Observable<ApiResponse<TenantMember>> {
     return this.http.post<ApiResponse<TenantMember>>(`${this.apiUrl}/tenants/${id}/users`, payload);
   }
 
-  updateTenantMemberRole(tenantId: number, userId: number, roleLevel: number): Observable<ApiResponse<{ role_level: number; role_name: string }>> {
+  updateTenantMemberRole(
+    tenantId: number,
+    userId: number,
+    roleLevel: number,
+  ): Observable<ApiResponse<{ role_level: number; role_name: string }>> {
     return this.http.patch<ApiResponse<{ role_level: number; role_name: string }>>(
       `${this.apiUrl}/tenants/${tenantId}/users/${userId}/role`,
       { role_level: roleLevel },
     );
   }
 
-  updateTenantMemberPermissions(tenantId: number, userId: number, permissions: string[]): Observable<ApiResponse<{ permissions: string[] }>> {
+  updateTenantMemberPermissions(
+    tenantId: number,
+    userId: number,
+    permissions: string[],
+  ): Observable<ApiResponse<{ permissions: string[] }>> {
     return this.http.put<ApiResponse<{ permissions: string[] }>>(
       `${this.apiUrl}/tenants/${tenantId}/users/${userId}/permissions`,
       { permissions },
@@ -183,7 +196,9 @@ export class AdminApiRepository {
   }
 
   removeTenantMember(tenantId: number, userId: number): Observable<ApiResponse<null>> {
-    return this.http.delete<ApiResponse<null>>(`${this.apiUrl}/tenants/${tenantId}/users/${userId}`);
+    return this.http.delete<ApiResponse<null>>(
+      `${this.apiUrl}/tenants/${tenantId}/users/${userId}`,
+    );
   }
 
   listPlatformUsers(q?: string): Observable<ApiResponse<PlatformUser[]>> {
@@ -197,11 +212,21 @@ export class AdminApiRepository {
   }
 
   /** Login con selector de tenant (permisos de la membresía en el token). */
-  loginTenant(username: string, password: string, tenantId: number): Observable<ApiResponse<{ token: string; tenant_id: number; tenant_slug?: string; permissions?: string[] }>> {
-    return this.http.post<ApiResponse<{ token: string; tenant_id: number; tenant_slug?: string; permissions?: string[] }>>(
-      `${this.apiUrl}/auth/login-tenant`,
-      { username, password, tenant_id: tenantId },
-    );
+  loginTenant(
+    username: string,
+    password: string,
+    tenantId: number,
+  ): Observable<
+    ApiResponse<{ token: string; tenant_id: number; tenant_slug?: string; permissions?: string[] }>
+  > {
+    return this.http.post<
+      ApiResponse<{
+        token: string;
+        tenant_id: number;
+        tenant_slug?: string;
+        permissions?: string[];
+      }>
+    >(`${this.apiUrl}/auth/login-tenant`, { username, password, tenant_id: tenantId });
   }
 
   /** Descarga el archivo de exportación de credenciales (secretos en claro). */
@@ -222,13 +247,26 @@ export class AdminApiRepository {
     );
   }
 
-  /** Trazas de comunicaciones con APIs externas (scopped al tenant del token). */
-  listServerComms(page = 1, limit = 20, taskId?: string): Observable<ApiResponse<ServerCommsPage>> {
+  /**
+   * Header del tenant elegido en la consola: el back lo acepta solo para
+   * superadmin y le da prioridad sobre el tenant_id del token.
+   */
+  private tenantHeaders(tenantSlug?: string): { headers?: Record<string, string> } {
+    return tenantSlug ? { headers: { 'X-Tenant-Slug': tenantSlug } } : {};
+  }
+
+  /** Trazas de comunicaciones con APIs externas del tenant administrado. */
+  listServerComms(
+    page = 1,
+    limit = 20,
+    taskId?: string,
+    tenantSlug?: string,
+  ): Observable<ApiResponse<ServerCommsPage>> {
     const params: Record<string, string | number> = { page, limit };
     if (taskId) params['task_id'] = taskId;
     return this.http.get<ApiResponse<ServerCommsPage>>(
       `${this.apiUrl}/agency/logs/server-communications`,
-      { params },
+      { params, ...this.tenantHeaders(tenantSlug) },
     );
   }
 
@@ -237,6 +275,7 @@ export class AdminApiRepository {
     page = 1,
     limit = 20,
     eventId?: string,
+    tenantSlug?: string,
   ): Observable<ApiResponse<GeneratedVideosPage>> {
     const params: Record<string, number | string> = { page, limit };
     if (eventId) {
@@ -244,6 +283,7 @@ export class AdminApiRepository {
     }
     return this.http.get<ApiResponse<GeneratedVideosPage>>(`${this.apiUrl}/agency/videos`, {
       params,
+      ...this.tenantHeaders(tenantSlug),
     });
   }
 
@@ -252,6 +292,7 @@ export class AdminApiRepository {
     page = 1,
     limit = 20,
     eventId?: string,
+    tenantSlug?: string,
   ): Observable<ApiResponse<GeneratedImagesPage>> {
     const params: Record<string, number | string> = { page, limit };
     if (eventId) {
@@ -259,16 +300,22 @@ export class AdminApiRepository {
     }
     return this.http.get<ApiResponse<GeneratedImagesPage>>(`${this.apiUrl}/agency/images`, {
       params,
+      ...this.tenantHeaders(tenantSlug),
     });
   }
 
   // ─── Inference worker: model weight management ────────────────────────
 
+  /** Estado en vivo del worker (device, CUDA, modelos disponibles). */
+  workerStatus(): Observable<ApiResponse<WorkerStatus>> {
+    return this.http.get<ApiResponse<WorkerStatus>>(`${this.apiUrl}/worker/status`);
+  }
+
   /** Lista todos los modelos del worker con estado de descarga y ruta en disco. */
   listWorkerModels(): Observable<ApiResponse<WorkerModel[]>> {
-    return this.http.get<ApiResponse<WorkerModelWire[]>>(`${this.apiUrl}/worker/models`).pipe(
-      map((res) => ({ ...res, data: (res.data ?? []).map(toWorkerModel) })),
-    );
+    return this.http
+      .get<ApiResponse<WorkerModelWire[]>>(`${this.apiUrl}/worker/models`)
+      .pipe(map((res) => ({ ...res, data: (res.data ?? []).map(toWorkerModel) })));
   }
 
   /** Inicia la descarga de los pesos de un modelo en el worker. */

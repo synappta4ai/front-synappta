@@ -8,6 +8,9 @@ import { AdminModelsComponent } from './ui/admin-models/admin-models.component';
 import { AdminLogsComponent } from './ui/admin-logs/admin-logs.component';
 import { AdminVideosComponent } from './ui/admin-videos/admin-videos.component';
 import { AdminImagesComponent } from './ui/admin-images/admin-images.component';
+import { AdminGpuComponent } from './ui/admin-gpu/admin-gpu.component';
+import { AdminUsersComponent } from './ui/admin-users/admin-users.component';
+import { AdminBucketComponent } from './ui/admin-bucket/admin-bucket.component';
 import { TenantsComponent } from './ui/tenants/tenants.component';
 
 export const adminRoutes: Routes = [
@@ -22,7 +25,12 @@ export const adminRoutes: Routes = [
       { path: 'models', component: AdminModelsComponent },
       { path: 'logs', component: AdminLogsComponent },
       { path: 'videos', component: AdminVideosComponent },
-      { path: 'imagens', component: AdminImagesComponent },
+      { path: 'imagenes', component: AdminImagesComponent },
+      // Ruta histórica con el typo, para no romper links guardados.
+      { path: 'imagens', redirectTo: 'imagenes', pathMatch: 'full' },
+      { path: 'gpu', component: AdminGpuComponent },
+      { path: 'users', component: AdminUsersComponent },
+      { path: 'bucket', component: AdminBucketComponent },
       { path: 'tenants', component: TenantsComponent },
       { path: '', redirectTo: 'models', pathMatch: 'full' },
     ],

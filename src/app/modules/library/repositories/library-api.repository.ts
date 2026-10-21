@@ -28,7 +28,20 @@ export class LibraryApiRepository {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = environment.API_URL;
 
-  uploadFile(file: File, category?: string, eventId?: string): Observable<ApiResponse<FileAsset>> {
+  /**
+   * Header del tenant elegido en la consola de administración: el back lo
+   * acepta solo para superadmin y le da prioridad sobre el tenant del token.
+   */
+  private tenantHeaders(tenantSlug?: string): { headers?: Record<string, string> } {
+    return tenantSlug ? { headers: { 'X-Tenant-Slug': tenantSlug } } : {};
+  }
+
+  uploadFile(
+    file: File,
+    category?: string,
+    eventId?: string,
+    tenantSlug?: string,
+  ): Observable<ApiResponse<FileAsset>> {
     const form = new FormData();
     form.append('file', file);
     if (category) {
@@ -37,17 +50,36 @@ export class LibraryApiRepository {
     if (eventId) {
       form.append('event_id', eventId);
     }
-    return this.http.post<ApiResponse<FileAsset>>(`${this.apiUrl}/files/upload`, form);
+    return this.http.post<ApiResponse<FileAsset>>(
+      `${this.apiUrl}/files/upload`,
+      form,
+      this.tenantHeaders(tenantSlug),
+    );
   }
 
   /** Asigna un recurso a un proyecto (evento). Idempotente. */
-  linkFileEvent(fileId: string, eventId: string): Observable<ApiResponse<null>> {
-    return this.http.put<ApiResponse<null>>(`${this.apiUrl}/files/${fileId}/event/${eventId}`, {});
+  linkFileEvent(
+    fileId: string,
+    eventId: string,
+    tenantSlug?: string,
+  ): Observable<ApiResponse<null>> {
+    return this.http.put<ApiResponse<null>>(
+      `${this.apiUrl}/files/${fileId}/event/${eventId}`,
+      {},
+      this.tenantHeaders(tenantSlug),
+    );
   }
 
   /** Quita la asignación de un recurso a un proyecto (evento). */
-  unlinkFileEvent(fileId: string, eventId: string): Observable<ApiResponse<null>> {
-    return this.http.delete<ApiResponse<null>>(`${this.apiUrl}/files/${fileId}/event/${eventId}`);
+  unlinkFileEvent(
+    fileId: string,
+    eventId: string,
+    tenantSlug?: string,
+  ): Observable<ApiResponse<null>> {
+    return this.http.delete<ApiResponse<null>>(
+      `${this.apiUrl}/files/${fileId}/event/${eventId}`,
+      this.tenantHeaders(tenantSlug),
+    );
   }
 
   /** Recursos asignados a un proyecto (evento). */
@@ -61,10 +93,14 @@ export class LibraryApiRepository {
     });
   }
 
-  listFilesPaginated(filters: FileListFilters = {}): Observable<ApiResponse<Paginated<FileAsset>>> {
+  listFilesPaginated(
+    filters: FileListFilters = {},
+    tenantSlug?: string,
+  ): Observable<ApiResponse<Paginated<FileAsset>>> {
     const params = this.toParams(filters);
     return this.http.get<ApiResponse<Paginated<FileAsset>>>(`${this.apiUrl}/files/page`, {
       params,
+      ...this.tenantHeaders(tenantSlug),
     });
   }
 
@@ -76,8 +112,11 @@ export class LibraryApiRepository {
     return this.http.get<ApiResponse<FileAsset>>(`${this.apiUrl}/files/${id}`);
   }
 
-  deleteFile(id: string): Observable<ApiResponse<null>> {
-    return this.http.delete<ApiResponse<null>>(`${this.apiUrl}/files/${id}`);
+  deleteFile(id: string, tenantSlug?: string): Observable<ApiResponse<null>> {
+    return this.http.delete<ApiResponse<null>>(
+      `${this.apiUrl}/files/${id}`,
+      this.tenantHeaders(tenantSlug),
+    );
   }
 
   restoreFile(id: string): Observable<ApiResponse<FileAsset>> {
@@ -105,15 +144,27 @@ export class LibraryApiRepository {
     return this.http.get<ApiResponse<IngredientWithFiles>>(`${this.apiUrl}/ingredients/${id}`);
   }
 
-  createIngredient(payload: CreateIngredientRequest): Observable<ApiResponse<Ingredient>> {
-    return this.http.post<ApiResponse<Ingredient>>(`${this.apiUrl}/ingredients`, payload);
+  createIngredient(
+    payload: CreateIngredientRequest,
+    tenantSlug?: string,
+  ): Observable<ApiResponse<Ingredient>> {
+    return this.http.post<ApiResponse<Ingredient>>(
+      `${this.apiUrl}/ingredients`,
+      payload,
+      this.tenantHeaders(tenantSlug),
+    );
   }
 
   updateIngredient(
     id: string,
     payload: UpdateIngredientRequest,
+    tenantSlug?: string,
   ): Observable<ApiResponse<Ingredient>> {
-    return this.http.patch<ApiResponse<Ingredient>>(`${this.apiUrl}/ingredients/${id}`, payload);
+    return this.http.patch<ApiResponse<Ingredient>>(
+      `${this.apiUrl}/ingredients/${id}`,
+      payload,
+      this.tenantHeaders(tenantSlug),
+    );
   }
 
   deleteIngredient(id: string): Observable<ApiResponse<null>> {
@@ -127,10 +178,12 @@ export class LibraryApiRepository {
   addIngredientFile(
     id: string,
     payload: AddIngredientFileRequest,
+    tenantSlug?: string,
   ): Observable<ApiResponse<IngredientFile>> {
     return this.http.post<ApiResponse<IngredientFile>>(
       `${this.apiUrl}/ingredients/${id}/files`,
       payload,
+      this.tenantHeaders(tenantSlug),
     );
   }
 

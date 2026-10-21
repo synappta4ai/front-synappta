@@ -1,7 +1,9 @@
+import { NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   inject,
   input,
   output,
@@ -46,6 +48,7 @@ const ASSIGNABLE_ROLES = [1, 2, 3].map((value) => ({
     InputText,
     Message,
     Tag,
+    NgTemplateOutlet,
     ConsentCheckboxesComponent,
   ],
   templateUrl: './tenant-users-dialog.component.html',
@@ -58,6 +61,8 @@ export class TenantUsersDialogComponent {
 
   /** Tenant en gestión (null = diálogo cerrado). */
   readonly tenant = input<Tenant | null>(null);
+  /** Embebido como panel de /admin/users, sin diálogo ni overlay. */
+  readonly inline = input(false);
   readonly closed = output<void>();
   /** Notifica a la lista padre que los permisos de la empresa cambiaron. */
   readonly tenantPermissionsChanged = output<{ tenantId: number; permissions: string[] }>();
@@ -101,12 +106,21 @@ export class TenantUsersDialogComponent {
   protected readonly editPerms = signal<Set<string>>(new Set());
 
   protected readonly tenantId = computed(() => this.tenant()?.id ?? 0);
-  protected readonly visible = computed(() => this.tenant() !== null);
+  protected readonly visible = computed(() => !this.inline() && this.tenant() !== null);
+
+  constructor() {
+    // Embebido no hay (onShow) del p-dialog: se carga al cambiar el tenant.
+    effect(() => {
+      if (this.inline() && this.tenant() !== null) {
+        this.onShow();
+      }
+    });
+  }
 
   /** Permisos heredados de la empresa (mostrados marcados y bloqueados). */
   protected readonly inherited = computed(() => this.companyPerms());
 
-  /** Se ejecuta cada vez que el diálogo se muestra (p-dialog onShow). */
+  /** Se ejecuta al abrir el diálogo (onShow) o al cambiar de tenant inline. */
   protected onShow(): void {
     this.error.set('');
     this.companyPerms.set(new Set(this.tenant()?.permissions ?? []));

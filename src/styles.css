@@ -5453,3 +5453,52 @@ main:has(> app-location) {
   font-weight: 600;
   text-decoration: underline wavy;
 }
+
+/* ============================================
+   Consola /admin: menubar compacto, agrupado por temas.
+   ============================================ */
+.p-menubar.admin-menubar {
+  background: var(--color-surface);
+  border: 1px solid var(--color-surface-border);
+  border-radius: var(--radius-xl);
+  padding: 2px 6px;
+  gap: 2px;
+}
+
+.p-menubar.admin-menubar .p-menubar-root-list {
+  gap: 2px !important;
+}
+
+.p-menubar.admin-menubar .p-menubar-item-link {
+  color: var(--color-ink-muted);
+  font-size: 0.8125rem;
+  padding: 0 10px;
+  border-radius: var(--radius-lg);
+  gap: 6px;
+}
+
+.p-menubar.admin-menubar .p-menubar-item-link:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-ink);
+}
+
+.p-menubar.admin-menubar .p-menubar-item-link.p-menubar-item-link-active,
+.p-menubar.admin-menubar .p-menubar-item-link.p-menubar-item-link-active:hover {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.p-menubar.admin-menubar .p-menubar-root-list > .p-menubar-item > .p-menubar-item-content {
+  min-height: 32px;
+}
+
+.p-menubar.admin-menubar .p-menubar-item.p-disabled .p-menubar-item-link {
+  opacity: 0.45;
+}
+
+.p-menubar.admin-menubar .p-menubar-separator {
+  border-left: 1px solid var(--color-surface-border);
+  height: 18px;
+  align-self: center;
+  margin: 0 4px;
+}

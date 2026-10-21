@@ -1,13 +1,4 @@
-<p-dialog
-  [visible]="visible()"
-  [header]="'ADMIN.USERS.HEADER' | translate: { name: tenant()?.name ?? '' }"
-  [modal]="true"
-  [style]="{ width: 'min(96vw, 46rem)' }"
-  [draggable]="false"
-  [resizable]="false"
-  (onShow)="onShow()"
-  (onHide)="close()"
->
+<ng-template #panel>
   @if (error(); as message) {
     <p-message severity="error" [text]="message" [escape]="false" styleClass="w-full" />
   }
@@ -331,13 +322,30 @@
       }
     </div>
   }
+</ng-template>
 
-  <ng-template #footer>
-    <p-button
-      [label]="'ADMIN.USERS.CLOSE' | translate"
-      size="small"
-      [text]="true"
-      (onClick)="close()"
-    />
-  </ng-template>
-</p-dialog>
+@if (inline()) {
+  <ng-container [ngTemplateOutlet]="panel" />
+} @else {
+  <p-dialog
+    [visible]="visible()"
+    [header]="'ADMIN.USERS.HEADER' | translate: { name: tenant()?.name ?? '' }"
+    [modal]="true"
+    [style]="{ width: 'min(96vw, 46rem)' }"
+    [draggable]="false"
+    [resizable]="false"
+    (onShow)="onShow()"
+    (onHide)="close()"
+  >
+    <ng-container [ngTemplateOutlet]="panel" />
+
+    <ng-template #footer>
+      <p-button
+        [label]="'ADMIN.USERS.CLOSE' | translate"
+        size="small"
+        [text]="true"
+        (onClick)="close()"
+      />
+    </ng-template>
+  </p-dialog>
+}

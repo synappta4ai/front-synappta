@@ -1,0 +1,8 @@
+@if (tenant(); as tenant) {
+  <div class="mx-auto w-full max-w-3xl">
+    <h2 class="mb-4 text-lg font-bold text-ink">
+      {{ 'ADMIN.STORAGE.HEADER' | translate: { name: tenant.name } }}
+    </h2>
+    <app-tenant-storage-dialog [tenant]="tenant" [inline]="true" />
+  </div>
+}

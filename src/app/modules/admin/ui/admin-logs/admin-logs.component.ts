@@ -1,5 +1,13 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { catchError, EMPTY, finalize } from 'rxjs';
@@ -16,6 +24,7 @@ import { Tooltip } from 'primeng/tooltip';
 import { UserSessionStore } from '@core/store/user.session';
 import { formatDurationValue } from '@pipes/format-duration.pipe';
 import { AdminService } from '../../services/admin.service';
+import { AdminTenantService } from '../../services/admin-tenant.service';
 import { ServerCommunicationLog } from '../../interfaces';
 
 /**
@@ -64,12 +73,16 @@ interface PhaseTab {
 })
 export class AdminLogsComponent {
   private readonly adminService = inject(AdminService);
+  private readonly adminTenants = inject(AdminTenantService);
   private readonly sessionStore = inject(UserSessionStore);
   private readonly translate = inject(TranslateService);
 
   protected readonly isSuperadmin = computed(
     () => this.sessionStore.currentUser()?.role_level === 0,
   );
+
+  /** Tenant elegido en la consola: sus trazas son las que se listan. */
+  protected readonly tenantSlug = computed(() => this.adminTenants.selectedTenant()?.slug ?? null);
 
   protected readonly comms = signal<ServerCommunicationLog[]>([]);
   protected readonly loading = signal(false);
@@ -83,14 +96,26 @@ export class AdminLogsComponent {
   protected readonly detailVisible = signal(false);
 
   constructor() {
-    this.load();
+    // Carga inicial y recarga al cambiar el tenant en el header de la consola.
+    effect(() => {
+      this.tenantSlug();
+      untracked(() => {
+        this.page.set(1);
+        this.load();
+      });
+    });
   }
 
   protected load(): void {
     this.loading.set(true);
     this.error.set(null);
     this.adminService
-      .listServerComms(this.page(), this.limit, this.taskIdFilter().trim() || undefined)
+      .listServerComms(
+        this.page(),
+        this.limit,
+        this.taskIdFilter().trim() || undefined,
+        this.tenantSlug() ?? undefined,
+      )
       .pipe(
         catchError(() => {
           this.error.set(this.translate.instant('ADMIN.LOGS.ERRORS.LOAD'));

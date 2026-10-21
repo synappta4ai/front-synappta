@@ -35,7 +35,7 @@ type PickerFilter = 'all' | 'character' | 'location' | 'props' | 'images' | 'vid
 
 /**
  * Modal de selección de recursos existentes de la biblioteca (los mismos
- * "Recursos subidos" de /admin/imagens). Emite los assets elegidos al cerrar
+ * "Recursos subidos" de /admin/imagenes). Emite los assets elegidos al cerrar
  * con "Usar seleccionados".
  */
 @Component({

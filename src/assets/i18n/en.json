@@ -308,13 +308,48 @@
     }
   },
   "ADMIN": {
+    "GPU": {
+      "TITLE": "GPU and inference",
+      "SUBTITLE": "Live status of the worker serving the downloaded models.",
+      "REFRESH": "Refresh",
+      "CONNECTION": "Connection",
+      "CONNECTED": "Connected",
+      "DISCONNECTED": "No response",
+      "NOT_CONFIGURED": "Not configured",
+      "DEVICE": "Device",
+      "CUDA_ON": "CUDA available",
+      "CUDA_OFF": "CPU (no CUDA)",
+      "CATALOG": "Models in catalog",
+      "CATALOG_HINT": "Reported by the worker",
+      "WEIGHTS": "Downloaded weights",
+      "ON_DISK": "on disk",
+      "HINT": "Weights are downloaded and removed from Models. Each company's paired GPUs are managed in \"Your GPU\".",
+      "MANAGE_WEIGHTS": "Manage weights",
+      "PAIR": "Pair a GPU",
+      "ERRORS": {
+        "LOAD": "Could not read the worker status."
+      }
+    },
     "CONSOLE": {
       "TITLE": "Administration Console",
-      "TAB_MODELS": "Models",
-      "TAB_VIDEOS": "Videos",
-      "TAB_IMAGES": "Images",
-      "TAB_LOGS": "Logs",
-      "TAB_TENANTS": "Tenants"
+      "SUBTITLE": "Pick a tenant, then open the area you want to manage.",
+      "TENANT_PLACEHOLDER": "Select a tenant",
+      "TENANT_SEARCH": "Search tenant…",
+      "TENANT_ARIA": "Tenant to administer",
+      "MANAGE_TENANTS": "Tenants",
+      "MANAGE_TENANTS_HINT": "Create, deactivate and manage each tenant's members",
+      "SELECT_TENANT_TITLE": "Select a tenant to start",
+      "SELECT_TENANT_HINT": "The console sections show up once you pick which tenant to work with.",
+      "MENU_MODELS": "Models",
+      "MENU_PROVIDERS": "Inference Providers",
+      "MENU_VIDEOS": "Videos",
+      "MENU_IMAGES": "Images",
+      "MENU_LOGS": "Logs",
+      "MENU_GPU": "GPU",
+      "MENU_USERS": "Users",
+      "MENU_BUCKET": "Bucket",
+      "MENU_DRIVE": "Google Drive",
+      "MENU_SOON": "Coming soon"
     },
     "TENANTS": {
       "TITLE": "Tenant Management",

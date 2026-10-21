@@ -24,6 +24,7 @@ import {
   WorkerArtifact,
   WorkerModel,
   WorkerModelState,
+  WorkerStatus,
 } from '../interfaces';
 import { AdminApiRepository } from '../repositories';
 
@@ -43,7 +44,10 @@ export class AdminService {
     return unwrap(this.adminApiRepository.deactivateTenant(id));
   }
 
-  updateTenantPermissions(id: number, permissions: string[]): Observable<{ permissions: string[] }> {
+  updateTenantPermissions(
+    id: number,
+    permissions: string[],
+  ): Observable<{ permissions: string[] }> {
     return unwrap(this.adminApiRepository.updateTenantPermissions(id, { permissions }));
   }
 
@@ -109,12 +113,22 @@ export class AdminService {
     return unwrap(this.adminApiRepository.createTenantMember(id, payload));
   }
 
-  updateTenantMemberRole(tenantId: number, userId: number, roleLevel: number): Observable<{ role_level: number; role_name: string }> {
+  updateTenantMemberRole(
+    tenantId: number,
+    userId: number,
+    roleLevel: number,
+  ): Observable<{ role_level: number; role_name: string }> {
     return unwrap(this.adminApiRepository.updateTenantMemberRole(tenantId, userId, roleLevel));
   }
 
-  updateTenantMemberPermissions(tenantId: number, userId: number, permissions: string[]): Observable<{ permissions: string[] }> {
-    return unwrap(this.adminApiRepository.updateTenantMemberPermissions(tenantId, userId, permissions));
+  updateTenantMemberPermissions(
+    tenantId: number,
+    userId: number,
+    permissions: string[],
+  ): Observable<{ permissions: string[] }> {
+    return unwrap(
+      this.adminApiRepository.updateTenantMemberPermissions(tenantId, userId, permissions),
+    );
   }
 
   removeTenantMember(tenantId: number, userId: number): Observable<null> {
@@ -129,19 +143,38 @@ export class AdminService {
     return unwrap(this.adminApiRepository.listPermissionCatalog());
   }
 
-  listServerComms(page = 1, limit = 20, taskId?: string): Observable<ServerCommsPage> {
-    return unwrap(this.adminApiRepository.listServerComms(page, limit, taskId));
+  listServerComms(
+    page = 1,
+    limit = 20,
+    taskId?: string,
+    tenantSlug?: string,
+  ): Observable<ServerCommsPage> {
+    return unwrap(this.adminApiRepository.listServerComms(page, limit, taskId, tenantSlug));
   }
 
-  listGeneratedVideos(page = 1, limit = 20, eventId?: string): Observable<GeneratedVideosPage> {
-    return unwrap(this.adminApiRepository.listGeneratedVideos(page, limit, eventId));
+  listGeneratedVideos(
+    page = 1,
+    limit = 20,
+    eventId?: string,
+    tenantSlug?: string,
+  ): Observable<GeneratedVideosPage> {
+    return unwrap(this.adminApiRepository.listGeneratedVideos(page, limit, eventId, tenantSlug));
   }
 
-  listGeneratedImages(page = 1, limit = 20, eventId?: string): Observable<GeneratedImagesPage> {
-    return unwrap(this.adminApiRepository.listGeneratedImages(page, limit, eventId));
+  listGeneratedImages(
+    page = 1,
+    limit = 20,
+    eventId?: string,
+    tenantSlug?: string,
+  ): Observable<GeneratedImagesPage> {
+    return unwrap(this.adminApiRepository.listGeneratedImages(page, limit, eventId, tenantSlug));
   }
 
   // ─── Inference worker: model weight management ────────────────────────
+
+  workerStatus(): Observable<WorkerStatus> {
+    return unwrap(this.adminApiRepository.workerStatus());
+  }
 
   listWorkerModels(): Observable<WorkerModel[]> {
     return unwrap(this.adminApiRepository.listWorkerModels());

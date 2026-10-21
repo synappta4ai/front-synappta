@@ -1,13 +1,4 @@
-<p-dialog
-  [visible]="visible()"
-  [header]="'ADMIN.STORAGE.HEADER' | translate: { name: tenant()?.name ?? '' }"
-  [modal]="true"
-  [style]="{ width: 'min(96vw, 44rem)' }"
-  [draggable]="false"
-  [resizable]="false"
-  (onShow)="onShow()"
-  (onHide)="close()"
->
+<ng-template #panel>
   <p class="storage-intro">{{ 'ADMIN.STORAGE.INTRO' | translate }}</p>
 
   @if (error(); as message) {
@@ -45,7 +36,10 @@
         <div>
           <span class="status-key">{{ 'ADMIN.STORAGE.SECRET' | translate }}</span>
           <span class="status-value">
-            {{ (config()?.has_secret ? 'ADMIN.STORAGE.SECRET_SAVED' : 'ADMIN.STORAGE.SECRET_MISSING') | translate }}
+            {{
+              (config()?.has_secret ? 'ADMIN.STORAGE.SECRET_SAVED' : 'ADMIN.STORAGE.SECRET_MISSING')
+                | translate
+            }}
           </span>
         </div>
         @if (config()?.updated_at; as updated) {
@@ -214,13 +208,15 @@
         />
       }
       <span class="spacer"></span>
-      <p-button
-        type="button"
-        [label]="'ADMIN.STORAGE.CANCEL' | translate"
-        size="small"
-        text
-        (onClick)="close()"
-      />
+      @if (!inline()) {
+        <p-button
+          type="button"
+          [label]="'ADMIN.STORAGE.CANCEL' | translate"
+          size="small"
+          text
+          (onClick)="close()"
+        />
+      }
       <p-button
         type="submit"
         [label]="(saving() ? 'ADMIN.STORAGE.SAVING' : 'ADMIN.STORAGE.SAVE') | translate"
@@ -231,4 +227,21 @@
       />
     </div>
   </form>
-</p-dialog>
+</ng-template>
+
+@if (inline()) {
+  <ng-container [ngTemplateOutlet]="panel" />
+} @else {
+  <p-dialog
+    [visible]="visible()"
+    [header]="'ADMIN.STORAGE.HEADER' | translate: { name: tenant()?.name ?? '' }"
+    [modal]="true"
+    [style]="{ width: 'min(96vw, 44rem)' }"
+    [draggable]="false"
+    [resizable]="false"
+    (onShow)="onShow()"
+    (onHide)="close()"
+  >
+    <ng-container [ngTemplateOutlet]="panel" />
+  </p-dialog>
+}

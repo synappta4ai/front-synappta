@@ -1,21 +1,71 @@
-<app-page-container [title]="'ADMIN.CONSOLE.TITLE' | translate" animate.enter="anim-page">
-  <p-tabs [value]="activeValue()" [scrollable]="true" styleClass="admin-console-tabs">
-    <p-tablist>
-      @for (item of tabItems(); track item.value) {
-        <p-tab [value]="item.value">
-          <a
-            [routerLink]="item.routerLink"
-            class="flex items-center gap-2 no-underline outline-none"
-          >
-            <i class="{{ item.icon }}"></i>
-            <span>{{ item.labelKey | translate }}</span>
-          </a>
-        </p-tab>
-      }
-    </p-tablist>
-  </p-tabs>
+<div class="admin-shell flex flex-col gap-3 px-4 pt-4 sm:px-6" [style.height.px]="shellHeight()">
+  <!-- Header: tenant en gestión + acceso a la lista de tenants -->
+  <header class="flex flex-wrap items-center gap-x-4 gap-y-2">
+    <div class="min-w-0">
+      <h1 class="text-xl font-bold text-ink">{{ 'ADMIN.CONSOLE.TITLE' | translate }}</h1>
+      <p class="text-xs text-ink-muted-on-dark">{{ 'ADMIN.CONSOLE.SUBTITLE' | translate }}</p>
+    </div>
 
-  <div class="mt-6">
-    <router-outlet />
+    <div class="ml-auto flex items-center gap-2">
+      <div class="w-[20rem] max-w-[60vw]">
+        @if (loadingTenants()) {
+          <div class="skel skel-text" aria-hidden="true"></div>
+        } @else {
+          <p-select
+            [options]="$any(tenantOptions())"
+            [ngModel]="selectedTenantId()"
+            (ngModelChange)="onTenantChange($event)"
+            optionLabel="label"
+            optionValue="value"
+            [filter]="true"
+            [filterPlaceholder]="'ADMIN.CONSOLE.TENANT_SEARCH' | translate"
+            [placeholder]="'ADMIN.CONSOLE.TENANT_PLACEHOLDER' | translate"
+            [attr.aria-label]="'ADMIN.CONSOLE.TENANT_ARIA' | translate"
+            styleClass="w-full"
+            appendTo="body"
+          />
+        }
+      </div>
+
+      @if (isSuperadmin()) {
+        <p-button
+          [label]="'ADMIN.CONSOLE.MANAGE_TENANTS' | translate"
+          icon="md md-business"
+          size="small"
+          outlined
+          [pTooltip]="'ADMIN.CONSOLE.MANAGE_TENANTS_HINT' | translate"
+          tooltipPosition="bottom"
+          showDelay="400"
+          (onClick)="goToTenants()"
+        />
+      }
+    </div>
+  </header>
+
+  <!-- Menubar: aparece al elegir tenant y agrupa las secciones por tema -->
+  @if (showMenubar()) {
+    <p-menubar [model]="menuItems()" styleClass="admin-menubar" />
+  }
+
+  <div class="min-h-0 flex-1">
+    @if (selectedTenantId() !== null || isTenantsRoute()) {
+      <div class="h-full overflow-y-auto pb-4">
+        <router-outlet />
+      </div>
+    } @else {
+      <div class="hidden"><router-outlet /></div>
+
+      <div class="flex h-full flex-col items-center justify-center gap-3 pb-10 text-center">
+        <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-2">
+          <i class="md md-business text-2xl text-ink-muted-on-dark"></i>
+        </div>
+        <div>
+          <p class="font-bold text-ink">{{ 'ADMIN.CONSOLE.SELECT_TENANT_TITLE' | translate }}</p>
+          <p class="mt-1 text-sm text-ink-muted-on-dark">
+            {{ 'ADMIN.CONSOLE.SELECT_TENANT_HINT' | translate }}
+          </p>
+        </div>
+      </div>
+    }
   </div>
-</app-page-container>
+</div>

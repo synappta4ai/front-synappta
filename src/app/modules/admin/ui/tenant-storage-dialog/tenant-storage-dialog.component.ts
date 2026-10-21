@@ -1,9 +1,10 @@
-import { DatePipe } from '@angular/common';
+import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   inject,
   input,
   output,
@@ -45,6 +46,7 @@ const ENDPOINT_PATTERN = /^https?:\/\/\S+$/i;
     Message,
     Tag,
     ToggleSwitch,
+    NgTemplateOutlet,
   ],
   templateUrl: './tenant-storage-dialog.component.html',
   styleUrls: ['./tenant-storage-dialog.component.css'],
@@ -57,9 +59,11 @@ export class TenantStorageDialogComponent {
 
   /** Tenant en gestión (null = diálogo cerrado). */
   readonly tenant = input<Tenant | null>(null);
+  /** Embebido como panel de /admin/bucket, sin diálogo ni overlay. */
+  readonly inline = input(false);
   readonly closed = output<void>();
 
-  protected readonly visible = computed(() => this.tenant() !== null);
+  protected readonly visible = computed(() => !this.inline() && this.tenant() !== null);
   protected readonly config = signal<TenantStorageConfig | null>(null);
   protected readonly loading = signal(false);
   protected readonly saving = signal(false);
@@ -77,6 +81,15 @@ export class TenantStorageDialogComponent {
     publicBase: [''],
     enabled: [true],
   });
+
+  constructor() {
+    // Embebido no hay (onShow) del p-dialog: se carga al cambiar el tenant.
+    effect(() => {
+      if (this.inline() && this.tenant() !== null) {
+        this.onShow();
+      }
+    });
+  }
 
   protected readonly configured = computed(() => this.config()?.configured === true);
 

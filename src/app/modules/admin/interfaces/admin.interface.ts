@@ -223,6 +223,15 @@ export interface WorkerModel {
   notes: string | null;
 }
 
+/** Estado en vivo del worker de inferencia (`GET /worker/status`). */
+export interface WorkerStatus {
+  configured: boolean;
+  connected: boolean;
+  device_name?: string;
+  cuda_available: boolean;
+  model_count: number;
+}
+
 /** Artefacto generado expuesto por el artifact server del worker. */
 export interface WorkerArtifact {
   name: string;

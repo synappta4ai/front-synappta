@@ -308,13 +308,48 @@
     }
   },
   "ADMIN": {
+    "GPU": {
+      "TITLE": "GPU e inferencia",
+      "SUBTITLE": "Estado en vivo del worker que sirve los modelos descargados.",
+      "REFRESH": "Actualizar",
+      "CONNECTION": "Conexión",
+      "CONNECTED": "Conectado",
+      "DISCONNECTED": "Sin respuesta",
+      "NOT_CONFIGURED": "Sin configurar",
+      "DEVICE": "Dispositivo",
+      "CUDA_ON": "CUDA disponible",
+      "CUDA_OFF": "CPU (sin CUDA)",
+      "CATALOG": "Modelos en catálogo",
+      "CATALOG_HINT": "Reportados por el worker",
+      "WEIGHTS": "Pesos descargados",
+      "ON_DISK": "en disco",
+      "HINT": "Los pesos se descargan y borran desde Modelos. Las GPUs que empareja cada empresa se gestionan en «Tu GPU».",
+      "MANAGE_WEIGHTS": "Gestionar pesos",
+      "PAIR": "Emparejar GPU",
+      "ERRORS": {
+        "LOAD": "No se pudo leer el estado del worker."
+      }
+    },
     "CONSOLE": {
       "TITLE": "Consola de Administración",
-      "TAB_MODELS": "Modelos",
-      "TAB_VIDEOS": "Videos",
-      "TAB_IMAGES": "Imágenes",
-      "TAB_LOGS": "Logs",
-      "TAB_TENANTS": "Tenants"
+      "SUBTITLE": "Elegí el tenant y entrá al área que querés gestionar.",
+      "TENANT_PLACEHOLDER": "Seleccioná un tenant",
+      "TENANT_SEARCH": "Buscar tenant…",
+      "TENANT_ARIA": "Tenant a administrar",
+      "MANAGE_TENANTS": "Tenants",
+      "MANAGE_TENANTS_HINT": "Alta, bajas y miembros de cada tenant",
+      "SELECT_TENANT_TITLE": "Seleccioná un tenant para empezar",
+      "SELECT_TENANT_HINT": "Las secciones de la consola aparecen cuando elegís con qué tenant trabajar.",
+      "MENU_MODELS": "Modelos",
+      "MENU_PROVIDERS": "Inference Providers",
+      "MENU_VIDEOS": "Videos",
+      "MENU_IMAGES": "Imágenes",
+      "MENU_LOGS": "Logs",
+      "MENU_GPU": "GPU",
+      "MENU_USERS": "Usuarios",
+      "MENU_BUCKET": "Bucket",
+      "MENU_DRIVE": "Google Drive",
+      "MENU_SOON": "Próximamente"
     },
     "TENANTS": {
       "TITLE": "Gestión de Tenants",

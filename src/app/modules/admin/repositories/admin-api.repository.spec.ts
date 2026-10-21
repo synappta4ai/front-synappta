@@ -90,6 +90,58 @@ describe('AdminApiRepository · tenant storage', () => {
   });
 });
 
+// La consola administra otro tenant que el del token: el slug elegido viaja
+// como X-Tenant-Slug y el back le da prioridad para superadmin.
+describe('AdminApiRepository · tenant override', () => {
+  let repository: AdminApiRepository;
+  let httpMock: HttpTestingController;
+
+  const base = environment.API_URL;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    }).compileComponents();
+
+    repository = TestBed.inject(AdminApiRepository);
+    httpMock = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    httpMock.verify();
+  });
+
+  it('scopes the generated galleries to the selected tenant', () => {
+    repository.listGeneratedVideos(1, 12, undefined, 'acme').subscribe();
+    repository.listGeneratedImages(2, 12, undefined, 'acme').subscribe();
+
+    const videos = httpMock.expectOne((req) => req.url === `${base}/agency/videos`);
+    expect(videos.request.headers.get('X-Tenant-Slug')).toBe('acme');
+    videos.flush({ success: true, message: 'success', data: { logs: [], total: 0 } });
+
+    const images = httpMock.expectOne((req) => req.url === `${base}/agency/images`);
+    expect(images.request.headers.get('X-Tenant-Slug')).toBe('acme');
+    images.flush({ success: true, message: 'success', data: { logs: [], total: 0 } });
+  });
+
+  it('scopes the server communication logs to the selected tenant', () => {
+    repository.listServerComms(1, 20, 'task-1', 'acme').subscribe();
+
+    const req = httpMock.expectOne((r) => r.url === `${base}/agency/logs/server-communications`);
+    expect(req.request.headers.get('X-Tenant-Slug')).toBe('acme');
+    expect(req.request.params.get('task_id')).toBe('task-1');
+    req.flush({ success: true, message: 'success', data: { logs: [], total: 0 } });
+  });
+
+  it('omits the override when no tenant is selected', () => {
+    repository.listGeneratedVideos().subscribe();
+
+    const req = httpMock.expectOne((r) => r.url === `${base}/agency/videos`);
+    expect(req.request.headers.has('X-Tenant-Slug')).toBe(false);
+    req.flush({ success: true, message: 'success', data: { logs: [], total: 0 } });
+  });
+});
+
 // El back sirve el catálogo del worker con la forma de /models (name +
 // downloaded anidado); la tabla admin consume el modelo plano del worker.
 describe('AdminApiRepository · worker models', () => {

@@ -1,5 +1,13 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { catchError, EMPTY, finalize, tap } from 'rxjs';
@@ -15,6 +23,7 @@ import { ProgressSpinner } from 'primeng/progressspinner';
 
 import { UserSessionStore } from '@core/store/user.session';
 import { AdminService } from '../../services/admin.service';
+import { AdminTenantService } from '../../services/admin-tenant.service';
 import { GeneratedVideo, WorkerArtifact } from '../../interfaces';
 import { ServerUrlPipe } from '@pipes/server-url.pipe';
 import { formatDurationValue } from '@pipes/format-duration.pipe';
@@ -43,12 +52,16 @@ import { TiltDirective } from '@shared/components/tilt/tilt.directive';
 })
 export class AdminVideosComponent {
   private readonly adminService = inject(AdminService);
+  private readonly adminTenants = inject(AdminTenantService);
   private readonly sessionStore = inject(UserSessionStore);
   private readonly translate = inject(TranslateService);
 
   protected readonly isSuperadmin = computed(
     () => this.sessionStore.currentUser()?.role_level === 0,
   );
+
+  /** Tenant elegido en la consola: sus videos son los que se listan. */
+  protected readonly tenantSlug = computed(() => this.adminTenants.selectedTenant()?.slug ?? null);
 
   protected readonly videos = signal<GeneratedVideo[]>([]);
   protected readonly loading = signal(false);
@@ -67,7 +80,14 @@ export class AdminVideosComponent {
   protected readonly deletingArtifact = signal<Record<string, boolean>>({});
 
   constructor() {
-    this.load();
+    // Carga inicial y recarga al cambiar el tenant en el header de la consola.
+    effect(() => {
+      this.tenantSlug();
+      untracked(() => {
+        this.page.set(1);
+        this.load();
+      });
+    });
     this.loadWorkerArtifacts();
   }
 
@@ -75,7 +95,7 @@ export class AdminVideosComponent {
     this.loading.set(true);
     this.error.set(null);
     this.adminService
-      .listGeneratedVideos(this.page(), this.limit)
+      .listGeneratedVideos(this.page(), this.limit, undefined, this.tenantSlug() ?? undefined)
       .pipe(
         catchError(() => {
           this.error.set(this.translate.instant('ADMIN.VIDEOS.ERRORS.LOAD'));

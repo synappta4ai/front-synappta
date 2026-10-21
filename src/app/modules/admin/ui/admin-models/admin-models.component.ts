@@ -1,10 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import {
-  FormsModule,
-  NonNullableFormBuilder,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
+import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { catchError, EMPTY, finalize, forkJoin, switchMap, tap } from 'rxjs';
 import { HttpResponse } from '@angular/common/http';
@@ -21,11 +16,10 @@ import { Password } from 'primeng/password';
 import { ProgressSpinner } from 'primeng/progressspinner';
 import { Tooltip } from 'primeng/tooltip';
 
-import { UserSessionStore } from '@core/store/user.session';
 import { AdminService } from '../../services/admin.service';
+import { AdminTenantService } from '../../services/admin-tenant.service';
 import {
   CredentialProviderType,
-  Tenant,
   TenantCredential,
   TenantModel,
   UpsertTenantCredentialRequest,
@@ -39,16 +33,10 @@ interface ProviderOption {
   icon: string;
 }
 
-interface TenantOption {
-  label: string;
-  value: number;
-}
-
 @Component({
   selector: 'app-admin-models',
   imports: [
     ReactiveFormsModule,
-    FormsModule,
     Button,
     InputText,
     TableModule,
@@ -67,18 +55,14 @@ interface TenantOption {
 })
 export class AdminModelsComponent {
   private readonly adminService = inject(AdminService);
+  private readonly adminTenants = inject(AdminTenantService);
   private readonly formBuilder = inject(NonNullableFormBuilder);
   private readonly confirmationService = inject(ConfirmationService);
-  private readonly sessionStore = inject(UserSessionStore);
   private readonly translate = inject(TranslateService);
 
-  protected readonly isSuperadmin = computed(
-    () => this.sessionStore.currentUser()?.role_level === 0,
-  );
-
-  protected readonly tenants = signal<Tenant[]>([]);
-  protected readonly selectedTenantId = signal<number | null>(null);
-  protected readonly loadingTenants = signal(false);
+  // El tenant se elige una sola vez, en el header de la consola.
+  protected readonly selectedTenantId = this.adminTenants.selectedTenantId;
+  protected readonly selectedTenant = this.adminTenants.selectedTenant;
 
   protected readonly models = signal<TenantModel[]>([]);
   protected readonly credentials = signal<TenantCredential[]>([]);
@@ -125,16 +109,6 @@ export class AdminModelsComponent {
    *  agencia (flujo Inmobiliaria), guardado en `extra.model`. */
   protected readonly agentModelProviders: CredentialProviderType[] = ['openrouter', 'anthropic'];
 
-  protected readonly tenantOptions = computed<TenantOption[]>(() =>
-    this.tenants()
-      .filter((t) => t.active)
-      .map((t) => ({ label: `${t.name} (${t.slug})`, value: t.id })),
-  );
-
-  protected readonly selectedTenant = computed(
-    () => this.tenants().find((t) => t.id === this.selectedTenantId()) ?? null,
-  );
-
   protected readonly credForm = this.formBuilder.group({
     provider: this.formBuilder.control<CredentialProviderType | null>(null, Validators.required),
     access_key_id: [''],
@@ -145,45 +119,16 @@ export class AdminModelsComponent {
   });
 
   constructor() {
-    if (this.isSuperadmin()) {
-      this.loadTenants();
-    } else {
-      // El admin de tenant opera sobre su propio tenant (viene en el token).
-      this.loadOwnTenantConfig();
-    }
-  }
-
-  /** Carga el tenant del token sin pasar por el selector. */
-  private loadOwnTenantConfig(): void {
-    const tenantId = this.sessionStore.getTenantId();
-    if (tenantId) {
-      this.selectedTenantId.set(tenantId);
-      this.loadTenantConfig(tenantId);
-    }
-  }
-
-  private loadTenants(): void {
-    this.loadingTenants.set(true);
-    this.adminService
-      .listTenants()
-      .pipe(
-        catchError(() => {
-          this.error.set(this.translate.instant('ADMIN.MODELS.ERRORS.LOAD_TENANTS'));
-          return EMPTY;
-        }),
-        finalize(() => this.loadingTenants.set(false)),
-      )
-      .subscribe((tenants) => this.tenants.set(tenants));
-  }
-
-  protected onTenantSelect(tenantId: number | null): void {
-    this.selectedTenantId.set(tenantId);
-    this.models.set([]);
-    this.credentials.set([]);
-    this.credForm.reset();
-    if (tenantId) {
-      this.loadTenantConfig(tenantId);
-    }
+    // Cambiar de tenant en el header recarga credenciales y modelos.
+    effect(() => {
+      const tenantId = this.selectedTenantId();
+      this.models.set([]);
+      this.credentials.set([]);
+      this.credForm.reset();
+      if (tenantId !== null) {
+        this.loadTenantConfig(tenantId);
+      }
+    });
   }
 
   private loadTenantConfig(tenantId: number): void {
@@ -471,7 +416,9 @@ export class AdminModelsComponent {
             err && typeof err === 'object' && 'message' in err
               ? String((err as { message?: unknown }).message)
               : null;
-          this.error.set(msg || this.translate.instant('ADMIN.MODELS.ERRORS.DOWNLOAD_WORKER_MODEL'));
+          this.error.set(
+            msg || this.translate.instant('ADMIN.MODELS.ERRORS.DOWNLOAD_WORKER_MODEL'),
+          );
           return EMPTY;
         }),
         finalize(() => {
@@ -534,7 +481,9 @@ export class AdminModelsComponent {
                 err && typeof err === 'object' && 'message' in err
                   ? String((err as { message?: unknown }).message)
                   : null;
-              this.error.set(msg || this.translate.instant('ADMIN.MODELS.ERRORS.DELETE_WORKER_MODEL'));
+              this.error.set(
+                msg || this.translate.instant('ADMIN.MODELS.ERRORS.DELETE_WORKER_MODEL'),
+              );
               return EMPTY;
             }),
             finalize(() => {

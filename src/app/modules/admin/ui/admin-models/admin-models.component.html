@@ -1,36 +1,4 @@
-<!-- Tenant selector (superadmin only) -->
 <div animate.enter="anim-page">
-  @if (isSuperadmin()) {
-    <div class="mb-6">
-      <p-message
-        severity="info"
-        [text]="'ADMIN.MODELS.SELECT_TENANT_HINT' | translate"
-        styleClass="w-full mb-4"
-      />
-      @if (loadingTenants()) {
-        <div class="flex flex-col gap-2 py-4" aria-busy="true">
-          <span class="sr-only">{{ 'ADMIN.MODELS.LOADING_TENANTS' | translate }}</span>
-          <div class="skel skel-text max-w-xl" aria-hidden="true"></div>
-          <div class="skel skel-text max-w-xl" aria-hidden="true"></div>
-        </div>
-      } @else {
-        <p-select
-          [options]="$any(tenantOptions())"
-          [ngModel]="selectedTenantId()"
-          (ngModelChange)="onTenantSelect($event)"
-          optionLabel="label"
-          optionValue="value"
-          [placeholder]="'ADMIN.MODELS.SELECT_TENANT_PLACEHOLDER' | translate"
-          [attr.aria-label]="'ADMIN.MODELS.SELECT_TENANT_ARIA' | translate"
-          [filter]="true"
-          [filterPlaceholder]="'ADMIN.MODELS.SEARCH_TENANT_PLACEHOLDER' | translate"
-          styleClass="w-full max-w-xl"
-          appendTo="body"
-        />
-      }
-    </div>
-  }
-
   @if (error(); as message) {
     <div class="mb-6">
       <p-message severity="error" [text]="message" [escape]="false" styleClass="w-full" />
@@ -166,7 +134,8 @@
                     <span class="text-danger">*</span>
                   </label>
                   <p-password
-                    inputId="cred-apikey" autocomplete="new-password"
+                    inputId="cred-apikey"
+                    autocomplete="new-password"
                     formControlName="api_key"
                     [feedback]="false"
                     [toggleMask]="true"
@@ -201,7 +170,8 @@
                     {{ 'ADMIN.MODELS.SECRET_ACCESS_KEY_LABEL' | translate }}
                   </label>
                   <p-password
-                    inputId="cred-sk" autocomplete="new-password"
+                    inputId="cred-sk"
+                    autocomplete="new-password"
                     formControlName="secret_access_key"
                     [feedback]="false"
                     [toggleMask]="true"
@@ -233,7 +203,8 @@
                     <span class="text-danger">*</span>
                   </label>
                   <p-password
-                    inputId="cred-hf-secret" autocomplete="new-password"
+                    inputId="cred-hf-secret"
+                    autocomplete="new-password"
                     formControlName="secret_access_key"
                     [feedback]="false"
                     [toggleMask]="true"
@@ -258,7 +229,8 @@
                     <span class="text-danger">*</span>
                   </label>
                   <p-password
-                    inputId="cred-apikey" autocomplete="new-password"
+                    inputId="cred-apikey"
+                    autocomplete="new-password"
                     formControlName="api_key"
                     [feedback]="false"
                     [toggleMask]="true"
@@ -310,15 +282,15 @@
                     formControlName="base_url"
                     [placeholder]="
                       isLocalProvider(credForm.controls.provider.value)
-                        ? (credForm.controls.provider.value === 'lmstudio'
-                            ? 'http://localhost:1234/v1'
-                            : 'http://localhost:11434/v1')
+                        ? credForm.controls.provider.value === 'lmstudio'
+                          ? 'http://localhost:1234/v1'
+                          : 'http://localhost:11434/v1'
                         : 'https://openrouter.ai/api/v1'
                     "
                     class="w-full"
                   />
                   <small class="text-ink-muted-on-dark">
-                    {{ 
+                    {{
                       isLocalProvider(credForm.controls.provider.value)
                         ? ('ADMIN.MODELS.LOCAL_BASE_URL_HINT' | translate)
                         : ('ADMIN.MODELS.BASE_URL_HINT' | translate)
@@ -476,9 +448,11 @@
                 </h4>
                 <p class="text-xs text-ink-muted-on-dark">
                   {{
-                    'ADMIN.MODELS.WORKER_MODELS_SUBTITLE' | translate: {
-                      count: workerModels().length,
-                    }
+                    'ADMIN.MODELS.WORKER_MODELS_SUBTITLE'
+                      | translate
+                        : {
+                            count: workerModels().length,
+                          }
                   }}
                 </p>
               </div>
@@ -489,7 +463,9 @@
                 <p-progressSpinner />
               </div>
             } @else if (workerModels().length === 0) {
-              <div class="flex flex-col items-center gap-4 rounded-3xl border border-surface-border bg-surface py-20">
+              <div
+                class="flex flex-col items-center gap-4 rounded-3xl border border-surface-border bg-surface py-20"
+              >
                 <div class="flex h-16 w-16 items-center justify-center rounded-full bg-surface-2">
                   <i class="md md-memory text-3xl text-ink-muted-on-dark"></i>
                 </div>
@@ -530,10 +506,7 @@
                   </tr>
                 </ng-template>
                 <ng-template #body let-m let-i="rowIndex">
-                  <tr
-                    animate.enter="anim-item"
-                    [style.animation-delay.ms]="i < 8 ? i * 35 : 280"
-                  >
+                  <tr animate.enter="anim-item" [style.animation-delay.ms]="i < 8 ? i * 35 : 280">
                     <td>
                       <p class="font-bold text-ink-on-dark">
                         {{ m.label || m.key }}
@@ -546,10 +519,7 @@
                       }
                     </td>
                     <td class="text-center">
-                      <p-tag
-                        [value]="m.mode"
-                        [severity]="modalitySeverity(m.mode)"
-                      />
+                      <p-tag [value]="m.mode" [severity]="modalitySeverity(m.mode)" />
                     </td>
                     <td>
                       <span class="text-sm text-ink-muted-on-dark">
@@ -663,23 +633,6 @@
         </div>
       </div>
     }
-  } @else if (isSuperadmin()) {
-    <!-- Superadmin sin tenant seleccionado: empty state -->
-    <div
-      class="flex flex-col items-center gap-4 rounded-3xl border border-surface-border bg-surface py-20"
-    >
-      <div class="flex h-16 w-16 items-center justify-center rounded-full bg-surface-2">
-        <i class="md md-business text-3xl text-ink-muted-on-dark"></i>
-      </div>
-      <div class="text-center">
-        <p class="font-bold text-ink-on-dark">
-          {{ 'ADMIN.MODELS.SELECT_TENANT_EMPTY_TITLE' | translate }}
-        </p>
-        <p class="mt-1 text-sm text-ink-muted-on-dark">
-          {{ 'ADMIN.MODELS.SELECT_TENANT_EMPTY_HINT' | translate }}
-        </p>
-      </div>
-    </div>
   }
 
   <p-confirmDialog styleClass="custom-confirm-dialog" />

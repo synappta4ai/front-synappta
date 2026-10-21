@@ -55,13 +55,13 @@
     </div>
 
     <div class="images-toolbar__group">
-      @if (isSuperadmin() && tenantSlug()) {
+      @if (isSuperadmin() && assetsTenantSlug()) {
         <span
           class="tenant-chip"
-          [title]="'ADMIN.IMAGES.TENANT_TITLE' | translate: { slug: tenantSlug() }"
+          [title]="'ADMIN.IMAGES.TENANT_TITLE' | translate: { slug: assetsTenantSlug() }"
         >
           <i class="md md-business"></i>
-          {{ tenantSlug() }}
+          {{ assetsTenantSlug() }}
         </span>
       }
 
@@ -602,12 +602,12 @@
               />
             </div>
           </div>
-          @if (isSuperadmin() && tenantSlug()) {
+          @if (isSuperadmin() && assetsTenantSlug()) {
             <div class="sm:col-span-4">
               <p class="text-xs text-ink-muted-on-dark">
                 {{ 'ADMIN.IMAGES.FIELD_TENANT' | translate }}
               </p>
-              <p class="font-bold text-ink-on-dark">{{ tenantSlug() }}</p>
+              <p class="font-bold text-ink-on-dark">{{ assetsTenantSlug() }}</p>
             </div>
           }
         </div>
