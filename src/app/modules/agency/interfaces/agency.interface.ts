@@ -1,5 +1,11 @@
-export type Modality = 'video' | 'image' | 'text';
-export type CredentialProvider = 'byteplus' | 'gemini' | 'anthropic' | 'openrouter';
+/** Modalidades del catálogo del back; `audio` cubre los modelos de voz. */
+export type Modality = 'video' | 'image' | 'text' | 'audio';
+export type CredentialProvider =
+  | 'byteplus'
+  | 'gemini'
+  | 'anthropic'
+  | 'higgsfield'
+  | 'openrouter';
 export type TaskStatus =
   'pending' | 'processing' | 'completed' | 'succeeded' | 'failed' | 'cancelled';
 

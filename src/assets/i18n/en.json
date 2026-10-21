@@ -128,6 +128,10 @@
     "STORYBOARD_REF_PREVIEW_FAILED": "Preview unavailable"
   },
   "SHARED": {
+    "MODEL_SELECT_LOADING": "Loading models…",
+    "MODEL_SELECT_ERROR": "The model catalog could not be loaded.",
+    "MODEL_SELECT_EMPTY": "No models available for this type. Check credentials in Admin.",
+    "MODEL_SELECT_PLACEHOLDER": "Choose a model",
     "NAV": {
       "AVATAR_ALT": "Profile photo",
       "LOGO_ALT": "Synapta logo"

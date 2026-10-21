@@ -128,6 +128,10 @@
     "STORYBOARD_REF_PREVIEW_FAILED": "Vista previa no disponible"
   },
   "SHARED": {
+    "MODEL_SELECT_LOADING": "Cargando modelos…",
+    "MODEL_SELECT_ERROR": "No se pudo cargar el catálogo de modelos.",
+    "MODEL_SELECT_EMPTY": "No hay modelos disponibles para este tipo. Revisá las credenciales en Admin.",
+    "MODEL_SELECT_PLACEHOLDER": "Elige el modelo",
     "NAV": {
       "AVATAR_ALT": "Foto de perfil",
       "LOGO_ALT": "Logo Synapta"
