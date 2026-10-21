@@ -28,7 +28,10 @@
         optionValue="value"
         [allowEmpty]="false"
       >
-        <ng-template let-option>
+        <!-- PrimeNG busca el template de opción como @ContentChild('item'):
+             sin la referencia renderiza optionLabel crudo y el label queda en
+             la clave i18n (ADMIN.IMAGES.SECTION_*). -->
+        <ng-template #item let-option>
           <span class="flex items-center gap-2">
             <i class="{{ option.icon }}"></i>
             <span>{{ option.labelKey | translate }}</span>

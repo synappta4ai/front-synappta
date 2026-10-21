@@ -15,6 +15,17 @@ async function selectFirstTenant(page: Page): Promise<void> {
   await options.first().click();
 }
 
+/**
+ * Entra a una sección de la consola. Desde el rediseño las secciones viven
+ * detrás del selector de tenant del header: sin elegirlo la página muestra el
+ * empty state y el contenido de la sección no existe.
+ */
+async function gotoAdminSection(page: Page, path: string): Promise<void> {
+  await page.goto(path);
+  await selectFirstTenant(page);
+  await expect(page.locator('.p-menubar.admin-menubar')).toBeVisible({ timeout: 20_000 });
+}
+
 test.describe('admin console', () => {
   test('pide un tenant antes de mostrar las secciones', async ({ authedPage: page }) => {
     await page.goto('/admin');
@@ -94,14 +105,16 @@ test.describe('admin models — modelo del agente', () => {
 
 test.describe('admin images gallery', () => {
   test('renders generated images section with toolbar', async ({ authedPage: page }) => {
-    await page.goto('/admin/imagenes');
+    test.setTimeout(60_000);
+    await gotoAdminSection(page, '/admin/imagenes');
     await expect(page.locator('.images-toolbar')).toBeVisible();
     await expect(page.locator('.section-toggle.p-togglebutton-checked')).toHaveText(/Generadas/);
     await expect(page.getByPlaceholder('Proyecto, pieza o task…')).toBeVisible();
   });
 
   test('switches to uploaded assets section with type tabs', async ({ authedPage: page }) => {
-    await page.goto('/admin/imagenes');
+    test.setTimeout(60_000);
+    await gotoAdminSection(page, '/admin/imagenes');
     // p-togglebutton de PrimeNG v22 solo alterna con click JS nativo y
     // tras "despertar" el delegador jsaction: el helper reintenta.
     const uploadsToggle = page.locator('.section-toggle').filter({ hasText: 'Recursos subidos' });
@@ -124,7 +137,8 @@ test.describe('admin images gallery', () => {
   });
 
   test('upload buttons are visible', async ({ authedPage: page }) => {
-    await page.goto('/admin/imagenes');
+    test.setTimeout(60_000);
+    await gotoAdminSection(page, '/admin/imagenes');
     const uploadsToggle = page.locator('.section-toggle').filter({ hasText: 'Recursos subidos' });
     await togglePrimeButton(uploadsToggle);
     for (const label of ['Todos', 'Personaje', 'Locación', 'Prop']) {
@@ -133,7 +147,8 @@ test.describe('admin images gallery', () => {
   });
 
   test('pagination bar hides when there is a single page', async ({ authedPage: page }) => {
-    await page.goto('/admin/imagenes');
+    test.setTimeout(60_000);
+    await gotoAdminSection(page, '/admin/imagenes');
     // Con pocos recursos no debe haber barra de paginación (total <= limit).
     const pager = page.locator('.pagination-bar');
     if (await pager.isVisible()) {
