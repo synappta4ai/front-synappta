@@ -19,10 +19,10 @@ import { mergeMap } from 'rxjs/operators';
 
 import { Button } from 'primeng/button';
 import { Message } from 'primeng/message';
-import { Select } from 'primeng/select';
 import { Tag } from 'primeng/tag';
 
 import { AiModel, StatusOutput } from '@modules/agency/interfaces';
+import { ModelSelectComponent } from '@modules/agency/ui/model-select/model-select.component';
 import { FileAsset } from '@modules/library/interfaces';
 import { LibraryService } from '@modules/library/services';
 import { ServerUrlPipe } from '@pipes/server-url.pipe';
@@ -36,6 +36,7 @@ import {
   STORYBOARD_PIECE_CODE,
   STORYBOARD_RATIO,
   STORYBOARD_REF_KINDS,
+  STORYBOARD_RESOLUTION_PREFERENCE,
   StoryboardPanelOption,
   StoryboardRefKind,
   TOOLS_LOADING_POSTER,
@@ -61,7 +62,16 @@ type RefPreviewStage = 'original' | 'failed';
  */
 @Component({
   selector: 'app-storyboard',
-  imports: [FormsModule, TranslatePipe, Button, Message, Select, Tag, ServerUrlPipe, UiIcon],
+  imports: [
+    FormsModule,
+    TranslatePipe,
+    Button,
+    Message,
+    ModelSelectComponent,
+    ServerUrlPipe,
+    Tag,
+    UiIcon,
+  ],
   templateUrl: './storyboard.component.html',
   styleUrl: './storyboard.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -94,12 +104,10 @@ export class StoryboardComponent implements OnInit {
   protected readonly loadingVideo = TOOLS_LOADING_VIDEO;
   protected readonly loadingPoster = TOOLS_LOADING_POSTER;
 
-  protected readonly models = signal<AiModel[]>([]);
-  protected readonly loadingModels = signal(true);
+  /** Nombre del modelo elegido en el select (lo que recibe el back). */
   protected readonly selectedModel = signal('');
-  protected readonly activeModel = computed(
-    () => this.models().find((m) => m.name === this.selectedModel()) ?? null,
-  );
+  /** Modelo completo, para leer sus defaults (resoluciones). */
+  protected readonly activeModel = signal<AiModel | null>(null);
 
   protected readonly panelCount = signal(STORYBOARD_DEFAULT_PANEL_COUNT);
   protected readonly activePanel = computed<StoryboardPanelOption>(
@@ -136,20 +144,6 @@ export class StoryboardComponent implements OnInit {
   );
 
   ngOnInit(): void {
-    this.toolsService
-      .listStoryboardModels()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (models) => {
-          this.models.set(models);
-          const first = models[0];
-          if (first && !this.selectedModel()) {
-            this.selectedModel.set(first.name);
-          }
-          this.loadingModels.set(false);
-        },
-        error: () => this.loadingModels.set(false),
-      });
     this.loadSystemPrompt();
   }
 
@@ -455,9 +449,15 @@ export class StoryboardComponent implements OnInit {
     return this.refKinds.find((option) => option.key === kind)?.promptLabel ?? 'REFERENCE';
   }
 
+  /**
+   * Resolución de la hoja: la mejor que declare el modelo elegido. Higgsfield
+   * Soul 2 sólo acepta 720p/1080p (el back rechaza 2K/4K), así que fijar 2K
+   * dejaba la petición inválida; sin resolución declarada se omite el campo y
+   * el proveedor usa su default.
+   */
   private preferredResolution(): string | undefined {
     const resolutions = this.activeModel()?.defaults?.resolutions ?? [];
-    return resolutions.includes('2K') ? '2K' : undefined;
+    return STORYBOARD_RESOLUTION_PREFERENCE.find((value) => resolutions.includes(value));
   }
 
   private absoluteUrl(url: string): string {

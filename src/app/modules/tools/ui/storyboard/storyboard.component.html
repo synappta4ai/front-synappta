@@ -186,34 +186,14 @@
       <div class="panel-head">
         <span><i class="md md-image"></i> {{ 'TOOLS.MODEL_LABEL' | translate }}</span>
       </div>
-      @if (loadingModels()) {
-        <p class="muted small">{{ 'TOOLS.LOADING_CATALOG' | translate }}</p>
-      } @else if (models().length === 0) {
-        <p class="muted small">{{ 'TOOLS.STORYBOARD_NO_MODELS' | translate }}</p>
-      } @else {
-        <p-select
-          id="storyboard-model"
-          [ngModel]="selectedModel()"
-          (ngModelChange)="selectedModel.set($event)"
-          [options]="models()"
-          optionLabel="display_name"
-          optionValue="name"
-          [placeholder]="'TOOLS.MODEL_PLACEHOLDER' | translate"
-          [showClear]="false"
-          class="w-full"
-          appendTo="body"
-        >
-          <ng-template #item let-m>
-            <div class="flex items-center justify-between gap-2 w-full">
-              <div class="min-w-0">
-                <p class="font-bold truncate">{{ m.display_name ?? m.name }}</p>
-                <p class="text-xs opacity-60 truncate">{{ m.name }}</p>
-              </div>
-              <p-tag [value]="m.credential_provider" severity="info" styleClass="text-xs" />
-            </div>
-          </ng-template>
-        </p-select>
-      }
+      <app-model-select
+        inputId="storyboard-model"
+        modality="image"
+        [ratio]="sheetRatio"
+        [ngModel]="selectedModel()"
+        (ngModelChange)="selectedModel.set($event)"
+        (selectionChange)="activeModel.set($event)"
+      />
     </div>
 
     <div class="pose-generate-bar">

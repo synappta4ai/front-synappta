@@ -18,16 +18,17 @@ import { mergeMap } from 'rxjs/operators';
 
 import { Button } from 'primeng/button';
 import { Message } from 'primeng/message';
-import { Select } from 'primeng/select';
 import { Tag } from 'primeng/tag';
 
-import { AiModel, StatusOutput } from '@modules/agency/interfaces';
+import { StatusOutput } from '@modules/agency/interfaces';
+import { ModelSelectComponent } from '@modules/agency/ui/model-select/model-select.component';
 import { FileAsset } from '@modules/library/interfaces';
 import { LibraryService } from '@modules/library/services';
 import { ServerUrlPipe } from '@pipes/server-url.pipe';
 import { UiIcon } from '@shared/components/ui-icon/ui-icon.component';
 
 import {
+  POSE_SHEET_MODEL_NAMES,
   POSE_SHEET_PIECE_CODE,
   POSE_SHEET_VARIANTS,
   PoseSheetVariant,
@@ -48,7 +49,16 @@ const PROGRESS_EXPECTED_MS = 75_000;
  */
 @Component({
   selector: 'app-pose-sheet',
-  imports: [FormsModule, TranslatePipe, Button, Message, Select, Tag, ServerUrlPipe, UiIcon],
+  imports: [
+    FormsModule,
+    TranslatePipe,
+    Button,
+    Message,
+    ModelSelectComponent,
+    Tag,
+    ServerUrlPipe,
+    UiIcon,
+  ],
   templateUrl: './pose-sheet.component.html',
   styleUrl: './pose-sheet.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -78,12 +88,9 @@ export class PoseSheetComponent implements OnInit {
   protected readonly loadingVideo = TOOLS_LOADING_VIDEO;
   protected readonly loadingPoster = TOOLS_LOADING_POSTER;
 
-  protected readonly models = signal<AiModel[]>([]);
-  protected readonly loadingModels = signal(true);
+  /** Modelos ofrecidos: sólo los que aceptan referencias para la hoja. */
+  protected readonly modelNames = POSE_SHEET_MODEL_NAMES;
   protected readonly selectedModel = signal('');
-  protected readonly activeModel = computed(
-    () => this.models().find((m) => m.name === this.selectedModel()) ?? null,
-  );
 
   protected readonly variant = signal<PoseSheetVariant>('body');
   protected readonly defaultPrompt = signal('');
@@ -108,20 +115,6 @@ export class PoseSheetComponent implements OnInit {
   protected readonly savedName = signal<string | null>(null);
 
   ngOnInit(): void {
-    this.toolsService
-      .listPoseSheetModels()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (models) => {
-          this.models.set(models);
-          const first = models[0];
-          if (first && !this.selectedModel()) {
-            this.selectedModel.set(first.name);
-          }
-          this.loadingModels.set(false);
-        },
-        error: () => this.loadingModels.set(false),
-      });
     this.loadPrompt('body');
   }
 

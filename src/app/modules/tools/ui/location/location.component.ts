@@ -22,6 +22,7 @@ import { Select } from 'primeng/select';
 import { Tag } from 'primeng/tag';
 
 import { AiModel, StatusOutput } from '@modules/agency/interfaces';
+import { ModelSelectComponent } from '@modules/agency/ui/model-select/model-select.component';
 import { FileAsset } from '@modules/library/interfaces';
 import { LibraryService } from '@modules/library/services';
 import { ServerUrlPipe } from '@pipes/server-url.pipe';
@@ -31,6 +32,7 @@ import {
   LOCATION_DEFAULT_RATIO,
   LOCATION_DEFAULT_RESOLUTION,
   LOCATION_DEFAULT_VIEW,
+  LOCATION_MODEL_NAMES,
   LOCATION_PIECE_CODE,
   LOCATION_RATIO_OPTIONS,
   LOCATION_RESOLUTION_PREFERENCE,
@@ -62,7 +64,17 @@ interface LocationViewResult {
  */
 @Component({
   selector: 'app-location',
-  imports: [FormsModule, TranslatePipe, Button, Message, Select, Tag, ServerUrlPipe, UiIcon],
+  imports: [
+    FormsModule,
+    TranslatePipe,
+    Button,
+    Message,
+    ModelSelectComponent,
+    Select,
+    Tag,
+    ServerUrlPipe,
+    UiIcon,
+  ],
   templateUrl: './location.component.html',
   styleUrl: './location.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -92,12 +104,11 @@ export class LocationComponent implements OnInit {
   protected readonly loadingVideo = TOOLS_LOADING_VIDEO;
   protected readonly loadingPoster = TOOLS_LOADING_POSTER;
 
-  protected readonly models = signal<AiModel[]>([]);
-  protected readonly loadingModels = signal(true);
+  /** Modelos ofrecidos: sólo los que aceptan imágenes de referencia. */
+  protected readonly modelNames = LOCATION_MODEL_NAMES;
   protected readonly selectedModel = signal('');
-  protected readonly activeModel = computed(
-    () => this.models().find((m) => m.name === this.selectedModel()) ?? null,
-  );
+  /** Modelo completo, para leer ratios y resoluciones soportadas. */
+  protected readonly activeModel = signal<AiModel | null>(null);
 
   protected readonly selectedViews = signal<readonly LocationView[]>([LOCATION_DEFAULT_VIEW]);
 
@@ -171,20 +182,6 @@ export class LocationComponent implements OnInit {
   protected readonly savedName = signal<string | null>(null);
 
   ngOnInit(): void {
-    this.toolsService
-      .listLocationModels()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (models) => {
-          this.models.set(models);
-          const first = models[0];
-          if (first && !this.selectedModel()) {
-            this.selectedModel.set(first.name);
-          }
-          this.loadingModels.set(false);
-        },
-        error: () => this.loadingModels.set(false),
-      });
     this.loadPrompt();
   }
 

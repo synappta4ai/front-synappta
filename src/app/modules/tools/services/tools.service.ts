@@ -4,7 +4,6 @@ import { catchError, concatMap, map, mergeMap, toArray } from 'rxjs/operators';
 
 import { AgencyService } from '@modules/agency/services';
 import {
-  AiModel,
   ContentItem,
   GenerateRequest,
   GenerateResponse,
@@ -17,14 +16,11 @@ import { StudioService } from '@modules/studio/services';
 import { environment } from '@env/environment';
 
 import {
-  LOCATION_MODEL_NAMES,
   LOCATION_PIECE_CODE,
   LOCATION_SYSTEM_ASSET,
-  POSE_SHEET_MODEL_NAMES,
   POSE_SHEET_PIECE_CODE,
   POSE_SHEET_RATIO,
   POSE_SHEET_VARIANTS,
-  STORYBOARD_MODEL_NAMES,
   STORYBOARD_PIECE_CODE,
   STORYBOARD_RATIO,
   STORYBOARD_SYSTEM_ASSET,
@@ -98,13 +94,6 @@ export class ToolsService {
     return this.repository.getSystemPrompt(def.asset);
   }
 
-  /** Solo Nano Banana Pro (nombre exacto del catálogo). */
-  listPoseSheetModels(): Observable<AiModel[]> {
-    return this.agencyService
-      .listModelsByModality('image')
-      .pipe(map((models) => models.filter((m) => POSE_SHEET_MODEL_NAMES.includes(m.name))));
-  }
-
   /** Anchor proyecto/pieza para los logs (idempotente por piece code). */
   ensureAnchor(projectName: string): Observable<PoseSheetAnchor> {
     return this.studioService.ensureTakeSlot(projectName, POSE_SHEET_PIECE_CODE);
@@ -145,12 +134,6 @@ export class ToolsService {
   /** System prompt por defecto del storyboard (editable por el usuario). */
   loadStoryboardPrompt(): Observable<string> {
     return this.repository.getSystemPrompt(STORYBOARD_SYSTEM_ASSET);
-  }
-
-  listStoryboardModels(): Observable<AiModel[]> {
-    return this.agencyService
-      .listModelsByModality('image')
-      .pipe(map((models) => models.filter((m) => STORYBOARD_MODEL_NAMES.includes(m.name))));
   }
 
   ensureStoryboardAnchor(projectName: string): Observable<PoseSheetAnchor> {
@@ -194,13 +177,6 @@ export class ToolsService {
   /** System prompt por defecto de la locación (editable por el usuario). */
   loadLocationPrompt(): Observable<string> {
     return this.repository.getSystemPrompt(LOCATION_SYSTEM_ASSET);
-  }
-
-  /** Mismo modelo que la hoja de poses (Nano Banana Pro, acepta referencias). */
-  listLocationModels(): Observable<AiModel[]> {
-    return this.agencyService
-      .listModelsByModality('image')
-      .pipe(map((models) => models.filter((m) => LOCATION_MODEL_NAMES.includes(m.name))));
   }
 
   /** Anchor proyecto/pieza para los logs (idempotente por piece code). */

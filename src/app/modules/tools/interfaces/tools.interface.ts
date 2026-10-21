@@ -186,18 +186,29 @@ export const STORYBOARD_PANEL_OPTIONS: readonly StoryboardPanelOption[] = [
 
 export const STORYBOARD_DEFAULT_PANEL_COUNT = 6;
 
-/** Gemini Pro/Flash: modelos de imagen que aceptan varias referencias. */
-export const STORYBOARD_MODEL_NAMES: readonly string[] = [
-  'gemini-3-pro-image-preview',
-  'gemini-3.1-flash-image-preview',
-];
-
 /**
- * Hoja horizontal 3:2 (soportada por Gemini Pro Image). Cada viñeta interna
- * se dibuja como un marco 16:9; la hoja completa deja aire para cabeceras y
- * líneas de guion.
+ * Hoja horizontal 3:2. Cada viñeta interna se dibuja como un marco 16:9; la
+ * hoja completa deja aire para cabeceras y líneas de guion.
+ *
+ * Es también el criterio del desplegable de modelos: entra todo modelo de
+ * imagen del catálogo que declare esta relación (Gemini Pro/Flash y las
+ * familias de Higgsfield — Soul 2, Ideogram 4.0, Recraft 4.1). Filtrar por
+ * capacidad, y no por nombre, deja entrar solo a un modelo nuevo.
  */
 export const STORYBOARD_RATIO = '3:2';
+
+/**
+ * Resolución preferida de la hoja, en orden: gana la primera que el modelo
+ * declare. Higgsfield Soul 2 trabaja en 720p/1080p (rechaza 2K/4K), así que el
+ * 2K de Gemini no sirve como única opción.
+ */
+export const STORYBOARD_RESOLUTION_PREFERENCE: readonly string[] = [
+  '2K',
+  '4K',
+  '1080p',
+  '1K',
+  '720p',
+];
 
 /** Anchor de proyecto/pieza para los logs del back (idempotente por código). */
 export const STORYBOARD_PIECE_CODE = 'TOOLS-STORYBOARD';
