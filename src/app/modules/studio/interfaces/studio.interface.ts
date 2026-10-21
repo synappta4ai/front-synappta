@@ -1,7 +1,7 @@
 import { AiModel, GenerateRequest, StatusResponse } from '@modules/agency/interfaces';
 
 /** Model type reported by the backend catalog: api (external provider) or
- * downloaded (weights on the brain-master inference worker). */
+ * downloaded (weights on the inference worker). */
 export type StudioModelType = 'api' | 'downloaded';
 
 /** View-model of a catalog entry for the studio's model picker. */

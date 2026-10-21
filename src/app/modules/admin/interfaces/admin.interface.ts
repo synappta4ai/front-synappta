@@ -190,7 +190,7 @@ export interface ServerCommsPage {
   total_pages: number;
 }
 
-// ─── Worker model management (brain-master inference worker) ────────────
+// ─── Worker model management (inference worker) ────────────────────────
 
 /** Estado de descarga de un modelo en el worker. */
 export interface WorkerModelState {
