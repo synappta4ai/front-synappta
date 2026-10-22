@@ -24,13 +24,6 @@ export const POSE_SHEET_VARIANTS: readonly PoseSheetVariantDef[] = [
   },
 ];
 
-/**
- * Modelos ofrecidos en la Hoja de poses. Nombres exactos del catálogo del
- * back (GET /models): Nano Banana Pro (acepta referencias). La API es
- * intercambiable por tenant vía credenciales.
- */
-export const POSE_SHEET_MODEL_NAMES: readonly string[] = ['gemini-3-pro-image-preview'];
-
 /** Tríptico horizontal (frente / perfil / cuerpo entero). */
 export const POSE_SHEET_RATIO = '3:2';
 
@@ -80,12 +73,6 @@ export const LOCATION_VIEWS: readonly LocationViewDef[] = [
 
 /** Vista por defecto: elevada desde la esquina superior (la mejor para fijar la locación como ingrediente de video). */
 export const LOCATION_DEFAULT_VIEW: LocationView = 'elevated-corner';
-
-/**
- * Modelos ofrecidos en Locación. Nano Banana Pro acepta las imágenes
- * subidas para recrear vistas desde otros ángulos.
- */
-export const LOCATION_MODEL_NAMES: readonly string[] = ['gemini-3-pro-image-preview'];
 
 /** Opción de relación de aspecto para el desplegable (w/h dibujan el swatch). */
 export interface LocationRatioOption {
@@ -190,10 +177,10 @@ export const STORYBOARD_DEFAULT_PANEL_COUNT = 6;
  * Hoja horizontal 3:2. Cada viñeta interna se dibuja como un marco 16:9; la
  * hoja completa deja aire para cabeceras y líneas de guion.
  *
- * Es también el criterio del desplegable de modelos: entra todo modelo de
- * imagen del catálogo que declare esta relación (Gemini Pro/Flash y las
- * familias de Higgsfield — Soul 2, Ideogram 4.0, Recraft 4.1). Filtrar por
- * capacidad, y no por nombre, deja entrar solo a un modelo nuevo.
+ * Es el formato que se pide al generar (prompt + `ratio` del payload). El
+ * desplegable lista todos los modelos de imagen del catálogo, igual que el
+ * Studio; si el modelo no declara 3:2, el proveedor recorta al subset que
+ * soporte (igual que cuando el Studio pide un ratio no declarado).
  */
 export const STORYBOARD_RATIO = '3:2';
 

@@ -32,7 +32,6 @@ import {
   LOCATION_DEFAULT_RATIO,
   LOCATION_DEFAULT_RESOLUTION,
   LOCATION_DEFAULT_VIEW,
-  LOCATION_MODEL_NAMES,
   LOCATION_PIECE_CODE,
   LOCATION_RATIO_OPTIONS,
   LOCATION_RESOLUTION_PREFERENCE,
@@ -104,8 +103,9 @@ export class LocationComponent implements OnInit {
   protected readonly loadingVideo = TOOLS_LOADING_VIDEO;
   protected readonly loadingPoster = TOOLS_LOADING_POSTER;
 
-  /** Modelos ofrecidos: sólo los que aceptan imágenes de referencia. */
-  protected readonly modelNames = LOCATION_MODEL_NAMES;
+  /** Modelo elegido (nombre del catálogo); el desplegable lista todos los
+   *  modelos de imagen disponibles, igual que el Studio. Los desplegables de
+   *  formato ya se adaptan a lo que declare cada modelo. */
   protected readonly selectedModel = signal('');
   /** Modelo completo, para leer ratios y resoluciones soportadas. */
   protected readonly activeModel = signal<AiModel | null>(null);

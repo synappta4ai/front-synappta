@@ -28,7 +28,6 @@ import { ServerUrlPipe } from '@pipes/server-url.pipe';
 import { UiIcon } from '@shared/components/ui-icon/ui-icon.component';
 
 import {
-  POSE_SHEET_MODEL_NAMES,
   POSE_SHEET_PIECE_CODE,
   POSE_SHEET_VARIANTS,
   PoseSheetVariant,
@@ -88,8 +87,8 @@ export class PoseSheetComponent implements OnInit {
   protected readonly loadingVideo = TOOLS_LOADING_VIDEO;
   protected readonly loadingPoster = TOOLS_LOADING_POSTER;
 
-  /** Modelos ofrecidos: sólo los que aceptan referencias para la hoja. */
-  protected readonly modelNames = POSE_SHEET_MODEL_NAMES;
+  /** Modelo elegido (nombre del catálogo); el desplegable lista todos los
+   *  modelos de imagen disponibles, igual que el Studio. */
   protected readonly selectedModel = signal('');
 
   protected readonly variant = signal<PoseSheetVariant>('body');
