@@ -25,12 +25,14 @@ import {
 } from '../interfaces';
 import { AgencyApiRepository } from '../repositories';
 import { unwrap } from '@utils/unwrap-api-response';
+import { WorkerAddressService } from '../../../core/services/worker-address.service';
 
 const TERMINAL_STATUSES: readonly string[] = ['succeeded', 'completed', 'failed', 'cancelled'];
 
 @Injectable({ providedIn: 'root' })
 export class AgencyService {
   private readonly agencyApiRepository = inject(AgencyApiRepository);
+  private readonly workerAddress = inject(WorkerAddressService);
 
   listModels(): Observable<AiModel[]> {
     return unwrap(this.agencyApiRepository.listModels());
@@ -53,6 +55,10 @@ export class AgencyService {
   }
 
   generate(modality: Modality, payload: GenerateRequest): Observable<GenerateResponse> {
+    const workerAddr = this.workerAddress.get();
+    if (workerAddr && !payload.worker_addr) {
+      payload = { ...payload, worker_addr: workerAddr };
+    }
     return unwrap(this.agencyApiRepository.generate(modality, payload));
   }
 
