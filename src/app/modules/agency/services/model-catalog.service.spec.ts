@@ -86,6 +86,18 @@ describe('ModelCatalogService', () => {
     expect(names).toEqual(['claude-text', 'soul']);
   });
 
+  it('all() pide el catálogo completo una sola vez', () => {
+    const received: string[][] = [];
+    service.all().subscribe((models) => received.push(models.map((m) => m.name)));
+    service.all().subscribe((models) => received.push(models.map((m) => m.name)));
+
+    const req = httpMock.expectOne(`${base}/models`);
+    req.flush({ success: true, message: 'success', data: [model('soul', 'image')] });
+
+    expect(received).toEqual([['soul'], ['soul']]);
+    httpMock.expectNone(`${base}/models`);
+  });
+
   it('refresh() obliga a volver a pedir la modalidad', () => {
     service.byModality('image').subscribe();
     httpMock

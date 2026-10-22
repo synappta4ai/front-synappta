@@ -18,6 +18,8 @@ export class ModelCatalogService {
   private readonly agencyService = inject(AgencyService);
   /** Una entrada por modalidad; guarda la petición, no sólo el resultado. */
   private readonly requests = new Map<Modality, Observable<AiModel[]>>();
+  /** Catálogo completo (GET /models), misma memoización que por modalidad. */
+  private allRequest: Observable<AiModel[]> | null = null;
 
   /** Modelos de una modalidad (texto, voz, imagen o video). */
   byModality(modality: Modality): Observable<AiModel[]> {
@@ -54,6 +56,24 @@ export class ModelCatalogService {
     );
   }
 
+  /**
+   * Catálogo completo sin filtrar (el mismo GET /models del Studio).
+   * Punto único de lectura para pantallas que necesitan los objetos enteros
+   * (payloads, defaults, badges): Agency y Studio lo mapean a su forma.
+   */
+  all(): Observable<AiModel[]> {
+    if (!this.allRequest) {
+      this.allRequest = this.agencyService.listModels().pipe(
+        catchError((err: unknown) => {
+          this.allRequest = null;
+          return throwError(() => err);
+        }),
+        shareReplay({ bufferSize: 1, refCount: false }),
+      );
+    }
+    return this.allRequest;
+  }
+
   /** Olvida lo memorizado (todo, o sólo una modalidad) para volver a pedirlo. */
   refresh(modality?: Modality): void {
     if (modality) {
@@ -61,5 +81,6 @@ export class ModelCatalogService {
       return;
     }
     this.requests.clear();
+    this.allRequest = null;
   }
 }

@@ -13,6 +13,11 @@
     optionValue="name"
     [placeholder]="placeholder() ?? ('SHARED.MODEL_SELECT_PLACEHOLDER' | translate)"
     [showClear]="false"
+    [filter]="filter()"
+    [pTooltip]="tooltip() ?? ''"
+    [tooltipDisabled]="!tooltip()"
+    tooltipPosition="top"
+    showDelay="400"
     class="w-full"
     appendTo="body"
   >
@@ -20,13 +25,27 @@
       <div class="flex items-center justify-between gap-2 w-full">
         <div class="min-w-0">
           <p class="font-bold truncate">{{ m.display_name ?? m.name }}</p>
-          <p class="text-xs opacity-60 truncate">{{ m.name }}</p>
+          @if (m.name) {
+            <p class="text-xs opacity-60 truncate">{{ m.name }}</p>
+          }
         </div>
-        <p-tag
-          [value]="providerTag(m.credential_provider)"
-          [severity]="isLocalProvider(m.credential_provider) ? 'success' : 'info'"
-          styleClass="text-xs shrink-0"
-        />
+        <div class="flex items-center gap-1 shrink-0">
+          @if (showBadges() && isDownloaded(m) && workerLabel(); as badge) {
+            <p-tag [value]="badge" severity="success" styleClass="text-xs" />
+            @if (vramGb(m); as vram) {
+              <p-tag [value]="vram + ' GB'" severity="secondary" styleClass="text-xs" />
+            }
+          } @else if (m.credential_provider) {
+            <p-tag
+              [value]="providerTag(m.credential_provider)"
+              [severity]="isLocalProvider(m.credential_provider) ? 'success' : 'info'"
+              styleClass="text-xs shrink-0"
+            />
+          }
+          @if (showBadges() && isUnavailable(m) && unavailableLabel(); as unavailable) {
+            <p-tag [value]="unavailable" severity="danger" styleClass="text-xs" />
+          }
+        </div>
       </div>
     </ng-template>
   </p-select>

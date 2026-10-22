@@ -22,6 +22,7 @@ import { catchError, map, of, startWith, switchMap } from 'rxjs';
 
 import { Select } from 'primeng/select';
 import { Tag } from 'primeng/tag';
+import { Tooltip } from 'primeng/tooltip';
 
 import { AiModel, CredentialProvider, Modality } from '../../interfaces';
 import { ModelCatalogService } from '../../services';
@@ -43,6 +44,12 @@ const LOADING: CatalogState = { status: 'loading', models: [] };
  * por modalidad: dos selectores de la misma pantalla (p. ej. texto + imagen)
  * comparten una sola petición.
  *
+ * Extras opcionales para los consumidores migrados (Agency, Studio):
+ * `autoLabel` antepone la opción vacía ("automático"), `extraOptions`
+ * agrega modelos fuera del catálogo (p. ej. el LLM de la credencial),
+ * `filter` habilita el buscador, `showBadges` muestra worker/VRAM/no
+ * disponible (Studio) y `tooltip` el hint del desplegable.
+ *
  * El valor es el `name` del modelo (sirve en `ngModel` y en formularios
  * reactivos); `selectionChange` entrega el modelo completo cuando el consumidor
  * necesita sus `defaults`.
@@ -54,7 +61,7 @@ const LOADING: CatalogState = { status: 'loading', models: [] };
  */
 @Component({
   selector: 'app-model-select',
-  imports: [ReactiveFormsModule, TranslatePipe, Select, Tag],
+  imports: [ReactiveFormsModule, TranslatePipe, Select, Tag, Tooltip],
   templateUrl: './model-select.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
@@ -77,6 +84,20 @@ export class ModelSelectComponent implements ControlValueAccessor {
   readonly provider = input<CredentialProvider | null>(null);
   /** Sólo estos nombres (para herramientas atadas a un modelo concreto). */
   readonly names = input<readonly string[] | null>(null);
+  /** Texto ya traducido de la opción vacía ('' = automático); sin valor no hay opción vacía. */
+  readonly autoLabel = input<string | null>(null);
+  /** Modelos fuera del catálogo que se agregan al final (p. ej. LLM de la credencial). */
+  readonly extraOptions = input<readonly AiModel[]>([]);
+  /** Muestra el buscador del desplegable (Studio). */
+  readonly filter = input(false);
+  /** Muestra badges de worker/VRAM/no disponible (Studio). */
+  readonly showBadges = input(false);
+  /** Texto ya traducido del badge de worker; sin valor no se muestra. */
+  readonly workerLabel = input<string | null>(null);
+  /** Texto ya traducido del badge de no disponible; sin valor no se muestra. */
+  readonly unavailableLabel = input<string | null>(null);
+  /** Texto ya traducido del hint con tooltip; sin valor no hay tooltip. */
+  readonly tooltip = input<string | null>(null);
   /** Elige el primer modelo cuando el control llega vacío. */
   readonly autoSelect = input(true);
   /** Id del `<select>`, para asociarle un `<label for>`. */
@@ -114,13 +135,45 @@ export class ModelSelectComponent implements ControlValueAccessor {
     const names = this.names();
     const ratio = this.ratio();
     const provider = this.provider();
-    return [...this.state().models].filter(
+    const catalog = [...this.state().models].filter(
       (model) =>
         (!names || names.includes(model.name)) &&
         (!ratio || (model.defaults?.ratios ?? []).includes(ratio)) &&
         (!provider || model.credential_provider === provider),
     );
+    const autoLabel = this.autoLabel();
+    const auto: AiModel[] =
+      autoLabel !== null ? [this.autoOption(autoLabel)] : [];
+    return [...auto, ...catalog, ...this.extraOptions()];
   });
+
+  /** Opción vacía ("automático"): mismo shape para que el p-select la trate igual. */
+  private autoOption(label: string): AiModel {
+    const modalities = this.modalities();
+    return {
+      name: '',
+      display_name: label,
+      modality: modalities[0] ?? 'text',
+      generator: '',
+      credential_provider: '' as AiModel['credential_provider'],
+      base_url: '',
+      endpoint: '',
+      gallery_sync: false,
+      defaults: {},
+    };
+  }
+
+  protected isDownloaded(model: AiModel): boolean {
+    return model.type === 'downloaded';
+  }
+
+  protected vramGb(model: AiModel): number | null {
+    return model.downloaded?.vram_gb ?? null;
+  }
+
+  protected isUnavailable(model: AiModel): boolean {
+    return model.downloaded ? model.downloaded.available === false : false;
+  }
 
   /** Los servidores que corre el propio tenant llevan chip verde con su
    *  nombre comercial; el resto conserva el identificador del catálogo. */

@@ -31,6 +31,11 @@ export interface AiModel {
     resolutions?: string[];
     durations?: number[];
   };
+  /** 'downloaded' = corre en el inference worker del tenant (back: type). */
+  type?: string;
+  /** Detalle del worker para modelos downloaded (back: downloaded):
+   *  available=false = listado pero no ejecutable. */
+  downloaded?: { vram_gb?: number; available?: boolean } | null;
 }
 
 export interface Credential {
