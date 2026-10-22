@@ -10,6 +10,19 @@ import type { StudioTake, StudioTakeRef } from '@modules/studio/interfaces';
 /** How often running tasks are re-polled (shared, global). */
 const POLL_INTERVAL_MS = 2500;
 
+/**
+ * Anti pile-up: a new round never starts while the previous one still has
+ * requests in flight (slow backend must delay polls, never queue them).
+ * Tasks without progress for this many ticks drop to a slower cadence, and
+ * tasks tracked longer than this many ticks time out instead of polling
+ * forever (e.g. a bridge job whose GPU never claims it).
+ */
+const STALE_AFTER_TICKS = 8;
+const SLOW_EVERY_NTH_TICK = 4;
+const MAX_TRACKED_TICKS = 720;
+/** Transient poll failures tolerated per task before giving up. */
+const MAX_CONSECUTIVE_POLL_ERRORS = 3;
+
 /** Backend statuses that mean a task is done (no more polling). */
 const TERMINAL_BACKEND_STATUSES: readonly string[] = [
   'succeeded',
@@ -42,6 +55,11 @@ export class GenerationEventsStore {
   private readonly _sessionDate = signal<string | null>(null);
   private readonly polling = new Set<string>();
   private timerSub: Subscription | null = null;
+  private roundInFlight = 0;
+  private readonly trackedTicks = new Map<string, number>();
+  private readonly staleTicks = new Map<string, number>();
+  private readonly lastProgress = new Map<string, number>();
+  private readonly pollErrors = new Map<string, number>();
 
   /** All events, newest first. */
   readonly events = this._events.asReadonly();
@@ -96,6 +114,10 @@ export class GenerationEventsStore {
   /** Removes an event from the list (e.g. discarded by the user). */
   remove(id: string): void {
     this.polling.delete(id);
+    this.trackedTicks.delete(id);
+    this.staleTicks.delete(id);
+    this.lastProgress.delete(id);
+    this.pollErrors.delete(id);
     this._events.update((list) => list.filter((e) => e.id !== id));
   }
 
@@ -304,36 +326,84 @@ export class GenerationEventsStore {
       this.timerSub = null;
       return;
     }
+    // No apilar rondas: si la anterior sigue en vuelo (backend lento), esta
+    // se salta. Las peticiones encoladas solo agregan carga y respuestas
+    // fuera de orden (errores de continuidad).
+    if (this.roundInFlight > 0) {
+      return;
+    }
     for (const id of [...this.polling]) {
+      const ticks = (this.trackedTicks.get(id) ?? 0) + 1;
+      this.trackedTicks.set(id, ticks);
+      // Timeout: un task colgado (p. ej. job de bridge que ninguna GPU
+      // reclama) no debe encuestarse para siempre.
+      if (ticks > MAX_TRACKED_TICKS) {
+        this.patch(id, { status: 'failed', error: 'tiempo de espera agotado' });
+        this.untrack(id);
+        this.notify(id);
+        continue;
+      }
+      // Backoff: sin progreso durante varios ticks, encuestar cada N.
+      const stale = this.staleTicks.get(id) ?? 0;
+      if (stale >= STALE_AFTER_TICKS && ticks % SLOW_EVERY_NTH_TICK !== 0) {
+        continue;
+      }
+      this.roundInFlight++;
       this.agencyService
         .getStatus('video', id)
         .pipe(
           catchError(() => {
-            this.patch(id, { status: 'failed', error: 'sin respuesta del servidor' });
-            this.polling.delete(id);
-            this.notify(id);
+            // Un fallo suelto (red, reinicio del back) no mata el take: solo
+            // tras varios errores seguidos se da por perdido.
+            const errors = (this.pollErrors.get(id) ?? 0) + 1;
+            this.pollErrors.set(id, errors);
+            this.roundInFlight--;
+            if (errors >= MAX_CONSECUTIVE_POLL_ERRORS) {
+              this.patch(id, { status: 'failed', error: 'sin respuesta del servidor' });
+              this.untrack(id);
+              this.notify(id);
+            }
             return EMPTY;
           }),
         )
         .subscribe((status) => {
+          this.roundInFlight--;
+          this.pollErrors.delete(id);
           const out = status.outputs?.[0];
           const backend = status.status;
           const terminal = ['succeeded', 'completed', 'failed', 'cancelled'].includes(backend);
+          const progress = status.progress_percent ?? 0;
           const mapped = this.mapStatus(backend);
           this.patch(id, {
             status: mapped,
-            progress: status.progress_percent ?? 0,
+            progress,
             videoUrl: out?.localUrl ?? out?.url ?? null,
             error: status.error ?? null,
           });
           if (terminal) {
-            this.polling.delete(id);
+            this.untrack(id);
             if (mapped === 'succeeded' || mapped === 'failed') {
               this.notify(id);
             }
+            return;
+          }
+          if (progress === (this.lastProgress.get(id) ?? -1)) {
+            this.staleTicks.set(id, (this.staleTicks.get(id) ?? 0) + 1);
+          } else {
+            this.staleTicks.delete(id);
+            this.lastProgress.set(id, progress);
           }
         });
     }
+  }
+
+  /** Stops polling a task and drops its polling bookkeeping. */
+  private untrack(id: string): void {
+    this.polling.delete(id);
+    this.trackedTicks.delete(id);
+    this.staleTicks.delete(id);
+    this.lastProgress.delete(id);
+    this.pollErrors.delete(id);
   }
 
   /** Flags a take as finished-and-unseen so the navbar badge surfaces it. */
