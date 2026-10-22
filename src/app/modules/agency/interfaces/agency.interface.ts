@@ -82,6 +82,9 @@ export interface GenerateRequest {
   piece_code: string;
   generation_number: number;
   user_id?: number;
+  /** Dirección del inference worker de este usuario para modelos downloaded.
+   * Si se envía, el back lo usa en vez de BM_WORKER_ADDR global. */
+  worker_addr?: string;
 }
 
 export interface OutputResource {
