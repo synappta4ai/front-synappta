@@ -26,7 +26,8 @@ Instrucciones para agentes de IA que trabajan en este repositorio. Léelas antes
 
 - Usa **Conventional Commits** (`feat`, `fix`, `docs`, `chore`, `refactor`, …), en inglés e imperativo, < 72 caracteres.
 - Un cambio lógico por commit; no mezcles refactors o arreglos no relacionados.
-- **Al commitear y hacer push, actualiza la versión de `package.json` en un commit `chore` dedicado** (separado del commit de código). La versión alimenta `APP_VERSION` en `src/environments/*` cada vez que corre `npm run env` (prebuild/prewatch); el build la pisa, así que **no** la copies a mano.
+- **Al commitear y hacer push, actualizá la versión antes de push**. Si el repo tiene versionamiento (`package.json`, `Cargo.toml`, `pyproject.toml`, `__version__`, etc.), subí la versión en un commit `chore` dedicado, separado del commit de código.
+- En `front-synapta` la versión de `package.json` alimenta `APP_VERSION` en `src/environments/*` cada vez que corre `npm run env` (prebuild/prewatch); el build la pisa, así que **no** la copies a mano.
 - **Prohibido comitear cambios en `src/environments/`**: son artefactos generados por `scripts/generate-env.ts`. Si el build los modifica, descartarlos antes de commitear (`git checkout -- src/environments`). Solo se comitean cuando cambia la estructura del archivo (nueva variable o target en `scripts/generate-env.ts`).
 
 ## TypeScript
