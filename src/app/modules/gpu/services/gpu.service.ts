@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { map, Observable } from 'rxjs';
+import { firstValueFrom, map, Observable } from 'rxjs';
 
 import { unwrap } from '@utils/unwrap-api-response';
 
@@ -9,6 +9,8 @@ import {
   ManagedWorkerModel,
   PairingCode,
   WorkerModelOperation,
+  WorkerUpdatePayloadResponse,
+  WorkerUpdateResponse,
 } from '../interfaces/gpu.interface';
 import { GpuApiRepository } from '../repositories/gpu-api.repository';
 
@@ -59,6 +61,22 @@ export class GpuService {
 
   deleteAllWorkerModels(): Observable<BulkDeleteResult> {
     return unwrap(this.repository.deleteAllWorkerModels());
+  }
+
+  /** Sube el .zip nuevo del worker al back. Devuelve la URL pública del payload. */
+  async uploadWorkerUpdatePayload(file: File): Promise<string> {
+    const resp = await firstValueFrom(
+      this.repository.uploadWorkerUpdatePayload(file),
+    );
+    if (!resp.success || !resp.data) {
+      throw new Error(resp.message || 'No se pudo subir el payload');
+    }
+    return resp.data.url;
+  }
+
+  /** Ordena al worker que se auto-actualice descargando el payload de `url`. */
+  async updateWorker(url: string, sha256?: string): Promise<WorkerUpdateResponse> {
+    return firstValueFrom(this.repository.updateWorker(url, sha256));
   }
 
   /** Encola la descarga de un modelo en una GPU emparejada (modo bridge). */

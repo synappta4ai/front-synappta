@@ -11,6 +11,8 @@ import {
   ManagedWorkerModel,
   PairingCode,
   WorkerModelOperation,
+  WorkerUpdatePayloadResponse,
+  WorkerUpdateResponse,
 } from '../interfaces/gpu.interface';
 
 /**
@@ -38,6 +40,24 @@ export class GpuApiRepository {
   listWorkerModelsResponse(): Observable<HttpResponse<ApiResponse<ManagedWorkerModel[]>>> {
     return this.http.get<ApiResponse<ManagedWorkerModel[]>>(`${this.apiUrl}/worker/models`, {
       observe: 'response',
+    });
+  }
+
+  /** Sube el .zip nuevo del worker al back (se sirve luego vía /outputs). */
+  uploadWorkerUpdatePayload(file: File): Observable<ApiResponse<WorkerUpdatePayloadResponse>> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<ApiResponse<WorkerUpdatePayloadResponse>>(
+      `${this.apiUrl}/worker/update-payload`,
+      formData,
+    );
+  }
+
+  /** Ordena al worker que se auto-actualice descargando el payload de `url`. */
+  updateWorker(url: string, sha256?: string): Observable<WorkerUpdateResponse> {
+    return this.http.post<WorkerUpdateResponse>(`${this.apiUrl}/worker/update`, {
+      url,
+      sha256,
     });
   }
 

@@ -76,6 +76,11 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
   protected readonly modelBusy = signal<string | null>(null);
   protected readonly bulkDeleting = signal(false);
 
+  /** Actualización del worker: estado y mensaje al usuario. */
+  protected readonly updateWorkerLoading = signal(false);
+  protected readonly updateWorkerMessage = signal<string | null>(null);
+  protected readonly selectedUpdateFile = signal<File | null>(null);
+
   /**
    * Instalador gráfico de Windows (.exe, onefile): doble click y corre la
    * GUI que instala, empareja y arranca — sin terminal ni Python previo.
@@ -413,6 +418,49 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
     document.body.appendChild(link); // Firefox no dispara clicks de links sueltos
     link.click();
     link.remove();
+  }
+
+  /** El usuario eligió el .zip nuevo del worker para actualizarlo. */
+  protected onUpdateFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.selectedUpdateFile.set(input.files?.[0] ?? null);
+    this.updateWorkerMessage.set(null);
+  }
+
+  /**
+   * Sube el .zip al back y ordena al worker que se auto-actualice.
+   * El worker se detiene, reemplaza archivos y se relanza solo.
+   */
+  protected async updateWorker(): Promise<void> {
+    const file = this.selectedUpdateFile();
+    if (!file) {
+      this.updateWorkerMessage.set('Seleccioná un archivo .zip primero.');
+      return;
+    }
+    if (!file.name.toLowerCase().endsWith('.zip')) {
+      this.updateWorkerMessage.set('El archivo debe ser un .zip.');
+      return;
+    }
+    this.updateWorkerLoading.set(true);
+    this.updateWorkerMessage.set(null);
+    try {
+      const url = await this.gpuService.uploadWorkerUpdatePayload(file);
+      await this.gpuService.updateWorker(url);
+      this.updateWorkerMessage.set(
+        'Actualización enviada: el worker se reiniciará al terminar.',
+      );
+      this.selectedUpdateFile.set(null);
+      const input = document.querySelector('input[type="file"]') as
+        | HTMLInputElement
+        | null;
+      if (input) input.value = '';
+    } catch (err) {
+      this.updateWorkerMessage.set(
+        err instanceof Error ? err.message : 'Error actualizando el worker.',
+      );
+    } finally {
+      this.updateWorkerLoading.set(false);
+    }
   }
 
   /** Click principal: generar un código de emparejamiento nuevo. */

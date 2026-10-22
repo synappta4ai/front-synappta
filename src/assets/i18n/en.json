@@ -1540,6 +1540,13 @@
       "DOWNLOAD_REQUESTED": "Download of \"{{name}}\" requested on {{worker}}: starts in ~20 s, progress shows here.",
       "DOWNLOAD_BRIDGE_TOOLTIP": "Request the download on {{worker}} (starts on the next heartbeat).",
       "VRAM_REQ": "Requires {{gb}} GB of VRAM",
+      "UPDATE": {
+        "TITLE": "Update Worker",
+        "SUBTITLE": "Upload the new worker installer .zip and order the worker to update itself.",
+        "SELECT": "Select installer .zip",
+        "BUTTON": "Update Worker",
+        "TOOLTIP": "Uploads the .zip to the back and orders the worker to download it, replace files and relaunch."
+      },
       "ERRORS": {
         "LOAD": "Couldn't load worker models. Try again in a few seconds.",
         "OPERATION": "The model operation failed. Check worker status and try again."

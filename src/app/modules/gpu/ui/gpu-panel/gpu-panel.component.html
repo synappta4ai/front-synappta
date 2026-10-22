@@ -90,6 +90,50 @@
     </div>
   }
 
+  <!-- ─── Actualización del worker ─────────────────────────── -->
+  @if (workers().length > 0) {
+    <section class="mt-10" aria-label="{{ 'GPU.UPDATE.TITLE' | translate }}">
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-semibold text-ink-on-dark">
+            {{ 'GPU.UPDATE.TITLE' | translate }}
+          </h2>
+          <p class="mt-1 text-sm text-ink-muted-on-dark">
+            {{ 'GPU.UPDATE.SUBTITLE' | translate }}
+          </p>
+        </div>
+        <div class="flex items-center gap-3">
+          <label
+            class="flex items-center gap-2 cursor-pointer border border-dashed border-ink-muted-on-dark rounded-lg px-4 py-3 text-sm text-ink-muted-on-dark hover:border-ink-on-dark hover:bg-surface-50 dark:hover:bg-surface-800 transition-colors"
+          >
+            <input
+              type="file"
+              accept=".zip"
+              (change)="onUpdateFileSelected($event)"
+              class="sr-only"
+            />
+            <span>{{ selectedUpdateFile()?.name ?? ('GPU.UPDATE.SELECT' | translate) }}</span>
+          </label>
+          <p-button
+            icon="md md-refresh"
+            [label]="'GPU.UPDATE.BUTTON' | translate"
+            [loading]="updateWorkerLoading()"
+            [disabled]="!selectedUpdateFile() || updateWorkerLoading()"
+            (onClick)="updateWorker()"
+            pTooltip="{{ 'GPU.UPDATE.TOOLTIP' | translate }}"
+          />
+        </div>
+      </div>
+      @if (updateWorkerMessage()) {
+        <p-message
+          [severity]="updateWorkerLoading() ? 'info' : 'success'"
+          [text]="updateWorkerMessage()!"
+          class="mt-4 block"
+        />
+      }
+    </section>
+  }
+
   <!-- ─── Modelos del worker: gestión de pesos ─────────────── -->
   <section class="mt-10" aria-label="{{ 'GPU.MODELS.TITLE' | translate }}">
     <div class="flex flex-wrap items-end justify-between gap-3">

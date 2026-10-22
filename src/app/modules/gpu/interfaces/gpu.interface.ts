@@ -88,3 +88,16 @@ export interface WorkerModelOperation {
   total_bytes: number;
   error?: string;
 }
+
+/** Respuesta de subida del payload del worker (/worker/update-payload). */
+export interface WorkerUpdatePayloadResponse {
+  path: string;
+  size: number;
+  url: string;
+}
+
+/** Respuesta de orden de actualización del worker (/worker/update). */
+export interface WorkerUpdateResponse {
+  status: string;
+  url?: string;
+}
