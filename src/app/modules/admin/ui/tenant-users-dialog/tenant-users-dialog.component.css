@@ -8,6 +8,12 @@
   gap: 0.75rem;
 }
 
+.consent-admin-note {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-ink-muted-on-dark);
+}
+
 .company-head {
   display: flex;
   align-items: flex-start;

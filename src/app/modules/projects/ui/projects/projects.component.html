@@ -1,4 +1,4 @@
-<app-page-container title="Proyectos" animate.enter="anim-page">
+<app-page-container [title]="'PROJECTS.TITLE' | translate" animate.enter="anim-page">
   @if (error(); as message) {
     <div class="mb-6">
       <p-message severity="error" [text]="message" [escape]="false" styleClass="w-full" />
@@ -6,7 +6,7 @@
   }
   @if (saved()) {
     <div class="mb-6">
-      <p-message severity="success" text="Cambios guardados correctamente." styleClass="w-full" />
+      <p-message severity="success" [text]="'PROJECTS.SAVED' | translate" styleClass="w-full" />
     </div>
   }
 
@@ -21,12 +21,21 @@
                 <i class="md md-work text-lg text-accent"></i>
               </div>
               <div>
-                <h2 class="text-lg font-bold text-ink-on-dark">Proyectos</h2>
-                <p class="text-sm text-ink-muted-on-dark">{{ projects().length }} proyectos</p>
+                <h2 class="text-lg font-bold text-ink-on-dark">
+                  {{ 'PROJECTS.TITLE' | translate }}
+                </h2>
+                <p class="text-sm text-ink-muted-on-dark">
+                  {{
+                    (projects().length === 1
+                      ? 'PROJECTS.SUBTITLE_SINGULAR'
+                      : 'PROJECTS.SUBTITLE_PLURAL'
+                    ) | translate: { count: projects().length }
+                  }}
+                </p>
               </div>
             </div>
             <p-button
-              label="Nuevo"
+              [label]="'PROJECTS.NEW' | translate"
               icon="md md-add"
               size="small"
               (onClick)="openProjectDialog()"
@@ -37,7 +46,7 @@
 
         @if (loading()) {
           <div class="flex flex-col gap-2 py-6" aria-busy="true">
-            <span class="sr-only">Cargando proyectos…</span>
+            <span class="sr-only">{{ 'PROJECTS.LOADING' | translate }}</span>
             <div class="skel skel-title" aria-hidden="true"></div>
             <div class="skel skel-text" aria-hidden="true"></div>
             <div class="skel skel-text" aria-hidden="true"></div>
@@ -47,12 +56,12 @@
             <div class="flex h-14 w-14 items-center justify-center rounded-full bg-surface-2">
               <i class="md md-work text-2xl text-ink-muted-on-dark"></i>
             </div>
-            <p class="font-bold text-ink-on-dark">Aún no hay proyectos</p>
+            <p class="font-bold text-ink-on-dark">{{ 'PROJECTS.EMPTY_TITLE' | translate }}</p>
             <p class="text-sm text-ink-muted-on-dark">
-              Crea tu primer proyecto para organizar programas y piezas
+              {{ 'PROJECTS.EMPTY_HINT' | translate }}
             </p>
             <p-button
-              label="Crear proyecto"
+              [label]="'PROJECTS.CREATE_PROJECT' | translate"
               icon="md md-add"
               (onClick)="openProjectDialog()"
               styleClass="active:scale-[0.98]"
@@ -66,8 +75,10 @@
                 (ngModelChange)="toggleShowInactive()"
                 [binary]="true"
                 inputId="show-inactive-projects"
-                label="Mostrar inactivos"
               />
+              <label for="show-inactive-projects" class="text-xs text-ink-muted-on-dark">{{
+                'PROJECTS.SHOW_INACTIVE' | translate
+              }}</label>
             </div>
             @for (project of projects(); track project.id; let i = $index) {
               <div
@@ -81,14 +92,20 @@
                 "
                 (click)="selectProject(project)"
                 (keydown.enter)="selectProject(project)"
+                (keydown.space)="$event.preventDefault(); selectProject(project)"
                 tabindex="0"
                 role="button"
-                [attr.aria-label]="'Abrir proyecto ' + project.name"
+                [attr.aria-label]="'PROJECTS.OPEN_ARIA' | translate: { name: project.name }"
               >
                 <div class="min-w-0">
                   <p class="truncate font-bold text-ink-on-dark">{{ project.name }}</p>
                   <p class="truncate text-xs text-ink-muted-on-dark">
-                    {{ project.program_count ?? 0 }} programas
+                    {{
+                      ((project.program_count ?? 0) === 1
+                        ? 'PROJECTS.PROGRAMS_SINGULAR'
+                        : 'PROJECTS.PROGRAMS_PLURAL'
+                      ) | translate: { count: project.program_count ?? 0 }
+                    }}
                     @if (project.venue) {
                       · {{ project.venue }}
                     }
@@ -96,14 +113,15 @@
                 </div>
                 <div class="flex shrink-0 items-center gap-1">
                   @if (!project.active) {
-                    <p-tag value="Inactivo" severity="warn" />
+                    <p-tag [value]="'PROJECTS.INACTIVE' | translate" severity="warn" />
                   }
                   <p-button
                     icon="md md-chevron_right"
                     severity="secondary"
                     text
                     size="small"
-                    pTooltip="Abrir"
+                    [ariaLabel]="'PROJECTS.OPEN' | translate"
+                    [pTooltip]="'PROJECTS.OPEN' | translate"
                     showDelay="400"
                     tooltipPosition="left"
                   />
@@ -112,7 +130,8 @@
                     severity="danger"
                     text
                     size="small"
-                    pTooltip="Eliminar"
+                    [ariaLabel]="'PROJECTS.DELETE' | translate"
+                    [pTooltip]="'PROJECTS.DELETE' | translate"
                     showDelay="400"
                     tooltipPosition="left"
                     (onClick)="confirmDeleteProject(project); $event.stopPropagation()"
@@ -138,7 +157,8 @@
                   severity="secondary"
                   text
                   (onClick)="closeDetail()"
-                  pTooltip="Volver"
+                  [ariaLabel]="'PROJECTS.BACK' | translate"
+                  [pTooltip]="'PROJECTS.BACK' | translate"
                   showDelay="400"
                   tooltipPosition="bottom"
                 />
@@ -148,11 +168,19 @@
                 <div>
                   <h2 class="text-lg font-bold text-ink-on-dark">{{ project.name }}</h2>
                   <p class="text-sm text-ink-muted-on-dark">
-                    {{ generations().length }}
-                    {{ generations().length === 1 ? 'generación' : 'generaciones' }}
+                    {{
+                      (generations().length === 1
+                        ? 'PROJECTS.GENERATIONS_SINGULAR'
+                        : 'PROJECTS.GENERATIONS_PLURAL'
+                      ) | translate: { count: generations().length }
+                    }}
                     ·
-                    {{ projectFiles().length }}
-                    {{ projectFiles().length === 1 ? 'recurso' : 'recursos' }}
+                    {{
+                      (projectFiles().length === 1
+                        ? 'PROJECTS.RESOURCES_SINGULAR'
+                        : 'PROJECTS.RESOURCES_PLURAL'
+                      ) | translate: { count: projectFiles().length }
+                    }}
                   </p>
                 </div>
               </div>
@@ -161,7 +189,7 @@
 
           @if (loadingDetail()) {
             <div class="flex flex-col gap-2 py-6" aria-busy="true">
-              <span class="sr-only">Cargando detalle…</span>
+              <span class="sr-only">{{ 'PROJECTS.DETAIL_LOADING' | translate }}</span>
               <div class="skel skel-title" aria-hidden="true"></div>
               <div class="skel skel-text" aria-hidden="true"></div>
               <div class="skel skel-text" aria-hidden="true"></div>
@@ -169,18 +197,20 @@
           } @else {
             <p-tabs value="gen" class="projects-tabs">
               <p-tablist>
-                <p-tab value="gen">Generaciones</p-tab>
-                <p-tab value="res">Recursos asignados</p-tab>
+                <p-tab value="gen">{{ 'PROJECTS.TAB_GENERATIONS' | translate }}</p-tab>
+                <p-tab value="res">{{ 'PROJECTS.TAB_RESOURCES' | translate }}</p-tab>
               </p-tablist>
               <p-tabpanels>
                 <p-tabpanel value="gen">
                   @if (generations().length === 0) {
                     <div class="flex flex-col items-center gap-2 py-8 text-center">
-                      <div class="flex h-12 w-12 items-center justify-center rounded-full bg-surface-2">
+                      <div
+                        class="flex h-12 w-12 items-center justify-center rounded-full bg-surface-2"
+                      >
                         <i class="md md-movie text-xl text-ink-muted-on-dark"></i>
                       </div>
                       <p class="text-sm text-ink-muted-on-dark">
-                        Sin generaciones en este proyecto todavía.
+                        {{ 'PROJECTS.NO_GENERATIONS' | translate }}
                       </p>
                     </div>
                   } @else {
@@ -203,7 +233,10 @@
                                 [src]="url | serverUrl"
                                 [alt]="log.piece_code || log.model_name"
                                 class="aspect-video w-full object-cover"
+                                width="640"
+                                height="360"
                                 loading="lazy"
+                                decoding="async"
                               />
                             }
                           }
@@ -212,7 +245,7 @@
                               {{ log.piece_code || log.model_name }}
                             </span>
                             <span class="shrink-0 text-xs text-ink-muted-on-dark">
-                              {{ logDate(log) }}
+                              {{ log.created_at | date: 'dd MMM' }}
                             </span>
                           </div>
                           @if (log.status === 'succeeded' || log.status === 'failed') {
@@ -222,45 +255,69 @@
                               <div
                                 class="log-rating-group"
                                 role="group"
-                                aria-label="Calificación de la generación"
+                                [attr.aria-label]="'PROJECTS.RATING_GROUP_ARIA' | translate"
                               >
                                 <button
                                   type="button"
                                   class="log-rating-check"
                                   [class.active]="log.rating_good"
-                                  [title]="log.rating_good ? 'Quitar Buena toma' : 'Buena toma'"
+                                  [title]="
+                                    (log.rating_good
+                                      ? 'PROJECTS.RATING_GOOD_REMOVE'
+                                      : 'PROJECTS.RATING_GOOD'
+                                    ) | translate
+                                  "
+                                  [attr.aria-label]="
+                                    (log.rating_good
+                                      ? 'PROJECTS.RATING_GOOD_REMOVE'
+                                      : 'PROJECTS.RATING_GOOD'
+                                    ) | translate
+                                  "
+                                  [attr.aria-pressed]="log.rating_good"
                                   (click)="rateLog(log, 'good')"
                                 >
-                                  <i class="md md-check"></i>
+                                  <ui-icon name="md-check" />
                                 </button>
                                 <button
                                   type="button"
                                   class="log-rating-check"
                                   [class.active]="log.rating_final"
-                                  [title]="log.rating_final ? 'Quitar Elegida final' : 'Elegida final'"
+                                  [title]="
+                                    (log.rating_final
+                                      ? 'PROJECTS.RATING_FINAL_REMOVE'
+                                      : 'PROJECTS.RATING_FINAL'
+                                    ) | translate
+                                  "
+                                  [attr.aria-label]="
+                                    (log.rating_final
+                                      ? 'PROJECTS.RATING_FINAL_REMOVE'
+                                      : 'PROJECTS.RATING_FINAL'
+                                    ) | translate
+                                  "
+                                  [attr.aria-pressed]="log.rating_final"
                                   (click)="rateLog(log, 'final')"
                                 >
-                                  <i class="md md-check md-double"></i>
+                                  <ui-icon name="md-check md-double" />
                                 </button>
                                 @if (log.rating_good || log.rating_final) {
                                   <button
                                     type="button"
                                     class="log-rating-clear"
-                                    title="Limpiar calificación"
+                                    [title]="'PROJECTS.RATING_CLEAR' | translate"
                                     (click)="clearLogRating(log)"
                                   >
-                                    CLEAR
+                                    {{ 'PROJECTS.CLEAR' | translate }}
                                   </button>
                                 }
                               </div>
                               <button
                                 type="button"
                                 class="log-reuse"
-                                title="Cargar estos datos en el studio para ajustar y volver a generar"
+                                [title]="'PROJECTS.REUSE_TITLE' | translate"
                                 (click)="reuseLog(log)"
                               >
                                 <i class="md md-refresh"></i>
-                                <span>REUSAR</span>
+                                <span>{{ 'PROJECTS.REUSE' | translate }}</span>
                               </button>
                             </div>
                           }
@@ -272,7 +329,7 @@
                 <p-tabpanel value="res">
                   <div class="mb-4 flex justify-end">
                     <p-button
-                      label="Asignar recursos"
+                      [label]="'PROJECTS.ASSIGN_RESOURCES' | translate"
                       icon="md md-add"
                       size="small"
                       [loading]="assigning()"
@@ -290,7 +347,7 @@
                         (click)="resourceFilter.set(opt.value)"
                       >
                         <i class="md {{ opt.icon }}"></i>
-                        {{ opt.label }}
+                        {{ opt.labelKey | translate }}
                         <span class="count" [class.badge]="resourceFilter() === opt.value">{{
                           resourceCounts()[opt.value]
                         }}</span>
@@ -299,11 +356,13 @@
                   </div>
                   @if (projectFiles().length === 0) {
                     <div class="flex flex-col items-center gap-2 py-8 text-center">
-                      <div class="flex h-12 w-12 items-center justify-center rounded-full bg-surface-2">
+                      <div
+                        class="flex h-12 w-12 items-center justify-center rounded-full bg-surface-2"
+                      >
                         <i class="md md-inventory_2 text-xl text-ink-muted-on-dark"></i>
                       </div>
                       <p class="text-sm text-ink-muted-on-dark">
-                        Sin recursos asignados. Asignalos desde la biblioteca o el studio.
+                        {{ 'PROJECTS.NO_RESOURCES' | translate }}
                       </p>
                     </div>
                   } @else {
@@ -311,14 +370,14 @@
                       @if (fileGroups().length === 0) {
                         <div class="flex flex-col items-center gap-2 py-8 text-center">
                           <p class="text-sm text-ink-muted-on-dark">
-                            No hay recursos de este tipo en el proyecto.
+                            {{ 'PROJECTS.NO_RESOURCES_TYPE' | translate }}
                           </p>
                         </div>
                       }
-                      @for (group of fileGroups(); track group.label) {
+                      @for (group of fileGroups(); track group.labelKey) {
                         <div>
                           <h4 class="mb-2 text-sm font-bold text-ink-on-dark">
-                            {{ group.label }}
+                            {{ group.labelKey | translate }}
                             <span class="ml-1 text-xs font-normal text-ink-muted-on-dark">
                               {{ group.files.length }}
                             </span>
@@ -335,7 +394,10 @@
                                       [src]="file.thumbnail_url || file.url | serverUrl"
                                       [alt]="file.filename"
                                       class="h-full w-full object-cover"
+                                      width="480"
+                                      height="480"
                                       loading="lazy"
+                                      decoding="async"
                                       (error)="markThumbBroken(file.id)"
                                     />
                                   } @else {
@@ -349,7 +411,10 @@
                                   @if (file.ingredients?.length) {
                                     <span
                                       class="resource-ing"
-                                      [title]="'Ingrediente: ' + file.ingredients![0].name"
+                                      [title]="
+                                        'PROJECTS.INGREDIENT'
+                                          | translate: { name: file.ingredients![0].name }
+                                      "
                                     >
                                       <i class="md md-label"></i>
                                       {{ file.ingredients![0].name }}
@@ -364,8 +429,10 @@
                                 <button
                                   type="button"
                                   class="resource-unassign"
-                                  title="Quitar del proyecto"
-                                  [attr.aria-label]="'Quitar ' + file.filename + ' del proyecto'"
+                                  [title]="'PROJECTS.UNASSIGN' | translate"
+                                  [attr.aria-label]="
+                                    'PROJECTS.UNASSIGN_ARIA' | translate: { name: file.filename }
+                                  "
                                   (click)="unassignFile(file)"
                                 >
                                   <i class="md md-close"></i>
@@ -388,7 +455,7 @@
 
   <!-- ─── New project dialog ────────────────────────────────── -->
   <p-dialog
-    header="Nuevo proyecto"
+    [header]="'PROJECTS.NEW_DIALOG_TITLE' | translate"
     [visible]="projectDialogVisible()"
     (visibleChange)="projectDialogVisible.set($event)"
     [modal]="true"
@@ -399,52 +466,65 @@
     <div class="flex flex-col gap-4 pt-2">
       <div class="flex flex-col gap-2">
         <label for="project-name" class="text-xs font-bold text-ink-on-dark">
-          Nombre <span class="text-danger">*</span>
+          {{ 'PROJECTS.NAME' | translate }} <span class="text-danger">*</span>
         </label>
         <input
           pInputText
           id="project-name"
+          name="project-name"
+          autocomplete="off"
           [ngModel]="newProject().name"
           (ngModelChange)="newProject().name = $event"
-          placeholder="Ej: Lanzamiento campaña 2026"
+          [placeholder]="'PROJECTS.NAME_PLACEHOLDER' | translate"
           class="w-full"
           (keydown.enter)="saveProject()"
         />
       </div>
       <div class="flex flex-col gap-2">
-        <label for="project-venue" class="text-xs font-bold text-ink-on-dark">Lugar</label>
+        <label for="project-venue" class="text-xs font-bold text-ink-on-dark">{{
+          'PROJECTS.VENUE' | translate
+        }}</label>
         <input
           pInputText
           id="project-venue"
+          name="project-venue"
+          autocomplete="off"
           [ngModel]="newProject().venue"
           (ngModelChange)="newProject().venue = $event"
-          placeholder="Opcional"
+          [placeholder]="'PROJECTS.OPTIONAL' | translate"
           class="w-full"
         />
       </div>
       <div class="flex flex-col gap-2">
-        <label for="project-desc" class="text-xs font-bold text-ink-on-dark">Descripción</label>
+        <label for="project-desc" class="text-xs font-bold text-ink-on-dark">{{
+          'PROJECTS.DESCRIPTION' | translate
+        }}</label>
         <textarea
           pTextarea
           id="project-desc"
+          name="project-description"
           rows="3"
           [ngModel]="newProject().description"
           (ngModelChange)="newProject().description = $event"
-          placeholder="Opcional"
+          [placeholder]="'PROJECTS.OPTIONAL' | translate"
           class="w-full"
         ></textarea>
       </div>
     </div>
     <ng-template #footer>
       <p-button
-        label="Cancelar"
+        [label]="'PROJECTS.CANCEL' | translate"
         severity="secondary"
         text
         (onClick)="projectDialogVisible.set(false)"
       />
-      <span pTooltip="Escribí un nombre para crear el proyecto" showDelay="400" class="inline-flex">
+      <span
+        [pTooltip]="'PROJECTS.CREATE_DISABLED_HINT' | translate"
+        showDelay="400"
+        class="inline-flex"
+      >
         <p-button
-          label="Crear"
+          [label]="'PROJECTS.CREATE' | translate"
           icon="md md-check"
           [loading]="saving()"
           [disabled]="!newProject().name.trim()"
@@ -459,7 +539,7 @@
     [visible]="assignDialogVisible()"
     (visibleChange)="assignDialogVisible.set($event)"
     (confirmed)="onAssignConfirmed($event)"
-    title="Asignar recursos al proyecto"
+    [title]="'PROJECTS.ASSIGN_DIALOG_TITLE' | translate"
   />
 
   <p-confirmDialog styleClass="custom-confirm-dialog" />

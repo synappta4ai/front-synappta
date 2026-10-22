@@ -22,6 +22,14 @@ Instrucciones para agentes de IA que trabajan en este repositorio. Léelas antes
 
 > Antes de dar una tarea por terminada, corre `npm run build` y `npm test`. Si no pasan, no está terminada.
 
+## Commits
+
+- Usa **Conventional Commits** (`feat`, `fix`, `docs`, `chore`, `refactor`, …), en inglés e imperativo, < 72 caracteres.
+- Un cambio lógico por commit; no mezcles refactors o arreglos no relacionados.
+- **Al commitear y hacer push, actualizá la versión antes de push**. Si el repo tiene versionamiento (`package.json`, `Cargo.toml`, `pyproject.toml`, `__version__`, etc.), subí la versión en un commit `chore` dedicado, separado del commit de código.
+- En `front-synapta` la versión de `package.json` alimenta `APP_VERSION` en `src/environments/*` cada vez que corre `npm run env` (prebuild/prewatch); el build la pisa, así que **no** la copies a mano.
+- **Prohibido comitear cambios en `src/environments/`**: son artefactos generados por `scripts/generate-env.ts`. Si el build los modifica, descartarlos antes de commitear (`git checkout -- src/environments`). Solo se comitean cuando cambia la estructura del archivo (nueva variable o target en `scripts/generate-env.ts`).
+
 ## TypeScript
 
 - `strict` está activado en `tsconfig.json` (`strictTemplates`, `strictInjectionParameters`, etc.). El código nuevo debe cumplirlo.
@@ -118,10 +126,13 @@ Sin inputs de personalización usa las claves `ALERTS.*` de `src/assets/i18n/{es
 
 ## Environments
 
-- Tres ambientes definidos por `fileReplacements` en `angular.json`:
+- Cuatro ambientes definidos por `fileReplacements` en `angular.json`:
   - **local** — configuración `development` (`ng serve`) → `src/environments/environment.ts`
+  - **localhost** — configuración `local` (`npm run start:local`) → `src/environments/environment.local.ts` (API `http://localhost:8099/api/v1`)
   - **dev** — configuración `dev` (`npm run build:dev`) → `src/environments/environment.dev.ts`
   - **prod** — configuración `production` (`npm run build`) → `src/environments/environment.prod.ts`
+- `scripts/generate-env.ts` (`npm run env`) corre **solo** en `prebuild`/`prebuild:dev`/`prewatch`; **no** en `ng serve` ni en `ng test`. Los `src/environments/*.ts` commiteados son la base; si necesitás regenerarlos a mano, usá `npm run env`.
+- **No se comitean los cambios** que el build genera en `src/environments/` (ver Commits). Tampoco se reescribe `.env.example`: es un archivo maintainido a mano.
 - Importarlos siempre con el alias `@env/environment` (nunca con rutas relativas).
 - La API base se lee de `environment.apiUrl` en los API repositories.
 
@@ -246,7 +257,7 @@ Reglas:
   - `p-selectbutton`: renderiza cada opción como `p-togglebutton` (los
     selectores CSS van contra `p-togglebutton.section-toggle`, no contra
     un contenedor); para contenido custom usar el slot `<ng-template #item
-    let-option>`.
+let-option>`.
   - `p-datepicker`: rompe SSR (NG0502) — evitar.
   - `p-dialog` controlado con signal + `(visibleChange)`.
   - En templates NO existe `Boolean` (TS2339) ni globals (`Math`, `Date`).
@@ -258,10 +269,19 @@ Reglas:
   `primeng/tooltip`; el fade-in usa rAF (en el panel preview puede quedarse
   en opacity 0 — artefacto del entorno, no un bug).
 - **Login E2E**: `POST /api/v1/auth/login-tenant` `{username, password,
-  tenant_id: 1}` con credenciales de `.env.e2e`. El password contiene un
+tenant_id: 1}` con credenciales de `.env.e2e`. El password contiene un
   en-dash U+2013: curl desde terminal lo rompe — usar Node/fetch (en
   preview_evaluate escribirlo como `\u20135`).
 - **Tipos de recursos**: las secciones de referencia viven en
   `library.interface.ts` (`ASSET_SECTIONS`, claves `character`/`location`/
   `props`) y el matching por tipo se hace con `assetMatchesSection()`
   (categoría **o** ingrediente tipado; `IngredientType` usa `prop` singular).
+- **Chat del asistente (/agency)**: el back emite eventos SSE `tool`
+  (status `running|ok|error`, con `task_id` cuando encola generaciones);
+  `applyToolEvent()` en `agency.component.ts` los muestra como chips de
+  actividad y engancha el `task_id` al `GenerationEventsStore` (reel y
+  campana siguen la generación). El turno del asistente puede encadenar
+  varias herramientas: el timeout del fetch es 120s, no 45s.
+- **Servidor MCP remoto**: `POST /api/v1/mcp` (Streamable HTTP stateless)
+  expone el dominio a agentes externos con el mismo JWT del login. No
+  duplicar esas tools en el front: son para clientes MCP (Claude/Codex).

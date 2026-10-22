@@ -1,7 +1,8 @@
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
-import { ApiResponse, Paginated } from '@interfaces/api.interface';
+import { Paginated } from '@interfaces/api.interface';
+import { unwrap } from '@utils/unwrap-api-response';
 
 import {
   AddIngredientFileRequest,
@@ -26,18 +27,23 @@ import { LibraryApiRepository } from '../repositories';
 export class LibraryService {
   private readonly libraryApiRepository = inject(LibraryApiRepository);
 
-  uploadFile(file: File, category?: string, eventId?: string): Observable<FileAsset> {
-    return unwrap(this.libraryApiRepository.uploadFile(file, category, eventId));
+  uploadFile(
+    file: File,
+    category?: string,
+    eventId?: string,
+    tenantSlug?: string,
+  ): Observable<FileAsset> {
+    return unwrap(this.libraryApiRepository.uploadFile(file, category, eventId, tenantSlug));
   }
 
   /** Asigna un recurso a un proyecto (evento). Idempotente. */
-  linkFileEvent(fileId: string, eventId: string): Observable<null> {
-    return unwrap(this.libraryApiRepository.linkFileEvent(fileId, eventId));
+  linkFileEvent(fileId: string, eventId: string, tenantSlug?: string): Observable<null> {
+    return unwrap(this.libraryApiRepository.linkFileEvent(fileId, eventId, tenantSlug));
   }
 
   /** Quita la asignación de un recurso a un proyecto (evento). */
-  unlinkFileEvent(fileId: string, eventId: string): Observable<null> {
-    return unwrap(this.libraryApiRepository.unlinkFileEvent(fileId, eventId));
+  unlinkFileEvent(fileId: string, eventId: string, tenantSlug?: string): Observable<null> {
+    return unwrap(this.libraryApiRepository.unlinkFileEvent(fileId, eventId, tenantSlug));
   }
 
   /** Recursos asignados a un proyecto (evento). */
@@ -45,8 +51,11 @@ export class LibraryService {
     return unwrap(this.libraryApiRepository.listFilesByEvent(eventId, category));
   }
 
-  listFilesPaginated(filters: FileListFilters = {}): Observable<Paginated<FileAsset>> {
-    return unwrap(this.libraryApiRepository.listFilesPaginated(filters));
+  listFilesPaginated(
+    filters: FileListFilters = {},
+    tenantSlug?: string,
+  ): Observable<Paginated<FileAsset>> {
+    return unwrap(this.libraryApiRepository.listFilesPaginated(filters, tenantSlug));
   }
 
   listFiles(): Observable<FileAsset[]> {
@@ -57,8 +66,8 @@ export class LibraryService {
     return unwrap(this.libraryApiRepository.getFile(id));
   }
 
-  deleteFile(id: string): Observable<null> {
-    return unwrap(this.libraryApiRepository.deleteFile(id));
+  deleteFile(id: string, tenantSlug?: string): Observable<null> {
+    return unwrap(this.libraryApiRepository.deleteFile(id, tenantSlug));
   }
 
   restoreFile(id: string): Observable<FileAsset> {
@@ -82,12 +91,16 @@ export class LibraryService {
     return unwrap(this.libraryApiRepository.getIngredient(id));
   }
 
-  createIngredient(payload: CreateIngredientRequest): Observable<Ingredient> {
-    return unwrap(this.libraryApiRepository.createIngredient(payload));
+  createIngredient(payload: CreateIngredientRequest, tenantSlug?: string): Observable<Ingredient> {
+    return unwrap(this.libraryApiRepository.createIngredient(payload, tenantSlug));
   }
 
-  updateIngredient(id: string, payload: UpdateIngredientRequest): Observable<Ingredient> {
-    return unwrap(this.libraryApiRepository.updateIngredient(id, payload));
+  updateIngredient(
+    id: string,
+    payload: UpdateIngredientRequest,
+    tenantSlug?: string,
+  ): Observable<Ingredient> {
+    return unwrap(this.libraryApiRepository.updateIngredient(id, payload, tenantSlug));
   }
 
   deleteIngredient(id: string): Observable<null> {
@@ -98,8 +111,12 @@ export class LibraryService {
     return unwrap(this.libraryApiRepository.listIngredientFiles(id));
   }
 
-  addIngredientFile(id: string, payload: AddIngredientFileRequest): Observable<IngredientFile> {
-    return unwrap(this.libraryApiRepository.addIngredientFile(id, payload));
+  addIngredientFile(
+    id: string,
+    payload: AddIngredientFileRequest,
+    tenantSlug?: string,
+  ): Observable<IngredientFile> {
+    return unwrap(this.libraryApiRepository.addIngredientFile(id, payload, tenantSlug));
   }
 
   removeIngredientFile(id: string, fileId: string): Observable<null> {
@@ -141,28 +158,4 @@ export class LibraryService {
   deleteSkill(id: string): Observable<null> {
     return unwrap(this.libraryApiRepository.deleteSkill(id));
   }
-}
-
-function unwrap<T>(source: Observable<ApiResponse<T>>): Observable<T> {
-  return new Observable<T>((subscriber) => {
-    const subscription = source.subscribe({
-      next: (response) => {
-        // success:false es error real; success:true con data:null es una
-        // respuesta de solo-mensaje (p.ej. "file added to ingredient").
-        if (response.success === false) {
-          subscriber.error(new Error(response.message || 'Request failed'));
-          return;
-        }
-        if (response.data === null) {
-          subscriber.next(null as T);
-          subscriber.complete();
-          return;
-        }
-        subscriber.next(response.data);
-        subscriber.complete();
-      },
-      error: (err: unknown) => subscriber.error(err),
-    });
-    return () => subscription.unsubscribe();
-  });
 }

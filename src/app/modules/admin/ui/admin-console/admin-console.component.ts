@@ -1,61 +1,157 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
+import { DOCUMENT } from '@angular/common';
+import {
+  afterNextRender,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  inject,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Tabs, Tab, TabList } from 'primeng/tabs';
+import { FormsModule } from '@angular/forms';
+import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
-import { UserSessionStore } from '@core/store/user.session';
-import { PageContainerComponent } from '@shared/components/index';
+import { MenuItem } from 'primeng/api';
+import { Button } from 'primeng/button';
+import { Menubar } from 'primeng/menubar';
+import { Select } from 'primeng/select';
+import { Tooltip } from 'primeng/tooltip';
 
+import { AdminTenantService } from '../../services/admin-tenant.service';
+
+/** Secciones de la consola, agrupadas por tema en el menubar. */
 @Component({
   selector: 'app-admin-console',
-  imports: [Tabs, Tab, TabList, RouterLink, RouterOutlet, PageContainerComponent],
+  imports: [FormsModule, RouterOutlet, Button, Menubar, Select, Tooltip, TranslatePipe],
   templateUrl: './admin-console.component.html',
+  styleUrls: ['./admin-console.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AdminConsoleComponent {
-  private readonly sessionStore = inject(UserSessionStore);
-  protected readonly router = inject(Router);
+  private readonly adminTenants = inject(AdminTenantService);
+  private readonly router = inject(Router);
+  private readonly translate = inject(TranslateService);
+  private readonly document = inject(DOCUMENT);
+  private readonly destroyRef = inject(DestroyRef);
 
-  /** true si el usuario actual es superadmin de plataforma (role_level 0). */
-  protected readonly isSuperadmin = computed(
-    () => this.sessionStore.currentUser()?.role_level === 0,
-  );
+  protected readonly isSuperadmin = this.adminTenants.isSuperadmin;
+  protected readonly selectedTenantId = this.adminTenants.selectedTenantId;
+  protected readonly tenantOptions = this.adminTenants.tenantOptions;
+  protected readonly loadingTenants = this.adminTenants.loading;
 
-  protected readonly tabItems = computed(() => {
-    const items = [
-      { value: 'models', label: 'Modelos', icon: 'md md-memory', routerLink: '/admin/models' },
-      { value: 'videos', label: 'Videos', icon: 'md md-videocam', routerLink: '/admin/videos' },
-      { value: 'imagens', label: 'Imágenes', icon: 'md md-image', routerLink: '/admin/imagens' },
-      { value: 'logs', label: 'Logs', icon: 'md md-list', routerLink: '/admin/logs' },
+  protected readonly isTenantsRoute = signal(this.router.url.includes('/admin/tenants'));
+
+  /** Alto exacto de la consola: viewport menos la navbar, sin scroll de página. */
+  protected readonly shellHeight = signal<number | null>(null);
+
+  protected readonly showMenubar = computed(() => this.selectedTenantId() !== null);
+
+  protected readonly menuItems = computed<MenuItem[]>(() => {
+    // currentLang() dentro del computed re-evalúa las etiquetas al cambiar idioma.
+    this.translate.currentLang();
+    const t = (key: string): string => this.translate.instant(key);
+    const soon = t('ADMIN.CONSOLE.MENU_SOON');
+
+    return [
+      {
+        label: t('ADMIN.CONSOLE.MENU_MODELS'),
+        icon: 'md md-memory',
+        routerLink: '/admin/models',
+        routerLinkActiveOptions: { exact: true },
+      },
+      {
+        label: t('ADMIN.CONSOLE.MENU_PROVIDERS'),
+        icon: 'md md-dashboard',
+        disabled: true,
+        title: soon,
+      },
+      { separator: true },
+      {
+        label: t('ADMIN.CONSOLE.MENU_VIDEOS'),
+        icon: 'md md-videocam',
+        routerLink: '/admin/videos',
+      },
+      {
+        label: t('ADMIN.CONSOLE.MENU_IMAGES'),
+        icon: 'md md-image',
+        routerLink: '/admin/imagenes',
+      },
+      { separator: true },
+      {
+        label: t('ADMIN.CONSOLE.MENU_LOGS'),
+        icon: 'md md-list',
+        routerLink: '/admin/logs',
+      },
+      {
+        label: t('ADMIN.CONSOLE.MENU_GPU'),
+        icon: 'md md-desktop_windows',
+        routerLink: '/admin/gpu',
+      },
+      { separator: true },
+      {
+        label: t('ADMIN.CONSOLE.MENU_USERS'),
+        icon: 'md md-people',
+        routerLink: '/admin/users',
+      },
+      {
+        label: t('ADMIN.CONSOLE.MENU_BUCKET'),
+        icon: 'md md-storage',
+        routerLink: '/admin/bucket',
+      },
+      {
+        label: t('ADMIN.CONSOLE.MENU_DRIVE'),
+        icon: 'md md-folder_open',
+        disabled: true,
+        title: soon,
+      },
     ];
-    if (this.isSuperadmin()) {
-      items.push({
-        value: 'tenants',
-        label: 'Tenants',
-        icon: 'md md-business',
-        routerLink: '/admin/tenants',
-      });
-    }
-    return items;
   });
 
-  /** Tab activo reactivo: el getter anterior quedaba stale con OnPush. */
-  protected readonly activeValue = signal(this.computeActiveValue());
-
   constructor() {
-    this.router.events.pipe(takeUntilDestroyed()).subscribe((e) => {
-      if (e instanceof NavigationEnd) {
-        this.activeValue.set(this.computeActiveValue());
+    this.adminTenants.ensureLoaded();
+
+    this.router.events.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
+      if (event instanceof NavigationEnd) {
+        this.isTenantsRoute.set(this.router.url.includes('/admin/tenants'));
       }
     });
+
+    afterNextRender(() => this.trackViewport());
   }
 
-  private computeActiveValue(): string {
-    const url = this.router.url;
-    if (url.includes('/admin/tenants')) return 'tenants';
-    if (url.includes('/admin/videos')) return 'videos';
-    if (url.includes('/admin/imagens')) return 'imagens';
-    if (url.includes('/admin/logs')) return 'logs';
-    return 'models';
+  protected onTenantChange(tenantId: number | null): void {
+    this.adminTenants.select(tenantId);
+    if (tenantId !== null && this.isTenantsRoute()) {
+      void this.router.navigate(['/admin/models']);
+    }
+  }
+
+  protected goToTenants(): void {
+    void this.router.navigate(['/admin/tenants']);
+  }
+
+  private trackViewport(): void {
+    const nav = this.document.querySelector<HTMLElement>('app-nav-bar header');
+    const win = this.document.defaultView;
+
+    const measure = (): void => {
+      const navHeight = nav?.getBoundingClientRect().height ?? 0;
+      const viewport = win?.innerHeight ?? 0;
+      this.shellHeight.set(Math.max(Math.round(viewport - navHeight), 420));
+    };
+
+    measure();
+    const observer = nav ? new ResizeObserver(measure) : null;
+    if (nav && observer) {
+      observer.observe(nav);
+    }
+    win?.addEventListener('resize', measure);
+
+    this.destroyRef.onDestroy(() => {
+      observer?.disconnect();
+      win?.removeEventListener('resize', measure);
+    });
   }
 }

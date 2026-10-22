@@ -53,6 +53,8 @@ Thumbs.db
 # Secrets
 .env
 .env.*
+/env
+/env.e2e
 !.env.example
 
 # Dev server and tool logs

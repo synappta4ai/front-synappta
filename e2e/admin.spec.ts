@@ -5,35 +5,69 @@ import {
   togglePrimeButton,
   openPrimeSelect,
 } from './helpers/session';
+import type { Page } from '@playwright/test';
+
+/** Elige el primer tenant del header; es lo que destapa el menubar. */
+async function selectFirstTenant(page: Page): Promise<void> {
+  await openPrimeSelect(page.locator('[aria-label="Tenant a administrar"]'));
+  const options = page.locator('.p-select-overlay:not(.p-select-overlay-hidden) .p-select-option');
+  await expect(options.first()).toBeVisible();
+  await options.first().click();
+}
+
+/**
+ * Entra a una sección de la consola. Desde el rediseño las secciones viven
+ * detrás del selector de tenant del header: sin elegirlo la página muestra el
+ * empty state y el contenido de la sección no existe.
+ */
+async function gotoAdminSection(page: Page, path: string): Promise<void> {
+  await page.goto(path);
+  await selectFirstTenant(page);
+  await expect(page.locator('.p-menubar.admin-menubar')).toBeVisible({ timeout: 20_000 });
+}
 
 test.describe('admin console', () => {
-  test('renders models tab by default', async ({ authedPage: page }) => {
+  test('pide un tenant antes de mostrar las secciones', async ({ authedPage: page }) => {
     await page.goto('/admin');
     await expectPageTitle(page, 'Consola de Administración');
-    await expect(page.locator('.p-tab.p-tab-active')).toHaveText(/Modelos/);
     await expect(page).toHaveURL(/\/admin\/models/);
+    await expect(page.getByText('Seleccioná un tenant para empezar')).toBeVisible();
+    await expect(page.locator('.p-menubar.admin-menubar')).toHaveCount(0);
   });
 
-  test('navigates every tab and highlights the active one', async ({ authedPage: page }) => {
+  test('al elegir tenant carga el menubar y navega sus secciones', async ({ authedPage: page }) => {
+    test.setTimeout(60_000);
     await page.goto('/admin');
-    const tabs = ['Videos', 'Imágenes', 'Logs'];
-    for (const tab of tabs) {
-      await page.locator('.p-tab').filter({ hasText: tab }).click();
-      await page.waitForURL(
-        new RegExp(`/admin/${tab === 'Imágenes' ? 'imagens' : tab.toLowerCase()}`),
-      );
-      await expect(page.locator('.p-tab.p-tab-active')).toHaveText(new RegExp(tab));
+    await selectFirstTenant(page);
+
+    const menubar = page.locator('.p-menubar.admin-menubar');
+    await expect(menubar).toBeVisible({ timeout: 20_000 });
+
+    const sections: [string, string][] = [
+      ['Videos', 'videos'],
+      ['Imágenes', 'imagenes'],
+      ['Logs', 'logs'],
+      ['GPU', 'gpu'],
+    ];
+    for (const [label, path] of sections) {
+      await menubar.getByRole('link', { name: label }).click();
+      await page.waitForURL(new RegExp(`/admin/${path}`));
+      await expect(menubar.locator('.p-menubar-item-link-active')).toHaveText(new RegExp(label));
     }
+
+    // La consola ocupa el viewport: el scroll vive dentro del contenido.
+    await expect
+      .poll(() => page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight))
+      .toBeLessThanOrEqual(1);
   });
 
-  test('shows Tenants tab for superadmin', async ({ authedPage: page }) => {
+  test('el botón Tenants es solo para superadmin y lleva a la gestión', async ({
+    authedPage: page,
+  }) => {
     await page.goto('/admin');
-    // El tab aparece tras hidratar la sesión (role_level 0): bajo carga de
-    // 6 workers la hidratación puede superar el timeout por defecto de 5s.
-    await expect(page.locator('.p-tab').filter({ hasText: 'Tenants' })).toBeVisible({
-      timeout: 20_000,
-    });
-    await page.locator('.p-tab').filter({ hasText: 'Tenants' }).click();
+    const tenantsButton = page.getByRole('button', { name: 'Tenants' });
+    await expect(tenantsButton).toBeVisible({ timeout: 20_000 });
+    await tenantsButton.click();
     await page.waitForURL(/\/admin\/tenants/);
     await expectPageTitle(page, 'Gestión de Tenants');
   });
@@ -49,11 +83,7 @@ test.describe('admin models — modelo del agente', () => {
     await expectPageTitle(page, 'Consola de Administración');
 
     // Superadmin: hay que elegir tenant para cargar credenciales y modelos.
-    await openPrimeSelect(page.locator('[aria-label="Seleccionar tenant"]'));
-    const tenantOptions = page
-      .locator('.p-select-overlay:not(.p-select-overlay-hidden) .p-select-option');
-    await expect(tenantOptions.first()).toBeVisible();
-    await tenantOptions.first().click();
+    await selectFirstTenant(page);
     await expect(page.getByText('API Keys del tenant')).toBeVisible({ timeout: 20_000 });
 
     // Proveedor LLM (OpenRouter): muestra modelo + Base URL del asistente.
@@ -62,9 +92,7 @@ test.describe('admin models — modelo del agente', () => {
     await options.filter({ hasText: 'OpenRouter' }).click();
     await expect(page.locator('#cred-agent-model')).toBeVisible();
     await expect(page.locator('#cred-agent-baseurl')).toBeVisible();
-    await expect(
-      page.getByText('El modelo LLM que usa el chat de la Agencia'),
-    ).toBeVisible();
+    await expect(page.getByText('El modelo LLM que usa el chat de la Agencia')).toBeVisible();
 
     // Proveedor de generación (BytePlus): no lleva modelo/base URL de agente.
     await openPrimeSelect(page.locator('#cred-provider'));
@@ -77,14 +105,16 @@ test.describe('admin models — modelo del agente', () => {
 
 test.describe('admin images gallery', () => {
   test('renders generated images section with toolbar', async ({ authedPage: page }) => {
-    await page.goto('/admin/imagens');
+    test.setTimeout(60_000);
+    await gotoAdminSection(page, '/admin/imagenes');
     await expect(page.locator('.images-toolbar')).toBeVisible();
     await expect(page.locator('.section-toggle.p-togglebutton-checked')).toHaveText(/Generadas/);
     await expect(page.getByPlaceholder('Proyecto, pieza o task…')).toBeVisible();
   });
 
   test('switches to uploaded assets section with type tabs', async ({ authedPage: page }) => {
-    await page.goto('/admin/imagens');
+    test.setTimeout(60_000);
+    await gotoAdminSection(page, '/admin/imagenes');
     // p-togglebutton de PrimeNG v22 solo alterna con click JS nativo y
     // tras "despertar" el delegador jsaction: el helper reintenta.
     const uploadsToggle = page.locator('.section-toggle').filter({ hasText: 'Recursos subidos' });
@@ -107,7 +137,8 @@ test.describe('admin images gallery', () => {
   });
 
   test('upload buttons are visible', async ({ authedPage: page }) => {
-    await page.goto('/admin/imagens');
+    test.setTimeout(60_000);
+    await gotoAdminSection(page, '/admin/imagenes');
     const uploadsToggle = page.locator('.section-toggle').filter({ hasText: 'Recursos subidos' });
     await togglePrimeButton(uploadsToggle);
     for (const label of ['Todos', 'Personaje', 'Locación', 'Prop']) {
@@ -116,7 +147,8 @@ test.describe('admin images gallery', () => {
   });
 
   test('pagination bar hides when there is a single page', async ({ authedPage: page }) => {
-    await page.goto('/admin/imagens');
+    test.setTimeout(60_000);
+    await gotoAdminSection(page, '/admin/imagenes');
     // Con pocos recursos no debe haber barra de paginación (total <= limit).
     const pager = page.locator('.pagination-bar');
     if (await pager.isVisible()) {
@@ -127,18 +159,25 @@ test.describe('admin images gallery', () => {
 
 test.describe('admin videos gallery', () => {
   test('renders without crashing', async ({ authedPage: page }) => {
+    test.setTimeout(60_000);
     await page.goto('/admin/videos');
+    await selectFirstTenant(page);
     await expectPageTitle(page, 'Consola de Administración');
-    await expect(page.locator('.p-tab.p-tab-active')).toHaveText(/Videos/);
+    await expect(page.locator('.p-menubar.admin-menubar .p-menubar-item-link-active')).toHaveText(
+      /Videos/,
+      { timeout: 20_000 },
+    );
   });
 });
 
 test.describe('admin logs', () => {
   test('renders the logs table', async ({ authedPage: page }) => {
+    test.setTimeout(60_000);
     await page.goto('/admin/logs');
-    await expect(page.locator('.p-tab.p-tab-active')).toHaveText(/Logs/);
-    // La página tiene su propio contenido (tabla o empty state).
-    const content = page.locator('app-page-container main, app-page-container');
-    await expect(content.first()).toBeVisible();
+    await selectFirstTenant(page);
+    await expect(page.locator('.p-menubar.admin-menubar .p-menubar-item-link-active')).toHaveText(
+      /Logs/,
+      { timeout: 20_000 },
+    );
   });
 });

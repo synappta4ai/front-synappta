@@ -1,4 +1,4 @@
-<app-page-container title="Recursos" animate.enter="anim-page">
+<app-page-container [title]="'LIBRARY.TITLE' | translate" animate.enter="anim-page">
   @if (error(); as message) {
     <div class="mb-6">
       <p-message severity="error" [text]="message" styleClass="w-full" />
@@ -12,16 +12,17 @@
         <p-inputicon styleClass="md md-search" />
         <input
           pInputText
-          type="text"
-          aria-label="Buscar recursos por nombre"
-          placeholder="Buscar por nombre…"
+          type="search"
+          name="search"
+          [attr.aria-label]="'LIBRARY.SEARCH_ARIA' | translate"
+          [placeholder]="'LIBRARY.SEARCH_PLACEHOLDER' | translate"
           [ngModel]="searchInput()"
           (ngModelChange)="onSearchInput($event)"
         />
       </p-iconfield>
       <span class="total-chip">
         <strong>{{ total() }}</strong>
-        <small>recursos</small>
+        <small>{{ 'LIBRARY.RESOURCES_UNIT' | translate }}</small>
       </span>
     </div>
 
@@ -29,15 +30,21 @@
       <label
         class="upload-btn"
         [class.busy]="uploading()"
-        [title]="uploading() ? 'Subida en curso…' : 'Subir imágenes, videos o audio'"
+        [title]="
+          uploading()
+            ? ('LIBRARY.UPLOAD_TITLE_BUSY' | translate)
+            : ('LIBRARY.UPLOAD_TITLE' | translate)
+        "
         tabindex="0"
         (keydown.enter)="fileInput.click()"
+        (keydown.space)="$event.preventDefault(); fileInput.click()"
       >
         <i [class]="uploading() ? 'md md-refresh md-spin' : 'md md-upload'"></i>
         {{
           uploading() && uploadProgress()
-            ? 'Subiendo ' + uploadProgress()!.done + '/' + uploadProgress()!.total
-            : 'Subir recursos'
+            ? ('LIBRARY.UPLOADING'
+              | translate: { done: uploadProgress()!.done, total: uploadProgress()!.total })
+            : ('LIBRARY.UPLOAD_LABEL' | translate)
         }}
         <input
           #fileInput
@@ -62,7 +69,7 @@
         (click)="filter.set(opt.value)"
       >
         <i [class]="opt.icon"></i>
-        {{ opt.label }}
+        {{ opt.labelKey | translate }}
         <span class="count" [class.badge]="filter() === opt.value">{{ counts()[opt.value] }}</span>
       </button>
     }
@@ -71,92 +78,132 @@
   <!-- Estado: cargando / vacío / grilla -->
   @if (loading()) {
     <div class="empty-state" aria-busy="true">
-      <span class="sr-only">Cargando recursos…</span>
+      <span class="sr-only">{{ 'LIBRARY.LOADING' | translate }}</span>
       <div class="skel skel-title" aria-hidden="true"></div>
       <div class="skel skel-text" aria-hidden="true"></div>
       <div class="skel skel-text" aria-hidden="true"></div>
     </div>
-  } @else if (filteredFiles().length === 0) {
+  } @else if (filteredGroups().length === 0) {
     <div class="empty-state">
       <div class="empty-icon">
         <i class="md md-inbox"></i>
       </div>
-      <h3>No hay recursos</h3>
-      <p>
-        No se encontraron archivos con la clasificación o búsqueda actual. Sube imágenes, videos o
-        audio para empezar.
-      </p>
+      <h3>{{ 'LIBRARY.EMPTY_TITLE' | translate }}</h3>
+      <p>{{ 'LIBRARY.EMPTY_HINT' | translate }}</p>
     </div>
   } @else {
     <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
-      @for (file of filteredFiles(); track file.id; let i = $index) {
-          <div
-            class="resource-card"
-            role="button"
-            tabindex="0"
-            animate.enter="anim-item"
-            [style.animation-delay.ms]="i < 8 ? i * 35 : 280"
-            [attr.aria-label]="'Ver ' + file.filename"
-            (click)="openViewer(file)"
-            (keydown.enter)="openViewer(file)"
-          >
-            <div class="resource-card__thumb">
-              @if (file.mime_type?.startsWith('image/') && !brokenThumbs().has(file.id)) {
-                <img
-                  appImgFade
-                  [src]="(file.thumbnail_url || file.url) | serverUrl"
-                  [alt]="file.filename"
-                  loading="lazy"
-                  decoding="async"
-                  (error)="markThumbBroken(file.id)"
-                />
-              } @else if (file.mime_type?.startsWith('image/')) {
-                <div class="resource-card__fallback">
-                  <i class="md md-image"></i>
-                </div>
-              } @else if (file.mime_type?.startsWith('video/')) {
-                <video [src]="file.url | serverUrl" preload="metadata"></video>
-              } @else if (file.mime_type?.startsWith('audio/')) {
-                <div class="resource-card__fallback">
-                  <i class="md md-play_arrow"></i>
-                </div>
-              } @else {
-                <div class="resource-card__fallback">
-                  <i class="md md-description"></i>
-                </div>
-              }
-              <button
-                type="button"
-                class="card-quick"
-                title="Descargar"
-                aria-label="Descargar recurso"
-                (click)="$event.stopPropagation(); download(absoluteUrl(file.url), file.filename)"
-              >
-                <i class="md md-download"></i>
-              </button>
-              @if ((file.project_ids?.length ?? 0) > 0) {
-                <span class="overlay-badge overlay-badge--bottom">
-                  <i class="md md-work"></i>{{ file.project_ids!.length }}
-                </span>
-              }
-            </div>
-            <div class="resource-card__body">
-              <p class="resource-card__name" [title]="file.filename">{{ file.filename }}</p>
-              @if (file.ingredients?.length) {
-                <div class="ing-row">
-                  @for (ing of file.ingredients; track ing.id) {
-                    <span class="ing-chip" [title]="ingTypeLabel(ing.type) + ': ' + ing.name">
-                      {{ ingTypeLabel(ing.type) }}: {{ ing.name }}
-                    </span>
-                  }
-                </div>
-              }
-              <div class="meta-row">
-                <span>{{ formatSize(file.size) }}</span>
-                <span>{{ file.created_at | date: 'shortDate' }}</span>
+      @for (group of filteredGroups(); track group.key; let i = $index) {
+        @let file = group.primary;
+        <div
+          class="resource-card"
+          role="button"
+          tabindex="0"
+          animate.enter="anim-item"
+          [style.animation-delay.ms]="i < 8 ? i * 35 : 280"
+          [attr.aria-label]="'LIBRARY.VIEW_ARIA' | translate: { name: file.filename }"
+          (click)="openViewer(file)"
+          (keydown.enter)="openViewer(file)"
+          (keydown.space)="$event.preventDefault(); openViewer(file)"
+        >
+          <div class="resource-card__thumb">
+            @if (file.mime_type?.startsWith('image/') && !brokenThumbs().has(file.id)) {
+              <img
+                appImgFade
+                [src]="file.thumbnail_url || file.url | serverUrl"
+                [alt]="file.filename"
+                width="480"
+                height="360"
+                loading="lazy"
+                decoding="async"
+                (error)="markThumbBroken(file.id)"
+              />
+            } @else if (file.mime_type?.startsWith('image/')) {
+              <div class="resource-card__fallback">
+                <i class="md md-image"></i>
               </div>
+            } @else if (file.mime_type?.startsWith('video/')) {
+              <video [src]="file.url | serverUrl" preload="metadata"></video>
+            } @else if (file.mime_type?.startsWith('audio/')) {
+              <div class="resource-card__fallback">
+                <i class="md md-play_arrow"></i>
+              </div>
+            } @else {
+              <div class="resource-card__fallback">
+                <i class="md md-description"></i>
+              </div>
+            }
+            <button
+              type="button"
+              class="card-quick"
+              [title]="'LIBRARY.DOWNLOAD' | translate"
+              [attr.aria-label]="'LIBRARY.DOWNLOAD_ARIA' | translate"
+              (click)="$event.stopPropagation(); download(absoluteUrl(file.url), file.filename)"
+            >
+              <i class="md md-download"></i>
+            </button>
+            @if ((file.project_ids?.length ?? 0) > 0) {
+              <span class="overlay-badge overlay-badge--bottom">
+                <i class="md md-work"></i>{{ file.project_ids!.length }}
+              </span>
+            }
+            @if (group.files.length > 1) {
+              <span
+                class="overlay-badge overlay-badge--top"
+                [title]="'LIBRARY.GROUP_TITLE' | translate: { count: group.files.length }"
+              >
+                <i class="md md-collections"></i>{{ group.files.length }}
+              </span>
+            }
+          </div>
+          <div class="resource-card__body">
+            <p class="resource-card__name" [title]="file.filename">{{ file.filename }}</p>
+            @if (group.files.length > 1) {
+              <div class="group-strip">
+                @for (item of group.files.slice(0, groupThumbsVisible); track item.id) {
+                  <button
+                    type="button"
+                    class="group-strip__item"
+                    [title]="item.filename"
+                    [attr.aria-label]="'LIBRARY.VIEW_ARIA' | translate: { name: item.filename }"
+                    (click)="$event.stopPropagation(); openViewer(item)"
+                  >
+                    @if (item.mime_type?.startsWith('image/') && !brokenThumbs().has(item.id)) {
+                      <img
+                        appImgFade
+                        [src]="item.thumbnail_url || item.url | serverUrl"
+                        [alt]="item.filename"
+                        width="48"
+                        height="48"
+                        loading="lazy"
+                        decoding="async"
+                        (error)="markThumbBroken(item.id)"
+                      />
+                    } @else {
+                      <i class="md md-image"></i>
+                    }
+                  </button>
+                }
+                @if (group.files.length > groupThumbsVisible) {
+                  <span class="group-strip__more">+{{ group.files.length - groupThumbsVisible }}</span>
+                }
+              </div>
+            }
+            @if (group.ingredients.length) {
+              <div class="ing-row">
+                @for (ing of group.ingredients; track ing.id) {
+                  <span class="ing-chip" [title]="ingTypeLabel(ing.type) + ': ' + ing.name">
+                    {{ ingTypeLabel(ing.type) }}: {{ ing.name }}
+                  </span>
+                }
+              </div>
+            }
+            <div class="meta-row">
+              <span>{{ formatSize(file.size) }}</span>
+              <span>{{ file.created_at | date: 'shortDate' }}</span>
             </div>
           </div>
+        </div>
       }
     </div>
   }
@@ -166,396 +213,33 @@
     <div class="pagination-bar">
       <p-button
         icon="md md-chevron_left"
-        label="Anterior"
+        [label]="'LIBRARY.PREV' | translate"
         [disabled]="page() <= 1"
         (onClick)="prevPage()"
       />
-      <span class="page-info">Página {{ page() }} · {{ total() }} recursos</span>
+      <span class="page-info">
+        {{ 'LIBRARY.PAGE' | translate: { page: page() } }} ·
+        {{
+          (total() === 1 ? 'LIBRARY.RECORDS_ONE' : 'LIBRARY.RECORDS_MANY')
+            | translate: { count: total() }
+        }}
+      </span>
       <p-button
         icon="md md-chevron_right"
         iconPos="right"
-        label="Siguiente"
+        [label]="'LIBRARY.NEXT' | translate"
         [disabled]="!hasNext()"
         (onClick)="nextPage()"
       />
     </div>
   }
 
-  <!-- Editar elemento: imágenes a la izquierda, datos a la derecha -->
-  <p-dialog
-    [visible]="viewerVisible()"
-    (visibleChange)="onViewerVisibleChange($event)"
-    [modal]="true"
-    [style]="{ width: 'min(96vw, 68rem)' }"
-    styleClass="element-dialog"
-    [draggable]="false"
-    [resizable]="false"
-    [closeOnEscape]="true"
-  >
-    <ng-template #header>
-      <div class="viewer-head">
-        <div class="viewer-head__icon">
-          <i class="md md-photo_library"></i>
-        </div>
-        <div class="min-w-0">
-          <h3 class="viewer-head__title">Editar elemento</h3>
-          <p class="viewer-head__sub" [title]="elementLabel()">{{ elementLabel() }}</p>
-        </div>
-      </div>
-    </ng-template>
-
-    <div class="edit-grid">
-      <!-- Izquierda: imágenes del elemento -->
-      <section class="edit-media" aria-label="Imágenes del elemento">
-        <div class="edit-tools">
-          <button
-            type="button"
-            class="icon-btn"
-            title="Recargar imágenes"
-            aria-label="Recargar imágenes"
-            (click)="reloadFiles()"
-          >
-            <i class="md md-refresh" [class.md-spin]="loadingElement()"></i>
-          </button>
-          <button
-            type="button"
-            class="icon-btn"
-            title="Rotar vista previa"
-            aria-label="Rotar vista previa"
-            (click)="rotatePreview()"
-          >
-            <i class="md md-rotate_90"></i>
-          </button>
-          <button
-            type="button"
-            class="icon-btn"
-            title="Quitar imagen del elemento"
-            aria-label="Quitar imagen del elemento"
-            [disabled]="!editIngId()"
-            (click)="confirmRemoveFile()"
-          >
-            <i class="md md-delete"></i>
-          </button>
-        </div>
-
-        <div class="edit-stage">
-          @for (item of displayFiles(); track item.file_id; let i = $index) {
-            <button
-              type="button"
-              class="edit-cell"
-              [class.active]="activeFile()?.file_id === item.file_id"
-              [title]="item.filename ?? ''"
-              [attr.aria-label]="'Ver ' + (item.filename ?? 'imagen')"
-              (click)="setActive(i)"
-            >
-              @if (item.mime_type?.startsWith('image/') && !brokenThumbs().has(item.file_id)) {
-                <img
-                  appImgFade
-                  [src]="absoluteUrl(item.url)"
-                  [alt]="item.filename ?? ''"
-                  loading="lazy"
-                  decoding="async"
-                  [style.transform]="
-                    activeFile()?.file_id === item.file_id ? 'rotate(' + rotation() + 'deg)' : ''
-                  "
-                  (error)="markThumbBroken(item.file_id)"
-                />
-              } @else {
-                <span class="edit-cell__fallback">
-                  <i class="md md-image"></i>
-                </span>
-              }
-            </button>
-          } @empty {
-            <div class="edit-empty">
-              <i class="md md-image"></i>
-              <p>Sin imágenes todavía</p>
-            </div>
-          }
-        </div>
-
-        <!-- Fila de miniaturas + añadir -->
-        <div class="edit-thumbs">
-          @for (item of displayFiles(); track item.file_id; let i = $index) {
-            <button
-              type="button"
-              class="edit-thumb"
-              [class.active]="activeFile()?.file_id === item.file_id"
-              [title]="item.filename ?? ''"
-              [attr.aria-label]="'Seleccionar ' + (item.filename ?? 'imagen')"
-              (click)="setActive(i)"
-            >
-              @if (!brokenThumbs().has(item.file_id) && (item.thumbnail_url || item.url)) {
-                <img
-                  [src]="absoluteUrl(item.thumbnail_url || item.url)"
-                  [alt]="item.filename ?? ''"
-                  loading="lazy"
-                  (error)="markThumbBroken(item.file_id)"
-                />
-              } @else {
-                <i class="md md-image"></i>
-              }
-            </button>
-          }
-          <button
-            type="button"
-            class="edit-thumb edit-thumb--add"
-            title="Añadir imagen"
-            aria-label="Añadir imagen al elemento"
-            [disabled]="pickingImage()"
-            (click)="imagePick.click()"
-          >
-            <i [class]="pickingImage() ? 'md md-refresh md-spin' : 'md md-add'"></i>
-          </button>
-          <input
-            #imagePick
-            type="file"
-            class="hidden"
-            accept="image/*"
-            aria-hidden="true"
-            tabindex="-1"
-            (change)="onPickImage($event)"
-          />
-        </div>
-
-        <!-- Acciones sobre el recurso de la biblioteca -->
-        @if (selected(); as file) {
-          <div class="edit-file-actions">
-            <p-button
-              icon="md md-download"
-              label="Descargar"
-              [text]="true"
-              size="small"
-              (onClick)="download(absoluteUrl(file.url), file.filename)"
-            />
-            <p-button
-              icon="md md-open_in_new"
-              label="Abrir en pestaña"
-              [text]="true"
-              size="small"
-              severity="secondary"
-              (onClick)="openInTab(absoluteUrl(file.url))"
-            />
-            <p-button
-              icon="md md-work"
-              label="Asignar a proyecto"
-              [text]="true"
-              size="small"
-              severity="secondary"
-              (onClick)="openAssign()"
-            />
-            <p-button
-              icon="md md-delete"
-              label="Eliminar recurso"
-              [text]="true"
-              size="small"
-              severity="danger"
-              (onClick)="confirmDelete(file)"
-            />
-          </div>
-        }
-      </section>
-
-      <!-- Derecha: datos del elemento -->
-      <section class="edit-form" aria-label="Datos del elemento">
-        <div class="field">
-          <label class="field__label" for="el-category">Categoría</label>
-          <p-select
-            inputId="el-category"
-            [ngModel]="editType()"
-            (ngModelChange)="editType.set($event)"
-            [options]="categoryOptions"
-            optionLabel="label"
-            optionValue="value"
-            [showClear]="false"
-            appendTo="body"
-            styleClass="w-full"
-          >
-            <ng-template pTemplate="selectedItem" let-opt>
-              <span class="select-with-icon"><i [class]="opt.icon"></i>{{ opt.label }}</span>
-            </ng-template>
-            <ng-template #item let-opt>
-              <span class="select-with-icon"><i [class]="opt.icon"></i>{{ opt.label }}</span>
-            </ng-template>
-          </p-select>
-        </div>
-
-        <div class="field">
-          <label class="field__label" for="el-name">Nombre</label>
-          <input
-            pInputText
-            id="el-name"
-            [ngModel]="editName()"
-            (ngModelChange)="editName.set($event)"
-            placeholder="Nombre del elemento"
-          />
-          <span class="field__hint">El nombre para mostrar, p. ej., Cal, Oli, Elena</span>
-        </div>
-
-        <div class="field-row">
-          <div class="field">
-            <label class="field__label" for="el-version">Versión</label>
-            <input
-              pInputText
-              id="el-version"
-              [ngModel]="editVersion()"
-              (ngModelChange)="editVersion.set($event)"
-              placeholder="v1"
-            />
-            <span class="field__hint">p. ej. v1</span>
-          </div>
-          <div class="field">
-            <label class="field__label" for="el-status">Estado</label>
-            <p-select
-              inputId="el-status"
-              [ngModel]="editStatus()"
-              (ngModelChange)="editStatus.set($event)"
-              [options]="statusOptions"
-              optionLabel="label"
-              optionValue="value"
-              [showClear]="false"
-              appendTo="body"
-              styleClass="w-full"
-            />
-          </div>
-        </div>
-
-        <div class="field">
-          <label class="field__label" for="el-id">ID del elemento</label>
-          <div class="id-row">
-            <p-iconfield iconPosition="left" styleClass="id-field">
-              <p-inputicon styleClass="md md-alternate_email" />
-              <input
-                pInputText
-                id="el-id"
-                [ngModel]="editElementId()"
-                (ngModelChange)="editElementId.set($event)"
-                placeholder="Mario"
-              />
-            </p-iconfield>
-            <button
-              type="button"
-              class="icon-btn"
-              title="Regenerar el ID desde el nombre"
-              aria-label="Regenerar el ID desde el nombre"
-              (click)="resetElementId()"
-            >
-              <i class="md md-rotate_left"></i>
-            </button>
-          </div>
-          <span class="field__hint">
-            Identificador único, p. ej. Mario · se guarda como
-            <code>@{{ editElementId() }}</code>
-          </span>
-        </div>
-
-        <div class="field">
-          <label class="field__label" for="el-desc">Descripción</label>
-          <textarea
-            pTextarea
-            [ngModel]="editDescription()"
-            (ngModelChange)="editDescription.set($event)"
-            id="el-desc"
-            [rows]="3"
-            placeholder="Describe este elemento (opcional)"
-            class="w-full"
-          ></textarea>
-        </div>
-
-        <div class="field">
-          <span class="field__label field__label--caps">Propiedades personalizadas</span>
-          @for (row of editProps(); track $index) {
-            <div class="prop-row">
-              <input
-                pInputText
-                placeholder="Clave"
-                [ngModel]="row.key"
-                (ngModelChange)="updatePropKey($index, $event)"
-                [attr.aria-label]="'Clave de la propiedad ' + ($index + 1)"
-              />
-              <input
-                pInputText
-                placeholder="Valor"
-                [ngModel]="row.value"
-                (ngModelChange)="updatePropValue($index, $event)"
-                [attr.aria-label]="'Valor de la propiedad ' + ($index + 1)"
-              />
-              <button
-                type="button"
-                class="icon-btn"
-                title="Quitar propiedad"
-                [attr.aria-label]="'Quitar la propiedad ' + ($index + 1)"
-                (click)="removeProp($index)"
-              >
-                <i class="md md-close"></i>
-              </button>
-            </div>
-          }
-          <button type="button" class="prop-add" (click)="addProp()">
-            <i class="md md-add"></i> Añadir propiedad personalizada
-          </button>
-        </div>
-      </section>
-
-      <div class="edit-actions">
-        <p-button
-          label="Cancelar"
-          severity="secondary"
-          [text]="true"
-          (onClick)="closeViewer()"
-        />
-        <p-button
-          label="Guardar"
-          icon="md md-check"
-          [loading]="savingElement()"
-          (onClick)="saveElement()"
-        />
-      </div>
-    </div>
-  </p-dialog>
-
-  <!-- Asignar a proyecto -->
-  <p-dialog
-    header="Asignar a proyecto"
-    [visible]="assignVisible()"
-    (visibleChange)="assignVisible.set($event)"
-    [modal]="true"
-    [style]="{ width: 'min(92vw, 28rem)' }"
-    [draggable]="false"
-    [resizable]="false"
-  >
-    <div class="flex flex-col gap-2">
-      <p-select
-        [ngModel]="assignProjectId()"
-        (ngModelChange)="assignProjectId.set($event)"
-        [options]="projectOptions()"
-        optionLabel="label"
-        optionValue="value"
-        placeholder="Elegí un proyecto"
-        [filter]="true"
-        appendTo="body"
-        styleClass="w-full"
-      />
-      <p class="text-xs text-ink-muted-on-dark">
-        El recurso queda disponible para ese proyecto sin perderlo de la biblioteca general.
-      </p>
-    </div>
-    <div class="mt-4 flex justify-end gap-2">
-      <p-button
-        label="Cancelar"
-        severity="secondary"
-        [text]="true"
-        (onClick)="assignVisible.set(false)"
-      />
-      <p-button
-        label="Asignar"
-        icon="md md-check"
-        [loading]="assigning()"
-        [disabled]="!assignProjectId()"
-        (onClick)="confirmAssign()"
-      />
-    </div>
-  </p-dialog>
-
-  <p-confirmDialog styleClass="custom-confirm-dialog" />
+  <!-- Modal "Editar elemento" (compartida con Agencia) -->
+  <app-asset-edit-dialog
+    [visible]="editorVisible()"
+    [asset]="editorAsset()"
+    (closed)="editorVisible.set(false)"
+    (changed)="load()"
+    (assetSaved)="mergeAsset($event)"
+  />
 </app-page-container>

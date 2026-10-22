@@ -5,7 +5,15 @@ import { Observable } from 'rxjs';
 import { ApiResponse } from '@interfaces/api.interface';
 import { environment } from '@env/environment';
 
-import { LoginRequest, RegisterRequest, TokenResponse, UpdateAvatarRequest, User } from '../interfaces';
+import {
+  AcceptConsentRequest,
+  Consent,
+  LoginRequest,
+  RegisterRequest,
+  TokenResponse,
+  UpdateAvatarRequest,
+  User,
+} from '../interfaces';
 
 @Injectable({ providedIn: 'root' })
 export class AuthApiRepository {
@@ -27,5 +35,15 @@ export class AuthApiRepository {
   /** Actualiza (o borra, con payload vacío) la foto de perfil del usuario. */
   updateAvatar(payload: UpdateAvatarRequest): Observable<ApiResponse<User>> {
     return this.http.put<ApiResponse<User>>(`${this.apiUrl}/user/profile/avatar`, payload);
+  }
+
+  /** Registra una aceptación legal (prueba Ley 1581). */
+  acceptConsent(payload: AcceptConsentRequest): Observable<ApiResponse<Consent>> {
+    return this.http.post<ApiResponse<Consent>>(`${this.apiUrl}/consents`, payload);
+  }
+
+  /** Lista las aceptaciones legales del usuario en sesión. */
+  listMyConsents(): Observable<ApiResponse<Consent[]>> {
+    return this.http.get<ApiResponse<Consent[]>>(`${this.apiUrl}/consents/me`);
   }
 }

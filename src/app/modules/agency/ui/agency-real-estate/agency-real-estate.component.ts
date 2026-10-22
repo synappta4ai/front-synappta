@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { Button } from 'primeng/button';
 import { Card } from 'primeng/card';
@@ -84,13 +85,14 @@ const AGENT_PROVIDERS: CredentialProvider[] = ['openrouter', 'anthropic'];
  */
 @Component({
   selector: 'app-agency-real-estate',
-  imports: [FormsModule, Button, Card, Message, Select, Tag, Textarea],
+  imports: [FormsModule, Button, Card, Message, Select, Tag, Textarea, TranslatePipe],
   templateUrl: './agency-real-estate.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AgencyRealEstateComponent {
   private readonly agencyService = inject(AgencyService);
   private readonly session = inject(UserSessionStore);
+  private readonly translate = inject(TranslateService);
 
   // ─── Credenciales (solo lectura — se gestionan en Admin → Modelos) ──
   protected readonly credentials = signal<Credential[]>([]);
@@ -175,7 +177,7 @@ export class AgencyRealEstateComponent {
     this.draft.set('');
     this.streaming.set(true);
     if (!this.stepLabel()) {
-      this.stepLabel.set('Analizando la información…');
+      this.stepLabel.set('AGENCY.REAL_ESTATE.STEP_ANALYZING');
     }
 
     try {
@@ -196,7 +198,12 @@ export class AgencyRealEstateComponent {
 
       if (!res.ok || !res.body) {
         const detail = await res.text();
-        this.pushError(`Error del servidor (${res.status}): ${detail}`);
+        this.pushError(
+          this.translate.instant('AGENCY.REAL_ESTATE.ERRORS.SERVER', {
+            status: res.status,
+            detail,
+          }),
+        );
         return;
       }
 
@@ -219,7 +226,11 @@ export class AgencyRealEstateComponent {
         }
       }
     } catch (err) {
-      this.pushError(`Error de conexión: ${err instanceof Error ? err.message : String(err)}`);
+      this.pushError(
+        this.translate.instant('AGENCY.REAL_ESTATE.ERRORS.CONNECTION', {
+          detail: err instanceof Error ? err.message : String(err),
+        }),
+      );
     } finally {
       this.streaming.set(false);
     }
@@ -240,22 +251,27 @@ export class AgencyRealEstateComponent {
           this.appendText(String((data as { text?: string }).text ?? ''));
           break;
         case 'error':
-          this.pushError(String((data as { message?: string }).message ?? 'Error desconocido del agente'));
+          this.pushError(
+            String(
+              (data as { message?: string }).message ??
+                this.translate.instant('AGENCY.REAL_ESTATE.ERRORS.UNKNOWN_AGENT'),
+            ),
+          );
           break;
         case 'sales_angles':
           this.salesAngles.set(data as unknown as SalesAnglesData);
-          this.stepLabel.set('Ángulos de venta');
+          this.stepLabel.set('AGENCY.REAL_ESTATE.STEP_ANGLES');
           break;
         case 'storyboard':
           this.storyboard.set(data as unknown as StoryboardData);
-          this.stepLabel.set('Storyboard visual');
+          this.stepLabel.set('AGENCY.REAL_ESTATE.STEP_STORYBOARD');
           break;
         case 'element_registry':
-          this.stepLabel.set('Galería & espacios');
+          this.stepLabel.set('AGENCY.REAL_ESTATE.STEP_GALLERY');
           break;
         case 'shot_breakdown':
           this.shots.set(data as unknown as ShotBreakdown);
-          this.stepLabel.set('Shots & prompts');
+          this.stepLabel.set('AGENCY.REAL_ESTATE.STEP_SHOTS');
           break;
         default:
           break;

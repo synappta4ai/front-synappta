@@ -142,7 +142,7 @@ function printDiff(translations: TranslationSet): void {
 }
 
 const args = process.argv.slice(2);
-const i18nDir = path.join(__dirname, '../public/assets/i18n');
+const i18nDir = path.join(__dirname, '../src/assets/i18n');
 const baseLang = 'en.json';
 
 if (!fs.existsSync(i18nDir)) {

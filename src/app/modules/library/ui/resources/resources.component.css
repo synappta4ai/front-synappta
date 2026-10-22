@@ -273,6 +273,71 @@
   bottom: 8px;
 }
 
+/* Contador de imágenes que agrupa la card (mismo ingrediente) */
+.overlay-badge--top {
+  left: 8px;
+  top: 8px;
+}
+
+/* Mini iconos, uno por imagen del grupo */
+.group-strip {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  max-width: 100%;
+}
+
+.group-strip__item {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  overflow: hidden;
+  border: 1.5px solid rgba(6, 16, 28, 0.55);
+  border-radius: 7px;
+  background: var(--color-surface-hover);
+  color: var(--color-ink-on-dark);
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.group-strip__item .md {
+  font-size: 14px;
+  opacity: 0.75;
+}
+
+.group-strip__item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.group-strip__item:hover,
+.group-strip__item:focus-visible {
+  border-color: var(--color-accent);
+  transform: translateY(-2px);
+}
+
+.group-strip__more {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 5px;
+  border-radius: 7px;
+  background: rgba(6, 16, 28, 0.78);
+  color: var(--color-ink-on-dark);
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
 .resource-card__body {
   display: flex;
   flex-direction: column;

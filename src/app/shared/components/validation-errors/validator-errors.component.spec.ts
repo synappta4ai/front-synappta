@@ -368,6 +368,32 @@ describe('ValidatorErrors', () => {
     });
   });
 
+  describe('live region', () => {
+    it('should expose role=alert with a unique id when an error renders', () => {
+      const control = new FormControl('');
+      control.setErrors({ required: true });
+      control.markAsTouched();
+      setInput('control', control);
+      const compiled = fixture.nativeElement as HTMLElement;
+      const alert = compiled.querySelector('[role="alert"]');
+      expect(alert).toBeTruthy();
+      expect(alert?.getAttribute('id')).toBe(component.errorId);
+    });
+
+    it('should not render the live region when there is no error', () => {
+      const control = new FormControl('test');
+      control.markAsTouched();
+      setInput('control', control);
+      const compiled = fixture.nativeElement as HTMLElement;
+      expect(compiled.querySelector('[role="alert"]')).toBeNull();
+    });
+
+    it('should generate a distinct id per instance', () => {
+      const other = TestBed.createComponent(ValidatorErrors).componentInstance;
+      expect(other.errorId).not.toBe(component.errorId);
+    });
+  });
+
   describe('errorsDefault', () => {
     it('should contain all standard error types', () => {
       expect(component.errorsDefault).toContain('required');

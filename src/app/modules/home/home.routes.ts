@@ -2,4 +2,6 @@ import { Routes } from '@angular/router';
 
 import { HomeComponent } from './ui/home/home.component';
 
-export const homeRoutes: Routes = [{ path: '', title: 'Home', component: HomeComponent }];
+export const homeRoutes: Routes = [
+  { path: '', title: 'APP.ROUTES.HOME', component: HomeComponent },
+];

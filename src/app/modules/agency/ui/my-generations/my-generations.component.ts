@@ -1,13 +1,8 @@
-import { DatePipe, DecimalPipe } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { catchError, EMPTY, finalize } from 'rxjs';
 
 import { Button } from 'primeng/button';
@@ -20,17 +15,19 @@ import { Select } from 'primeng/select';
 import { Tag } from 'primeng/tag';
 
 import { ServerUrlPipe } from '@pipes/server-url.pipe';
+import { formatDurationValue } from '@pipes/format-duration.pipe';
 import { GenerateRequest, GenerationLog } from '@modules/agency/interfaces';
 import { AgencyService } from '@modules/agency/services';
 import { ImgFadeDirective } from '@shared/components/img-fade/img-fade.directive';
 import { PageContainerComponent } from '@shared/components/page-container/page-container.component';
+import { UiIcon } from '@shared/components/ui-icon/ui-icon.component';
 import { downloadRemoteFile } from '@utils/download-url';
 
 type TypeFilter = 'all' | 'video' | 'image';
 
 interface TypeOption {
   value: TypeFilter;
-  label: string;
+  labelKey: string;
   icon: string;
 }
 
@@ -38,27 +35,12 @@ type StatusSeverity = 'success' | 'danger' | 'info' | 'warn' | 'secondary';
 
 /** Agrupación por día local de `created_at` (orden cronológico descendente). */
 interface DateGroup {
-  /** Etiqueta tipo "septiembre 12, 2026". */
+  /** Etiqueta localizada del día (mes en el idioma activo). */
   label: string;
   /** Epoch del día (medianoche local) para ordenar los grupos. */
   ts: number;
   logs: GenerationLog[];
 }
-
-const ES_MONTHS = [
-  'enero',
-  'febrero',
-  'marzo',
-  'abril',
-  'mayo',
-  'junio',
-  'julio',
-  'agosto',
-  'septiembre',
-  'octubre',
-  'noviembre',
-  'diciembre',
-];
 
 @Component({
   selector: 'app-my-generations',
@@ -73,9 +55,12 @@ const ES_MONTHS = [
     Message,
     Select,
     Tag,
+    CurrencyPipe,
     DatePipe,
     DecimalPipe,
     ImgFadeDirective,
+    TranslatePipe,
+    UiIcon,
   ],
   providers: [ServerUrlPipe],
   templateUrl: './my-generations.component.html',
@@ -86,6 +71,7 @@ export class MyGenerationsComponent {
   private readonly agencyService = inject(AgencyService);
   private readonly router = inject(Router);
   private readonly serverUrl = inject(ServerUrlPipe);
+  private readonly translate = inject(TranslateService);
 
   private readonly pageSize = 48;
   private cursorTo: string | null = null;
@@ -99,11 +85,18 @@ export class MyGenerationsComponent {
   protected readonly typeFilter = signal<TypeFilter>('all');
   protected readonly search = signal('');
   protected readonly projectId = signal<string | null>(null);
+  /** Día seleccionado del filtro (epoch medianoche local); null = todos. */
+  protected readonly selectedDay = signal<number | null>(null);
+  /**
+   * Grupo expandido; null = auto (el más reciente), -1 = ninguno.
+   * Acordeón de un solo día abierto para no mostrar una lista interminable.
+   */
+  protected readonly openGroup = signal<number | null>(null);
 
   protected readonly typeOptions: TypeOption[] = [
-    { value: 'all', label: 'Todas', icon: 'md md-grid_view' },
-    { value: 'video', label: 'Videos', icon: 'md md-videocam' },
-    { value: 'image', label: 'Imágenes', icon: 'md md-image' },
+    { value: 'all', labelKey: 'AGENCY.HISTORY.FILTER_ALL', icon: 'md md-grid_view' },
+    { value: 'video', labelKey: 'AGENCY.HISTORY.FILTER_VIDEOS', icon: 'md md-videocam' },
+    { value: 'image', labelKey: 'AGENCY.HISTORY.FILTER_IMAGES', icon: 'md md-image' },
   ];
 
   protected readonly detailVisible = signal(false);
@@ -138,7 +131,7 @@ export class MyGenerationsComponent {
       .taskHistory(params)
       .pipe(
         catchError(() => {
-          this.error.set('No se pudieron cargar tus generaciones.');
+          this.error.set(this.translate.instant('AGENCY.HISTORY.ERRORS.LOAD'));
           return EMPTY;
         }),
         finalize(() => {
@@ -175,7 +168,23 @@ export class MyGenerationsComponent {
     }
     this.typeFilter.set(value);
     this.cursorTo = null;
+    this.selectedDay.set(null);
+    this.openGroup.set(null);
     this.load(true);
+  }
+
+  protected toggleDayFilter(ts: number | null): void {
+    this.selectedDay.set(this.selectedDay() === ts ? null : ts);
+  }
+
+  protected isGroupOpen(ts: number, firstTs: number | null): boolean {
+    const open = this.openGroup();
+    const effective = open === null ? firstTs : open === -1 ? null : open;
+    return effective === ts;
+  }
+
+  protected toggleGroup(ts: number, firstTs: number | null): void {
+    this.openGroup.set(this.isGroupOpen(ts, firstTs) ? -1 : ts);
   }
 
   protected onSearch(value: string): void {
@@ -185,6 +194,8 @@ export class MyGenerationsComponent {
   protected clearFilters(): void {
     this.search.set('');
     this.projectId.set(null);
+    this.selectedDay.set(null);
+    this.openGroup.set(null);
     this.changeType('all');
   }
 
@@ -202,7 +213,19 @@ export class MyGenerationsComponent {
   protected readonly filtered = computed(() => {
     const query = this.search().trim().toLowerCase();
     const projectId = this.projectId();
+    const day = this.selectedDay();
     return this.logs().filter((log) => {
+      if (day !== null) {
+        const ts = new Date(log.created_at).getTime();
+        if (Number.isNaN(ts)) {
+          return false;
+        }
+        const start = new Date(ts);
+        const dayTs = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime();
+        if (dayTs !== day) {
+          return false;
+        }
+      }
       if (projectId && log.event_id !== projectId) {
         return false;
       }
@@ -239,11 +262,15 @@ export class MyGenerationsComponent {
     return [...groups.values()].sort((a, b) => b.ts - a.ts);
   });
 
+  /** Epoch del grupo más reciente (día auto-expandido del acordeón). */
+  protected readonly firstGroupTs = computed(() => this.dateGroups()[0]?.ts ?? null);
+
   protected readonly projectOptions = computed<{ label: string; value: string }[]>(() => {
+    const noName = this.translate.instant('AGENCY.HISTORY.NO_NAME');
     const map = new Map<string, string>();
     for (const log of this.logs()) {
       if (log.event_id) {
-        map.set(log.event_id, log.event_name || 'Sin nombre');
+        map.set(log.event_id, log.event_name || noName);
       }
     }
     return [...map.entries()]
@@ -274,7 +301,7 @@ export class MyGenerationsComponent {
   /** Reutiliza el prompt/payload original en el Studio (mismo flujo que Proyectos). */
   protected reuse(log: GenerationLog): void {
     if (!log.request) {
-      this.error.set('Esta generación no tiene payload de origen para reutilizar.');
+      this.error.set(this.translate.instant('AGENCY.HISTORY.ERRORS.NO_PAYLOAD'));
       return;
     }
     sessionStorage.setItem('studio:reuse', log.request);
@@ -297,7 +324,7 @@ export class MyGenerationsComponent {
       .updateTaskRating(log.task_id, good, final)
       .pipe(
         catchError(() => {
-          this.error.set('No se pudo guardar la calificación.');
+          this.error.set(this.translate.instant('AGENCY.HISTORY.ERRORS.RATING'));
           return EMPTY;
         }),
       )
@@ -310,7 +337,7 @@ export class MyGenerationsComponent {
       .updateTaskRating(log.task_id, false, false)
       .pipe(
         catchError(() => {
-          this.error.set('No se pudo limpiar la calificación.');
+          this.error.set(this.translate.instant('AGENCY.HISTORY.ERRORS.RATING_CLEAR'));
           return EMPTY;
         }),
       )
@@ -331,9 +358,14 @@ export class MyGenerationsComponent {
 
   // ── Helpers de plantilla ─────────────────────────────────────────────────
 
-  /** "septiembre 12, 2026" (mes en español, sin depender del locale de Angular). */
+  /** Etiqueta del día con el mes en el idioma activo (reactivo al cambiar de idioma). */
   private formatDayLabel(date: Date): string {
-    return `${ES_MONTHS[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+    const lang = this.translate.currentLang() ?? 'es';
+    return new Intl.DateTimeFormat(lang, {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    }).format(date);
   }
 
   protected isVideo(log: GenerationLog): boolean {
@@ -359,29 +391,29 @@ export class MyGenerationsComponent {
       return base;
     }
     const ext = this.isVideo(log) ? 'mp4' : 'png';
-    return `${log.task_id || 'generacion'}.${ext}`;
+    const name = log.task_id || this.translate.instant('AGENCY.HISTORY.DEFAULT_FILENAME');
+    return `${name}.${ext}`;
   }
 
   protected downloadOutput(log: GenerationLog, url: string): void {
     void downloadRemoteFile(url, this.downloadName(log, url));
   }
 
-  protected statusLabel(status: string | null): string {
+  protected statusKey(status: string | null): string {
     switch (status) {
       case 'succeeded':
-        return 'Completada';
       case 'completed':
-        return 'Completada';
+        return 'AGENCY.HISTORY.STATUS_COMPLETED';
       case 'failed':
-        return 'Fallida';
+        return 'AGENCY.HISTORY.STATUS_FAILED';
       case 'running':
-        return 'En curso';
+        return 'AGENCY.HISTORY.STATUS_RUNNING';
       case 'pending':
-        return 'En espera';
+        return 'AGENCY.HISTORY.STATUS_PENDING';
       case 'cancelled':
-        return 'Cancelada';
+        return 'AGENCY.HISTORY.STATUS_CANCELLED';
       case 'canceling':
-        return 'Cancelando';
+        return 'AGENCY.HISTORY.STATUS_CANCELING';
       default:
         return status ?? '—';
     }
@@ -412,7 +444,7 @@ export class MyGenerationsComponent {
     if (!seconds || seconds <= 0) {
       return '';
     }
-    return `${seconds.toFixed(1)}s`;
+    return formatDurationValue(seconds, 's');
   }
 
   protected promptOf(log: GenerationLog): string {

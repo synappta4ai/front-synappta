@@ -1,0 +1,9 @@
+:host {
+  display: block;
+}
+
+/* Fallback para el render del servidor: en el cliente el alto se mide contra
+   la navbar real y se aplica por style, así nunca aparece scroll de página. */
+.admin-shell {
+  height: calc(100dvh - 3.5rem);
+}

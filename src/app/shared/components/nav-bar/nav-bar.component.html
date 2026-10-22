@@ -12,7 +12,7 @@
         @if (navAvatarUrl(); as avatar) {
           <img
             [src]="avatar | serverUrl"
-            alt="Foto de perfil"
+            alt="{{ 'SHARED.NAV.AVATAR_ALT' | translate }}"
             width="36"
             height="36"
             class="h-9 w-9 rounded-full object-cover"
@@ -20,7 +20,7 @@
         } @else {
           <img
             ngSrc="assets/img/sinappta-logo-sqared.png"
-            alt="Logo Synapta"
+            alt="{{ 'SHARED.NAV.LOGO_ALT' | translate }}"
             width="36"
             height="36"
             class="h-9 w-9"
@@ -42,4 +42,28 @@
       </div>
     </ng-template>
   </p-menubar>
+
+  <p-popover #toolsPopover styleClass="tools-popover">
+    <div class="pop-head">
+      <span><i class="md md-auto_fix_high"></i> {{ 'TOOLS.TITLE' | translate }}</span>
+    </div>
+    <div class="pop-list">
+      @for (tool of toolItems(); track tool.routerLink) {
+        <a
+          [routerLink]="tool.routerLink"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: true }"
+          class="pop-item"
+          (click)="hideTools()"
+        >
+          <span class="pop-thumb icon"><i [class]="tool.icon"></i></span>
+          <span class="pop-info">
+            <span class="pop-model">{{ tool.label }}</span>
+            <span class="pop-prompt">{{ tool.description }}</span>
+          </span>
+          <i class="md md-chevron_right pop-go"></i>
+        </a>
+      }
+    </div>
+  </p-popover>
 </header>

@@ -1,51 +1,63 @@
-<!-- /agency = flujo Inmobiliaria: Documentación → Ángulos → Storyboard → Escenas -->
-<app-page-container title="Agencia · Flujo de Inmobiliaria" animate.enter="anim-page">
+﻿<!-- /agency = detectives y redactores por experto: Documentación → Ángulos → Storyboard → Escenas -->
+<app-page-container
+  [title]="'AGENCY.STUDIO.TITLE' | translate: { agent: agentLabel() }"
+  animate.enter="anim-page"
+>
   @if (error(); as message) {
-    <div class="mb-6">
+    <div class="mb-6" aria-live="assertive">
       <p-message severity="error" [text]="message" [escape]="false" styleClass="w-full" />
     </div>
   }
 
   <!-- Phase Indicator -->
   <div class="mb-8">
-    <p-steps [model]="stepItems()" [activeIndex]="phaseIndex()" styleClass="custom-steps" />
+    <p-steps
+      [model]="stepItems()"
+      [activeIndex]="phaseIndex()"
+      [readonly]="false"
+      styleClass="custom-steps"
+    />
   </div>
 
   <!-- Phase 1: Input / Documentation -->
   @if (currentPhase() === 'input') {
     <p-card styleClass="phase-card">
       <ng-template #header>
-        <div class="flex items-center gap-3 border-b border-surface-border px-6 py-4">
+        <div class="flex flex-wrap items-center gap-3 border-b border-surface-border px-6 py-4">
           <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
             <i class="md md-edit_note text-lg text-accent"></i>
           </div>
           <div>
-            <h2 class="text-lg font-bold text-ink-on-dark">Información del Proyecto</h2>
-            <p class="text-sm text-ink-muted-on-dark">Documentación para análisis IA</p>
+            <h2 id="agency-phase-heading" tabindex="-1" class="text-lg font-bold text-ink-on-dark">
+              {{ 'AGENCY.STUDIO.P1_TITLE' | translate }}
+            </h2>
+            <p class="text-sm text-ink-muted-on-dark">
+              {{ 'AGENCY.STUDIO.P1_SUBTITLE' | translate }}
+            </p>
           </div>
           <!-- Select de proyecto existente en el header de la card -->
-          <div class="ml-auto flex w-full max-w-lg flex-col gap-1">
+          <div class="ml-auto flex w-full max-w-md flex-col gap-1">
             <p-select
               inputId="agencyProject"
-              aria-label="Proyecto existente"
+              [attr.aria-label]="'AGENCY.STUDIO.P1_PROJECT_ARIA' | translate"
               [ngModel]="selectedProjectId()"
               (ngModelChange)="selectedProjectId.set($event)"
               [ngModelOptions]="{ standalone: true }"
               [options]="projectOptions()"
               optionLabel="label"
               optionValue="value"
-              placeholder="Proyecto existente (opcional)"
+              [placeholder]="'AGENCY.STUDIO.P1_PROJECT_PLACEHOLDER' | translate"
               [showClear]="true"
               [filter]="true"
-              filterPlaceholder="Buscar proyecto..."
+              [filterPlaceholder]="'AGENCY.STUDIO.P1_PROJECT_FILTER' | translate"
               styleClass="w-full"
               appendTo="body"
             />
             <small class="text-right text-ink-muted-on-dark">
               @if (inputsLocked()) {
-                Datos cargados en el formulario. Limpialo para crear otro proyecto.
+                {{ 'AGENCY.STUDIO.P1_LOCKED_HINT' | translate }}
               } @else {
-                Elegí uno para cargar sus datos; escenas e imágenes quedan centralizadas.
+                {{ 'AGENCY.STUDIO.P1_PROJECT_HINT' | translate }}
               }
             </small>
           </div>
@@ -53,17 +65,18 @@
       </ng-template>
 
       <form [formGroup]="form" class="flex flex-col gap-6" novalidate>
-        <div class="grid gap-6 sm:grid-cols-2">
-          <div class="flex flex-col gap-2">
+        <div class="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          <div class="contents">
+          <div class="flex min-w-0 flex-col gap-2">
             <label for="propertyName" class="text-xs font-bold text-ink-on-dark">
-              Nombre del Proyecto <span class="text-danger">*</span>
+              {{ 'AGENCY.STUDIO.P1_NAME_LABEL' | translate }} <span class="text-danger">*</span>
             </label>
             <input
               pInputText
               id="propertyName"
               type="text"
               formControlName="propertyName"
-              placeholder="Ej: Residencias El Parque"
+              [placeholder]="'AGENCY.STUDIO.P1_NAME_PLACEHOLDER' | translate"
               class="w-full"
               [attr.aria-invalid]="
                 form.get('propertyName')?.invalid &&
@@ -74,20 +87,20 @@
             <validator-errors
               id="agency-propertyName-errors"
               [control]="form.get('propertyName')"
-              [label]="'Nombre del proyecto'"
+              [label]="'AGENCY.STUDIO.P1_NAME_VALIDATOR' | translate"
               [submitTick]="submitted()"
             />
           </div>
-          <div class="flex flex-col gap-2">
+          <div class="flex min-w-0 flex-col gap-2">
             <label for="location" class="text-xs font-bold text-ink-on-dark">
-              Ubicación <span class="text-danger">*</span>
+              {{ 'AGENCY.STUDIO.P1_LOCATION_LABEL' | translate }} <span class="text-danger">*</span>
             </label>
             <input
               pInputText
               id="location"
               type="text"
               formControlName="location"
-              placeholder="Ej: CDMX, Polanco"
+              [placeholder]="'AGENCY.STUDIO.P1_LOCATION_PLACEHOLDER' | translate"
               class="w-full"
               [attr.aria-invalid]="
                 form.get('location')?.invalid && (form.get('location')?.touched || submitted() > 0)
@@ -97,31 +110,37 @@
             <validator-errors
               id="agency-location-errors"
               [control]="form.get('location')"
-              [label]="'Ubicación'"
+              [label]="'AGENCY.STUDIO.P1_LOCATION_LABEL' | translate"
               [submitTick]="submitted()"
             />
           </div>
-          <div class="flex flex-col gap-2">
-            <label for="anglesCount" class="text-xs font-bold text-ink-on-dark">
-              Ángulos de venta a crear <span class="text-danger">*</span>
+          <div class="flex min-w-0 flex-col gap-2 lg:col-start-1 lg:row-start-2">
+            <label for="agencyAgent" class="text-xs font-bold text-ink-on-dark">
+              {{ 'AGENCY.STUDIO.P1_AGENT_LABEL' | translate }}
             </label>
-            <p-inputNumber
-              inputId="anglesCount"
-              formControlName="anglesCount"
-              [min]="1"
-              [max]="10"
-              [showButtons]="true"
-              styleClass="w-40"
+            <p-select
+              inputId="agencyAgent"
+              [attr.aria-label]="('AGENCY.STUDIO.P1_AGENT_ARIA' | translate) + ' ' + agentHint()"
+              [options]="agentOptions()"
+              optionLabel="label"
+              optionValue="value"
+              [ngModel]="agent()"
+              (ngModelChange)="onAgentChange($event)"
+              [ngModelOptions]="{ standalone: true }"
+              styleClass="w-full"
+              appendTo="body"
+              [pTooltip]="agentHint()"
+              showDelay="400"
+              tooltipPosition="top"
             />
-            <small class="text-ink-muted-on-dark">Entre 1 y 10; por defecto 3.</small>
           </div>
-          <div class="flex flex-col gap-2">
+          <div class="flex min-w-0 flex-col gap-2 lg:col-start-3 lg:row-start-1">
             <label for="agencyTextModel" class="text-xs font-bold text-ink-on-dark">
-              Modelo · Ángulos de venta
+              {{ 'AGENCY.STUDIO.P1_BRAIN_LABEL' | translate }}
             </label>
             <p-select
               inputId="agencyTextModel"
-              aria-label="Modelo de ángulos de venta"
+              [attr.aria-label]="'AGENCY.STUDIO.P1_BRAIN_ARIA' | translate"
               [options]="modelTextOptions()"
               optionLabel="label"
               optionValue="value"
@@ -130,23 +149,51 @@
               [ngModelOptions]="{ standalone: true }"
               styleClass="w-full"
               appendTo="body"
+              [pTooltip]="'AGENCY.STUDIO.P1_BRAIN_TOOLTIP' | translate"
+              showDelay="400"
+              tooltipPosition="top"
             />
-            <small class="text-ink-muted-on-dark"
-              >Modelo LLM que redacta los ángulos. Automático = el de Admin → Modelos.</small
-            >
+          </div>
+          @if (agent() === 'real_estate' || agent() === 'commercial') {
+            <div class="flex min-w-0 flex-col gap-2 lg:col-start-2 lg:row-start-2">
+              <label for="anglesCount" class="text-xs font-bold text-ink-on-dark">
+                {{
+                  (agent() === 'real_estate'
+                    ? 'AGENCY.STUDIO.P1_ANGLES_LABEL'
+                    : 'AGENCY.STUDIO.P1_SCENES_LABEL'
+                  ) | translate
+                }}
+                <span class="text-danger">*</span>
+              </label>
+              <p-inputNumber
+                inputId="anglesCount"
+                formControlName="anglesCount"
+                [min]="1"
+                [max]="10"
+                [showButtons]="true"
+                styleClass="w-28"
+              />
+              <small class="text-ink-muted-on-dark">{{
+                (agent() === 'real_estate'
+                  ? 'AGENCY.STUDIO.P1_ANGLES_HINT'
+                  : 'AGENCY.STUDIO.P1_SCENES_HINT'
+                ) | translate
+              }}</small>
+            </div>
+          }
           </div>
         </div>
 
-        <div class="flex flex-col gap-2">
+        <div class="flex min-w-0 flex-col gap-2">
           <label for="description" class="text-xs font-bold text-ink-on-dark">
-            Descripción y puntos fuertes <span class="text-danger">*</span>
+            {{ 'AGENCY.STUDIO.P1_CONTEXT_LABEL' | translate }} <span class="text-danger">*</span>
           </label>
           <textarea
             pTextarea
             id="description"
             formControlName="description"
             rows="4"
-            placeholder="Describe las características principales del proyecto inmobiliario, target de clientes, precio promedio, amenidades..."
+            [placeholder]="descriptionPlaceholder()"
             class="w-full"
             [attr.aria-invalid]="
               form.get('description')?.invalid &&
@@ -157,40 +204,372 @@
           <validator-errors
             id="agency-description-errors"
             [control]="form.get('description')"
-            [label]="'Descripción del proyecto'"
+            [label]="'AGENCY.STUDIO.P1_CONTEXT_LABEL' | translate"
             [submitTick]="submitted()"
           />
-          <small class="text-ink-muted-on-dark"
-            >Obligatorio: amenities, target, precio promedio y puntos fuertes — el insumo de los
-            ángulos de venta</small
-          >
+          <small class="text-ink-muted-on-dark">{{
+            'AGENCY.STUDIO.P1_CONTEXT_HINT' | translate
+          }}</small>
         </div>
 
-        <div class="flex items-center justify-between border-t border-surface-border pt-4">
-          <p class="text-sm text-ink-muted-on-dark">
-            <i class="md md-info mr-1"></i>
-            @if (inputsLocked()) {
-              Con el proyecto elegido ya podés pasar directo a los ángulos de venta
-            } @else {
-              El sistema creará tu proyecto y generará ángulos de venta
-            }
-          </p>
-          <span
-            pTooltip="Completá los campos requeridos para analizar"
-            showDelay="400"
-            class="inline-flex"
-          >
-            <p-button
-              type="button"
-              label="Analizar y generar ángulos"
-              icon="md md-bolt"
-              [loading]="loading()"
-              [disabled]="!canProceedToAngles || loading()"
-              (onClick)="generateAngles()"
-              styleClass="px-6 active:scale-[0.98]"
+        <div
+          class="grid gap-4 border-t border-surface-border pt-5 md:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-start"
+        >
+          <div class="flex min-w-0 flex-col gap-1.5">
+            <input
+              #briefInput
+              type="file"
+              accept=".pdf,.docx,.txt,.md"
+              multiple
+              class="hidden"
+              tabindex="-1"
+              [attr.aria-label]="'AGENCY.STUDIO.P1_BRIEF_ARIA' | translate"
+              (change)="onBriefFiles($event)"
             />
-          </span>
+            <p-button
+              [label]="'AGENCY.STUDIO.P1_BRIEF_BUTTON' | translate"
+              icon="md md-upload"
+              size="large"
+              [fluid]="true"
+              [loading]="extractingBrief()"
+              [disabled]="extractingBrief()"
+              (onClick)="briefInput.click()"
+            />
+            <small class="text-center text-xs text-ink-muted-on-dark">{{
+              'AGENCY.STUDIO.P1_BRIEF_HINT' | translate
+            }}</small>
+            @if (briefNote(); as note) {
+              <p-message severity="success" [text]="note" styleClass="w-full" />
+            }
+          </div>
+
+          @if (isCommercial()) {
+            <div class="flex min-w-0 flex-col gap-1.5">
+              <input
+                #projectPhotoInput
+                type="file"
+                accept="image/*"
+                multiple
+                class="hidden"
+                tabindex="-1"
+                [attr.aria-label]="'AGENCY.STUDIO.P1_REFS_UPLOAD_ARIA' | translate"
+                (change)="onProjectPhotoFiles($event)"
+              />
+              <p-button
+                [label]="'AGENCY.STUDIO.P1_REFS_UPLOAD' | translate"
+                icon="md md-upload"
+                size="large"
+                [fluid]="true"
+                [loading]="uploadingProjectPhotos()"
+                [disabled]="uploadingProjectPhotos()"
+                (onClick)="projectPhotoInput.click()"
+              />
+              <small class="text-center text-xs text-ink-muted-on-dark">{{
+                'AGENCY.STUDIO.P1_REFS_SUBTITLE' | translate
+              }}</small>
+            </div>
+          }
+
+          <div class="flex min-w-0 flex-col gap-2 md:col-span-2 lg:col-span-1 lg:items-end">
+            @if (isCommercial() && angles().length > 0) {
+              @if (pendingStepPhotos().length > 0 && !stepPhotosSkipped()) {
+                <small id="prompts-gate-hint" class="text-ink-muted-on-dark">
+                  {{
+                    'AGENCY.STUDIO.P1_PHOTOS_PENDING'
+                      | translate: { count: pendingStepPhotos().length }
+                  }}
+                </small>
+              } @else if (stepPhotosSkipped() && pendingStepPhotos().length > 0) {
+                <small class="text-ink-muted-on-dark">
+                  {{ 'AGENCY.STUDIO.P1_PHOTOS_SKIPPED' | translate }}
+                </small>
+              }
+              <div class="flex flex-wrap items-center gap-2 lg:justify-end">
+                <p-button
+                  type="button"
+                  [label]="generateLabelKey() | translate"
+                  size="small"
+                  [loading]="loading()"
+                  [disabled]="!canProceedToAngles || loading()"
+                  (onClick)="generateAngles()"
+                  styleClass="active:scale-[0.98]"
+                />
+                @if (pendingStepPhotos().length > 0 && !stepPhotosSkipped()) {
+                  <p-button
+                    type="button"
+                    [label]="'AGENCY.STUDIO.P1_PHOTOS_SKIP' | translate"
+                    severity="secondary"
+                    text
+                    size="small"
+                    (onClick)="skipStepPhotos()"
+                  />
+                }
+                <p-button
+                  type="button"
+                  [label]="'AGENCY.STUDIO.P1_TO_PROMPTS' | translate"
+                  icon="md md-arrow_forward"
+                  iconPos="right"
+                  severity="secondary"
+                  [outlined]="true"
+                  size="small"
+                  [attr.aria-describedby]="!canAdvanceToPrompts ? 'prompts-gate-hint' : null"
+                  [disabled]="!canAdvanceToPrompts"
+                  (onClick)="nextPhase()"
+                  styleClass="active:scale-[0.98]"
+                />
+              </div>
+            } @else {
+              <div class="flex flex-wrap items-center gap-2 lg:justify-end">
+                <p-button
+                  type="button"
+                  [label]="generateLabelKey() | translate"
+                  size="small"
+                  [attr.aria-describedby]="
+                    !canProceedToAngles && !loading() ? 'angles-gate-hint' : null
+                  "
+                  [loading]="loading()"
+                  [disabled]="!canProceedToAngles || loading()"
+                  (onClick)="generateAngles()"
+                  styleClass="active:scale-[0.98]"
+                />
+              </div>
+              @if (!canProceedToAngles && !loading()) {
+                <small id="angles-gate-hint" class="text-ink-muted-on-dark">
+                  {{ 'AGENCY.STUDIO.P1_GATE_HINT' | translate }}
+                </small>
+              }
+            }
+          </div>
         </div>
+
+        <p class="text-xs text-ink-muted-on-dark">
+          <i class="md md-info mr-1"></i>
+          @if (inputsLocked()) {
+            {{ 'AGENCY.STUDIO.P1_NOTE_LOCKED' | translate: { noun: anglesNoun() } }}
+          } @else {
+            {{ 'AGENCY.STUDIO.P1_NOTE_NEW' | translate: { noun: anglesNoun() } }}
+          }
+        </p>
+
+        <!-- Fotos de referencia subidas antes de generar los prompts -->
+        @if (isCommercial()) {
+          <div class="rounded-xl border border-surface-border bg-surface-2 p-4">
+            <div class="flex flex-wrap items-center gap-2">
+              <i class="md md-photo_library text-lg text-accent"></i>
+              <div class="min-w-0 flex-1">
+                <p class="text-sm font-bold text-ink-on-dark">
+                  {{ 'AGENCY.STUDIO.P1_REFS_TITLE' | translate }}
+                </p>
+              </div>
+              <span
+                class="inline-flex items-center rounded-full border border-surface-border-strong bg-surface px-2.5 py-1 text-xs font-semibold text-ink-on-dark"
+              >
+                {{ 'AGENCY.STUDIO.P1_REFS_COUNT' | translate: { count: projectPhotos().length } }}
+              </span>
+              <button
+                type="button"
+                class="inline-flex h-8 w-8 items-center justify-center rounded-full text-ink-muted-on-dark transition hover:bg-surface-hover hover:text-ink-on-dark"
+                [attr.aria-expanded]="projectPhotosOpen()"
+                [attr.aria-label]="'AGENCY.STUDIO.P1_REFS_TOGGLE' | translate"
+                (click)="projectPhotosOpen.set(!projectPhotosOpen())"
+              >
+                <i
+                  class="md md-expand_more text-lg transition-transform"
+                  [class.rotate-180]="projectPhotosOpen()"
+                ></i>
+              </button>
+            </div>
+
+            @if (!projectPhotosReady()) {
+              <p-message
+                severity="warn"
+                [text]="'AGENCY.STUDIO.P1_REFS_KIND_PENDING' | translate"
+                styleClass="mt-3 w-full"
+              />
+            }
+
+            @if (projectPhotosOpen() && projectPhotos().length > 0) {
+              <ul class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                @for (photo of projectPhotos(); track photo.id) {
+                  <li
+                    class="relative overflow-hidden rounded-lg border border-surface-border bg-surface"
+                    [style.border-color]="photo.kind ? kindColor(photo.kind) : null"
+                  >
+                    <img
+                      [src]="photo.url | serverUrl"
+                      [alt]="photo.filename"
+                      class="h-16 w-full object-cover"
+                      width="320"
+                      height="160"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                    <button
+                      type="button"
+                      class="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-scrim/70 text-white transition hover:bg-danger focus-visible:outline-2 focus-visible:outline-accent"
+                      [attr.aria-label]="
+                        'AGENCY.STUDIO.P1_REFS_REMOVE' | translate: { name: photo.filename }
+                      "
+                      (click)="removeProjectPhoto(photo.id)"
+                    >
+                      <i class="md md-close text-sm"></i>
+                    </button>
+                    <div class="flex flex-col gap-1 p-1.5">
+                      <span
+                        class="truncate text-[11px] font-semibold"
+                        [style.color]="kindColor(photo.kind)"
+                        [title]="photo.filename"
+                      >
+                        {{ photo.tag }}
+                      </span>
+                      <p-select
+                        inputId="agencyPhotoKind-{{ photo.id }}"
+                        [attr.aria-label]="
+                          'AGENCY.STUDIO.P1_REFS_KIND_ARIA'
+                            | translate: { name: photo.filename }
+                        "
+                        [options]="photoKindOptions()"
+                        optionLabel="label"
+                        optionValue="value"
+                        [ngModel]="photo.kind"
+                        (ngModelChange)="setProjectPhotoKind(photo.id, $event)"
+                        [ngModelOptions]="{ standalone: true }"
+                        [placeholder]="'AGENCY.STUDIO.P1_REFS_KIND_PLACEHOLDER' | translate"
+                        styleClass="photo-kind-select w-full"
+                        appendTo="body"
+                      />
+                    </div>
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+        }
+
+        <!-- Imágenes que el experto pide antes de armar los prompts -->
+        @if (isCommercial() && stepPhotos().length > 0) {
+          <details
+            class="rounded-xl border border-surface-border bg-surface-2 px-4 py-3"
+            [open]="stepPhotosOpen()"
+            (toggle)="stepPhotosOpen.set($any($event.target).open)"
+          >
+            <summary
+              class="flex cursor-pointer list-none flex-wrap items-center gap-3 [&::-webkit-details-marker]:hidden"
+            >
+              <i class="md md-add_photo_alternate text-lg text-accent"></i>
+              <div class="min-w-0 flex-1">
+                <p class="text-sm font-bold text-ink-on-dark">
+                  {{ 'AGENCY.STUDIO.P1_PHOTOS_TITLE' | translate }}
+                </p>
+                <p class="text-xs text-ink-muted-on-dark">
+                  {{ 'AGENCY.STUDIO.P1_PHOTOS_SUBTITLE' | translate }}
+                </p>
+              </div>
+              <span
+                class="inline-flex items-center rounded-full border border-surface-border-strong bg-surface px-2.5 py-1 text-xs font-semibold text-ink-on-dark"
+              >
+                {{
+                  'AGENCY.STUDIO.P1_PHOTOS_COUNT'
+                    | translate: { done: stepPhotosCount(), total: stepPhotos().length }
+                }}
+              </span>
+              <span
+                class="inline-flex items-center gap-1 text-xs font-bold text-ink-muted-on-dark"
+              >
+                {{ 'AGENCY.STUDIO.P1_PHOTOS_BUTTON' | translate }}
+                <i
+                  class="md md-expand_more text-base transition-transform"
+                  [class.rotate-180]="stepPhotosOpen()"
+                ></i>
+              </span>
+            </summary>
+
+            <ul class="mt-3 flex flex-col gap-3">
+                @for (photo of stepPhotos(); track photo.id) {
+                  <li class="rounded-xl border border-surface-border bg-surface px-3 py-3">
+                    <div class="flex flex-wrap items-start gap-2">
+                      <p-tag
+                        [value]="photoPriorityLabel(photo.priority)"
+                        [severity]="
+                          photo.priority === 'imprescindible'
+                            ? 'danger'
+                            : photo.priority === 'recomendada'
+                              ? 'warn'
+                              : 'secondary'
+                        "
+                      />
+                      <div class="flex-1">
+                        <p class="text-sm text-ink-on-dark">{{ photo.description }}</p>
+                        <p class="text-xs text-ink-muted-on-dark">
+                          {{
+                            'AGENCY.STUDIO.P1_PHOTOS_FOR'
+                              | translate: { prompt: photoPromptLabel(photo) }
+                          }}
+                          @if (photo.reason) {
+                            · {{ photo.reason }}
+                          }
+                        </p>
+                      </div>
+                      <span class="text-xs text-ink-muted-on-dark">{{ photo.type }}</span>
+                    </div>
+
+                    <div class="mt-2 flex flex-wrap items-center gap-2">
+                      <input
+                        #stepPhotoInput
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        class="hidden"
+                        tabindex="-1"
+                        [attr.aria-label]="'AGENCY.STUDIO.P1_PHOTOS_UPLOAD_ARIA' | translate"
+                        (change)="onStepPhotoFiles(photo.id, $event)"
+                      />
+                      <p-button
+                        [label]="
+                          (photo.files.length
+                            ? 'AGENCY.STUDIO.P1_PHOTOS_REPLACE'
+                            : 'AGENCY.STUDIO.P1_PHOTOS_UPLOAD'
+                          ) | translate
+                        "
+                        icon="md md-upload"
+                        size="small"
+                        severity="secondary"
+                        text
+                        [loading]="isUploadingPhoto(photo.id)"
+                        (onClick)="stepPhotoInput.click()"
+                      />
+                      @for (file of photo.files; track file.id) {
+                        <span
+                          class="inline-flex items-center gap-2 rounded-lg border border-surface-border bg-surface-2 px-2 py-1"
+                          [title]="file.filename"
+                        >
+                          <img
+                            [src]="file.url | serverUrl"
+                            [alt]="file.filename"
+                            width="32"
+                            height="32"
+                            loading="lazy"
+                            class="h-8 w-8 rounded object-cover"
+                          />
+                          <span class="text-xs font-semibold text-accent">
+                            {{ photoTag(photo, file.id) }}
+                          </span>
+                          <button
+                            type="button"
+                            class="text-ink-muted-on-dark hover:text-danger"
+                            [attr.aria-label]="'AGENCY.STUDIO.P1_PHOTOS_REMOVE' | translate"
+                            (click)="removeStepPhoto(photo.id, file.id)"
+                          >
+                            <i class="md md-close"></i>
+                          </button>
+                        </span>
+                      }
+                    </div>
+                  </li>
+                }
+            </ul>
+          </details>
+        }
       </form>
     </p-card>
   }
@@ -199,44 +578,37 @@
   @if (currentPhase() === 'angles') {
     <p-card styleClass="phase-card">
       <ng-template #header>
-        <div class="flex items-center gap-3 border-b border-surface-border px-6 py-4">
+        <div class="flex flex-wrap items-center gap-3 border-b border-surface-border px-6 py-4">
           <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
             <i class="md md-explore text-lg text-accent"></i>
           </div>
           <div>
-            <h2 class="text-lg font-bold text-ink-on-dark">Ángulos de Venta</h2>
-            <p class="text-sm text-ink-muted-on-dark">Selecciona uno o más para continuar</p>
+            <h2 id="agency-phase-heading" tabindex="-1" class="text-lg font-bold text-ink-on-dark">
+              {{
+                (agent() === 'real_estate'
+                  ? 'AGENCY.STUDIO.P2_TITLE'
+                  : 'AGENCY.STUDIO.PHASE_PROMPTS'
+                ) | translate
+              }}
+            </h2>
+            <p class="text-sm text-ink-muted-on-dark">
+              {{ 'AGENCY.STUDIO.P2_SUBTITLE' | translate }}
+            </p>
           </div>
         </div>
       </ng-template>
 
       <div class="flex flex-col gap-4">
-        <!-- Modelo elegido en el paso anterior: genera las imágenes -->
-        <div
-          class="flex flex-wrap items-center gap-3 rounded-xl border border-surface-border bg-surface-2 px-4 py-3"
-        >
-          <span class="text-xs font-bold text-ink-muted-on-dark"
-            >Modelo de imágenes (Storyboard y escenas)</span
-          >
-          <p-select
-            inputId="agencyImageModel"
-            aria-label="Modelo de imágenes"
-            [options]="modelImageOptions()"
-            optionLabel="label"
-            optionValue="value"
-            [ngModel]="modelImage()"
-            (ngModelChange)="modelImage.set($event)"
-            [ngModelOptions]="{ standalone: true }"
-            styleClass="w-72"
-            appendTo="body"
-          />
-        </div>
         @if (selectedAnglesCount > 0) {
-          <div class="flex items-center gap-2">
-            <p-tag [value]="selectedAnglesCount + ' seleccionados'" severity="info" />
-            <span class="text-sm text-ink-muted-on-dark"
-              >Selecciona los ángulos que mejor se adapten a tu proyecto</span
+          <div class="flex items-center gap-2" aria-live="polite">
+            <span
+              class="inline-flex items-center rounded-full border border-surface-border-strong bg-surface px-2.5 py-1 text-xs font-semibold text-ink-on-dark"
             >
+              {{ 'AGENCY.STUDIO.P2_SELECTED' | translate: { count: selectedAnglesCount } }}
+            </span>
+            <span class="text-sm text-ink-muted-on-dark">{{
+              'AGENCY.STUDIO.P2_HINT' | translate: { noun: anglesNoun() }
+            }}</span>
           </div>
         }
 
@@ -250,17 +622,20 @@
                   : 'border-surface-border bg-surface hover:border-surface-border-strong'
               "
               (click)="onAngleCardActivate(angle.id, $event)"
-              (keydown.enter)="onAngleCardActivate(angle.id, $event)"
-              (keydown.space)="onAngleCardActivate(angle.id, $event)"
-              tabindex="0"
-              role="checkbox"
-              [attr.aria-checked]="angle.selected"
-              [attr.aria-label]="'Ángulo ' + (i + 1) + ': ' + angle.title"
             >
-              <!-- Checkbox decorativo: el control real es la card (role=checkbox).
-                   Pointer-events:none evita el doble disparo (click + ngModelChange). -->
-              <div class="pointer-events-none pt-0.5" aria-hidden="true">
-                <p-checkbox [binary]="true" [ngModel]="angle.selected" />
+              <!-- Checkbox real: el único control de tildado (teclado + lector).
+                   La card solo replica el click de mouse/touch fuera de controles. -->
+              <div class="pt-0.5">
+                <p-checkbox
+                  [binary]="true"
+                  [inputId]="'angle-check-' + angle.id"
+                  [ngModel]="angle.selected"
+                  (ngModelChange)="toggleAngle(angle.id)"
+                  [ngModelOptions]="{ standalone: true }"
+                />
+                <label class="sr-only" [attr.for]="'angle-check-' + angle.id">{{
+                  'AGENCY.STUDIO.P2_CHECKBOX_ARIA' | translate: { title: angle.title }
+                }}</label>
               </div>
               <div class="flex-1">
                 <div class="flex items-center gap-2">
@@ -268,7 +643,7 @@
                   <input
                     pInputText
                     class="flex-1 font-bold text-ink-on-dark"
-                    aria-label="Título del ángulo"
+                    [attr.aria-label]="'AGENCY.STUDIO.P2_TITLE_ARIA' | translate"
                     [ngModel]="angle.title"
                     (ngModelChange)="updateAngle(angle.id, 'title', $event)"
                     (change)="commitAngleEdits()"
@@ -279,12 +654,104 @@
                   pTextarea
                   rows="2"
                   class="mt-2 w-full text-sm text-ink-muted-on-dark"
-                  aria-label="Descripción del ángulo"
+                  [attr.aria-label]="'AGENCY.STUDIO.P2_DESC_ARIA' | translate"
                   [ngModel]="angle.description"
                   (ngModelChange)="updateAngle(angle.id, 'description', $event)"
                   (change)="commitAngleEdits()"
                   [ngModelOptions]="{ standalone: true }"
                 ></textarea>
+                @if (isCommercial() && taggedStepPhotos(angle.id).length > 0) {
+                  <div class="mt-2 flex flex-wrap items-center gap-2">
+                    <span class="text-xs font-semibold text-ink-muted-on-dark">{{
+                      'AGENCY.STUDIO.P2_IMAGE_TAGS' | translate
+                    }}</span>
+                    @for (item of taggedStepPhotos(angle.id); track item.tag) {
+                      <span
+                        class="inline-flex items-center gap-1 rounded-full border border-surface-border bg-surface px-2 py-0.5 text-xs text-ink-on-dark"
+                        [title]="item.file.filename"
+                      >
+                        <i class="md md-image text-accent"></i>{{ item.tag }} ·
+                        {{ item.photo.type }}
+                      </span>
+                    }
+                  </div>
+                }
+                @if (isCommercial() && missingStepPhotos(angle.id).length > 0) {
+                  <p class="mt-1 text-xs text-danger">
+                    {{
+                      'AGENCY.STUDIO.P2_IMAGE_MISSING'
+                        | translate: { count: missingStepPhotos(angle.id).length }
+                    }}
+                  </p>
+                }
+                @if (isCommercial() && scenePlan(angle); as plan) {
+                  <details class="mt-3 rounded-xl border border-surface-border bg-surface-2 p-3">
+                    <summary class="cursor-pointer text-xs font-bold text-ink-muted-on-dark">
+                      {{ 'AGENCY.STUDIO.P2_DETAIL' | translate }}
+                    </summary>
+                    <div class="mt-2 flex flex-col gap-2 text-sm text-ink-on-dark">
+                      @if (plan.location; as loc) {
+                        <p>
+                          <span class="font-semibold">{{
+                            'AGENCY.STUDIO.P2_LOCATION' | translate
+                          }}</span
+                          >: {{ sceneFieldText(loc) }}
+                        </p>
+                      }
+                      @if (plan.characters.length > 0) {
+                        <div>
+                          <span class="font-semibold">{{
+                            'AGENCY.STUDIO.P2_CHARACTERS' | translate
+                          }}</span
+                          >:
+                          <div class="mt-1 flex flex-wrap gap-1">
+                            @for (character of plan.characters; track $index) {
+                              <span
+                                class="rounded-full border border-surface-border px-2 py-0.5 text-xs"
+                              >
+                                {{ sceneFieldText(character) }}
+                              </span>
+                            }
+                          </div>
+                        </div>
+                      }
+                      @if (plan.product; as prod) {
+                        <p>
+                          <span class="font-semibold">{{
+                            'AGENCY.STUDIO.P2_PRODUCT' | translate
+                          }}</span
+                          >: {{ sceneFieldText(prod) }}
+                        </p>
+                      }
+                      @if (plan.beats.length > 0) {
+                        <ol class="ml-4 flex list-decimal flex-col gap-1">
+                          @for (beat of plan.beats; track $index) {
+                            <li>
+                              {{ beat.action }}
+                              @if (beat.dialogue) {
+                                <em class="text-ink-muted-on-dark">· {{ beat.dialogue }}</em>
+                              }
+                            </li>
+                          }
+                        </ol>
+                      }
+                      @if (plan.camera.mode || plan.camera.registro) {
+                        <p class="text-xs text-ink-muted-on-dark">
+                          {{ 'AGENCY.STUDIO.P2_CAMERA' | translate }}:
+                          @if (plan.camera.mode) {
+                            {{ plan.camera.mode }}
+                          }
+                          @if (plan.camera.registro) {
+                            · {{ plan.camera.registro }}
+                          }
+                        </p>
+                      }
+                      @if (plan.marca) {
+                        <p class="text-xs text-ink-muted-on-dark">{{ plan.marca }}</p>
+                      }
+                    </div>
+                  </details>
+                }
               </div>
               @if (angle.selected) {
                 <div class="flex h-6 w-6 items-center justify-center rounded-full bg-accent">
@@ -295,23 +762,33 @@
           }
         </div>
 
-        <div class="flex items-center justify-between border-t border-surface-border pt-4 mt-2">
-          <p-button label="← Volver" severity="secondary" text (onClick)="prevPhase()" />
-          <span
-            pTooltip="Seleccioná al menos un ángulo para continuar"
-            showDelay="400"
-            class="inline-flex"
-          >
+        <div
+          class="flex items-center justify-between gap-3 border-t border-surface-border pt-4 mt-2"
+        >
+          <p-button
+            [label]="'AGENCY.STUDIO.BACK' | translate"
+            icon="md md-arrow_back"
+            severity="secondary"
+            text
+            (onClick)="prevPhase()"
+          />
+          <div class="flex shrink-0 flex-col items-end gap-1">
             <p-button
-              label="Generar Storyboard"
+              [label]="'AGENCY.STUDIO.NEXT' | translate"
               icon="md md-arrow_forward"
               iconPos="right"
+              [attr.aria-describedby]="!canProceedToStoryboard ? 'storyboard-gate-hint' : null"
               [loading]="loading()"
               [disabled]="!canProceedToStoryboard"
               (onClick)="generateStoryboard()"
               styleClass="px-6 active:scale-[0.98]"
             />
-          </span>
+            @if (!canProceedToStoryboard) {
+              <small id="storyboard-gate-hint" class="text-ink-muted-on-dark">
+                {{ 'AGENCY.STUDIO.P2_GATE_HINT' | translate }}
+              </small>
+            }
+          </div>
         </div>
       </div>
     </p-card>
@@ -321,125 +798,396 @@
   @if (currentPhase() === 'storyboard') {
     <p-card styleClass="phase-card">
       <ng-template #header>
-        <div class="flex items-center gap-3 border-b border-surface-border px-6 py-4">
+        <div class="flex flex-wrap items-center gap-3 border-b border-surface-border px-6 py-4">
           <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
             <i class="md md-photo_library text-lg text-accent"></i>
           </div>
           <div class="flex-1">
-            <h2 class="text-lg font-bold text-ink-on-dark">Storyboard</h2>
-            <p class="text-sm text-ink-muted-on-dark">Genera imágenes para cada escena</p>
+            <h2 id="agency-phase-heading" tabindex="-1" class="text-lg font-bold text-ink-on-dark">
+              {{ 'AGENCY.STUDIO.P3_TITLE' | translate }}
+            </h2>
+            <p class="text-sm text-ink-muted-on-dark">
+              {{ 'AGENCY.STUDIO.P3_SUBTITLE' | translate }}
+            </p>
           </div>
-          <p-tag [value]="storyboard().length + ' escenas'" severity="info" />
+          <span
+            class="inline-flex items-center rounded-full border border-surface-border-strong bg-surface px-2.5 py-1 text-xs font-semibold text-ink-on-dark"
+          >
+            {{ 'AGENCY.STUDIO.P3_SCENES_COUNT' | translate: { count: storyboard().length } }}
+          </span>
+          <p-button
+            id="boardReelTrigger"
+            [label]="
+              boardQueue().length
+                ? ('AGENCY.STUDIO.REEL_GENERATING' | translate: { count: boardQueue().length })
+                : ('AGENCY.STUDIO.REEL' | translate)
+            "
+            icon="md md-photo_library"
+            severity="secondary"
+            size="small"
+            [loading]="boardQueue().length > 0"
+            (onClick)="toggleBoardReel($event)"
+          />
         </div>
       </ng-template>
 
       <div class="flex flex-col gap-6">
-        <!-- Modelo elegido en el paso anterior: genera los videos -->
+        <!-- Modelo de imágenes: se elige acá porque acá se generan las imágenes -->
         <div
           class="flex flex-wrap items-center gap-3 rounded-xl border border-surface-border bg-surface-2 px-4 py-3"
         >
-          <span class="text-xs font-bold text-ink-muted-on-dark">Modelo de videos (Escenas)</span>
+          <span class="text-xs font-bold text-ink-muted-on-dark">{{
+            'AGENCY.STUDIO.P3_IMAGE_MODEL' | translate
+          }}</span>
           <p-select
-            inputId="agencyVideoModel"
-            aria-label="Modelo de videos"
-            [options]="modelVideoOptions()"
+            inputId="agencyImageModel"
+            [attr.aria-label]="'AGENCY.STUDIO.P3_IMAGE_MODEL_ARIA' | translate"
+            [options]="modelImageOptions()"
             optionLabel="label"
             optionValue="value"
-            [ngModel]="modelVideo()"
-            (ngModelChange)="modelVideo.set($event)"
+            [ngModel]="modelImage()"
+            (ngModelChange)="modelImage.set($event)"
             [ngModelOptions]="{ standalone: true }"
             styleClass="w-72"
             appendTo="body"
           />
         </div>
-        @for (scene of storyboard(); track scene.id; let i = $index) {
+
+        <!-- Escenas agrupadas por su ángulo de venta -->
+        @for (group of scenesByAngle(); track group.angleId; let g = $index) {
           <div
             animate.enter="anim-item"
-            [style.animation-delay.ms]="i < 8 ? i * 35 : 280"
-            class="rounded-2xl border border-surface-border bg-surface-2 p-5"
-          >              <div class="mb-4 flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                <div
-                  class="flex h-8 w-8 items-center justify-center rounded-xl bg-accent text-on-accent text-sm font-bold"
-                >
-                  {{ i + 1 }}
-                </div>
-                <div class="flex-1">
-                  <h3 class="font-bold text-ink-on-dark">{{ scene.title }}</h3>
-                  <textarea
-                    pTextarea
-                    rows="2"
-                    class="mt-1 w-full text-sm text-ink-muted-on-dark"
-                    aria-label="Prompt de la escena"
-                    [ngModel]="scene.description"
-                    (ngModelChange)="updateSceneDescription(scene.id, $event)"
-                    (change)="commitSceneEdit()"
-                    [ngModelOptions]="{ standalone: true }"
-                  ></textarea>
-                </div>
-              </div>
-              <p-button
-                label="Generar imágenes"
-                icon="md md-image"
-                severity="secondary"
-                size="small"
-                [loading]="scene.shots.some((s) => s.generating)"
-                [disabled]="scene.shots.some((s) => s.generating)"
-                (onClick)="generateScene(scene.id)"
-              />
+            [style.animation-delay.ms]="g < 8 ? g * 35 : 280"
+            class="flex flex-col gap-4"
+          >
+            <div class="flex items-center gap-2 border-b border-surface-border pb-2">
+              <i class="md md-gps_fixed text-accent"></i>
+              <h3 class="font-bold text-ink-on-dark">{{ group.angleTitle }}</h3>
+              <span
+                class="inline-flex items-center rounded-full border border-surface-border-strong bg-surface px-2.5 py-1 text-xs font-semibold text-ink-on-dark"
+              >
+                {{ 'AGENCY.STUDIO.P3_SCENES_COUNT' | translate: { count: group.scenes.length } }}
+              </span>
             </div>
 
-            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              @for (shot of scene.shots; track shot.id; let k = $index) {
-                <div
-                  animate.enter="anim-item"
-                  [style.animation-delay.ms]="k < 8 ? k * 35 : 280"
-                  class="overflow-hidden rounded-2xl border border-surface-border bg-surface shadow-sm"
-                >
-                  @if (shot.imageUrl) {
-                    <img
-                      [src]="shot.imageUrl"
-                      [alt]="shot.description"
-                      loading="lazy"
-                      decoding="async"
-                      class="aspect-video w-full object-cover"
+            @for (scene of group.scenes; track scene.id; let i = $index) {
+              <div
+                animate.enter="anim-item"
+                [style.animation-delay.ms]="i < 8 ? i * 35 : 280"
+                class="rounded-2xl border border-surface-border bg-surface-2 p-5"
+              >
+                <div class="mb-2 flex flex-wrap items-start justify-between gap-3">
+                  <div class="flex min-w-0 flex-1 items-start gap-3">
+                    <div
+                      class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-accent text-on-accent text-sm font-bold"
+                    >
+                      {{ i + 1 }}
+                    </div>
+                    <div class="min-w-0 flex-1">
+                      <div class="flex flex-wrap items-center gap-2">
+                        <h3 class="font-bold text-ink-on-dark">{{ scene.title }}</h3>
+                        @if (scene.approved) {
+                          <p-tag
+                            [value]="'AGENCY.STUDIO.TAG_APPROVED' | translate"
+                            severity="success"
+                          />
+                        } @else if (scene.boardImageUrl) {
+                          <p-tag
+                            [value]="'AGENCY.STUDIO.TAG_PENDING' | translate"
+                            severity="warn"
+                          />
+                        } @else {
+                          <p-tag
+                            [value]="'AGENCY.STUDIO.TAG_NO_STORYBOARD' | translate"
+                            severity="danger"
+                          />
+                        }
+                      </div>
+                      <textarea
+                        pTextarea
+                        rows="2"
+                        class="mt-1 w-full text-sm text-ink-muted-on-dark"
+                        [attr.aria-label]="'AGENCY.STUDIO.SCENE_PROMPT_ARIA' | translate"
+                        [ngModel]="scene.description"
+                        (ngModelChange)="updateSceneDescription(scene.id, $event)"
+                        (change)="commitSceneEdit()"
+                        [ngModelOptions]="{ standalone: true }"
+                      ></textarea>
+                    </div>
+                  </div>
+                  <div class="flex shrink-0 items-center gap-2">
+                    <p-button
+                      [label]="'AGENCY.STUDIO.P3_GENERATE_BOARD' | translate"
+                      icon="md md-image"
+                      severity="secondary"
+                      size="small"
+                      [loading]="!!scene.boardGenerating"
+                      [disabled]="!canGenerateBoard(scene)"
+                      (onClick)="openBoardDialog(scene.id)"
                     />
-                  } @else if (shot.generating) {
-                    <div class="flex aspect-video items-center justify-center bg-surface-2">
-                      <div class="text-center">
-                        <p-progressSpinner styleClass="w-10 h-10 mb-2" strokeWidth="3" />
-                        <p class="text-xs font-bold text-ink-on-dark">Generando imagen…</p>
-                      </div>
-                    </div>
-                  } @else {
-                    <div class="flex aspect-video items-center justify-center bg-surface-2">
-                      <div class="text-center">
-                        <i class="md md-image mb-2 text-3xl text-ink-muted-on-dark"></i>
-                        <p class="text-xs text-ink-muted-on-dark">Sin generar</p>
-                      </div>
-                    </div>
-                  }
-                  <div class="p-3">
-                    <p class="text-xs leading-relaxed text-ink-muted-on-dark">
-                      {{ shot.description }}
-                    </p>
+                    <p-button
+                      [label]="
+                        scene.approved
+                          ? ('AGENCY.STUDIO.APPROVED_CHECK' | translate)
+                          : ('AGENCY.STUDIO.APPROVE' | translate)
+                      "
+                      [icon]="scene.approved ? 'md md-check_circle' : ''"
+                      [severity]="scene.approved ? 'success' : 'contrast'"
+                      size="small"
+                      [disabled]="!scene.boardImageUrl || !!scene.boardGenerating"
+                      (onClick)="toggleApproveScene(scene.id)"
+                    />
                   </div>
                 </div>
-              }
-            </div>
+                <div class="mb-4 flex justify-end">
+                  @if (pendingDeleteSceneId() === scene.id) {
+                    <span
+                      class="flex items-center gap-1"
+                      role="group"
+                      [attr.aria-label]="
+                        'AGENCY.STUDIO.P3_CONFIRM_DELETE_ARIA' | translate: { title: scene.title }
+                      "
+                    >
+                      <p-button
+                        [label]="'AGENCY.STUDIO.DELETE' | translate"
+                        icon="md md-delete"
+                        severity="danger"
+                        size="small"
+                        (onClick)="removeScene(scene.id)"
+                      />
+                      <p-button
+                        [label]="'AGENCY.STUDIO.CANCEL' | translate"
+                        severity="secondary"
+                        text
+                        size="small"
+                        (onClick)="cancelRemoveScene()"
+                      />
+                    </span>
+                  } @else {
+                    <p-button
+                      [label]="'AGENCY.STUDIO.DELETE' | translate"
+                      icon="md md-close"
+                      severity="danger"
+                      text
+                      size="small"
+                      [ariaLabel]="'AGENCY.STUDIO.DELETE_ARIA' | translate: { title: scene.title }"
+                      (onClick)="armRemoveScene(scene.id)"
+                    />
+                  }
+                </div>
+
+                <!-- Fotos de referencia de la escena: al aprobarse habilitan "Generar Storyboard" -->
+                <div class="mb-4 rounded-xl border border-surface-border bg-surface-2 px-4 py-3">
+                  <div class="flex flex-wrap items-center gap-3">
+                    <i class="md md-photo_camera text-accent"></i>
+                    <span class="text-xs font-bold text-ink-on-dark">{{
+                      'AGENCY.STUDIO.P3_REFS_TITLE' | translate
+                    }}</span>
+                    @if (scene.references?.length) {
+                      <span
+                        class="inline-flex items-center rounded-full border border-surface-border-strong bg-surface px-2.5 py-1 text-xs font-semibold text-ink-on-dark"
+                      >
+                        {{
+                          'AGENCY.STUDIO.P3_REFS_COUNT'
+                            | translate: { count: scene.references?.length ?? 0 }
+                        }}
+                      </span>
+                    }
+                    @if (scene.refsApproved) {
+                      <p-tag
+                        [value]="'AGENCY.STUDIO.REFS_APPROVED_CHECK' | translate"
+                        severity="success"
+                      />
+                    }
+                    <div class="ml-auto flex items-center gap-2">
+                      <input
+                        #sceneRefInput
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        class="hidden"
+                        tabindex="-1"
+                        [attr.aria-label]="
+                          'AGENCY.STUDIO.P3_UPLOAD_REFS_ARIA' | translate: { title: scene.title }
+                        "
+                        (change)="onSceneReferenceFiles(scene.id, $event)"
+                      />
+                      <p-button
+                        [label]="'AGENCY.STUDIO.P3_UPLOAD_REFS' | translate"
+                        icon="md md-upload"
+                        severity="secondary"
+                        text
+                        size="small"
+                        [loading]="isUploadingRefs(scene.id)"
+                        [disabled]="isUploadingRefs(scene.id)"
+                        (onClick)="sceneRefInput.click()"
+                      />
+                      <p-button
+                        [label]="
+                          scene.refsApproved
+                            ? ('AGENCY.STUDIO.REFS_APPROVED' | translate)
+                            : ('AGENCY.STUDIO.APPROVE_REFS' | translate)
+                        "
+                        [icon]="scene.refsApproved ? 'md md-check_circle' : ''"
+                        [severity]="scene.refsApproved ? 'success' : 'contrast'"
+                        size="small"
+                        [disabled]="!scene.references?.length || scene.refsApproved"
+                        (onClick)="toggleApproveReferences(scene.id)"
+                      />
+                    </div>
+                  </div>
+                  <p class="mt-2 text-xs text-ink-muted-on-dark">
+                    {{ 'AGENCY.STUDIO.P3_SUGGESTED' | translate }}
+                    {{ sceneSuggestions(scene.id).join(' · ') }}
+                  </p>
+                  @if (scene.references?.length) {
+                    <div class="mt-3 flex flex-wrap gap-3">
+                      @for (ref of scene.references; track ref.id) {
+                        <div
+                          class="relative h-20 w-28 cursor-pointer overflow-hidden rounded-lg border border-surface-border bg-surface transition hover:border-accent"
+                          role="button"
+                          tabindex="0"
+                          [attr.aria-label]="
+                            'AGENCY.STUDIO.EDIT_ELEMENT_ARIA' | translate: { name: ref.filename }
+                          "
+                          [title]="
+                            'AGENCY.STUDIO.EDIT_ELEMENT_TITLE' | translate: { name: ref.filename }
+                          "
+                          (click)="openAssetEditor(ref.id)"
+                          (keydown.enter)="openAssetEditor(ref.id)"
+                        >
+                          @if (ref.url) {
+                            <img
+                              [src]="ref.url | serverUrl"
+                              [alt]="ref.filename"
+                              width="480"
+                              height="360"
+                              loading="lazy"
+                              decoding="async"
+                              class="h-full w-full object-cover"
+                            />
+                          }
+                          <button
+                            type="button"
+                            class="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full border border-surface-border bg-surface-2 text-ink-on-dark"
+                            [attr.aria-label]="
+                              'AGENCY.STUDIO.REMOVE_ARIA' | translate: { name: ref.filename }
+                            "
+                            (click)="
+                              $event.stopPropagation(); removeSceneReference(scene.id, ref.id)
+                            "
+                          >
+                            <i class="md md-close text-sm"></i>
+                          </button>
+                        </div>
+                      }
+                    </div>
+                  }
+                  @if (!scene.refsApproved) {
+                    <p class="mt-2 text-xs text-ink-muted-on-dark">
+                      {{ 'AGENCY.STUDIO.P3_REFS_GATE' | translate }}
+                    </p>
+                  }
+                </div>
+
+                <!-- Hoja de storyboard: la guía visual del escenario -->
+                @if (scene.boardImageUrl) {
+                  <img
+                    [src]="scene.boardImageUrl"
+                    [alt]="'AGENCY.STUDIO.P3_BOARD_ALT' | translate: { title: scene.title }"
+                    width="1280"
+                    height="720"
+                    loading="lazy"
+                    decoding="async"
+                    class="mb-4 w-full cursor-pointer rounded-xl border border-surface-border bg-surface transition hover:border-accent"
+                    [title]="'AGENCY.STUDIO.EDIT_ELEMENT' | translate"
+                    (click)="openBoardAssetEditor(scene)"
+                  />
+                } @else if (scene.boardGenerating) {
+                  <div
+                    class="mb-4 flex items-center justify-center gap-3 rounded-xl border border-surface-border bg-surface py-10"
+                  >
+                    <p-progressSpinner styleClass="w-8 h-8" strokeWidth="3" />
+                    <p class="text-xs font-bold text-ink-on-dark">
+                      {{ 'AGENCY.STUDIO.P3_BOARD_GENERATING' | translate }}
+                    </p>
+                  </div>
+                } @else {
+                  <div
+                    class="mb-4 flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-surface-border-strong bg-surface py-6"
+                  >
+                    <i class="md md-image text-ink-muted-on-dark"></i>
+                    <p class="text-xs text-ink-muted-on-dark">
+                      {{ 'AGENCY.STUDIO.P3_BOARD_EMPTY' | translate }}
+                    </p>
+                  </div>
+                }
+
+                <!-- Tomas de la escena (una por viñeta del storyboard) -->
+                <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  @for (shot of scene.shots; track shot.id; let k = $index) {
+                    <div
+                      class="flex items-center gap-2 rounded-xl border border-surface-border bg-surface px-3 py-2"
+                    >
+                      <span
+                        class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-surface-2 text-xs font-bold text-ink-on-dark"
+                      >
+                        {{ k + 1 }}
+                      </span>
+                      <input
+                        pInputText
+                        class="min-w-0 flex-1 text-xs"
+                        [attr.aria-label]="'AGENCY.STUDIO.P3_SHOT_DESC_ARIA' | translate"
+                        [ngModel]="shot.description"
+                        (ngModelChange)="updateShotDescription(scene.id, shot.id, $event)"
+                        (change)="commitSceneEdit()"
+                        [ngModelOptions]="{ standalone: true }"
+                      />
+                    </div>
+                  }
+                </div>
+              </div>
+            }
           </div>
         }
       </div>
 
-      <div class="flex items-center justify-between border-t border-surface-border pt-4 mt-6">
-        <p-button label="← Volver" severity="secondary" text (onClick)="prevPhase()" />
+      <div class="flex items-center justify-between gap-3 border-t border-surface-border pt-4 mt-6">
         <p-button
-          label="Continuar a Escenas →"
-          icon="md md-arrow_forward"
-          iconPos="right"
-          (onClick)="nextPhase()"
-          styleClass="px-6 active:scale-[0.98]"
+          [label]="'AGENCY.STUDIO.BACK' | translate"
+          icon="md md-arrow_back"
+          severity="secondary"
+          text
+          (onClick)="prevPhase()"
         />
+        <div class="flex shrink-0 flex-col items-end gap-1">
+          @if (storyboard().length > 0 && !canProceedToScenes) {
+            <span id="scenes-gate-hint" class="text-sm text-ink-muted-on-dark">
+              {{ 'AGENCY.STUDIO.P3_PENDING_APPROVALS' | translate: { count: pendingApprovals } }}
+            </span>
+          }
+          <div class="flex flex-wrap justify-end gap-2">
+            @if (canApproveAll) {
+              <p-button
+                [label]="'AGENCY.STUDIO.P3_APPROVE_ALL' | translate"
+                icon="md md-check_circle"
+                severity="secondary"
+                (onClick)="approveAllScenes()"
+              />
+            }
+            <p-button
+              [label]="'AGENCY.STUDIO.P3_NEXT' | translate"
+              icon="md md-arrow_forward"
+              iconPos="right"
+              [attr.aria-describedby]="
+                storyboard().length > 0 && !canProceedToScenes ? 'scenes-gate-hint' : null
+              "
+              [disabled]="!canProceedToScenes"
+              (onClick)="nextPhase()"
+              styleClass="px-6 active:scale-[0.98]"
+            />
+          </div>
+        </div>
       </div>
     </p-card>
   }
@@ -448,85 +1196,981 @@
   @if (currentPhase() === 'scenes') {
     <p-card styleClass="phase-card">
       <ng-template #header>
-        <div class="flex items-center gap-3 border-b border-surface-border px-6 py-4">
+        <div class="flex flex-wrap items-center gap-3 border-b border-surface-border px-6 py-4">
           <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
             <i class="md md-movie text-lg text-accent"></i>
           </div>
           <div>
-            <h2 class="text-lg font-bold text-ink-on-dark">Escenas y Shots Finales</h2>
-            <p class="text-sm text-ink-muted-on-dark">Planos listos para producción</p>
+            <h2 id="agency-phase-heading" tabindex="-1" class="text-lg font-bold text-ink-on-dark">
+              {{ 'AGENCY.STUDIO.P4_TITLE' | translate }}
+            </h2>
+            <p class="text-sm text-ink-muted-on-dark">
+              {{ 'AGENCY.STUDIO.P4_SUBTITLE' | translate }}
+            </p>
           </div>
         </div>
       </ng-template>
 
       @if (storyboard().length > 0) {
         <div class="flex flex-col gap-6">
-          @for (scene of storyboard(); track scene.id; let i = $index) {
+          <!-- Configuración de los videos: modelo, duración, ratio y tags -->
+          <div
+            class="flex flex-wrap items-start gap-4 rounded-xl border border-surface-border bg-surface-2 px-4 py-3"
+          >
+            @if (isCommercial()) {
+              <p class="self-center text-xs text-ink-muted-on-dark">
+                {{ 'AGENCY.STUDIO.P4_SCENE_CONFIG_HINT' | translate }}
+              </p>
+            }
+            @if (!isCommercial()) {
+            <div class="flex flex-col gap-1">
+              <span class="text-xs font-bold text-ink-muted-on-dark">{{
+                'AGENCY.STUDIO.P4_VIDEO_MODEL' | translate
+              }}</span>
+              <p-select
+                inputId="agencyVideoModel"
+                [attr.aria-label]="'AGENCY.STUDIO.P4_VIDEO_MODEL_ARIA' | translate"
+                [options]="modelVideoOptions()"
+                optionLabel="label"
+                optionValue="value"
+                [ngModel]="modelVideo()"
+                (ngModelChange)="modelVideo.set($event); onVideoConfigChange()"
+                [ngModelOptions]="{ standalone: true }"
+                styleClass="w-72"
+                appendTo="body"
+              />
+            </div>
+            <div class="flex flex-col gap-1">
+              <span class="text-xs font-bold text-ink-muted-on-dark">{{
+                'AGENCY.STUDIO.P4_DURATION_LABEL' | translate
+              }}</span>
+              <p-inputNumber
+                inputId="agencyVideoDuration"
+                [min]="1"
+                [max]="600"
+                [showButtons]="true"
+                styleClass="w-36"
+                [ngModel]="videoDuration()"
+                (ngModelChange)="videoDuration.set($event || 10); onVideoConfigChange()"
+                [ngModelOptions]="{ standalone: true }"
+              />
+              <small class="text-ink-muted-on-dark">
+                @if (videoMaxDuration() > 0) {
+                  {{ 'AGENCY.STUDIO.P4_DURATION_MAX' | translate: { max: videoMaxDuration() } }}
+                } @else {
+                  {{ 'AGENCY.STUDIO.P4_DURATION_DEFAULT' | translate }}
+                }
+              </small>
+            </div>
+            <div class="flex flex-col gap-1">
+              <span class="text-xs font-bold text-ink-muted-on-dark">{{
+                'AGENCY.STUDIO.RATIO' | translate
+              }}</span>
+              <p-select
+                [attr.aria-label]="'AGENCY.STUDIO.RATIO' | translate"
+                [options]="videoRatioOptions()"
+                optionLabel="label"
+                optionValue="value"
+                [ngModel]="videoRatio()"
+                (ngModelChange)="videoRatio.set($event); onVideoConfigChange()"
+                [ngModelOptions]="{ standalone: true }"
+                styleClass="w-56"
+                appendTo="body"
+              />
+            </div>
+            <!-- Tags de referencia: oculto temporalmente (el valor guardado
+                 de proyectos viejos sigue aplicándose al texto de los prompts). -->
+            <div class="flex flex-col gap-1">
+              <span class="text-xs font-bold text-ink-muted-on-dark">{{
+                'AGENCY.STUDIO.P4_QUALITY' | translate
+              }}</span>
+              <p-select
+                [attr.aria-label]="'AGENCY.STUDIO.P4_QUALITY' | translate"
+                [options]="videoResolutionOptions()"
+                optionLabel="label"
+                optionValue="value"
+                [ngModel]="videoResolution()"
+                (ngModelChange)="videoResolution.set($event); onVideoConfigChange()"
+                [ngModelOptions]="{ standalone: true }"
+                styleClass="w-56"
+                appendTo="body"
+              />
+              <small class="text-ink-muted-on-dark">{{
+                'AGENCY.STUDIO.P4_QUALITY_EMPTY' | translate
+              }}</small>
+            </div>
+            <div class="flex flex-col gap-1">
+              <span class="text-xs font-bold text-ink-muted-on-dark">{{
+                'AGENCY.STUDIO.SOUND' | translate
+              }}</span>
+              <div class="flex h-8 items-center gap-2">
+                <p-toggleswitch
+                  [ariaLabel]="'AGENCY.STUDIO.SOUND_ARIA' | translate"
+                  [ngModel]="videoAudio()"
+                  (ngModelChange)="videoAudio.set($event)"
+                  [ngModelOptions]="{ standalone: true }"
+                />
+                <small class="text-ink-muted-on-dark">
+                  @if (videoMaxDuration() > 0) {
+                    {{ 'AGENCY.STUDIO.P4_DURATION_MAX' | translate: { max: videoMaxDuration() } }}
+                  } @else {
+                    {{ 'AGENCY.STUDIO.P4_DURATION_DEFAULT' | translate }}
+                  }
+                </small>
+              </div>
+              <div class="flex flex-col gap-1">
+                <label for="agencyVideoRatio" class="text-xs font-bold text-ink-muted-on-dark">{{
+                  'AGENCY.STUDIO.RATIO' | translate
+                }}</label>
+                <p-select
+                  inputId="agencyVideoRatio"
+                  [attr.aria-label]="'AGENCY.STUDIO.RATIO' | translate"
+                  [options]="videoRatioOptions()"
+                  optionLabel="label"
+                  optionValue="value"
+                  [ngModel]="videoRatio()"
+                  (ngModelChange)="videoRatio.set($event); onVideoConfigChange()"
+                  [ngModelOptions]="{ standalone: true }"
+                  styleClass="w-full"
+                  appendTo="body"
+                />
+              </div>
+              <div class="flex flex-col gap-1">
+                <label
+                  for="agencyVideoResolution"
+                  class="text-xs font-bold text-ink-muted-on-dark"
+                  >{{ 'AGENCY.STUDIO.RESOLUTION' | translate }}</label
+                >
+                <p-select
+                  inputId="agencyVideoResolution"
+                  [attr.aria-label]="'AGENCY.STUDIO.P4_RESOLUTION_ARIA' | translate"
+                  [options]="videoResolutionOptions()"
+                  optionLabel="label"
+                  optionValue="value"
+                  [ngModel]="videoResolution()"
+                  (ngModelChange)="videoResolution.set($event); onVideoConfigChange()"
+                  [ngModelOptions]="{ standalone: true }"
+                  styleClass="w-full"
+                  appendTo="body"
+                />
+                <small class="text-ink-muted-on-dark">{{
+                  'AGENCY.STUDIO.P4_RESOLUTION_HINT' | translate
+                }}</small>
+              </div>
+              <div class="flex flex-col gap-1">
+                <span id="agencyVideoAudioTitle" class="text-xs font-bold text-ink-muted-on-dark">{{
+                  'AGENCY.STUDIO.SOUND' | translate
+                }}</span>
+                <div
+                  class="flex min-h-10 items-center gap-2"
+                  role="group"
+                  aria-labelledby="agencyVideoAudioTitle"
+                >
+                  <p-checkbox
+                    inputId="agencyVideoAudio"
+                    [binary]="true"
+                    [ngModel]="videoAudio()"
+                    (ngModelChange)="videoAudio.set($event); onVideoConfigChange()"
+                    [ngModelOptions]="{ standalone: true }"
+                  />
+                  <label for="agencyVideoAudio" class="text-sm text-ink-on-dark">{{
+                    'AGENCY.STUDIO.P4_WITH_SOUND' | translate
+                  }}</label>
+                </div>
+                <small id="agencyVideoAudioHint" class="text-ink-muted-on-dark">
+                  @if (videoAudio()) {
+                    {{ 'AGENCY.STUDIO.P4_AUDIO_ON' | translate }}
+                  } @else {
+                    {{ 'AGENCY.STUDIO.P4_AUDIO_OFF' | translate }}
+                  }
+                </small>
+              </div>
+            </div>
+            }
+            <p-button
+              [label]="'AGENCY.STUDIO.P4_GENERATE_PROMPTS' | translate"
+              class="self-end"
+              icon="md md-auto_fix_high"
+              (onClick)="generatePrompts()"
+            />
+            <p-button
+              id="videoReelTrigger"
+              [label]="
+                videoQueue().length
+                  ? ('AGENCY.STUDIO.REEL_GENERATING' | translate: { count: videoQueue().length })
+                  : ('AGENCY.STUDIO.REEL' | translate)
+              "
+              icon="md md-movie"
+              severity="secondary"
+              class="self-end"
+              [loading]="videoQueue().length > 0"
+              (onClick)="toggleVideoReel($event)"
+            />
+            @if (!isCommercial() && videoSegmentCount() > 1) {
+              <p-tag
+                [value]="'AGENCY.STUDIO.P4_SEGMENTS' | translate: { count: videoSegmentCount() }"
+                severity="warn"
+              />
+            }
+          </div>
+
+          <!-- Escenas agrupadas por ángulo: storyboard base + prompts -->
+          @for (group of scenesByAngle(); track group.angleId; let g = $index) {
             <div
               animate.enter="anim-item"
-              [style.animation-delay.ms]="i < 8 ? i * 35 : 280"
-              class="rounded-2xl border border-surface-border bg-surface-2 p-5"
+              [style.animation-delay.ms]="g < 8 ? g * 35 : 280"
+              class="flex flex-col gap-4"
             >
-              <h3 class="mb-4 flex items-center gap-2 font-bold text-ink-on-dark">
-                <i class="md md-play_circle"></i>
-                {{ scene.title }}
-              </h3>
-
-              <div class="mb-4 flex flex-wrap items-center gap-3">
-                <p-button
-                  label="Generar video"
-                  icon="md md-movie"
-                  severity="secondary"
-                  size="small"
-                  [loading]="!!scene.generatingVideo"
-                  [disabled]="!!scene.generatingVideo"
-                  (onClick)="generateVideo(scene.id)"
-                />
-                @if (scene.videoUrl) {
-                  <video
-                    [src]="scene.videoUrl"
-                    class="w-64 rounded-xl border border-surface-border"
-                    controls
-                    muted
-                    loading="lazy"
-                  ></video>
-                }
+              <div class="flex items-center gap-2 border-b border-surface-border pb-2">
+                <i class="md md-gps_fixed text-accent"></i>
+                <h3 class="font-bold text-ink-on-dark">{{ group.angleTitle }}</h3>
+                <span
+                  class="inline-flex items-center rounded-full border border-surface-border-strong bg-surface px-2.5 py-1 text-xs font-semibold text-ink-on-dark"
+                >
+                  {{ group.scenes.length }}
+                  {{
+                    (group.scenes.length === 1
+                      ? 'AGENCY.STUDIO.SCENE_SINGULAR'
+                      : 'AGENCY.STUDIO.SCENE_PLURAL'
+                    ) | translate
+                  }}
+                </span>
               </div>
 
-              <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                @for (shot of scene.shots; track shot.id; let j = $index) {
-                  <div
-                    class="overflow-hidden rounded-2xl border border-surface-border bg-surface shadow-sm"
-                  >
-                    @if (shot.imageUrl) {
-                      <img
-                        [src]="shot.imageUrl"
-                        [alt]="shot.description"
-                        loading="lazy"
-                        decoding="async"
-                        class="aspect-video w-full object-cover"
-                      />
-                    } @else {
-                      <div class="flex aspect-video items-center justify-center bg-surface-2">
-                        <i class="md md-schedule text-3xl text-ink-muted-on-dark"></i>
+              @for (scene of group.scenes; track scene.id; let i = $index) {
+                <div
+                  animate.enter="anim-item"
+                  [style.animation-delay.ms]="i < 8 ? i * 35 : 280"
+                  class="rounded-2xl border border-surface-border bg-surface-2 p-5"
+                >
+                  <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                    <h3 class="flex min-w-0 flex-1 items-center gap-2 font-bold text-ink-on-dark">
+                      <i class="md md-play_circle"></i>
+                      {{ scene.title }}
+                      @if (scene.approved) {
+                        <p-tag
+                          [value]="'AGENCY.STUDIO.TAG_APPROVED' | translate"
+                          severity="success"
+                        />
+                      }
+                    </h3>
+                    @if (scene.boardImageUrl) {
+                      <div class="flex shrink-0 items-center gap-2">
+                        <span
+                          class="text-xs text-ink-muted-on-dark"
+                          [id]="'boardLabel-' + scene.id"
+                          >{{ 'AGENCY.STUDIO.P4_BOARD_BASE' | translate }}</span
+                        >
+                        <button
+                          type="button"
+                          class="cursor-pointer rounded-lg border border-surface-border transition hover:border-accent"
+                          [attr.aria-label]="
+                            'AGENCY.STUDIO.P4_EDIT_BOARD_ARIA' | translate: { title: scene.title }
+                          "
+                          [attr.aria-describedby]="'boardLabel-' + scene.id"
+                          (click)="openBoardAssetEditor(scene)"
+                        >
+                          <img
+                            [src]="scene.boardImageUrl"
+                            [alt]="'AGENCY.STUDIO.P4_BOARD_ALT' | translate: { title: scene.title }"
+                            width="224"
+                            height="128"
+                            loading="lazy"
+                            decoding="async"
+                            class="block h-16 w-28 rounded-lg object-cover"
+                          />
+                        </button>
                       </div>
                     }
-                    <div class="p-3">
-                      <div class="mb-1 flex items-center gap-2">
-                        <span
-                          class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-surface-2 text-xs font-bold text-ink-on-dark"
-                        >
-                          {{ j + 1 }}
-                        </span>
-                        <span class="text-xs font-bold text-ink-on-dark">Shot {{ j + 1 }}</span>
-                      </div>
-                      <p class="text-xs leading-relaxed text-ink-muted-on-dark">
-                        {{ shot.description }}
-                      </p>
-                    </div>
                   </div>
-                }
-              </div>
+
+                  <!-- Prompt de la escena (uno por segmento de duración) -->
+                  <div class="mb-4 rounded-xl border border-surface-border bg-surface p-3">
+                    <div class="mb-2 flex items-center justify-between">
+                      <span class="text-xs font-bold text-ink-on-dark">{{
+                        'AGENCY.STUDIO.P4_SCENE_PROMPT' | translate
+                      }}</span>
+                      <p-button
+                        [label]="'AGENCY.STUDIO.P4_SUGGEST_AGENT' | translate"
+                        icon="md md-auto_fix_high"
+                        severity="secondary"
+                        [outlined]="true"
+                        size="small"
+                        [loading]="clipAgentSceneId() === scene.id"
+                        [disabled]="!!clipAgentSceneId()"
+                        (onClick)="suggestPromptsFromAgent(scene)"
+                      />
+                      <span class="text-xs text-ink-muted-on-dark">
+                        {{
+                          'AGENCY.STUDIO.P4_VIDEO_COUNT'
+                            | translate: { count: (scene.prompts ?? []).length }
+                        }}
+                      </span>
+                    </div>
+                    @if (editorNotes(scene).length > 0) {
+                      <div class="mb-2 rounded-xl border border-surface-border bg-surface p-3">
+                        <span class="text-xs font-bold text-ink-on-dark">{{
+                          'AGENCY.STUDIO.P4_EDITOR_NOTES' | translate
+                        }}</span>
+                        <ul
+                          class="m-0 mt-1 flex list-disc flex-col gap-1 pl-5 text-sm text-ink-muted-on-dark"
+                        >
+                          @for (note of editorNotes(scene); track note.key) {
+                            <li>{{ note.key }}: {{ note.value }}</li>
+                          }
+                        </ul>
+                      </div>
+                    }
+                    @for (prompt of scene.prompts ?? []; track $index; let p = $index) {
+                      <div
+                        class="flex flex-col gap-3 rounded-2xl border border-surface-border bg-surface p-4"
+                      >
+                        <!-- Cabecera: estado del video + acciones -->
+                        <div class="flex flex-wrap items-center gap-2">
+                          <p-tag
+                            [value]="
+                              'AGENCY.STUDIO.P4_VIDEO_TAG'
+                                | translate
+                                  : {
+                                      index: p + 1,
+                                      total: scene.prompts?.length ?? 0,
+                                      duration: prompt.duration ?? segmentDuration(p),
+                                    }
+                            "
+                            severity="info"
+                          />
+                          <div class="ml-auto flex flex-wrap items-center gap-2">
+                            @if (prompt.videoUrl) {
+                              @if (takeForPrompt(scene.id, null, p); as take) {
+                                <span
+                                  class="log-rating-group"
+                                  role="group"
+                                  [attr.aria-label]="'AGENCY.STUDIO.RATING_ARIA' | translate"
+                                >
+                                  <button
+                                    type="button"
+                                    class="log-rating-check"
+                                    [class.active]="take.ratingGood"
+                                    [title]="
+                                      (take.ratingGood
+                                        ? 'AGENCY.STUDIO.RATE_GOOD_REMOVE'
+                                        : 'AGENCY.STUDIO.RATE_GOOD'
+                                      ) | translate
+                                    "
+                                    (click)="rateTake(take, 'good')"
+                                  >
+                                    <i class="md md-check"></i>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    class="log-rating-check"
+                                    [class.active]="take.ratingFinal"
+                                    [title]="
+                                      (take.ratingFinal
+                                        ? 'AGENCY.STUDIO.RATE_FINAL_REMOVE'
+                                        : 'AGENCY.STUDIO.RATE_FINAL'
+                                      ) | translate
+                                    "
+                                    (click)="rateTake(take, 'final')"
+                                  >
+                                    <i class="md md-check md-double"></i>
+                                  </button>
+                                  @if (take.ratingGood || take.ratingFinal) {
+                                    <button
+                                      type="button"
+                                      class="log-rating-clear"
+                                      [title]="'AGENCY.STUDIO.RATE_CLEAR' | translate"
+                                      (click)="clearRating(take)"
+                                    >
+                                      CLEAR
+                                    </button>
+                                  }
+                                </span>
+                              }
+                              <p-button
+                                [label]="'AGENCY.STUDIO.P4_GO_STUDIO' | translate"
+                                icon="md md-auto_fix_high"
+                                severity="secondary"
+                                [outlined]="true"
+                                size="small"
+                                (onClick)="goToStudioFromPrompt(scene, null, p)"
+                              />
+                            }
+                          </div>
+                        </div>
+
+                        <!-- Cuerpo: video generado (si hay) + prompt editable + ajustes -->
+                        <div class="flex flex-col gap-3 sm:flex-row">
+                          @if (prompt.videoUrl; as url) {
+                            <button
+                              type="button"
+                              class="group relative h-28 w-full shrink-0 self-start overflow-hidden rounded-xl border border-surface-border transition hover:border-accent focus-visible:outline-2 focus-visible:outline-accent sm:w-48"
+                              [attr.aria-label]="'AGENCY.STUDIO.P4_PREVIEW_SCENE_ARIA' | translate"
+                              (click)="
+                                openVideoPreview(
+                                  url,
+                                  scenePreviewTitle(scene.title, p + 1, scene.prompts?.length ?? 0)
+                                )
+                              "
+                            >
+                              <!-- Placeholder detrás del video: si el medio no carga (404), se ve el icono y no un cuadro negro -->
+                              <span
+                                class="pointer-events-none absolute inset-0 flex items-center justify-center bg-surface-2 text-ink-muted-on-dark"
+                              >
+                                <i class="md md-movie text-2xl"></i>
+                              </span>
+                              <video
+                                [src]="url | serverUrl"
+                                muted
+                                playsinline
+                                preload="metadata"
+                                class="pointer-events-none relative h-full w-full object-cover"
+                              ></video>
+                              <span
+                                class="absolute inset-0 flex items-center justify-center bg-scrim/45 opacity-0 transition-opacity group-hover:opacity-100"
+                              >
+                                <i class="md md-play_arrow text-2xl text-white"></i>
+                              </span>
+                            </button>
+                          }
+                          <div class="flex min-w-0 flex-1 flex-col gap-3">
+                            @if (isCommercial() && projectPhotos().length > 0) {
+                              <div class="flex flex-col gap-1.5">
+                                <div
+                                  class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-ink-muted-on-dark"
+                                >
+                                  @for (kind of photoKindOptions(); track kind.value) {
+                                    <span class="inline-flex items-center gap-1">
+                                      <span
+                                        class="h-2 w-2 rounded-full"
+                                        [style.background]="kindColor(kind.value)"
+                                      ></span>
+                                      {{ kind.label }}
+                                    </span>
+                                  }
+                                </div>
+                                <div class="flex flex-wrap items-center gap-2">
+                                  <span class="text-xs text-ink-muted-on-dark">
+                                    {{ 'AGENCY.STUDIO.C2_INSERT_HINT' | translate }}
+                                  </span>
+                                  @for (photo of projectPhotos(); track photo.id) {
+                                    <button
+                                      type="button"
+                                      [class]="photoChipClass(photo.kind, isPhotoAssigned(prompt, photo.tag))"
+                                      [title]="photo.filename"
+                                      [attr.aria-label]="photo.tag + ' — ' + photo.filename"
+                                      (mousedown)="$event.preventDefault()"
+                                      (click)="insertProjectPhotoTag(scene.id, p, photo.tag, photo.kind)"
+                                    >
+                                      @if (photo.url) {
+                                        <img
+                                          [src]="photo.url | serverUrl"
+                                          [alt]="photo.filename"
+                                          class="h-6 w-6 rounded object-cover"
+                                          width="48"
+                                          height="48"
+                                          loading="lazy"
+                                          decoding="async"
+                                        />
+                                      } @else {
+                                        <i class="md md-image"></i>
+                                      }
+                                      <span>{{ photo.tag }}</span>
+                                      @if (isPhotoAssigned(prompt, photo.tag)) {
+                                        <i class="md md-check text-[14px]"></i>
+                                      }
+                                    </button>
+                                  }
+                                </div>
+                              </div>
+                            }
+                            <div class="prompt-editor">
+                              <div
+                                #promptMirror
+                                class="prompt-editor__mirror"
+                                aria-hidden="true"
+                              >
+                                <pre class="prompt-editor__pre">@for (segment of highlightSegments(scene.sceneArtifact, prompt.text); track $index) {<span [class]="'prompt-tone-' + segment.tone">{{ segment.text }}</span>}<span aria-hidden="true">&#8203;</span></pre>
+                              </div>
+                              <textarea
+                                #scenePrompt
+                                appAutogrow
+                                rows="2"
+                                spellcheck="false"
+                                class="prompt-editor__input"
+                                [attr.aria-label]="
+                                  'AGENCY.STUDIO.P4_PROMPT_ARIA' | translate: { title: scene.title }
+                                "
+                                [ngModel]="prompt.text"
+                                (ngModelChange)="updateScenePrompt(scene.id, p, $event)"
+                                (focus)="rememberPromptField(scene.id, p, scenePrompt)"
+                                (scroll)="syncPromptScroll(scenePrompt, promptMirror)"
+                                (change)="commitSceneEdit()"
+                                [ngModelOptions]="{ standalone: true }"
+                              ></textarea>
+                            </div>
+
+                            <!-- Ajustes por prompt: modelo, ratio, duración, calidad y sonido -->
+                            <div
+                              class="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-ink-muted-on-dark"
+                            >
+                              <label class="flex items-center gap-1.5">
+                                {{ 'AGENCY.STUDIO.P4_VIDEO_MODEL' | translate }}
+                                <p-select
+                                  [attr.aria-label]="'AGENCY.STUDIO.P4_VIDEO_MODEL_ARIA' | translate"
+                                  [options]="modelVideoOptions()"
+                                  optionLabel="label"
+                                  optionValue="value"
+                                  [ngModel]="prompt.videoModel ?? modelVideo()"
+                                  (ngModelChange)="setPromptModel(scene.id, null, p, $event)"
+                                  [ngModelOptions]="{ standalone: true }"
+                                  styleClass="w-52"
+                                  appendTo="body"
+                                />
+                              </label>
+                              <label class="flex items-center gap-1.5">
+                                {{ 'AGENCY.STUDIO.RATIO' | translate }}
+                                <p-select
+                                  [attr.aria-label]="'AGENCY.STUDIO.RATIO' | translate"
+                                  [options]="promptRatioOptions(prompt)"
+                                  optionLabel="label"
+                                  optionValue="value"
+                                  [ngModel]="prompt.ratio ?? videoRatio()"
+                                  (ngModelChange)="setPromptRatio(scene.id, null, p, $event)"
+                                  [ngModelOptions]="{ standalone: true }"
+                                  styleClass="w-40"
+                                  appendTo="body"
+                                />
+                              </label>
+                              <label class="flex items-center gap-1.5">
+                                {{ 'AGENCY.STUDIO.DURATION' | translate }}
+                                <p-inputNumber
+                                  [min]="1"
+                                  [max]="600"
+                                  [showButtons]="true"
+                                  styleClass="w-28"
+                                  [attr.aria-label]="'AGENCY.STUDIO.DURATION_ARIA' | translate"
+                                  [ngModel]="prompt.duration ?? segmentDuration(p)"
+                                  (ngModelChange)="setPromptDuration(scene.id, null, p, $event)"
+                                  [ngModelOptions]="{ standalone: true }"
+                                />
+                              </label>
+                              <label class="flex items-center gap-1.5">
+                                {{ 'AGENCY.STUDIO.QUALITY' | translate }}
+                                <p-select
+                                  [attr.aria-label]="'AGENCY.STUDIO.P4_QUALITY' | translate"
+                                  [options]="promptResolutionOptions(prompt)"
+                                  optionLabel="label"
+                                  optionValue="value"
+                                  [ngModel]="prompt.resolution ?? videoResolution()"
+                                  (ngModelChange)="setPromptResolution(scene.id, null, p, $event)"
+                                  [ngModelOptions]="{ standalone: true }"
+                                  styleClass="w-52"
+                                  appendTo="body"
+                                />
+                              </label>
+                              <label class="flex items-center gap-1.5">
+                                {{ 'AGENCY.STUDIO.SOUND' | translate }}
+                                <p-toggleswitch
+                                  [ariaLabel]="'AGENCY.STUDIO.SOUND_ARIA' | translate"
+                                  [ngModel]="prompt.audio ?? videoAudio()"
+                                  (ngModelChange)="setPromptAudio(scene.id, null, p, $event)"
+                                  [ngModelOptions]="{ standalone: true }"
+                                />
+                              </label>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="border-t border-surface-border pt-2">
+                          <button
+                            type="button"
+                            class="flex w-full items-center gap-1.5 text-left text-xs font-bold text-ink-muted-on-dark transition-colors hover:text-ink-on-dark"
+                            [attr.aria-expanded]="isPromptResourcesOpen(scene.id, null, p)"
+                            (click)="togglePromptResources(scene.id, null, p)"
+                          >
+                            <i class="md md-attach_file"></i>
+                            <span class="flex-1">
+                              {{
+                                'AGENCY.STUDIO.P4_RESOURCES'
+                                  | translate: { count: promptResources(scene, prompt).length }
+                              }}
+                            </span>
+                            <i
+                              class="md md-expand_more transition-transform"
+                              [class.rotate-180]="isPromptResourcesOpen(scene.id, null, p)"
+                            ></i>
+                          </button>
+                          @if (isPromptResourcesOpen(scene.id, null, p)) {
+                            <div class="mt-2 flex flex-wrap gap-2">
+                              @for (res of promptResources(scene, prompt); track res.id) {
+                                <button
+                                  type="button"
+                                  class="flex items-center gap-2 rounded-lg border border-surface-border bg-surface-2 px-2 py-1 text-xs text-ink-muted-on-dark transition hover:border-accent hover:text-ink-on-dark"
+                                  [attr.aria-label]="
+                                    'AGENCY.STUDIO.EDIT_ELEMENT_ARIA'
+                                      | translate: { name: res.name }
+                                  "
+                                  [title]="
+                                    'AGENCY.STUDIO.EDIT_ELEMENT_TITLE'
+                                      | translate: { name: res.name }
+                                  "
+                                  (click)="openAssetEditor(res.id)"
+                                >
+                                  @if (res.url) {
+                                    <img
+                                      [src]="res.url | serverUrl"
+                                      [alt]="res.name"
+                                      class="h-8 w-8 rounded object-cover"
+                                      width="64"
+                                      height="64"
+                                      loading="lazy"
+                                      decoding="async"
+                                    />
+                                  } @else {
+                                    <i class="md md-image"></i>
+                                  }
+                                  <span class="max-w-40 truncate" [style.color]="kindColor(res.kind)">{{ res.name }}</span>
+                                </button>
+                              }
+                              @if (promptResources(scene, prompt).length === 0) {
+                                <p class="text-xs text-ink-muted-on-dark">
+                                  {{ 'AGENCY.STUDIO.P4_NO_RESOURCES' | translate }}
+                                </p>
+                              }
+                              @if (promptHasSingleReference(scene, prompt)) {
+                                <p class="text-xs text-ink-muted-on-dark">
+                                  {{ 'AGENCY.STUDIO.P4_REFS_DESCRIBED' | translate }}
+                                </p>
+                              }
+                            </div>
+                          }
+                        </div>
+
+                        <div class="border-t border-surface-border pt-3">
+                          <p-button
+                            [label]="
+                              (prompt.videoUrl
+                                ? 'AGENCY.STUDIO.P4_REGENERATE'
+                                : 'AGENCY.STUDIO.P4_GENERATE_VIDEO'
+                              ) | translate
+                            "
+                            icon="md md-movie"
+                            size="small"
+                            [loading]="!!prompt.generating"
+                            [disabled]="!!prompt.generating"
+                            (onClick)="generatePromptVideo(scene.id, null, p)"
+                          />
+                        </div>
+                      </div>
+                    }
+
+                    @if ((scene.prompts ?? []).length === 0) {
+                      <p class="text-xs text-ink-muted-on-dark">
+                        {{ 'AGENCY.STUDIO.P4_NO_PROMPTS_SCENE' | translate }}
+                      </p>
+                    }
+                  </div>
+
+                  <!-- Cada toma, emparentada con su prompt de video -->
+                  <div class="flex flex-col gap-3">
+                    <span class="text-xs font-bold text-ink-on-dark">{{
+                      'AGENCY.STUDIO.P4_SHOTS_TITLE' | translate
+                    }}</span>
+                    @for (shot of scene.shots; track shot.id; let j = $index) {
+                      <div class="rounded-xl border border-surface-border bg-surface p-3">
+                        <div class="mb-2 flex items-center gap-2">
+                          <span
+                            class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-surface-2 text-xs font-bold text-ink-on-dark"
+                          >
+                            {{ j + 1 }}
+                          </span>
+                          <span class="text-xs font-bold text-ink-on-dark">{{
+                            'AGENCY.STUDIO.P4_SHOT' | translate: { n: j + 1 }
+                          }}</span>
+                          <span class="min-w-0 flex-1 truncate text-xs text-ink-muted-on-dark">
+                            {{ shot.description }}
+                          </span>
+                        </div>
+                        @for (prompt of shot.prompts ?? []; track $index; let p = $index) {
+                          <div
+                            class="flex flex-col gap-3 rounded-2xl border border-surface-border bg-surface p-4"
+                          >
+                            <!-- Cabecera: estado del video + acciones -->
+                            <div class="flex flex-wrap items-center gap-2">
+                              <p-tag
+                                [value]="
+                                  'AGENCY.STUDIO.P4_VIDEO_TAG'
+                                    | translate
+                                      : {
+                                          index: p + 1,
+                                          total: shot.prompts?.length ?? 0,
+                                          duration: prompt.duration ?? segmentDuration(p),
+                                        }
+                                "
+                                severity="info"
+                              />
+                              <div class="ml-auto flex flex-wrap items-center gap-2">
+                                @if (prompt.videoUrl) {
+                                  @if (takeForPrompt(scene.id, shot.id, p); as take) {
+                                    <span
+                                      class="log-rating-group"
+                                      role="group"
+                                      [attr.aria-label]="'AGENCY.STUDIO.RATING_ARIA' | translate"
+                                    >
+                                      <button
+                                        type="button"
+                                        class="log-rating-check"
+                                        [class.active]="take.ratingGood"
+                                        [title]="
+                                          (take.ratingGood
+                                            ? 'AGENCY.STUDIO.RATE_GOOD_REMOVE'
+                                            : 'AGENCY.STUDIO.RATE_GOOD'
+                                          ) | translate
+                                        "
+                                        (click)="rateTake(take, 'good')"
+                                      >
+                                        <i class="md md-check"></i>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        class="log-rating-check"
+                                        [class.active]="take.ratingFinal"
+                                        [title]="
+                                          (take.ratingFinal
+                                            ? 'AGENCY.STUDIO.RATE_FINAL_REMOVE'
+                                            : 'AGENCY.STUDIO.RATE_FINAL'
+                                          ) | translate
+                                        "
+                                        (click)="rateTake(take, 'final')"
+                                      >
+                                        <i class="md md-check md-double"></i>
+                                      </button>
+                                      @if (take.ratingGood || take.ratingFinal) {
+                                        <button
+                                          type="button"
+                                          class="log-rating-clear"
+                                          [title]="'AGENCY.STUDIO.RATE_CLEAR' | translate"
+                                          (click)="clearRating(take)"
+                                        >
+                                          CLEAR
+                                        </button>
+                                      }
+                                    </span>
+                                  }
+                                  <p-button
+                                    [label]="'AGENCY.STUDIO.P4_GO_STUDIO' | translate"
+                                    icon="md md-auto_fix_high"
+                                    severity="secondary"
+                                    [outlined]="true"
+                                    size="small"
+                                    (onClick)="goToStudioFromPrompt(scene, shot.id, p)"
+                                  />
+                                }
+                              </div>
+                            </div>
+
+                            <!-- Cuerpo: video generado (si hay) + prompt editable + ajustes -->
+                            <div class="flex flex-col gap-3 sm:flex-row">
+                              @if (prompt.videoUrl; as url) {
+                                <button
+                                  type="button"
+                                  class="group relative h-28 w-full shrink-0 self-start overflow-hidden rounded-xl border border-surface-border transition hover:border-accent focus-visible:outline-2 focus-visible:outline-accent sm:w-48"
+                                  [attr.aria-label]="
+                                    'AGENCY.STUDIO.P4_PREVIEW_SHOT_ARIA' | translate: { n: j + 1 }
+                                  "
+                                  (click)="
+                                    openVideoPreview(url, shotPreviewTitle(scene.title, j + 1))
+                                  "
+                                >
+                                  <!-- Placeholder detrás del video: si el medio no carga (404), se ve el icono y no un cuadro negro -->
+                                  <span
+                                    class="pointer-events-none absolute inset-0 flex items-center justify-center bg-surface-2 text-ink-muted-on-dark"
+                                  >
+                                    <i class="md md-movie text-2xl"></i>
+                                  </span>
+                                  <video
+                                    [src]="url | serverUrl"
+                                    muted
+                                    playsinline
+                                    preload="metadata"
+                                    class="pointer-events-none relative h-full w-full object-cover"
+                                  ></video>
+                                  <span
+                                    class="absolute inset-0 flex items-center justify-center bg-scrim/45 opacity-0 transition-opacity group-hover:opacity-100"
+                                  >
+                                    <i class="md md-play_arrow text-2xl text-white"></i>
+                                  </span>
+                                </button>
+                              }
+                              <div class="flex min-w-0 flex-1 flex-col gap-3">
+                                <div class="prompt-editor">
+                                  <div
+                                    #shotMirror
+                                    class="prompt-editor__mirror"
+                                    aria-hidden="true"
+                                  >
+                                    <pre class="prompt-editor__pre">@for (segment of highlightSegments(scene.sceneArtifact, prompt.text); track $index) {<span [class]="'prompt-tone-' + segment.tone">{{ segment.text }}</span>}<span aria-hidden="true">&#8203;</span></pre>
+                                  </div>
+                                  <textarea
+                                    #shotPrompt
+                                    appAutogrow
+                                    rows="2"
+                                    spellcheck="false"
+                                    class="prompt-editor__input"
+                                    [attr.aria-label]="
+                                      'AGENCY.STUDIO.P4_PROMPT_SHOT_ARIA'
+                                        | translate: { n: j + 1, title: scene.title }
+                                    "
+                                    [ngModel]="prompt.text"
+                                    (ngModelChange)="updateShotPrompt(scene.id, shot.id, p, $event)"
+                                    (scroll)="syncPromptScroll(shotPrompt, shotMirror)"
+                                    (change)="commitSceneEdit()"
+                                    [ngModelOptions]="{ standalone: true }"
+                                  ></textarea>
+                                </div>
+
+                                <!-- Ajustes por prompt: duración, calidad y sonido -->
+                                <div
+                                  class="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-ink-muted-on-dark"
+                                >
+                                  <label class="flex items-center gap-1.5">
+                                    {{ 'AGENCY.STUDIO.DURATION' | translate }}
+                                    <p-inputNumber
+                                      [min]="1"
+                                      [max]="600"
+                                      [showButtons]="true"
+                                      styleClass="w-28"
+                                      [attr.aria-label]="'AGENCY.STUDIO.DURATION_ARIA' | translate"
+                                      [ngModel]="prompt.duration ?? segmentDuration(p)"
+                                      (ngModelChange)="
+                                        setPromptDuration(scene.id, shot.id, p, $event)
+                                      "
+                                      [ngModelOptions]="{ standalone: true }"
+                                    />
+                                  </label>
+                                  <label class="flex items-center gap-1.5">
+                                    {{ 'AGENCY.STUDIO.QUALITY' | translate }}
+                                    <p-select
+                                      [attr.aria-label]="'AGENCY.STUDIO.P4_QUALITY' | translate"
+                                      [options]="videoResolutionOptions()"
+                                      optionLabel="label"
+                                      optionValue="value"
+                                      [ngModel]="prompt.resolution ?? videoResolution()"
+                                      (ngModelChange)="
+                                        setPromptResolution(scene.id, shot.id, p, $event)
+                                      "
+                                      [ngModelOptions]="{ standalone: true }"
+                                      styleClass="w-52"
+                                      appendTo="body"
+                                    />
+                                  </label>
+                                  <label class="flex items-center gap-1.5">
+                                    {{ 'AGENCY.STUDIO.SOUND' | translate }}
+                                    <p-toggleswitch
+                                      [ariaLabel]="'AGENCY.STUDIO.SOUND_ARIA' | translate"
+                                      [ngModel]="prompt.audio ?? videoAudio()"
+                                      (ngModelChange)="setPromptAudio(scene.id, shot.id, p, $event)"
+                                      [ngModelOptions]="{ standalone: true }"
+                                    />
+                                  </label>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div class="border-t border-surface-border pt-2">
+                              <button
+                                type="button"
+                                class="flex w-full items-center gap-1.5 text-left text-xs font-bold text-ink-muted-on-dark transition-colors hover:text-ink-on-dark"
+                                [attr.aria-expanded]="isPromptResourcesOpen(scene.id, shot.id, p)"
+                                (click)="togglePromptResources(scene.id, shot.id, p)"
+                              >
+                                <i class="md md-attach_file"></i>
+                                <span class="flex-1">
+                                  {{
+                                    'AGENCY.STUDIO.P4_RESOURCES'
+                                      | translate: { count: promptResources(scene, prompt).length }
+                                  }}
+                                </span>
+                                <i
+                                  class="md md-expand_more transition-transform"
+                                  [class.rotate-180]="isPromptResourcesOpen(scene.id, shot.id, p)"
+                                ></i>
+                              </button>
+                              @if (isPromptResourcesOpen(scene.id, shot.id, p)) {
+                                <div class="mt-2 flex flex-wrap gap-2">
+                                  @for (res of promptResources(scene, prompt); track res.id) {
+                                    <button
+                                      type="button"
+                                      class="flex items-center gap-2 rounded-lg border border-surface-border bg-surface-2 px-2 py-1 text-xs text-ink-muted-on-dark transition hover:border-accent hover:text-ink-on-dark"
+                                      [attr.aria-label]="
+                                        'AGENCY.STUDIO.EDIT_ELEMENT_ARIA'
+                                          | translate: { name: res.name }
+                                      "
+                                      [title]="
+                                        'AGENCY.STUDIO.EDIT_ELEMENT_TITLE'
+                                          | translate: { name: res.name }
+                                      "
+                                      (click)="openAssetEditor(res.id)"
+                                    >
+                                      @if (res.url) {
+                                        <img
+                                          [src]="res.url | serverUrl"
+                                          [alt]="res.name"
+                                          class="h-8 w-8 rounded object-cover"
+                                          width="64"
+                                          height="64"
+                                          loading="lazy"
+                                          decoding="async"
+                                        />
+                                      } @else {
+                                        <i class="md md-image"></i>
+                                      }
+                                      <span class="max-w-40 truncate" [style.color]="kindColor(res.kind)">{{ res.name }}</span>
+                                    </button>
+                                  }
+                                  @if (promptResources(scene, prompt).length === 0) {
+                                    <p class="text-xs text-ink-muted-on-dark">
+                                      {{ 'AGENCY.STUDIO.P4_NO_RESOURCES' | translate }}
+                                    </p>
+                                  }
+                                  @if (promptHasSingleReference(scene, prompt)) {
+                                    <p class="text-xs text-ink-muted-on-dark">
+                                      {{ 'AGENCY.STUDIO.P4_REFS_DESCRIBED' | translate }}
+                                    </p>
+                                  }
+                                </div>
+                              }
+                            </div>
+
+                            <div class="border-t border-surface-border pt-3">
+                              <p-button
+                                [label]="
+                                  (prompt.videoUrl
+                                    ? 'AGENCY.STUDIO.P4_REGENERATE'
+                                    : 'AGENCY.STUDIO.P4_GENERATE_VIDEO'
+                                  ) | translate
+                                "
+                                icon="md md-movie"
+                                size="small"
+                                [loading]="!!prompt.generating"
+                                [disabled]="!!prompt.generating"
+                                (onClick)="generatePromptVideo(scene.id, shot.id, p)"
+                              />
+                            </div>
+                          </div>
+                        }
+
+                        @if ((shot.prompts ?? []).length === 0) {
+                          <p class="text-xs text-ink-muted-on-dark">
+                            {{ 'AGENCY.STUDIO.P4_NO_PROMPTS_SHOT' | translate }}
+                          </p>
+                        }
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
             </div>
           }
         </div>
@@ -538,28 +2182,565 @@
             <i class="md md-inbox text-3xl text-ink-muted-on-dark"></i>
           </div>
           <div>
-            <p class="font-bold text-ink-on-dark">No hay escenas generadas</p>
+            <p class="font-bold text-ink-on-dark">
+              {{ 'AGENCY.STUDIO.P4_EMPTY_TITLE' | translate }}
+            </p>
             <p class="mt-1 text-sm text-ink-muted-on-dark">
-              Vuelve al storyboard para generar imágenes
+              {{ 'AGENCY.STUDIO.P4_EMPTY_HINT' | translate }}
             </p>
           </div>
         </div>
       }
 
-      <div class="flex items-center justify-between border-t border-surface-border pt-4 mt-6">
+      <div class="flex items-center justify-between gap-3 border-t border-surface-border pt-4 mt-6">
         <p-button
-          label="← Volver al Storyboard"
+          [label]="'AGENCY.STUDIO.BACK' | translate"
+          icon="md md-arrow_back"
           severity="secondary"
           text
           (onClick)="prevPhase()"
         />
         <p-button
-          label="Nuevo Proyecto"
+          [label]="'AGENCY.STUDIO.P4_NEW_PROJECT' | translate"
           icon="md md-add"
+          severity="secondary"
           (onClick)="resetWorkflow()"
           styleClass="px-6 active:scale-[0.98]"
         />
       </div>
     </p-card>
   }
+  <!-- Modal: hoja de storyboard de una escena (varias viñetas) -->
+  <p-dialog
+    [header]="'AGENCY.STUDIO.BOARD_DIALOG_TITLE' | translate"
+    [visible]="boardVisible()"
+    (onHide)="closeBoardDialog()"
+    [modal]="true"
+    [style]="{ width: 'min(760px, 95vw)' }"
+  >
+    @if (boardScene(); as scene) {
+      <div class="flex flex-col gap-4">
+        <p class="text-sm text-ink-muted-on-dark">{{ scene.title }}</p>
+        <div class="flex flex-wrap items-start gap-6">
+          <div class="flex flex-col gap-1">
+            <label for="boardShotCount" class="text-xs font-bold text-ink-on-dark">
+              {{ 'AGENCY.STUDIO.BOARD_SHOTS' | translate }}
+            </label>
+            <p-inputNumber
+              inputId="boardShotCount"
+              [min]="1"
+              [max]="12"
+              [showButtons]="true"
+              styleClass="w-36"
+              [ngModel]="boardShotCount()"
+              (ngModelChange)="onBoardShotCountChange($event)"
+              [ngModelOptions]="{ standalone: true }"
+            />
+            <small class="text-ink-muted-on-dark">
+              {{ 'AGENCY.STUDIO.BOARD_SHOTS_HINT' | translate: { count: boardShotCount() } }}
+            </small>
+          </div>
+          <div class="flex flex-col gap-1">
+            <label for="boardRatio" class="text-xs font-bold text-ink-on-dark">
+              {{ 'AGENCY.STUDIO.RATIO' | translate }}
+            </label>
+            <p-select
+              inputId="boardRatio"
+              [attr.aria-label]="'AGENCY.STUDIO.BOARD_RATIO_ARIA' | translate"
+              [options]="imageRatioOptions()"
+              optionLabel="label"
+              optionValue="value"
+              [ngModel]="boardRatio()"
+              (ngModelChange)="boardRatio.set($event)"
+              [ngModelOptions]="{ standalone: true }"
+              styleClass="w-56"
+              appendTo="body"
+            />
+          </div>
+        </div>
+        <div class="flex flex-col gap-1">
+          <label for="boardPrompt" class="text-xs font-bold text-ink-on-dark">
+            {{ 'AGENCY.STUDIO.BOARD_PROMPT' | translate }}
+          </label>
+          <textarea
+            pTextarea
+            id="boardPrompt"
+            rows="7"
+            class="w-full"
+            [ngModel]="boardPrompt()"
+            (ngModelChange)="onBoardPromptChange($event)"
+            [ngModelOptions]="{ standalone: true }"
+          ></textarea>
+          <small class="text-ink-muted-on-dark">
+            {{ 'AGENCY.STUDIO.BOARD_PROMPT_HINT' | translate }}
+          </small>
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+          <p-button
+            [label]="'AGENCY.STUDIO.BOARD_SUGGEST_AGENT' | translate"
+            icon="md md-auto_fix_high"
+            severity="secondary"
+            [outlined]="true"
+            size="small"
+            [loading]="boardAgentLoading()"
+            [disabled]="boardAgentLoading()"
+            (onClick)="suggestBoardFromAgent()"
+          />
+          @if (boardAgentLoading()) {
+            <small class="text-ink-muted-on-dark">{{
+              'AGENCY.STUDIO.BOARD_SUGGEST_HINT' | translate
+            }}</small>
+          }
+        </div>
+        @if (scene.boardArtifact; as board) {
+          @if (board.vinetas.length > 0) {
+            <div class="flex flex-col gap-1">
+              <span class="text-xs font-bold text-ink-on-dark">{{
+                'AGENCY.STUDIO.BOARD_VINETAS' | translate
+              }}</span>
+              <ul class="m-0 flex list-disc flex-col gap-1 pl-5 text-sm text-ink-muted-on-dark">
+                @for (v of board.vinetas; track $index) {
+                  <li>
+                    @if (v.tipo_toma) {
+                      <span class="font-semibold text-ink-on-dark">{{ v.tipo_toma }}</span>
+                    }
+                    {{ v.que_se_ve }}
+                    @if (v.duracion_s) {
+                      <span>· {{ v.duracion_s }}s</span>
+                    }
+                  </li>
+                }
+              </ul>
+              @if (board.fotos_faltantes; as faltantes) {
+                @if (faltantes.length) {
+                  <small class="text-ink-muted-on-dark">{{
+                    'AGENCY.STUDIO.BOARD_MISSING_PHOTOS' | translate: { list: faltantes.join(', ') }
+                  }}</small>
+                }
+              }
+            </div>
+          }
+        }
+        @if (scene.references?.length) {
+          <div class="flex flex-col gap-1">
+            <span class="text-xs font-bold text-ink-on-dark">{{
+              'AGENCY.STUDIO.BOARD_REFS' | translate
+            }}</span>
+            <div class="flex flex-wrap gap-3">
+              @for (ref of scene.references; track ref.id) {
+                <div
+                  class="relative h-20 w-28 cursor-pointer overflow-hidden rounded-lg border border-surface-border bg-surface transition hover:border-accent"
+                  role="button"
+                  tabindex="0"
+                  [attr.aria-label]="
+                    'AGENCY.STUDIO.EDIT_ELEMENT_ARIA' | translate: { name: ref.filename }
+                  "
+                  [title]="'AGENCY.STUDIO.EDIT_ELEMENT_TITLE' | translate: { name: ref.filename }"
+                  (click)="openAssetEditor(ref.id)"
+                  (keydown.enter)="openAssetEditor(ref.id)"
+                >
+                  @if (ref.url) {
+                    <img
+                      [src]="ref.url | serverUrl"
+                      [alt]="ref.filename"
+                      width="480"
+                      height="360"
+                      loading="lazy"
+                      decoding="async"
+                      class="h-full w-full object-cover"
+                    />
+                  }
+                </div>
+              }
+            </div>
+            @if (scene.refsApproved) {
+              <small class="text-ink-muted-on-dark">{{
+                'AGENCY.STUDIO.REFS_APPROVED_CHECK' | translate
+              }}</small>
+            } @else {
+              <small class="text-ink-muted-on-dark">
+                {{ 'AGENCY.STUDIO.BOARD_REFS_HINT' | translate }}
+              </small>
+            }
+          </div>
+        }
+        @if (scene.boardImageUrl) {
+          <div class="flex flex-col gap-1">
+            <span class="text-xs font-bold text-ink-on-dark">{{
+              'AGENCY.STUDIO.BOARD_CURRENT' | translate
+            }}</span>
+            <img
+              [src]="scene.boardImageUrl"
+              [alt]="'AGENCY.STUDIO.BOARD_CURRENT_ALT' | translate"
+              width="1280"
+              height="720"
+              loading="lazy"
+              decoding="async"
+              class="w-full cursor-pointer rounded-xl border border-surface-border transition hover:border-accent"
+              [title]="'AGENCY.STUDIO.EDIT_ELEMENT' | translate"
+              (click)="openBoardAssetEditor(scene)"
+            />
+          </div>
+        }
+      </div>
+    }
+    <ng-template #footer>
+      <div class="flex items-center justify-end gap-2">
+        <p-button
+          [label]="'AGENCY.STUDIO.CANCEL' | translate"
+          severity="secondary"
+          text
+          [disabled]="!!boardScene()?.boardGenerating"
+          (onClick)="closeBoardDialog()"
+        />
+        <p-button
+          [label]="'AGENCY.STUDIO.BOARD_GENERATE' | translate"
+          icon="md md-image"
+          [loading]="!!boardScene()?.boardGenerating"
+          [disabled]="!!boardScene()?.boardGenerating"
+          (onClick)="submitBoardImage()"
+        />
+      </div>
+    </ng-template>
+  </p-dialog>
+
+  <!-- Popover del paso 3: cola sencilla de hojas de storyboard + take reel -->
+  <p-popover #boardReelPopover styleClass="agency-reel-popover">
+    <div class="reel-head">
+      <span
+        ><i class="md md-photo_library"></i> {{ 'AGENCY.STUDIO.POP_BOARD_TITLE' | translate }}</span
+      >
+      @if (boardQueue().length) {
+        <span class="reel-live"
+          ><span class="dot"></span>
+          {{ 'AGENCY.STUDIO.POP_IN_PROGRESS' | translate: { count: boardQueue().length } }}</span
+        >
+      }
+    </div>
+    @if (boardQueue().length === 0 && boardTakes().length === 0) {
+      <p class="reel-empty">{{ 'AGENCY.STUDIO.POP_BOARD_EMPTY' | translate }}</p>
+    }
+    @if (boardQueue().length) {
+      <div class="reel-section">{{ 'AGENCY.STUDIO.POP_QUEUE' | translate }}</div>
+      <div class="reel-list">
+        @for (scene of boardQueue(); track scene.id) {
+          <div class="reel-item">
+            <span class="reel-thumb icon spin"><i class="md md-autorenew md-spin"></i></span>
+            <span class="reel-info">
+              <span class="reel-title">{{ scene.title }}</span>
+              <span class="reel-sub">{{ 'AGENCY.STUDIO.P3_BOARD_GENERATING' | translate }}</span>
+              <span class="reel-track"><span class="reel-fill indeterminate"></span></span>
+            </span>
+          </div>
+        }
+      </div>
+    }
+    @if (boardTakes().length) {
+      <div class="reel-section">{{ 'AGENCY.STUDIO.POP_TAKE_REEL' | translate }}</div>
+      <div class="reel-list">
+        @for (take of boardTakes(); track take.id) {
+          <div class="reel-item">
+            @if (take.url) {
+              <img
+                class="reel-thumb"
+                [src]="take.url | serverUrl"
+                [alt]="take.title"
+                width="320"
+                height="180"
+                loading="lazy"
+                decoding="async"
+              />
+            } @else {
+              <span class="reel-thumb icon"><i class="md md-image"></i></span>
+            }
+            <span class="reel-info">
+              <span class="reel-title">{{ take.title }}</span>
+              <span class="reel-sub">{{ 'AGENCY.STUDIO.POP_BOARD_READY' | translate }}</span>
+            </span>
+            @if (take.approved) {
+              <p-tag [value]="'AGENCY.STUDIO.POP_APPROVED' | translate" severity="success" />
+            }
+          </div>
+        }
+      </div>
+    }
+  </p-popover>
+
+  <!-- Popover del paso 4: cola de videos en curso + take reel con
+       calificaciones e "Ir a estudio" -->
+  <p-popover #videoReelPopover styleClass="agency-reel-popover">
+    <div class="reel-head">
+      <span><i class="md md-movie"></i> {{ 'AGENCY.STUDIO.POP_VIDEO_TITLE' | translate }}</span>
+      @if (videoQueue().length) {
+        <span class="reel-live"
+          ><span class="dot"></span>
+          {{ 'AGENCY.STUDIO.POP_IN_PROGRESS' | translate: { count: videoQueue().length } }}</span
+        >
+      }
+    </div>
+    @if (videoQueue().length === 0 && videoTakes().length === 0) {
+      <p class="reel-empty">{{ 'AGENCY.STUDIO.POP_VIDEO_EMPTY' | translate }}</p>
+    }
+    @if (videoQueue().length) {
+      <div class="reel-section">{{ 'AGENCY.STUDIO.POP_QUEUE' | translate }}</div>
+      <div class="reel-list">
+        @for (take of videoQueue(); track take.id) {
+          <div class="reel-item">
+            <span class="reel-thumb icon spin"><i class="md md-autorenew md-spin"></i></span>
+            <span class="reel-info">
+              <span class="reel-title">{{ take.modelDisplayName || take.modelName }}</span>
+              <span class="reel-sub">{{ shortPrompt(take.prompt) }}</span>
+              <span class="reel-track"
+                ><span class="reel-fill" [style.width.%]="take.progress"></span
+              ></span>
+            </span>
+            <p-tag
+              [value]="take.progress + '%'"
+              [severity]="takeSeverity(take.status)"
+              styleClass="text-xs"
+            />
+          </div>
+        }
+      </div>
+    }
+    @if (videoTakes().length) {
+      <div class="reel-section">{{ 'AGENCY.STUDIO.POP_TAKE_REEL' | translate }}</div>
+      <div class="reel-list">
+        @for (take of videoTakes(); track take.id) {
+          <div class="reel-item reel-item-video">
+            @if (take.status === 'succeeded' && take.videoUrl) {
+              <video
+                class="reel-thumb"
+                [src]="take.videoUrl | serverUrl"
+                preload="metadata"
+                muted
+                controls
+              ></video>
+            } @else {
+              <span class="reel-thumb icon" [class.danger]="take.status === 'failed'">
+                <i
+                  class="md"
+                  [class.md-error]="take.status === 'failed'"
+                  [class.md-link_off]="take.status === 'cancelled'"
+                ></i>
+              </span>
+            }
+            <span class="reel-info">
+              <span class="reel-title-row">
+                <span class="reel-title">{{ take.modelDisplayName || take.modelName }}</span>
+                <p-tag
+                  [value]="
+                    take.status === 'succeeded'
+                      ? ('AGENCY.STUDIO.POP_STATUS_READY' | translate)
+                      : take.status === 'failed'
+                        ? ('AGENCY.STUDIO.POP_STATUS_FAILED' | translate)
+                        : ('AGENCY.STUDIO.POP_STATUS_CANCELLED' | translate)
+                  "
+                  [severity]="takeSeverity(take.status)"
+                  styleClass="text-xs"
+                />
+              </span>
+              <span class="reel-sub">{{ shortPrompt(take.prompt) }}</span>
+              @if (take.status === 'failed' && take.error) {
+                <span class="reel-error">{{ take.error }}</span>
+              }
+              <span class="reel-actions">
+                <span
+                  class="log-rating-group"
+                  role="group"
+                  [attr.aria-label]="'AGENCY.STUDIO.RATING_ARIA' | translate"
+                >
+                  <button
+                    type="button"
+                    class="log-rating-check"
+                    [class.active]="take.ratingGood"
+                    [title]="
+                      (take.ratingGood
+                        ? 'AGENCY.STUDIO.RATE_GOOD_REMOVE'
+                        : 'AGENCY.STUDIO.RATE_GOOD'
+                      ) | translate
+                    "
+                    (click)="rateTake(take, 'good')"
+                  >
+                    <i class="md md-check"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="log-rating-check"
+                    [class.active]="take.ratingFinal"
+                    [title]="
+                      (take.ratingFinal
+                        ? 'AGENCY.STUDIO.RATE_FINAL_REMOVE'
+                        : 'AGENCY.STUDIO.RATE_FINAL'
+                      ) | translate
+                    "
+                    (click)="rateTake(take, 'final')"
+                  >
+                    <i class="md md-check md-double"></i>
+                  </button>
+                  @if (take.ratingGood || take.ratingFinal) {
+                    <button
+                      type="button"
+                      class="log-rating-clear"
+                      [title]="'AGENCY.STUDIO.RATE_CLEAR' | translate"
+                      (click)="clearRating(take)"
+                    >
+                      CLEAR
+                    </button>
+                  }
+                </span>
+                @if (take.status === 'succeeded' && take.request) {
+                  <button
+                    type="button"
+                    class="reel-studio"
+                    [title]="'AGENCY.STUDIO.POP_STUDIO_TITLE' | translate"
+                    (click)="goToStudio(take)"
+                  >
+                    <i class="md md-auto_fix_high"></i>
+                    {{ 'AGENCY.STUDIO.P4_GO_STUDIO' | translate }}
+                  </button>
+                }
+              </span>
+            </span>
+          </div>
+        }
+      </div>
+    }
+  </p-popover>
+
+  <!-- Modal de visualización del video generado -->
+  <p-dialog
+    [header]="'AGENCY.STUDIO.PREVIEW_TITLE' | translate"
+    [visible]="!!videoPreview()"
+    (onHide)="closeVideoPreview()"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [style]="{ width: 'min(880px, 95vw)' }"
+  >
+    @if (videoPreview(); as vp) {
+      <div class="flex flex-col gap-3">
+        <p class="text-sm text-ink-muted-on-dark">{{ vp.title }}</p>
+        <video
+          [src]="vp.url | serverUrl"
+          controls
+          autoplay
+          playsinline
+          class="w-full rounded-xl border border-surface-border bg-black"
+        ></video>
+      </div>
+    }
+  </p-dialog>
+
+  <!-- Modal "Editar elemento" (compartida con Recursos) -->
+  <app-asset-edit-dialog
+    [visible]="editorVisible()"
+    [asset]="editorAsset()"
+    (closed)="editorVisible.set(false)"
+    (changed)="onAssetEditorChanged()"
+    (assetSaved)="onAssetEditorSaved($event)"
+  />
+
+  <!-- Chat con el agente experto: asistente para armar el video -->
+  <button
+    type="button"
+    class="agency-chat-fab"
+    [attr.aria-expanded]="chatVisible()"
+    aria-controls="agency-chat-panel"
+    (click)="toggleChat()"
+  >
+    <i class="md md-forum"></i>
+    <span class="sr-only">{{
+      'AGENCY.STUDIO.CHAT_FAB_ARIA' | translate: { agent: agentLabel() }
+    }}</span>
+  </button>
+
+  <aside
+    id="agency-chat-panel"
+    class="agency-chat-panel"
+    [class.open]="chatVisible()"
+    [attr.aria-hidden]="!chatVisible()"
+  >
+    <header class="agency-chat-head">
+      <div>
+        <p class="agency-chat-title">
+          {{ agentLabel() }}
+          <span class="agency-chat-ai">{{ 'AGENCY.STUDIO.CHAT_AI_BADGE' | translate }}</span>
+        </p>
+        <p class="agency-chat-sub">{{ 'AGENCY.STUDIO.CHAT_SUBTITLE' | translate }}</p>
+      </div>
+      <button
+        type="button"
+        class="agency-chat-close"
+        [title]="'AGENCY.STUDIO.CHAT_CLOSE' | translate"
+        [attr.aria-label]="'AGENCY.STUDIO.CHAT_CLOSE' | translate"
+        (click)="toggleChat()"
+      >
+        <ui-icon name="md-close" />
+      </button>
+    </header>
+
+    <div class="agency-chat-log" aria-live="polite">
+      @if (chatMessages().length === 0) {
+        <p class="agency-chat-empty">
+          {{ 'AGENCY.STUDIO.CHAT_EMPTY' | translate: { agent: agentLabel() | lowercase } }}
+        </p>
+      }
+      @for (msg of chatMessages(); track $index) {
+        <div class="agency-chat-msg" [class.user]="msg.role === 'user'">
+          {{ msg.content }}
+        </div>
+      }
+      @for (act of chatActivity(); track $index) {
+        <div class="agency-chat-tool" [class.error]="act.status === 'error'">
+          <span class="agency-chat-tool-icon" aria-hidden="true">
+            @switch (act.status) {
+              @case ('running') {
+                …
+              }
+              @case ('ok') {
+                ✓
+              }
+              @case ('error') {
+                ✗
+              }
+            }
+          </span>
+          <span class="agency-chat-tool-name">{{ act.name }}</span>
+          @if (act.summary) {
+            <span class="agency-chat-tool-summary">{{ act.summary }}</span>
+          }
+          @if (act.error) {
+            <span class="agency-chat-tool-summary">{{ act.error }}</span>
+          }
+        </div>
+      }
+      @if (chatBusy()) {
+        <div class="agency-chat-msg assistant typing" aria-hidden="true">
+          <span></span><span></span><span></span>
+        </div>
+      }
+    </div>
+
+    <form class="agency-chat-input" (ngSubmit)="sendChat()">
+      <textarea
+        pTextarea
+        rows="2"
+        class="w-full"
+        [ngModel]="chatDraft()"
+        (ngModelChange)="chatDraft.set($event)"
+        [ngModelOptions]="{ standalone: true }"
+        [placeholder]="'AGENCY.STUDIO.CHAT_PLACEHOLDER' | translate: { agent: agentLabel() }"
+        [attr.aria-label]="'AGENCY.STUDIO.CHAT_INPUT_ARIA' | translate: { agent: agentLabel() }"
+        [disabled]="chatBusy()"
+        (keydown.enter)="$event.preventDefault(); sendChat()"
+      ></textarea>
+      <p-button
+        icon="md md-send"
+        [disabled]="chatBusy() || !chatDraft().trim()"
+        (onClick)="sendChat()"
+        [ariaLabel]="'AGENCY.STUDIO.CHAT_SEND_ARIA' | translate: { agent: agentLabel() }"
+      />
+    </form>
+  </aside>
 </app-page-container>

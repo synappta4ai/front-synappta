@@ -87,7 +87,7 @@ function syncTranslations(dir: string): void {
   console.log('─'.repeat(50));
 }
 
-const i18nDir = path.join(__dirname, '../public/assets/i18n');
+const i18nDir = path.join(__dirname, '../src/assets/i18n');
 
 if (!fs.existsSync(i18nDir)) {
   console.error('❌ i18n directory not found:', i18nDir);

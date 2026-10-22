@@ -1,0 +1,421 @@
+<!-- Editar elemento: imágenes a la izquierda, datos a la derecha -->
+<p-dialog
+  [visible]="visible()"
+  (visibleChange)="onVisibleChange($event)"
+  [modal]="true"
+  [style]="{ width: 'min(96vw, 68rem)' }"
+  styleClass="element-dialog"
+  [draggable]="false"
+  [resizable]="false"
+  [closeOnEscape]="true"
+>
+  <ng-template #header>
+    <div class="viewer-head">
+      <div class="viewer-head__icon">
+        <i class="md md-photo_library"></i>
+      </div>
+      <div class="min-w-0">
+        <h3 class="viewer-head__title">{{ 'LIBRARY.EDIT.TITLE' | translate }}</h3>
+        <p class="viewer-head__sub" [title]="elementLabel()">{{ elementLabel() }}</p>
+      </div>
+    </div>
+  </ng-template>
+
+  @if (error(); as message) {
+    <div class="mb-3">
+      <p-message severity="error" [text]="message" styleClass="w-full" />
+    </div>
+  }
+
+  <div class="edit-grid">
+    <!-- Izquierda: imágenes del elemento -->
+    <section class="edit-media" [attr.aria-label]="'LIBRARY.EDIT.IMAGES_ARIA' | translate">
+      <div class="edit-tools">
+        <button
+          type="button"
+          class="icon-btn"
+          [title]="'LIBRARY.EDIT.RELOAD' | translate"
+          [attr.aria-label]="'LIBRARY.EDIT.RELOAD' | translate"
+          (click)="reloadFiles()"
+        >
+          <i class="md md-refresh" [class.md-spin]="loadingElement()"></i>
+        </button>
+        <button
+          type="button"
+          class="icon-btn"
+          [title]="'LIBRARY.EDIT.ROTATE' | translate"
+          [attr.aria-label]="'LIBRARY.EDIT.ROTATE' | translate"
+          (click)="rotatePreview()"
+        >
+          <i class="md md-rotate_90"></i>
+        </button>
+        <button
+          type="button"
+          class="icon-btn"
+          [title]="'LIBRARY.EDIT.REMOVE_IMAGE' | translate"
+          [attr.aria-label]="'LIBRARY.EDIT.REMOVE_IMAGE' | translate"
+          [disabled]="!editIngId()"
+          (click)="confirmRemoveFile()"
+        >
+          <i class="md md-delete"></i>
+        </button>
+      </div>
+
+      <!-- Visualizador principal: solo la imagen activa; el reel de abajo
+           cambia cuál se ve. -->
+      <div class="edit-stage">
+        @if (activeFile(); as active) {
+          <div class="edit-stage__frame">
+            @if (active.mime_type?.startsWith('image/') && !brokenThumbs().has(active.file_id)) {
+              <img
+                appImgFade
+                [src]="absoluteUrl(active.url)"
+                [alt]="active.filename ?? ''"
+                width="1024"
+                height="768"
+                decoding="async"
+                [style.transform]="'rotate(' + rotation() + 'deg)'"
+                (error)="markThumbBroken(active.file_id)"
+              />
+            } @else {
+              <span class="edit-stage__fallback">
+                <i class="md md-image"></i>
+              </span>
+            }
+          </div>
+        } @else {
+          <div class="edit-empty">
+            <i class="md md-image"></i>
+            <p>{{ 'LIBRARY.EDIT.NO_IMAGES' | translate }}</p>
+          </div>
+        }
+      </div>
+
+      <!-- Fila de miniaturas + añadir -->
+      <div class="edit-thumbs">
+        @for (item of displayFiles(); track item.file_id; let i = $index) {
+          <button
+            type="button"
+            class="edit-thumb"
+            [class.active]="activeFile()?.file_id === item.file_id"
+            [title]="item.filename ?? ''"
+            [attr.aria-label]="
+              'LIBRARY.EDIT.SELECT_ARIA'
+                | translate: { name: item.filename ?? ('LIBRARY.EDIT.IMAGE_FALLBACK' | translate) }
+            "
+            (click)="setActive(i)"
+          >
+            @if (!brokenThumbs().has(item.file_id) && (item.thumbnail_url || item.url)) {
+              <img
+                [src]="absoluteUrl(item.thumbnail_url || item.url)"
+                [alt]="item.filename ?? ''"
+                width="320"
+                height="320"
+                loading="lazy"
+                decoding="async"
+                (error)="markThumbBroken(item.file_id)"
+              />
+            } @else {
+              <i class="md md-image"></i>
+            }
+          </button>
+        }
+        <button
+          type="button"
+          class="edit-thumb edit-thumb--add"
+          [title]="'LIBRARY.EDIT.ADD_IMAGE' | translate"
+          [attr.aria-label]="'LIBRARY.EDIT.ADD_IMAGE_ARIA' | translate"
+          [disabled]="pickingImage()"
+          (click)="imagePick.click()"
+        >
+          <i [class]="pickingImage() ? 'md md-refresh md-spin' : 'md md-add'"></i>
+        </button>
+        <input
+          #imagePick
+          type="file"
+          class="hidden"
+          accept="image/*"
+          aria-hidden="true"
+          tabindex="-1"
+          (change)="onPickImage($event)"
+        />
+      </div>
+
+      <!-- Acciones sobre el recurso de la biblioteca -->
+      @if (selected(); as file) {
+        <div class="edit-file-actions">
+          <p-button
+            icon="md md-download"
+            [label]="'LIBRARY.EDIT.DOWNLOAD' | translate"
+            [text]="true"
+            size="small"
+            (onClick)="download(absoluteUrl(file.url), file.filename)"
+          />
+          <p-button
+            icon="md md-open_in_new"
+            [label]="'LIBRARY.EDIT.OPEN_IN_TAB' | translate"
+            [text]="true"
+            size="small"
+            severity="secondary"
+            (onClick)="openInTab(absoluteUrl(file.url))"
+          />
+          <p-button
+            icon="md md-work"
+            [label]="'LIBRARY.EDIT.ASSIGN_PROJECT' | translate"
+            [text]="true"
+            size="small"
+            severity="secondary"
+            (onClick)="openAssign()"
+          />
+          <p-button
+            icon="md md-delete"
+            [label]="'LIBRARY.EDIT.DELETE_RESOURCE' | translate"
+            [text]="true"
+            size="small"
+            severity="danger"
+            (onClick)="confirmDelete(file)"
+          />
+        </div>
+      }
+    </section>
+
+    <!-- Derecha: datos del elemento -->
+    <section class="edit-form" [attr.aria-label]="'LIBRARY.EDIT.DATA_ARIA' | translate">
+      <div class="field">
+        <label class="field__label" for="el-category">
+          {{ 'LIBRARY.EDIT.CATEGORY_LABEL' | translate }}
+        </label>
+        <p-select
+          inputId="el-category"
+          [ngModel]="editType()"
+          (ngModelChange)="editType.set($event)"
+          [options]="categoryOptions"
+          optionLabel="labelKey"
+          optionValue="value"
+          [showClear]="false"
+          appendTo="body"
+          styleClass="w-full"
+        >
+          <ng-template #selectedItem let-opt>
+            <span class="select-with-icon"
+              ><i [class]="opt.icon"></i>{{ opt.labelKey | translate }}</span
+            >
+          </ng-template>
+          <ng-template #item let-opt>
+            <span class="select-with-icon"
+              ><i [class]="opt.icon"></i>{{ opt.labelKey | translate }}</span
+            >
+          </ng-template>
+        </p-select>
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="el-name">{{
+          'LIBRARY.EDIT.NAME_LABEL' | translate
+        }}</label>
+        <input
+          pInputText
+          id="el-name"
+          name="element-name"
+          autocomplete="off"
+          [ngModel]="editName()"
+          (ngModelChange)="editName.set($event)"
+          [placeholder]="'LIBRARY.EDIT.NAME_PLACEHOLDER' | translate"
+        />
+        <span class="field__hint">{{ 'LIBRARY.EDIT.NAME_HINT' | translate }}</span>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label class="field__label" for="el-version">
+            {{ 'LIBRARY.EDIT.VERSION_LABEL' | translate }}
+          </label>
+          <input
+            pInputText
+            id="el-version"
+            name="element-version"
+            autocomplete="off"
+            [ngModel]="editVersion()"
+            (ngModelChange)="editVersion.set($event)"
+            placeholder="v1"
+          />
+          <span class="field__hint">{{ 'LIBRARY.EDIT.VERSION_HINT' | translate }}</span>
+        </div>
+        <div class="field">
+          <label class="field__label" for="el-status">
+            {{ 'LIBRARY.EDIT.STATUS_LABEL' | translate }}
+          </label>
+          <p-select
+            inputId="el-status"
+            [ngModel]="editStatus()"
+            (ngModelChange)="editStatus.set($event)"
+            [options]="statusOptions"
+            optionLabel="labelKey"
+            optionValue="value"
+            [showClear]="false"
+            appendTo="body"
+            styleClass="w-full"
+          >
+          <ng-template #selectedItem let-opt>
+            <span>{{ opt.labelKey | translate }}</span>
+          </ng-template>
+          <ng-template #item let-opt>
+            <span>{{ opt.labelKey | translate }}</span>
+          </ng-template>
+          </p-select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="el-id">
+          {{ 'LIBRARY.EDIT.ELEMENT_ID_LABEL' | translate }}
+        </label>
+        <div class="id-row">
+          <p-iconfield iconPosition="left" styleClass="id-field">
+            <p-inputicon styleClass="md md-alternate_email" />
+            <input
+              pInputText
+              id="el-id"
+              name="element-id"
+              autocomplete="off"
+              spellcheck="false"
+              [ngModel]="editElementId()"
+              class="pl-7!"
+              (ngModelChange)="editElementId.set($event)"
+              placeholder="Mario"
+            />
+          </p-iconfield>
+          <button
+            type="button"
+            class="icon-btn"
+            [title]="'LIBRARY.EDIT.REGEN_ID' | translate"
+            [attr.aria-label]="'LIBRARY.EDIT.REGEN_ID' | translate"
+            (click)="resetElementId()"
+          >
+            <ui-icon name="md-rotate_left" />
+          </button>
+        </div>
+        <span class="field__hint">
+          {{ 'LIBRARY.EDIT.ELEMENT_ID_HINT' | translate }}
+          <code>@{{ editElementId() }}</code>
+        </span>
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="el-desc">
+          {{ 'LIBRARY.EDIT.DESCRIPTION_LABEL' | translate }}
+        </label>
+        <textarea
+          pTextarea
+          [ngModel]="editDescription()"
+          (ngModelChange)="editDescription.set($event)"
+          id="el-desc"
+          name="element-description"
+          [rows]="3"
+          [placeholder]="'LIBRARY.EDIT.DESCRIPTION_PLACEHOLDER' | translate"
+          class="w-full"
+        ></textarea>
+      </div>
+
+      <div class="field">
+        <span class="field__label field__label--caps">
+          {{ 'LIBRARY.EDIT.PROPS_LABEL' | translate }}
+        </span>
+        @for (row of editProps(); track $index) {
+          <div class="prop-row">
+            <input
+              pInputText
+              name="prop-key"
+              autocomplete="off"
+              [placeholder]="'LIBRARY.EDIT.PROP_KEY' | translate"
+              [ngModel]="row.key"
+              (ngModelChange)="updatePropKey($index, $event)"
+              [attr.aria-label]="'LIBRARY.EDIT.PROP_KEY_ARIA' | translate: { n: $index + 1 }"
+            />
+            <input
+              pInputText
+              name="prop-value"
+              autocomplete="off"
+              [placeholder]="'LIBRARY.EDIT.PROP_VALUE' | translate"
+              [ngModel]="row.value"
+              (ngModelChange)="updatePropValue($index, $event)"
+              [attr.aria-label]="'LIBRARY.EDIT.PROP_VALUE_ARIA' | translate: { n: $index + 1 }"
+            />
+            <button
+              type="button"
+              class="icon-btn"
+              [title]="'LIBRARY.EDIT.PROP_REMOVE' | translate"
+              [attr.aria-label]="'LIBRARY.EDIT.PROP_REMOVE_ARIA' | translate: { n: $index + 1 }"
+              (click)="removeProp($index)"
+            >
+              <ui-icon name="md-close" />
+            </button>
+          </div>
+        }
+        <button type="button" class="prop-add" (click)="addProp()">
+          <i class="md md-add"></i> {{ 'LIBRARY.EDIT.ADD_PROP' | translate }}
+        </button>
+      </div>
+    </section>
+
+    <div class="edit-actions">
+      <p-button
+        [label]="'LIBRARY.EDIT.CANCEL' | translate"
+        severity="secondary"
+        [text]="true"
+        (onClick)="closeViewer()"
+      />
+      <p-button
+        [label]="'LIBRARY.EDIT.SAVE' | translate"
+        icon="md md-check"
+        [loading]="savingElement()"
+        (onClick)="saveElement()"
+      />
+    </div>
+  </div>
+</p-dialog>
+
+<!-- Asignar a proyecto -->
+<p-dialog
+  [header]="'LIBRARY.EDIT.ASSIGN_DIALOG_TITLE' | translate"
+  [visible]="assignVisible()"
+  (visibleChange)="assignVisible.set($event)"
+  [modal]="true"
+  [style]="{ width: 'min(92vw, 28rem)' }"
+  [draggable]="false"
+  [resizable]="false"
+>
+  <div class="flex flex-col gap-2">
+    <p-select
+      [ngModel]="assignProjectId()"
+      (ngModelChange)="assignProjectId.set($event)"
+      [options]="projectOptions()"
+      optionLabel="label"
+      optionValue="value"
+      [placeholder]="'LIBRARY.EDIT.CHOOSE_PROJECT' | translate"
+      [filter]="true"
+      appendTo="body"
+      styleClass="w-full"
+    />
+    <p class="text-xs text-ink-muted-on-dark">
+      {{ 'LIBRARY.EDIT.ASSIGN_HINT' | translate }}
+    </p>
+  </div>
+  <div class="mt-4 flex justify-end gap-2">
+    <p-button
+      [label]="'LIBRARY.EDIT.CANCEL' | translate"
+      severity="secondary"
+      [text]="true"
+      (onClick)="assignVisible.set(false)"
+    />
+    <p-button
+      [label]="'LIBRARY.EDIT.ASSIGN' | translate"
+      icon="md md-check"
+      [loading]="assigning()"
+      [disabled]="!assignProjectId()"
+      (onClick)="confirmAssign()"
+    />
+  </div>
+</p-dialog>
+
+<p-confirmDialog styleClass="custom-confirm-dialog" />

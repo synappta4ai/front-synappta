@@ -19,7 +19,22 @@ export type CredentialProviderType =
   | 'gemini'
   | 'anthropic'
   | 'higgsfield'
-  | 'openrouter';
+  | 'openrouter'
+  /** Servidores OpenAI-compatibles del propio tenant (Ollama, LM Studio):
+   *  no llevan API key, solo base URL, y sus modelos se descubren en vivo. */
+  | 'ollama'
+  | 'lmstudio'
+  /** Nubes de inferencia hospedadas: el tenant trae su API key y el catálogo
+   *  lista en vivo los modelos que esa key alcanza. RunPod suma el id de su
+   *  serverless endpoint (un endpoint = un modelo: runpod/<endpoint-id>). */
+  | 'runpod'
+  | 'together'
+  | 'deepinfra'
+  | 'gmi'
+  | 'baseten'
+  | 'vultr'
+  | 'digitalocean'
+  | 'coreweave';
 
 /** Modelo del catálogo anotado con el estado de credenciales del tenant. */
 export interface TenantModel {
@@ -186,6 +201,54 @@ export interface ServerCommsPage {
   total_pages: number;
 }
 
+// ─── Worker model management (inference worker) ────────────────────────
+
+/** Estado de descarga de un modelo en el worker. */
+export interface WorkerModelState {
+  key: string;
+  state: 'idle' | 'downloading' | 'ready' | 'failed' | 'cancelled' | 'deleted';
+  progress: number;
+  bytes_downloaded: number;
+  total_bytes: number;
+  error: string;
+}
+
+/** Modelo del worker con su estado de descarga y ubicación en disco. */
+export interface WorkerModel {
+  key: string;
+  label: string;
+  mode: 'image' | 'video' | 'tts' | 'audio';
+  engine: 'diffusers' | 'v1_bridge' | 'mock';
+  pipeline: string;
+  repo: string | null;
+  steps: number;
+  vram_gb: number;
+  family: string;
+  available: boolean;
+  downloaded: boolean;
+  downloading: boolean;
+  download_percent: number;
+  size_bytes: number;
+  download_error: string | null;
+  download_path: string | null;
+  notes: string | null;
+}
+
+/** Estado en vivo del worker de inferencia (`GET /worker/status`). */
+export interface WorkerStatus {
+  configured: boolean;
+  connected: boolean;
+  device_name?: string;
+  cuda_available: boolean;
+  model_count: number;
+}
+
+/** Artefacto generado expuesto por el artifact server del worker. */
+export interface WorkerArtifact {
+  name: string;
+  size_bytes: number;
+}
+
 // ─── Generated videos gallery ────────────────────────────────
 
 /** Output file of a generation (server-relative or absolute URL). */
@@ -236,3 +299,32 @@ export interface GeneratedVideosPage {
 export type GeneratedImagesPage = GeneratedVideosPage;
 export type GeneratedImage = GeneratedMedia;
 export type GeneratedVideo = GeneratedMedia;
+
+/**
+ * Bucket (S3/MinIO) del tenant, tal como lo devuelve la API. `configured`
+ * false significa que el tenant guarda sus archivos en el disco local.
+ * Los secretos nunca llegan en claro: solo la máscara y `has_secret`.
+ */
+export interface TenantStorageConfig {
+  configured: boolean;
+  endpoint?: string;
+  bucket?: string;
+  region?: string;
+  public_base?: string;
+  enabled: boolean;
+  access_key_id?: string;
+  has_secret: boolean;
+  updated_at?: string;
+}
+
+/** Payload para guardar el bucket de un tenant (credenciales cifradas). */
+export interface TenantStorageConfigRequest {
+  endpoint: string;
+  bucket: string;
+  region?: string;
+  /** Se puede omitir al actualizar: el back conserva la guardada. */
+  access_key_id?: string;
+  secret_access_key?: string;
+  public_base?: string;
+  enabled?: boolean;
+}

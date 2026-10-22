@@ -6,6 +6,7 @@ import { ApiResponse } from '@interfaces/api.interface';
 import { environment } from '@env/environment';
 import {
   AiModel,
+  BriefExtraction,
   CostSummary,
   Credential,
   GenerateRequest,
@@ -174,6 +175,16 @@ export class AgencyApiRepository {
   listGeneratedAssets(pieceId: string): Observable<ApiResponse<GeneratedAsset[]>> {
     const params = toQueryParams({ piece_id: pieceId });
     return this.http.get<ApiResponse<GeneratedAsset[]>>(`${this.apiUrl}/agency/assets`, { params });
+  }
+
+  /** Extrae el texto de un folleto (PDF/DOCX/TXT/MD) para la descripción. */
+  extractBrief(file: File): Observable<ApiResponse<BriefExtraction>> {
+    const form = new FormData();
+    form.append('file', file, file.name);
+    return this.http.post<ApiResponse<BriefExtraction>>(
+      `${this.apiUrl}/agency/brief/extract`,
+      form,
+    );
   }
 }
 

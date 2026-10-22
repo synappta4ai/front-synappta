@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { catchError, EMPTY, finalize } from 'rxjs';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { Button } from 'primeng/button';
 import { Card } from 'primeng/card';
@@ -22,6 +23,7 @@ import { PageContainerComponent } from '@shared/components/index';
   selector: 'app-events',
   imports: [
     DatePipe,
+    DecimalPipe,
     FormsModule,
     PageContainerComponent,
     Button,
@@ -34,12 +36,14 @@ import { PageContainerComponent } from '@shared/components/index';
     IconField,
     InputIcon,
     Tooltip,
+    TranslatePipe,
   ],
   templateUrl: './events.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EventsComponent {
   private readonly eventsService = inject(EventsService);
+  private readonly translate = inject(TranslateService);
 
   protected readonly events = signal<readonly Event[]>([]);
   protected readonly loading = signal(false);
@@ -59,7 +63,7 @@ export class EventsComponent {
       .listEvents(this.showInactive())
       .pipe(
         catchError(() => {
-          this.error.set('No se pudieron cargar los eventos.');
+          this.error.set(this.translate.instant('EVENTS.ERRORS.LOAD'));
           return EMPTY;
         }),
         finalize(() => this.loading.set(false)),
@@ -82,7 +86,7 @@ export class EventsComponent {
       .createEvent({ name })
       .pipe(
         catchError(() => {
-          this.error.set('No se pudo crear el evento.');
+          this.error.set(this.translate.instant('EVENTS.ERRORS.CREATE'));
           return EMPTY;
         }),
         finalize(() => this.loading.set(false)),

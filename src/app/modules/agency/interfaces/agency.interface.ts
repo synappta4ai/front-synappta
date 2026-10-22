@@ -1,5 +1,14 @@
-export type Modality = 'video' | 'image' | 'text';
-export type CredentialProvider = 'byteplus' | 'gemini' | 'anthropic' | 'openrouter';
+/** Modalidades del catálogo del back; `audio` cubre los modelos de voz. */
+export type Modality = 'video' | 'image' | 'text' | 'audio';
+export type CredentialProvider =
+  | 'byteplus'
+  | 'gemini'
+  | 'anthropic'
+  | 'higgsfield'
+  | 'openrouter'
+  /** Servidores OpenAI-compatibles del propio tenant (sin API key). */
+  | 'ollama'
+  | 'lmstudio';
 export type TaskStatus =
   'pending' | 'processing' | 'completed' | 'succeeded' | 'failed' | 'cancelled';
 
@@ -12,6 +21,11 @@ export interface AiModel {
   base_url: string;
   endpoint: string;
   gallery_sync: boolean;
+  /** Ruta i2v gemela del modelo (back: image_endpoint). */
+  image_endpoint?: string;
+  /** Ruta multi-referencia (back: reference_endpoint): habilita adjuntar
+   *  varias fotos reales a la generación de video. */
+  reference_endpoint?: string;
   defaults: {
     ratios?: string[];
     resolutions?: string[];
@@ -68,6 +82,9 @@ export interface GenerateRequest {
   piece_code: string;
   generation_number: number;
   user_id?: number;
+  /** Dirección del inference worker de este usuario para modelos downloaded.
+   * Si se envía, el back lo usa en vez de BM_WORKER_ADDR global. */
+  worker_addr?: string;
 }
 
 export interface OutputResource {
@@ -223,6 +240,14 @@ export interface ModelAsset {
   reference_uri: string | null;
   error_message: string | null;
   created_at: string;
+}
+
+/** Resultado de POST /agency/brief/extract: texto plano del folleto subido. */
+export interface BriefExtraction {
+  filename: string;
+  text: string;
+  chars: number;
+  truncated: boolean;
 }
 
 export interface GeneratedAsset {

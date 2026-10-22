@@ -8,4 +8,13 @@
   <main class="flex-1">
     <router-outlet />
   </main>
+
+  <ngx-ui-loader
+    fgsType="three-strings"
+    [fgsSize]="56"
+    fgsColor="var(--color-accent)"
+    overlayColor="var(--p-mask-background)"
+  />
+  <consent-gate />
+  <cookie-banner />
 </div>
