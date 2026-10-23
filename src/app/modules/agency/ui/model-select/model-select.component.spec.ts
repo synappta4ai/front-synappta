@@ -17,6 +17,7 @@ function model(
   modality: AiModel['modality'],
   ratios: string[],
   provider: AiModel['credential_provider'] = 'gemini',
+  maxReferences = 0,
 ): AiModel {
   return {
     name,
@@ -27,6 +28,7 @@ function model(
     base_url: 'https://example.test',
     endpoint: '/x',
     gallery_sync: false,
+    ...(maxReferences > 0 ? { max_references: maxReferences } : {}),
     defaults: { ratios },
   };
 }
@@ -40,8 +42,8 @@ interface Internals {
 const imageCatalog: AiModel[] = [
   model('higgsfield-soul-2-standard', 'image', ['1:1', '3:2', '16:9'], 'higgsfield'),
   model('higgsfield-recraft-4-1', 'image', ['1:1', '16:9'], 'higgsfield'),
-  model('gemini-3-pro-image-preview', 'image', ['1:1', '3:2', '4:3']),
-  model('dola-seedream-5-0-pro-260628', 'image', ['1:1', '16:9']),
+  model('gemini-3-pro-image-preview', 'image', ['1:1', '3:2', '4:3'], 'gemini', 14),
+  model('dola-seedream-5-0-pro-260628', 'image', ['1:1', '16:9'], 'gemini', 10),
 ];
 
 /** Pantalla con dos selectores de distinta modalidad en el mismo formulario. */
@@ -121,6 +123,18 @@ describe('ModelSelectComponent', () => {
       'higgsfield-soul-2-standard',
       'higgsfield-recraft-4-1',
     ]);
+  });
+
+  it('sólo lista modelos que aceptan imágenes de referencia', async () => {
+    fixture.componentRef.setInput('requiresReferences', true);
+    await loadImages();
+
+    expect(internals.filtered().map((m) => m.name)).toEqual([
+      'gemini-3-pro-image-preview',
+      'dola-seedream-5-0-pro-260628',
+    ]);
+    // La selección automática cae en el primero que sí acepta referencias.
+    expect(internals.control.value).toBe('gemini-3-pro-image-preview');
   });
 
   it('respeta el valor escrito desde el formulario', async () => {

@@ -16,6 +16,7 @@
       <app-model-select
         inputId="pose-model"
         modality="image"
+        [requiresReferences]="true"
         [ngModel]="selectedModel()"
         (ngModelChange)="selectedModel.set($event)"
       />
