@@ -189,6 +189,8 @@
       <app-model-select
         inputId="storyboard-model"
         modality="image"
+        [filter]="true"
+        [requiresReferences]="true"
         [ngModel]="selectedModel()"
         (ngModelChange)="selectedModel.set($event)"
         (selectionChange)="activeModel.set($event)"

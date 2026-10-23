@@ -16,6 +16,7 @@
       <app-model-select
         inputId="location-model"
         modality="image"
+        [requiresReferences]="true"
         [ngModel]="selectedModel()"
         (ngModelChange)="selectedModel.set($event)"
         (selectionChange)="activeModel.set($event)"

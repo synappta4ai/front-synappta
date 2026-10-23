@@ -26,6 +26,9 @@ export interface AiModel {
   /** Ruta multi-referencia (back: reference_endpoint): habilita adjuntar
    *  varias fotos reales a la generación de video. */
   reference_endpoint?: string;
+  /** Cuántas imágenes de referencia acepta el modelo (back: max_references).
+   *  0/undefined = no admite referencias. */
+  max_references?: number;
   defaults: {
     ratios?: string[];
     resolutions?: string[];
