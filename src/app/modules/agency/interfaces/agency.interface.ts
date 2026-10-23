@@ -29,6 +29,8 @@ export interface AiModel {
   /** Cuántas imágenes de referencia acepta el modelo (back: max_references).
    *  0/undefined = no admite referencias. */
   max_references?: number;
+  /** true = LLM con razonamiento (back: reasoning). Solo estos van al Cerebro. */
+  reasoning?: boolean;
   defaults: {
     ratios?: string[];
     resolutions?: string[];

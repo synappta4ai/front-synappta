@@ -518,12 +518,12 @@ export class AgencyComponent {
   /** Ángulos: catálogo de texto + los modelos LLM guardados en admin/models
    *  (openrouter/anthropic extra.model), que es donde se configuran. */
   protected readonly modelTextOptions = computed(() => {
-    const options = this.modelOptionsFor('text');
+    const options = this.modelOptionsFor('text', true);
     const known = new Set(options.map((o) => o.value));
     for (const cred of this.credentials()) {
       if (cred.provider !== 'openrouter' && cred.provider !== 'anthropic') continue;
       const model = this.credentialModel(cred);
-      if (model && !known.has(model)) {
+      if (model && !known.has(model) && !this.isMediaModel(model)) {
         known.add(model);
         options.push({ label: `${model} · ${cred.provider}`, value: model });
       }
@@ -2108,13 +2108,35 @@ export class AgencyComponent {
 
   // ─── Modelos por paso ─────────────────────────────────────────────
 
-  /** Opciones de modelo para una modalidad ('Automático' = default del back). */
-  private modelOptionsFor(modality: Modality): { label: string; value: string }[] {
+  /** Opciones de modelo para una modalidad ('Automático' = default del back).
+   *  `reasoningOnly` es exclusivo del Cerebro: si el back todavía no marca
+   *  `reasoning` (binario viejo), cae a todos los modelos de texto. */
+  private modelOptionsFor(
+    modality: Modality,
+    reasoningOnly = false,
+  ): { label: string; value: string }[] {
     this.translate.currentLang();
-    const list = this.models()
-      .filter((m) => m.modality === modality)
-      .map((m) => ({ label: m.display_name || m.name, value: m.name }));
+    const all = this.models().filter((m) => m.modality === modality);
+    const reasoning = all.filter((m) => m.reasoning);
+    const list = (reasoningOnly && reasoning.length ? reasoning : all).map((m) => ({
+      label: m.display_name || m.name,
+      value: m.name,
+    }));
     return [{ label: this.translate.instant('AGENCY.STUDIO.MODEL_AUTO'), value: '' }, ...list];
+  }
+
+  /** Un modelo configurado en admin solo puede entrar al Cerebro si no es un
+   *  generador de imagen/video del catálogo. */
+  private isMediaModel(name: string): boolean {
+    const target = name.trim().toLowerCase().replace(/^openrouter\//, '');
+    if (!target) return false;
+    return this.models().some((m) => {
+      if (m.modality === 'text') return false;
+      const catalog = m.name.trim().toLowerCase().replace(/^openrouter\//, '');
+      return (
+        catalog === target || catalog.endsWith(`/${target}`) || target.endsWith(`/${catalog}`)
+      );
+    });
   }
 
   /** Modelo LLM configurado en la credencial (extra.model de admin/models). */

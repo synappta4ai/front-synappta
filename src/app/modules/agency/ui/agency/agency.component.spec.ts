@@ -5,7 +5,7 @@ import { provideRouter } from '@angular/router';
 import { provideTranslateService } from '@ngx-translate/core';
 
 import { environment } from '@env/environment';
-import { AiModel, GenerateRequest } from '@modules/agency/interfaces';
+import { AiModel, Credential, GenerateRequest } from '@modules/agency/interfaces';
 import { Piece } from '@modules/events/interfaces';
 
 import { ProjectPhoto, RequiredPhoto, ReferenceImage } from './agency-photos';
@@ -49,6 +49,8 @@ interface Internals {
   stepPhotos: AnySignal<RequiredPhoto[]>;
   projectPhotos: AnySignal<ProjectPhoto[]>;
   models: AnySignal<AiModel[]>;
+  credentials: AnySignal<Credential[]>;
+  modelTextOptions(): { label: string; value: string }[];
   stepPhotosSkipped: AnySignal<boolean>;
   currentPhase: AnySignal<string>;
   canAdvanceToPrompts: boolean;
@@ -166,6 +168,58 @@ describe('AgencyComponent — flujo comercial publicitario', () => {
       'storyboard',
       'scenes',
     ]);
+  });
+
+  it('el Cerebro solo ofrece LLMs de razonamiento y nunca generadores de imagen/video', () => {
+    component.models.set([
+      {
+        name: 'openrouter/openai/gpt-5.5',
+        display_name: 'GPT 5.5',
+        modality: 'text',
+        reasoning: true,
+        defaults: {},
+      } as unknown as AiModel,
+      {
+        name: 'openrouter/meta-llama/Llama-3.3-70B-Instruct',
+        display_name: 'Llama 3.3',
+        modality: 'text',
+        reasoning: false,
+        defaults: {},
+      } as unknown as AiModel,
+      {
+        name: 'openrouter/openai/gpt-image-2',
+        display_name: 'GPT Image 2',
+        modality: 'image',
+        defaults: {},
+      } as unknown as AiModel,
+      {
+        name: 'openrouter/google/veo-3.1',
+        display_name: 'Veo 3.1',
+        modality: 'video',
+        defaults: {},
+      } as unknown as AiModel,
+    ]);
+    component.credentials.set([
+      {
+        provider: 'openrouter',
+        api_key_mask: '***',
+        extra: JSON.stringify({ model: 'openai/gpt-image-2' }),
+        metadata: null,
+      } as unknown as Credential,
+      {
+        provider: 'anthropic',
+        api_key_mask: '***',
+        extra: JSON.stringify({ model: 'claude-opus-5.5' }),
+        metadata: null,
+      } as unknown as Credential,
+    ]);
+
+    const values = component.modelTextOptions().map((o) => o.value);
+    expect(values).toContain('openrouter/openai/gpt-5.5');
+    expect(values).not.toContain('openrouter/meta-llama/Llama-3.3-70B-Instruct');
+    expect(values).not.toContain('openrouter/openai/gpt-image-2');
+    expect(values).not.toContain('openrouter/google/veo-3.1');
+    expect(values).toContain('claude-opus-5.5');
   });
 
   it('no deja avanzar a los prompts hasta resolver las imágenes imprescindibles', () => {
