@@ -165,7 +165,11 @@
 .pose-loading-pct {
   font-size: 26px;
   font-weight: 700;
-  color: var(--color-ink-on-dark);
+  color: var(--color-accent);
+}
+
+.pose-loading-progress .muted {
+  color: var(--color-ink-on-scrim);
 }
 
 .pose-refs {
