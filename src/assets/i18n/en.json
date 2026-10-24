@@ -128,6 +128,7 @@
     "MODEL_SELECT_ERROR": "The model catalog could not be loaded.",
     "MODEL_SELECT_EMPTY": "No models available for this type. Check credentials in Admin.",
     "MODEL_SELECT_PLACEHOLDER": "Choose a model",
+    "MODEL_FILTER_PLACEHOLDER": "Search model...",
     "NAV": {
       "AVATAR_ALT": "Profile photo",
       "LOGO_ALT": "Synapta logo"
@@ -1159,7 +1160,7 @@
       "BOARD_SHOTS_HINT": "Suggested: at least one shot per image ({{count}} panel(s)).",
       "BOARD_RATIO_ARIA": "Sheet aspect ratio",
       "BOARD_PROMPT": "Storyboard sheet prompt",
-      "BOARD_PROMPT_HINT": "It is built from the scene shots and the panel style; you can edit it.",
+      "BOARD_PROMPT_HINT": "Only the panel beats. The app adds the visual style, the grid and your reference photos; you can edit it.",
       "BOARD_SUGGEST_AGENT": "Suggest with the agent",
       "BOARD_SUGGEST_HINT": "The expert is drafting the panels and the sheet prompt…",
       "BOARD_VINETAS": "Suggested panels",
