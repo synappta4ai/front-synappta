@@ -21,6 +21,18 @@
     class="w-full"
     appendTo="body"
   >
+    <ng-template #selectedItem let-m>
+      <span class="flex min-w-0 items-center gap-2">
+        <span class="truncate">{{ m.display_name ?? m.name }}</span>
+        @if (m.credential_provider) {
+          <p-tag
+            [value]="providerTag(m.credential_provider)"
+            [severity]="isLocalProvider(m.credential_provider) ? 'success' : 'info'"
+            styleClass="text-xs shrink-0"
+          />
+        }
+      </span>
+    </ng-template>
     <ng-template #item let-m>
       <div class="flex items-center justify-between gap-2 w-full">
         <div class="min-w-0">

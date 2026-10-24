@@ -43,6 +43,7 @@ import {
   AiModel,
   ContentItem,
   Credential,
+  CredentialProvider,
   GenerateRequest,
   Modality,
   GeneratedAsset,
@@ -63,6 +64,7 @@ import { FileAsset } from '@modules/library/interfaces';
 import { environment } from '@env/environment';
 import {
   addPhotoFiles,
+  imageTag,
   missingPhotosForPrompt,
   parseSuggestedPhotos,
   parseTagsFromText,
@@ -82,6 +84,8 @@ import {
   taggedPhotosForPrompt,
   TaggedPhoto,
 } from './agency-photos';
+import { composeBoardSheetPrompt } from './agency-storyboard-sheet';
+import { ClipVinheta, composeSceneClipPrompt, rescaleClipDurations } from './agency-video-prompt';
 import {
   planScenePrompt,
   ScenePromptArtifact,
@@ -93,6 +97,13 @@ import {
 import { highlightPrompt, PromptSegment } from './agency-prompt-highlight';
 
 type WorkflowPhase = 'input' | 'angles' | 'storyboard' | 'scenes';
+
+/** Opción de los desplegables de modelo, con el proveedor para el badge. */
+type ModelOption = {
+  label: string;
+  value: string;
+  provider?: AiModel['credential_provider'];
+};
 
 /** Experto que analiza el proyecto (valor = workflow del agente en el back). */
 type AgencyAgent = 'commercial' | 'real_estate' | 'cinema';
@@ -167,6 +178,10 @@ interface StoryboardVinheta {
   tipo_toma?: string;
   que_se_ve?: string;
   duracion_s?: number;
+  foto_referencia?: string;
+  movimiento_camara?: string;
+  funcion?: string;
+  importancia?: string;
 }
 
 /** Artefacto storyboard del back: viñetas + prompt de la hoja. */
@@ -515,17 +530,24 @@ export class AgencyComponent {
   protected readonly modelText = signal('');
   protected readonly modelImage = signal('');
   protected readonly modelVideo = signal('');
-  /** Ángulos: catálogo de texto + los modelos LLM guardados en admin/models
-   *  (openrouter/anthropic extra.model), que es donde se configuran. */
+  /** Ángulos: catálogo de texto (razonamiento primero) + los modelos LLM
+   *  guardados en admin/models (openrouter/anthropic extra.model). */
   protected readonly modelTextOptions = computed(() => {
-    const options = this.modelOptionsFor('text', true);
-    const known = new Set(options.map((o) => o.value));
-    for (const cred of this.credentials()) {
-      if (cred.provider !== 'openrouter' && cred.provider !== 'anthropic') continue;
+    const usable = this.credentials().filter(
+      (c) => !!c.api_key_mask && (c.provider === 'openrouter' || c.provider === 'anthropic'),
+    );
+    const configured = new Set(usable.map((c) => c.provider));
+    // Solo modelos de proveedores con credencial: el resto fallaría al
+    // enviarse a la API del proveedor elegido.
+    const options = this.modelOptionsFor('text').filter(
+      (o) => !o.provider || configured.has(o.provider),
+    );
+    const known = new Set(options.map((o) => this.normalizedModelName(o.value)));
+    for (const cred of usable) {
       const model = this.credentialModel(cred);
-      if (model && !known.has(model) && !this.isMediaModel(model)) {
-        known.add(model);
-        options.push({ label: `${model} · ${cred.provider}`, value: model });
+      if (model && !known.has(this.normalizedModelName(model)) && !this.isMediaModel(model)) {
+        known.add(this.normalizedModelName(model));
+        options.push({ label: model, value: model, provider: cred.provider });
       }
     }
     return options;
@@ -1526,9 +1548,14 @@ export class AgencyComponent {
       this.boardRatio.set(options[0]?.value ?? '');
     }
     this.boardPromptEdited.set(false);
-    this.boardPrompt.set(this.buildBoardPrompt(scene, count));
+    const suggested = scene.boardArtifact?.prompt_hoja_storyboard?.trim();
+    this.boardPrompt.set(suggested || this.buildBoardPrompt(scene, count));
     this.error.set(null);
     this.boardVisible.set(true);
+    // La hoja la escribe el experto a partir del ángulo y las referencias.
+    // Si todavía no hay artefacto, se pide al abrir en vez de dejar la
+    // plantilla genérica como prompt final.
+    if (!suggested) this.suggestBoardFromAgent();
   }
 
   protected closeBoardDialog(): void {
@@ -1584,7 +1611,7 @@ export class AgencyComponent {
               workflow: this.agent(),
               artifact: kind,
               payload,
-              ...(this.modelText() ? { model: this.modelText() } : {}),
+              ...(this.modelText() ? { model: this.modelForProvider(cred.provider) } : {}),
             }),
             signal: controller.signal,
           })
@@ -1662,18 +1689,33 @@ export class AgencyComponent {
   protected suggestBoardFromAgent(): void {
     const scene = this.boardScene();
     if (!scene || this.boardAgentLoading()) return;
+    const angle = this.angles().find((a) => a.id === scene.angleId);
+    const suggestions = this.sceneSuggestions(scene.id);
+    const references = (scene.references ?? []).map((r, i) => {
+      const descripcion = (r.note || suggestions[i] || '').trim();
+      return {
+        tag: `@image${i + 1}`,
+        archivo: r.filename,
+        descripcion,
+        funcion: r.role || 'sin_definir',
+      };
+    });
     const payload: Record<string, unknown> = {
       prompt: {
         id: scene.id,
         titulo: scene.title,
         resumen_para_usuario: scene.description,
-        ...(scene.angleTitle ? { angulo: scene.angleTitle } : {}),
+        angulo: {
+          id: scene.angleId ?? '',
+          titulo: angle?.title ?? scene.angleTitle ?? '',
+          promesa: angle?.description ?? scene.description,
+          virtudes_agrupadas: [],
+        },
       },
-      referencias: (scene.references ?? []).map((r, i) => ({
-        tag: `@image${i + 1}`,
-        archivo: r.filename,
-        descripcion: '',
-        funcion: 'sin_definir',
+      referencias: references,
+      fotos_subidas: references.map((r) => ({
+        nombre: r.archivo,
+        descripcion: r.descripcion,
       })),
       cantidad_vinetas: this.boardShotCount(),
       duracion_total_s: this.videoDuration(),
@@ -1706,6 +1748,12 @@ export class AgencyComponent {
         tipo_toma: typeof v['tipo_toma'] === 'string' ? v['tipo_toma'] : '',
         que_se_ve: typeof v['que_se_ve'] === 'string' ? v['que_se_ve'] : '',
         duracion_s: typeof v['duracion_s'] === 'number' ? v['duracion_s'] : undefined,
+        foto_referencia:
+          typeof v['foto_referencia'] === 'string' ? v['foto_referencia'] : undefined,
+        movimiento_camara:
+          typeof v['movimiento_camara'] === 'string' ? v['movimiento_camara'] : undefined,
+        funcion: typeof v['funcion'] === 'string' ? v['funcion'] : undefined,
+        importancia: typeof v['importancia'] === 'string' ? v['importancia'] : undefined,
       })),
       prompt_hoja_storyboard:
         typeof data['prompt_hoja_storyboard'] === 'string' ? data['prompt_hoja_storyboard'] : '',
@@ -1746,6 +1794,8 @@ export class AgencyComponent {
   protected suggestPromptsFromAgent(scene: StoryboardScene): void {
     if (this.clipAgentSceneId()) return;
     const hasBoard = !!(scene.boardFileId || scene.boardImageUrl);
+    const vinetas = this.sceneClipVinetas(scene);
+    const total = this.videoDuration();
     const payload: Record<string, unknown> = {
       prompt: {
         id: scene.id,
@@ -1753,7 +1803,16 @@ export class AgencyComponent {
         resumen_para_usuario: scene.description,
         ...(scene.angleTitle ? { angulo: scene.angleTitle } : {}),
       },
-      vinetas: scene.boardArtifact?.vinetas ?? [],
+      escena: {
+        numero: Math.max(this.storyboard().findIndex((s) => s.id === scene.id), 0) + 1,
+        titulo: scene.title,
+      },
+      vinetas,
+      cantidad_vinetas: vinetas.length,
+      // La duración se reparte en partes iguales entre las viñetas.
+      duracion_por_vineta_s: vinetas.length
+        ? Math.round((total / vinetas.length) * 100) / 100
+        : total,
       referencias: [
         ...(hasBoard ? [{ tag: '@image1', archivo: 'storyboard.jpg', tipo: 'storyboard' }] : []),
         ...(scene.references ?? []).map((r, i) => ({
@@ -1826,23 +1885,36 @@ export class AgencyComponent {
     return `Fotos reales asignadas a la escena (${files}): ${items.join(', ')}. Integrar esos elementos en la acción y respetar su apariencia.`;
   }
 
-  /** Prompt por defecto de la hoja: N viñetas tipo cómic, cada una con
-   *  TIPO DE TOMA / ENCUADRE y sonido o diálogo al pie (ver ejemplo). */
+  /** Prompt de respaldo de la hoja: secuencia visual limpia, sin texto
+   *  dibujado. El experto lo reemplaza con su `prompt_hoja_storyboard`. */
   private buildBoardPrompt(scene: StoryboardScene, tomas: number): string {
     const shots = Array.from({ length: tomas }, (_, i) => {
       const shot = scene.shots[i];
-      return `${i + 1}) ${shot?.description?.trim() || `Toma ${i + 1} — ${scene.title}`}`;
-    }).join(' ');
+      const desc = shot?.description?.trim() || scene.title;
+      return `Viñeta ${i + 1}: ${desc}.`;
+    });
+    const references = this.boardReferenceLines(scene);
     const lines = [
-      `Hoja de storyboard dibujada a lápiz en blanco y negro, con ${tomas} viñetas en cuadrícula para la escena "${scene.title}"${scene.angleTitle ? ` del ángulo "${scene.angleTitle}"` : ''}.`,
-      'Cada viñeta lleva encabezado con el título de la escena, "TIPO DE TOMA:" y "ENCUADRE:" en mayúsculas, el dibujo narrativo de la acción y al pie el sonido o diálogo correspondiente.',
-      `Acción de la escena: ${scene.description}`,
-      `Tomas: ${shots}`,
+      `Secuencia visual para materializar el ángulo de venta "${scene.angleTitle || scene.title}": ${scene.description}`,
+      ...shots,
     ];
-    const references = this.referenceNarrative(scene);
-    if (references) lines.push(references);
-    lines.push('Estilo storyboard de cine: líneas de entintado y sombreado a lápiz, sin color.');
+    if (references.length) {
+      lines.push(
+        `Usar como verdad visual las imágenes de referencia adjuntas: ${references.join('; ')}. No inventar arquitectura, materiales ni mobiliario.`,
+      );
+    }
     return lines.join(' ');
+  }
+
+  /** Referencias de la hoja con el mismo orden en que se adjuntan al modelo. */
+  private boardReferenceLines(scene: StoryboardScene): string[] {
+    const suggestions = this.sceneSuggestions(scene.id);
+    return (scene.references ?? []).map((ref, i) => {
+      const desc = [ref.role, ref.note || suggestions[i]]
+        .filter((part): part is string => !!part && part !== 'sin_definir')
+        .join(' — ');
+      return `Referencia ${i + 1} (${ref.filename}${desc ? `: ${desc}` : ''})`;
+    });
   }
 
   /** Genera la imagen-guía (hoja con varias viñetas) de la escena abierta. */
@@ -1862,6 +1934,27 @@ export class AgencyComponent {
     }
     const count = this.boardShotCount();
     const ratio = this.boardRatio();
+    // Las fotos reales son la verdad visual de la constructora: la hoja las
+    // recibe como input_references, no solo como texto en el prompt. El
+    // texto lleva la directiva del motor (ADN visual, estilo, cuadrícula y
+    // manifiesto) alrededor de los beats que ve y edita el usuario.
+    const references = (scene.references ?? []).slice(0, 16);
+    const content: ContentItem[] = [
+      {
+        type: 'text',
+        text: composeBoardSheetPrompt({
+          agent: this.agent(),
+          beats: prompt,
+          count,
+          ratio,
+          references,
+          descriptions: this.sceneSuggestions(scene.id),
+        }),
+      },
+    ];
+    for (const ref of references) {
+      content.push({ type: 'image', id: ref.id, name: ref.filename });
+    }
     const setGenerating = (generating: boolean, patch: Partial<StoryboardScene> = {}) =>
       this.storyboard.update((scenes) =>
         scenes.map((s) =>
@@ -1890,7 +1983,7 @@ export class AgencyComponent {
         this.agencyService
           .generate('image', {
             model: model.name,
-            content: [{ type: 'text', text: prompt }],
+            content,
             ...(ratio ? { ratio } : {}),
             event_id: project.id,
             piece_id: piece.id,
@@ -2109,20 +2202,33 @@ export class AgencyComponent {
   // ─── Modelos por paso ─────────────────────────────────────────────
 
   /** Opciones de modelo para una modalidad ('Automático' = default del back).
-   *  `reasoningOnly` es exclusivo del Cerebro: si el back todavía no marca
-   *  `reasoning` (binario viejo), cae a todos los modelos de texto. */
-  private modelOptionsFor(
-    modality: Modality,
-    reasoningOnly = false,
-  ): { label: string; value: string }[] {
+   *  Los de razonamiento van primero para el Cerebro; los `:batch` se ocultan
+   *  porque OpenRouter los rechaza en el chat síncrono. */
+  private modelOptionsFor(modality: Modality): ModelOption[] {
     this.translate.currentLang();
-    const all = this.models().filter((m) => m.modality === modality);
-    const reasoning = all.filter((m) => m.reasoning);
-    const list = (reasoningOnly && reasoning.length ? reasoning : all).map((m) => ({
-      label: m.display_name || m.name,
-      value: m.name,
-    }));
+    const list = this.models()
+      .filter((m) => m.modality === modality && !m.name.toLowerCase().endsWith(':batch'))
+      .slice()
+      .sort((a, b) => Number(!!b.reasoning) - Number(!!a.reasoning))
+      .map((m) => ({
+        label: m.display_name || m.name,
+        value: m.name,
+        provider: m.credential_provider,
+      }));
     return [{ label: this.translate.instant('AGENCY.STUDIO.MODEL_AUTO'), value: '' }, ...list];
+  }
+
+  /** Compara nombres con y sin el prefijo del catálogo ("openrouter/"). */
+  private normalizedModelName(name: string): string {
+    return name.trim().toLowerCase().replace(/^openrouter\//, '');
+  }
+
+  /** El proveedor solo conoce su id nativo: quita el prefijo del catálogo. */
+  private modelForProvider(provider: CredentialProvider): string {
+    const model = this.modelText().trim();
+    if (provider === 'openrouter') return model.replace(/^openrouter\//, '');
+    if (provider === 'anthropic') return model.replace(/^anthropic\//, '');
+    return model;
   }
 
   /** Un modelo configurado en admin solo puede entrar al Cerebro si no es un
@@ -2278,7 +2384,7 @@ export class AgencyComponent {
           // Artefacto del paso 1 según el agente elegido.
           artifact: ARTIFACT_STEP1[agent],
           payload,
-          ...(this.modelText() ? { model: this.modelText() } : {}),
+          ...(this.modelText() ? { model: this.modelForProvider(cred.provider) } : {}),
         }),
         signal: controller.signal,
       })
@@ -3038,6 +3144,32 @@ export class AgencyComponent {
     if (!shot && this.isCommercial() && scene.sceneArtifact) {
       return this.composeCommercialPrompt(scene, index, segments, ratio, resolution);
     }
+    // Inmobiliaria y cine: prompt directo, corte por corte, con la duración
+    // repartida en partes iguales. Sin contexto de venta: el modelo de video
+    // solo necesita saber qué ver y con qué imagen.
+    if (!shot && !this.isCommercial()) {
+      const vinetas = this.sceneClipVinetas(scene);
+      if (vinetas.length > 0) {
+        const hasBoard = !!scene.boardFileId;
+        const refs = this.referencesOfScene(scene.id).filter((ref) => ref.id !== scene.boardFileId);
+        return composeSceneClipPrompt({
+          sceneNumber: Math.max(this.storyboard().findIndex((s) => s.id === scene.id), 0) + 1,
+          duration: this.segmentDuration(index),
+          board: hasBoard
+            ? { tag: imageTag(0), filename: `storyboard-${scene.id}.png` }
+            : null,
+          references: refs.map((ref, i) => ({
+            tag: imageTag(i + (hasBoard ? 1 : 0)),
+            filename: ref.filename,
+          })),
+          vinetas,
+          segmentIndex: index,
+          segmentCount: segments,
+          tags,
+          specLine: this.specLine(this.segmentDuration(index), ratio, resolution),
+        });
+      }
+    }
     const shotIndex = shot ? scene.shots.indexOf(shot) : -1;
     const lines: string[] =
       shotIndex >= 0
@@ -3074,6 +3206,17 @@ export class AgencyComponent {
     }
     lines.push(this.specLine(this.segmentDuration(index), ratio, resolution));
     return lines.join('\n');
+  }
+
+  /** Viñetas del clip: las del experto o, sin artefacto, las tomas con
+   *  descripción real (se descartan los placeholders "Toma N — ..."). */
+  private sceneClipVinetas(scene: StoryboardScene): ClipVinheta[] {
+    const fromExpert = scene.boardArtifact?.vinetas ?? [];
+    if (fromExpert.length > 0) return fromExpert;
+    return scene.shots
+      .map((shot) => (shot.description ?? '').trim())
+      .filter((text) => text !== '' && !/^Toma \d+/i.test(text))
+      .map((text) => ({ que_se_ve: text }));
   }
 
   /** Prompt de una escena comercial a partir del artefacto del paso 1: cada
@@ -3193,7 +3336,9 @@ export class AgencyComponent {
       patch.resolution !== undefined ? patch.resolution : (prompt.resolution ?? null);
     const audio = patch.audio ?? prompt.audio ?? null;
     const text = this.replaceSpecLine(
-      prompt.text,
+      // Si el prompt es el directo (corte por corte), reparte la nueva
+      // duración en partes iguales entre sus viñetas.
+      rescaleClipDurations(prompt.text, duration ?? this.segmentDuration(index)),
       // null/undefined → manda la config global; '' explícito = Automática.
       this.specLine(
         duration ?? this.segmentDuration(index),
@@ -3900,7 +4045,7 @@ export class AgencyComponent {
           message,
           provider: cred.provider,
           workflow: this.agent(),
-          ...(this.modelText() ? { model: this.modelText() } : {}),
+          ...(this.modelText() ? { model: this.modelForProvider(cred.provider) } : {}),
         }),
         signal: controller.signal,
       })

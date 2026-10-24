@@ -144,6 +144,9 @@
               [options]="modelTextOptions()"
               optionLabel="label"
               optionValue="value"
+              [filter]="true"
+              filterBy="label"
+              [filterPlaceholder]="'SHARED.MODEL_FILTER_PLACEHOLDER' | translate"
               [ngModel]="modelText()"
               (ngModelChange)="modelText.set($event)"
               [ngModelOptions]="{ standalone: true }"
@@ -152,7 +155,24 @@
               [pTooltip]="'AGENCY.STUDIO.P1_BRAIN_TOOLTIP' | translate"
               showDelay="400"
               tooltipPosition="top"
-            />
+            >
+              <ng-template #selectedItem let-opt>
+                <span class="flex min-w-0 items-center gap-2">
+                  <span class="truncate">{{ opt.label }}</span>
+                  @if (opt.provider) {
+                    <p-tag [value]="opt.provider" severity="info" styleClass="text-xs shrink-0" />
+                  }
+                </span>
+              </ng-template>
+              <ng-template #item let-opt>
+                <div class="flex w-full items-center justify-between gap-2">
+                  <span class="min-w-0 truncate">{{ opt.label }}</span>
+                  @if (opt.provider) {
+                    <p-tag [value]="opt.provider" severity="info" styleClass="text-xs shrink-0" />
+                  }
+                </div>
+              </ng-template>
+            </p-select>
           </div>
           @if (agent() === 'real_estate' || agent() === 'commercial') {
             <div class="flex min-w-0 flex-col gap-2 lg:col-start-2 lg:row-start-2">
@@ -850,7 +870,24 @@
             [ngModelOptions]="{ standalone: true }"
             styleClass="w-72"
             appendTo="body"
-          />
+          >
+            <ng-template #selectedItem let-opt>
+              <span class="flex min-w-0 items-center gap-2">
+                <span class="truncate">{{ opt.label }}</span>
+                @if (opt.provider) {
+                  <p-tag [value]="opt.provider" severity="info" styleClass="text-xs shrink-0" />
+                }
+              </span>
+            </ng-template>
+            <ng-template #item let-opt>
+              <div class="flex w-full items-center justify-between gap-2">
+                <span class="min-w-0 truncate">{{ opt.label }}</span>
+                @if (opt.provider) {
+                  <p-tag [value]="opt.provider" severity="info" styleClass="text-xs shrink-0" />
+                }
+              </div>
+            </ng-template>
+          </p-select>
         </div>
 
         <!-- Escenas agrupadas por su ángulo de venta -->
@@ -1238,7 +1275,24 @@
                 [ngModelOptions]="{ standalone: true }"
                 styleClass="w-72"
                 appendTo="body"
-              />
+              >
+                <ng-template #selectedItem let-opt>
+                  <span class="flex min-w-0 items-center gap-2">
+                    <span class="truncate">{{ opt.label }}</span>
+                    @if (opt.provider) {
+                      <p-tag [value]="opt.provider" severity="info" styleClass="text-xs shrink-0" />
+                    }
+                  </span>
+                </ng-template>
+                <ng-template #item let-opt>
+                  <div class="flex w-full items-center justify-between gap-2">
+                    <span class="min-w-0 truncate">{{ opt.label }}</span>
+                    @if (opt.provider) {
+                      <p-tag [value]="opt.provider" severity="info" styleClass="text-xs shrink-0" />
+                    }
+                  </div>
+                </ng-template>
+              </p-select>
             </div>
             <div class="flex flex-col gap-1">
               <span class="text-xs font-bold text-ink-muted-on-dark">{{
@@ -1726,7 +1780,32 @@
                                   [ngModelOptions]="{ standalone: true }"
                                   styleClass="w-52"
                                   appendTo="body"
-                                />
+                                >
+                                  <ng-template #selectedItem let-opt>
+                                    <span class="flex min-w-0 items-center gap-2">
+                                      <span class="truncate">{{ opt.label }}</span>
+                                      @if (opt.provider) {
+                                        <p-tag
+                                          [value]="opt.provider"
+                                          severity="info"
+                                          styleClass="text-xs shrink-0"
+                                        />
+                                      }
+                                    </span>
+                                  </ng-template>
+                                  <ng-template #item let-opt>
+                                    <div class="flex w-full items-center justify-between gap-2">
+                                      <span class="min-w-0 truncate">{{ opt.label }}</span>
+                                      @if (opt.provider) {
+                                        <p-tag
+                                          [value]="opt.provider"
+                                          severity="info"
+                                          styleClass="text-xs shrink-0"
+                                        />
+                                      }
+                                    </div>
+                                  </ng-template>
+                                </p-select>
                               </label>
                               <label class="flex items-center gap-1.5">
                                 {{ 'AGENCY.STUDIO.RATIO' | translate }}
@@ -2397,7 +2476,7 @@
           [label]="'AGENCY.STUDIO.BOARD_GENERATE' | translate"
           icon="md md-image"
           [loading]="!!boardScene()?.boardGenerating"
-          [disabled]="!!boardScene()?.boardGenerating"
+          [disabled]="!!boardScene()?.boardGenerating || boardAgentLoading()"
           (onClick)="submitBoardImage()"
         />
       </div>

@@ -3,9 +3,12 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { provideTranslateService } from '@ngx-translate/core';
+import { EMPTY, of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { environment } from '@env/environment';
 import { AiModel, Credential, GenerateRequest } from '@modules/agency/interfaces';
+import { AgencyService } from '@modules/agency/services';
 import { Piece } from '@modules/events/interfaces';
 
 import { ProjectPhoto, RequiredPhoto, ReferenceImage } from './agency-photos';
@@ -50,7 +53,7 @@ interface Internals {
   projectPhotos: AnySignal<ProjectPhoto[]>;
   models: AnySignal<AiModel[]>;
   credentials: AnySignal<Credential[]>;
-  modelTextOptions(): { label: string; value: string }[];
+  modelTextOptions(): { label: string; value: string; provider?: string }[];
   stepPhotosSkipped: AnySignal<boolean>;
   currentPhase: AnySignal<string>;
   canAdvanceToPrompts: boolean;
@@ -170,12 +173,13 @@ describe('AgencyComponent — flujo comercial publicitario', () => {
     ]);
   });
 
-  it('el Cerebro solo ofrece LLMs de razonamiento y nunca generadores de imagen/video', () => {
+  it('el Cerebro ofrece todos los LLMs de texto configurados y nunca generadores de imagen/video', () => {
     component.models.set([
       {
         name: 'openrouter/openai/gpt-5.5',
         display_name: 'GPT 5.5',
         modality: 'text',
+        credential_provider: 'openrouter',
         reasoning: true,
         defaults: {},
       } as unknown as AiModel,
@@ -183,19 +187,38 @@ describe('AgencyComponent — flujo comercial publicitario', () => {
         name: 'openrouter/meta-llama/Llama-3.3-70B-Instruct',
         display_name: 'Llama 3.3',
         modality: 'text',
+        credential_provider: 'openrouter',
         reasoning: false,
+        defaults: {},
+      } as unknown as AiModel,
+      {
+        name: 'openrouter/anthropic/claude-opus-5.5:batch',
+        display_name: 'Claude Opus 5.5 Batch',
+        modality: 'text',
+        credential_provider: 'openrouter',
+        reasoning: true,
+        defaults: {},
+      } as unknown as AiModel,
+      {
+        name: 'gemini/gemini-3-pro',
+        display_name: 'Gemini 3 Pro',
+        modality: 'text',
+        credential_provider: 'gemini',
+        reasoning: true,
         defaults: {},
       } as unknown as AiModel,
       {
         name: 'openrouter/openai/gpt-image-2',
         display_name: 'GPT Image 2',
         modality: 'image',
+        credential_provider: 'openrouter',
         defaults: {},
       } as unknown as AiModel,
       {
         name: 'openrouter/google/veo-3.1',
         display_name: 'Veo 3.1',
         modality: 'video',
+        credential_provider: 'openrouter',
         defaults: {},
       } as unknown as AiModel,
     ]);
@@ -214,9 +237,15 @@ describe('AgencyComponent — flujo comercial publicitario', () => {
       } as unknown as Credential,
     ]);
 
-    const values = component.modelTextOptions().map((o) => o.value);
-    expect(values).toContain('openrouter/openai/gpt-5.5');
-    expect(values).not.toContain('openrouter/meta-llama/Llama-3.3-70B-Instruct');
+    const options = component.modelTextOptions();
+    const values = options.map((o) => o.value);
+    expect(options[1].value).toBe('openrouter/openai/gpt-5.5');
+    expect(options.find((o) => o.value === 'openrouter/openai/gpt-5.5')?.provider).toBe(
+      'openrouter',
+    );
+    expect(values).toContain('openrouter/meta-llama/Llama-3.3-70B-Instruct');
+    expect(values).not.toContain('openrouter/anthropic/claude-opus-5.5:batch');
+    expect(values).not.toContain('gemini/gemini-3-pro');
     expect(values).not.toContain('openrouter/openai/gpt-image-2');
     expect(values).not.toContain('openrouter/google/veo-3.1');
     expect(values).toContain('claude-opus-5.5');
@@ -413,6 +442,64 @@ describe('AgencyComponent — flujo comercial publicitario', () => {
       component.promptResources(scene, { text: 'La escena usa @ivan.' }).map((item) => item.id),
     ).toEqual(['f1']);
     expect(component.promptResources(scene, { text: 'La escena no usa fotos.' })).toEqual([]);
+  });
+
+  it('la hoja de storyboard recibe las fotos reales como imágenes y su prompt no pide texto', () => {
+    const internals = component as unknown as {
+      boardSceneId: AnySignal<string | null>;
+      boardPrompt: AnySignal<string>;
+      boardShotCount: AnySignal<number>;
+      submitBoardImage(): void;
+      buildBoardPrompt(scene: TestScene, tomas: number): string;
+      ensureSceneAnchor(scene: TestScene): unknown;
+      showBoardReel(): void;
+    };
+    const scene: TestScene = {
+      id: 'scene-1',
+      angleId: 'A1',
+      title: 'Escena 1: Vive Medellín',
+      description: 'Plano general del proyecto',
+      shots: [],
+      refsApproved: true,
+      references: [
+        { id: 'r1', filename: 'entrada.jpg', url: null },
+        { id: 'r2', filename: 'lobby.jpg', url: null },
+      ],
+    };
+    component.storyboard.set([scene]);
+    component.models.set([
+      { name: 'openrouter/openai/gpt-image-2', modality: 'image', defaults: {} } as unknown as AiModel,
+    ]);
+
+    // Plantilla de respaldo: solo beats, sin encabezados ni texto dibujado.
+    const fallback = internals.buildBoardPrompt(scene, 3);
+    expect(fallback).not.toContain('TIPO DE TOMA');
+    expect(fallback).toContain('entrada.jpg');
+
+    const agency = TestBed.inject(AgencyService);
+    const generate = vi.spyOn(agency, 'generate').mockReturnValue(EMPTY);
+    vi.spyOn(internals, 'ensureSceneAnchor').mockReturnValue(
+      of({ project: { id: 'p1' }, piece: { id: 'pc1', piece_code: 'SCENE-1' } }) as never,
+    );
+    vi.spyOn(internals, 'showBoardReel').mockImplementation(() => undefined);
+
+    internals.boardSceneId.set('scene-1');
+    internals.boardShotCount.set(3);
+    internals.boardPrompt.set('Viñeta 1: plano general de la entrada.');
+    internals.submitBoardImage();
+
+    const body = generate.mock.calls[0][1] as GenerateRequest;
+    const text = body.content[0].text ?? '';
+    expect(body.content[0].type).toBe('text');
+    // Los beats del Cerebro viajan dentro de la directiva del motor.
+    expect(text).toContain('Viñeta 1: plano general de la entrada.');
+    expect(text).toContain('Row 1, Column 3');
+    expect(text).toContain('Reference 1 [LOCATION]: entrada.jpg');
+    expect(text).toContain('No text at all');
+    expect(body.content.filter((item) => item.type === 'image').map((item) => item.id)).toEqual([
+      'r1',
+      'r2',
+    ]);
   });
 
   it('sin tags en el prompt no adjunta ninguna foto al video comercial', () => {
