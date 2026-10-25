@@ -28,6 +28,7 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import type { GenerateRequest, Modality } from '@modules/agency/interfaces';
 import { AgencyService } from '@modules/agency/services';
+import { ModelSelectComponent } from '@modules/agency/ui/model-select/model-select.component';
 import { LibraryService } from '@modules/library/services';
 import {
   FileAsset,
@@ -98,6 +99,7 @@ interface MentionRow {
     TranslatePipe,
     ServerUrlPipe,
     AssetPickerDialogComponent,
+    ModelSelectComponent,
     AssetEditDialogComponent,
     SlidePillDirective,
     TiltDirective,

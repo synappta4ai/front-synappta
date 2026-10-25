@@ -42,6 +42,21 @@
           }
         </div>
         <div class="flex items-center gap-1 shrink-0">
+          @if (m.favorite) {
+            <p-tag
+              icon="md md-star"
+              [value]="'SHARED.MODEL_FAVORITE' | translate"
+              severity="warn"
+              styleClass="text-xs"
+            />
+          }
+          @if (m.recommended) {
+            <p-tag
+              [value]="recommendTag(m) ?? ('SHARED.MODEL_RECOMMENDED' | translate)"
+              severity="success"
+              styleClass="text-xs"
+            />
+          }
           @if (showBadges() && isDownloaded(m) && workerLabel(); as badge) {
             <p-tag [value]="badge" severity="success" styleClass="text-xs" />
             @if (vramGb(m); as vram) {

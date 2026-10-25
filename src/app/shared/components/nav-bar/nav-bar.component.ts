@@ -92,6 +92,11 @@ export class NavBarComponent {
         icon: 'md md-memory',
         routerLink: '/gpu',
       });
+      items.push({
+        label: t('APP.ROUTES.TENANT_MODELS'),
+        icon: 'md md-star',
+        routerLink: '/mis-modelos',
+      });
     }
     if (isSuperadmin) {
       items.push({

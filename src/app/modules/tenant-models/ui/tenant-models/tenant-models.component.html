@@ -1,0 +1,163 @@
+<div animate.enter="anim-page">
+  <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <h3 class="font-bold text-ink-on-dark">{{ 'TENANT_MODELS.TITLE' | translate }}</h3>
+      <p class="text-sm text-ink-muted-on-dark">{{ 'TENANT_MODELS.DESC' | translate }}</p>
+    </div>
+    <p-button
+      [label]="'TENANT_MODELS.SAVE' | translate"
+      icon="md md-save"
+      size="small"
+      [loading]="saving()"
+      [disabled]="!dirty() || saving()"
+      (onClick)="save()"
+    />
+  </div>
+
+  @if (error(); as message) {
+    <div class="mb-6">
+      <p-message severity="error" [text]="message" styleClass="w-full" />
+    </div>
+  }
+
+  @if (saved()) {
+    <div class="mb-6">
+      <p-message severity="success" [text]="'TENANT_MODELS.SAVED' | translate" styleClass="w-full" />
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="flex flex-col gap-2 rounded-3xl border border-surface-border bg-surface p-6" aria-busy="true">
+      <span class="sr-only">{{ 'TENANT_MODELS.LOADING' | translate }}</span>
+      <div class="skel skel-title" aria-hidden="true"></div>
+      <div class="skel skel-text" aria-hidden="true"></div>
+      <div class="skel skel-text" aria-hidden="true"></div>
+    </div>
+  } @else {
+    <div class="mb-4 flex flex-wrap items-center gap-3">
+      <input
+        pInputText
+        class="w-64"
+        [ngModel]="search()"
+        (ngModelChange)="search.set($event)"
+        [placeholder]="'TENANT_MODELS.SEARCH_PH' | translate"
+      />
+      <p-select
+        [options]="modalityOptions()"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="modalityFilter()"
+        (ngModelChange)="modalityFilter.set($event)"
+        styleClass="w-40"
+      />
+      <p-select
+        [options]="providerOptions()"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="providerFilter()"
+        (ngModelChange)="providerFilter.set($event)"
+        styleClass="w-48"
+      />
+    </div>
+
+    <p-table
+      [value]="visibleRows()"
+      dataKey="name"
+      styleClass="w-full"
+      [paginator]="true"
+      [rows]="pageSize()"
+      [rowsPerPageOptions]="[10, 25, 50, 100]"
+      [first]="first()"
+      (onPage)="first.set($event.first ?? 0); pageSize.set($event.rows ?? pageSize())"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>{{ 'TENANT_MODELS.COL_MODEL' | translate }}</th>
+          <th>{{ 'TENANT_MODELS.COL_MASTER' | translate }}</th>
+          <th>{{ 'TENANT_MODELS.COL_ACTIVE' | translate }}</th>
+          <th>{{ 'TENANT_MODELS.COL_FAVORITE' | translate }}</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-row>
+        <tr>
+          <td>
+            <p class="font-bold">{{ row.model?.display_name ?? row.name }}</p>
+            <p class="text-xs opacity-60">{{ row.name }}</p>
+          </td>
+          <td>
+            <div class="flex items-center gap-1">
+              @if (row.masterRecommended) {
+                <p-tag
+                  [value]="'SHARED.MODEL_RECOMMENDED' | translate"
+                  severity="success"
+                  styleClass="text-xs"
+                />
+              }
+              @if (row.masterFavorite) {
+                <p-tag
+                  icon="md md-star"
+                  [value]="'SHARED.MODEL_FAVORITE' | translate"
+                  severity="warn"
+                  styleClass="text-xs"
+                />
+              }
+              @if (!row.masterRecommended && !row.masterFavorite) {
+                <span class="text-xs opacity-60">—</span>
+              }
+            </div>
+          </td>
+          <td>
+            <p-toggleSwitch
+              [ngModel]="row.enabled"
+              (ngModelChange)="setEnabled(row.name, $event)"
+              [ariaLabel]="'TENANT_MODELS.COL_ACTIVE' | translate"
+            />
+          </td>
+          <td>
+            <p-inputNumber
+              [ngModel]="row.favoriteRank"
+              (ngModelChange)="setRank(row.name, $event)"
+              [min]="0"
+              [max]="99"
+              [showButtons]="false"
+              inputStyleClass="w-16"
+              [ariaLabel]="'TENANT_MODELS.COL_FAVORITE' | translate"
+            />
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="4" class="text-center text-sm opacity-60">
+            {{ 'TENANT_MODELS.EMPTY' | translate }}
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+
+    @if (disabledRows().length > 0) {
+      <h4 class="mt-8 mb-2 font-bold text-ink-on-dark">
+        {{ 'TENANT_MODELS.DISABLED_TITLE' | translate }}
+      </h4>
+      <p-table [value]="disabledRows()" dataKey="name" styleClass="w-full">
+        <ng-template pTemplate="body" let-row>
+          <tr class="opacity-60">
+            <td>
+              <p class="font-bold">{{ row.model?.display_name ?? row.name }}</p>
+              <p class="text-xs opacity-60">{{ row.name }}</p>
+            </td>
+            <td class="text-right">
+              <p-button
+                [label]="'TENANT_MODELS.REENABLE' | translate"
+                icon="md md-refresh"
+                size="small"
+                severity="secondary"
+                (onClick)="setEnabled(row.name, true)"
+              />
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    }
+  }
+</div>

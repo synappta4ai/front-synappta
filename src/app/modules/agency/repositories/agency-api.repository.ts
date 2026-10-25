@@ -16,6 +16,8 @@ import {
   GenerationLogsPage,
   GeneratedAsset,
   Modality,
+  TenantModelPref,
+  TenantPrefsView,
   ModelAsset,
   PreviewPayloadResponse,
   ServerCommunication,
@@ -37,6 +39,15 @@ export class AgencyApiRepository {
 
   listModelsByModality(modality: Modality): Observable<ApiResponse<AiModel[]>> {
     return this.http.get<ApiResponse<AiModel[]>>(`${this.apiUrl}/models/${modality}`);
+  }
+
+  /** Curaduría propia del tenant (tenant admin): lo efectivo + desactivados. */
+  getTenantModelPrefs(): Observable<ApiResponse<TenantPrefsView>> {
+    return this.http.get<ApiResponse<TenantPrefsView>>(`${this.apiUrl}/models/prefs`);
+  }
+
+  upsertTenantModelPrefs(prefs: TenantModelPref[]): Observable<ApiResponse<TenantPrefsView>> {
+    return this.http.put<ApiResponse<TenantPrefsView>>(`${this.apiUrl}/models/prefs`, prefs);
   }
 
   listCredentials(): Observable<ApiResponse<Credential[]>> {

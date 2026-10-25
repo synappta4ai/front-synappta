@@ -21,6 +21,8 @@ import {
   ServerCommsPage,
   StatusResponse,
   SyncAssetResult,
+  TenantModelPref,
+  TenantPrefsView,
   UpsertCredentialRequest,
 } from '../interfaces';
 import { AgencyApiRepository } from '../repositories';
@@ -40,6 +42,15 @@ export class AgencyService {
 
   listModelsByModality(modality: Modality): Observable<AiModel[]> {
     return unwrap(this.agencyApiRepository.listModelsByModality(modality));
+  }
+
+  /** Curaduría propia del tenant (lo efectivo + desactivados). */
+  getTenantModelPrefs(): Observable<TenantPrefsView> {
+    return unwrap(this.agencyApiRepository.getTenantModelPrefs());
+  }
+
+  upsertTenantModelPrefs(prefs: TenantModelPref[]): Observable<TenantPrefsView> {
+    return unwrap(this.agencyApiRepository.upsertTenantModelPrefs(prefs));
   }
 
   listCredentials(): Observable<Credential[]> {

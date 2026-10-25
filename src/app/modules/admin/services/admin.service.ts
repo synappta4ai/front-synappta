@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 
 import { unwrap } from '@utils/unwrap-api-response';
 
+import { MasterModelPref, MasterPrefsView } from '@modules/agency/interfaces';
 import {
   CreateTenantMemberRequest,
   CreateTenantRequest,
@@ -70,6 +71,16 @@ export class AdminService {
 
   deleteTenantCredential(id: number, provider: string): Observable<null> {
     return unwrap(this.adminApiRepository.deleteTenantCredential(id, provider));
+  }
+
+  // ─── Maestro del catálogo (platform superadmin, vale para todos) ───
+
+  getMasterModelPrefs(): Observable<MasterPrefsView> {
+    return unwrap(this.adminApiRepository.getMasterModelPrefs());
+  }
+
+  upsertMasterModelPrefs(prefs: MasterModelPref[]): Observable<MasterPrefsView> {
+    return unwrap(this.adminApiRepository.upsertMasterModelPrefs(prefs));
   }
 
   /** Descarga el archivo de exportación de credenciales (secretos en claro). */

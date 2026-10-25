@@ -555,62 +555,19 @@
       @if (loadingModels()) {
         <p class="muted small">{{ 'STUDIO.LOADING_CATALOG' | translate }}</p>
       } @else {
-        <p-select
+        <app-model-select
+          inputId="studio-model"
+          [modality]="mode() === 'video' ? 'video' : 'image'"
+          [autoSelect]="false"
+          [filter]="true"
+          [showBadges]="true"
+          [workerLabel]="'STUDIO.MODEL_WORKER' | translate"
+          [unavailableLabel]="'STUDIO.MODEL_UNAVAILABLE' | translate"
+          [placeholder]="'STUDIO.MODEL_PLACEHOLDER' | translate"
           [ngModel]="selectedModel()?.name ?? null"
           (ngModelChange)="onModelChange($event)"
-          [options]="modeModels()"
-          optionLabel="displayName"
-          optionValue="name"
-          [placeholder]="'STUDIO.MODEL_PLACEHOLDER' | translate"
-          [filter]="true"
-          [showClear]="false"
-          class="w-full"
-          appendTo="body"
-        >
-          <ng-template #selectedItem let-m>
-            <span class="flex min-w-0 items-center gap-2">
-              <span class="truncate">{{ m.displayName }}</span>
-              @if (m.type === 'downloaded') {
-                <p-tag
-                  [value]="'STUDIO.MODEL_WORKER' | translate"
-                  severity="success"
-                  styleClass="text-xs shrink-0"
-                />
-              } @else if (m.badge) {
-                <p-tag [value]="m.badge" severity="info" styleClass="text-xs shrink-0" />
-              }
-            </span>
-          </ng-template>
-          <ng-template #item let-m>
-            <div class="flex items-center justify-between gap-2 w-full">
-              <div class="min-w-0">
-                <p class="font-bold truncate">{{ m.displayName }}</p>
-                <p class="text-xs opacity-60 truncate">{{ m.name }}</p>
-              </div>
-              <div class="flex items-center gap-1 shrink-0">
-                @if (m.type === 'downloaded') {
-                  <p-tag
-                    [value]="'STUDIO.MODEL_WORKER' | translate"
-                    severity="success"
-                    styleClass="text-xs"
-                  />
-                  @if (m.vramGb) {
-                    <p-tag [value]="m.vramGb + ' GB'" severity="secondary" styleClass="text-xs" />
-                  }
-                } @else {
-                  <p-tag [value]="m.badge" severity="info" styleClass="text-xs" />
-                }
-                @if (!m.available) {
-                  <p-tag
-                    [value]="'STUDIO.MODEL_UNAVAILABLE' | translate"
-                    severity="danger"
-                    styleClass="text-xs"
-                  />
-                }
-              </div>
-            </div>
-          </ng-template>
-        </p-select>
+          class="block w-full"
+        />
       }
     </div>
 

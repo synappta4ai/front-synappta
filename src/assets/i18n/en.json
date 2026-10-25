@@ -23,8 +23,26 @@
       "VIDEO": "Video",
       "ADMIN": "Admin",
       "GPU": "Your GPU",
+      "TENANT_MODELS": "My models",
       "TOOLS": "Tools"
     }
+  },
+  "TENANT_MODELS": {
+    "TITLE": "My models",
+    "DESC": "On top of what the master list leaves active, tune your own: disable the inefficient ones and pin your favorites (they sort first in your listings).",
+    "SAVE": "Save changes",
+    "SAVED": "Preferences saved.",
+    "LOADING": "Loading your models…",
+    "ERROR": "Could not load or save your model preferences.",
+    "SEARCH_PH": "Search models…",
+    "PROVIDER_ALL": "All providers",
+    "COL_MODEL": "Model",
+    "COL_MASTER": "Master",
+    "COL_ACTIVE": "Active",
+    "COL_FAVORITE": "My favorite (rank)",
+    "EMPTY": "No models match the filter.",
+    "DISABLED_TITLE": "Disabled by you",
+    "REENABLE": "Re-enable"
   },
   "TOOLS": {
     "TITLE": "Tools",
@@ -129,6 +147,8 @@
     "MODEL_SELECT_EMPTY": "No models available for this type. Check credentials in Admin.",
     "MODEL_SELECT_PLACEHOLDER": "Choose a model",
     "MODEL_FILTER_PLACEHOLDER": "Search model...",
+    "MODEL_RECOMMENDED": "Recommended",
+    "MODEL_FAVORITE": "Favorite",
     "NAV": {
       "AVATAR_ALT": "Profile photo",
       "LOGO_ALT": "Synapta logo"
@@ -342,6 +362,7 @@
       "SELECT_TENANT_TITLE": "Select a tenant to start",
       "SELECT_TENANT_HINT": "The console sections show up once you pick which tenant to work with.",
       "MENU_MODELS": "Models",
+      "MENU_MASTER": "Master",
       "MENU_PROVIDERS": "Inference Providers",
       "MENU_VIDEOS": "Videos",
       "MENU_IMAGES": "Images",
@@ -476,6 +497,31 @@
         "SAVE_PERMS": "Could not save the permissions.",
         "REMOVE": "Could not remove the user from the tenant."
       }
+    },
+    "MODEL_MASTER": {
+      "TITLE": "Model master list",
+      "DESC": "Disabling a model here hides it for every tenant (they cannot re-enable it). Favorites sort first in each listing.",
+      "SAVE": "Save changes",
+      "SAVED": "Master list saved.",
+      "LOADING": "Loading master catalog…",
+      "ERROR": "Could not load or save the model master list.",
+      "SEARCH_PH": "Search models…",
+      "MODALITY_ALL": "All",
+      "SUMMARY": "{favorites} favorites · {disabled} disabled",
+      "COL_MODEL": "Model",
+      "COL_MODALITY": "Modality",
+      "COL_PROVIDER": "Provider",
+      "COL_ACTIVE": "Active",
+      "COL_TAGS": "Recommendation tags",
+      "COL_META": "Metadata",
+      "COL_FAVORITE": "Favorite (rank)",
+      "TAGS_PH": "efficient, cheap…",
+      "META_KEY_PH": "key",
+      "META_VALUE_PH": "value",
+      "META_ADD": "Add key-value pair",
+      "EMPTY": "No models match the filter.",
+      "ORPHANS_HINT": "There are prefs for models no longer in the catalog (marked with ?). Set their favorite rank to 0 or delete them with the trash button.",
+      "ORPHAN_REMOVE": "Remove from master"
     },
     "MODELS": {
       "SELECT_TENANT_HINT": "First select the tenant you want to manage.",

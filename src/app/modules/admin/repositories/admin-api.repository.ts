@@ -5,6 +5,7 @@ import { map, Observable } from 'rxjs';
 import { ApiResponse } from '@interfaces/api.interface';
 import { environment } from '@env/environment';
 
+import { MasterModelPref, MasterPrefsView } from '@modules/agency/interfaces';
 import {
   CreateTenantMemberRequest,
   CreateTenantRequest,
@@ -111,6 +112,16 @@ export class AdminApiRepository {
 
   listTenantModels(id: number): Observable<ApiResponse<TenantModel[]>> {
     return this.http.get<ApiResponse<TenantModel[]>>(`${this.apiUrl}/tenants/${id}/models`);
+  }
+
+  // ─── Maestro del catálogo (platform superadmin) ───
+
+  getMasterModelPrefs(): Observable<ApiResponse<MasterPrefsView>> {
+    return this.http.get<ApiResponse<MasterPrefsView>>(`${this.apiUrl}/models/master`);
+  }
+
+  upsertMasterModelPrefs(prefs: MasterModelPref[]): Observable<ApiResponse<MasterPrefsView>> {
+    return this.http.put<ApiResponse<MasterPrefsView>>(`${this.apiUrl}/models/master`, prefs);
   }
 
   listTenantCredentials(id: number): Observable<ApiResponse<TenantCredential[]>> {

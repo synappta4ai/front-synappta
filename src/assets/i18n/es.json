@@ -23,8 +23,26 @@
       "VIDEO": "Video",
       "ADMIN": "Admin",
       "GPU": "Tu GPU",
+      "TENANT_MODELS": "Mis modelos",
       "TOOLS": "Herramientas"
     }
+  },
+  "TENANT_MODELS": {
+    "TITLE": "Mis modelos",
+    "DESC": "Lo que el maestro deja activo, vos lo ajustás: desactivá lo ineficiente y marcá tus favoritos (salen primeros en tus listados).",
+    "SAVE": "Guardar cambios",
+    "SAVED": "Preferencias guardadas.",
+    "LOADING": "Cargando tus modelos…",
+    "ERROR": "No se pudieron cargar o guardar tus preferencias de modelos.",
+    "SEARCH_PH": "Buscar modelo…",
+    "PROVIDER_ALL": "Todos los proveedores",
+    "COL_MODEL": "Modelo",
+    "COL_MASTER": "Maestro",
+    "COL_ACTIVE": "Activo",
+    "COL_FAVORITE": "Mi favorito (orden)",
+    "EMPTY": "Ningún modelo coincide con el filtro.",
+    "DISABLED_TITLE": "Desactivados por vos",
+    "REENABLE": "Reactivar"
   },
   "TOOLS": {
     "TITLE": "Herramientas",
@@ -129,6 +147,8 @@
     "MODEL_SELECT_EMPTY": "No hay modelos disponibles para este tipo. Revisá las credenciales en Admin.",
     "MODEL_SELECT_PLACEHOLDER": "Elige el modelo",
     "MODEL_FILTER_PLACEHOLDER": "Buscar modelo...",
+    "MODEL_RECOMMENDED": "Recomendado",
+    "MODEL_FAVORITE": "Favorito",
     "NAV": {
       "AVATAR_ALT": "Foto de perfil",
       "LOGO_ALT": "Logo Synapta"
@@ -342,6 +362,7 @@
       "SELECT_TENANT_TITLE": "Seleccioná un tenant para empezar",
       "SELECT_TENANT_HINT": "Las secciones de la consola aparecen cuando elegís con qué tenant trabajar.",
       "MENU_MODELS": "Modelos",
+      "MENU_MASTER": "Maestro",
       "MENU_PROVIDERS": "Inference Providers",
       "MENU_VIDEOS": "Videos",
       "MENU_IMAGES": "Imágenes",
@@ -476,6 +497,31 @@
         "SAVE_PERMS": "No se pudieron guardar los permisos.",
         "REMOVE": "No se pudo quitar al usuario del tenant."
       }
+    },
+    "MODEL_MASTER": {
+      "TITLE": "Maestro de modelos",
+      "DESC": "Lo que desactives acá desaparece para todos los tenants (no lo pueden reactivar). Los favoritos salen primeros en cada listado.",
+      "SAVE": "Guardar cambios",
+      "SAVED": "Maestro guardado correctamente.",
+      "LOADING": "Cargando catálogo maestro…",
+      "ERROR": "No se pudo cargar o guardar el maestro de modelos.",
+      "SEARCH_PH": "Buscar modelo…",
+      "MODALITY_ALL": "Todas",
+      "SUMMARY": "{favorites} favoritos · {disabled} desactivados",
+      "COL_MODEL": "Modelo",
+      "COL_MODALITY": "Modalidad",
+      "COL_PROVIDER": "Proveedor",
+      "COL_ACTIVE": "Activo",
+      "COL_TAGS": "Etiquetas de recomendación",
+      "COL_META": "Metadata",
+      "COL_FAVORITE": "Favorito (orden)",
+      "TAGS_PH": "eficiente, barato…",
+      "META_KEY_PH": "clave",
+      "META_VALUE_PH": "valor",
+      "META_ADD": "Agregar par clave-valor",
+      "EMPTY": "Ningún modelo coincide con el filtro.",
+      "ORPHANS_HINT": "Hay preferencias de modelos que ya no existen en el catálogo (marcados con ?). Poné su favorito en 0 o borralos con el tacho.",
+      "ORPHAN_REMOVE": "Quitar del maestro"
     },
     "MODELS": {
       "SELECT_TENANT_HINT": "Selecciona primero el tenant que quieres gestionar.",

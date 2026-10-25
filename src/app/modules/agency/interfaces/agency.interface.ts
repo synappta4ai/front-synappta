@@ -41,6 +41,44 @@ export interface AiModel {
   /** Detalle del worker para modelos downloaded (back: downloaded):
    *  available=false = listado pero no ejecutable. */
   downloaded?: { vram_gb?: number; available?: boolean } | null;
+  /** Badge de curaduría: el maestro marca los modelos eficientes. */
+  recommended?: boolean;
+  /** Etiquetas de recomendación del maestro (vacío = no recomendado). */
+  recommend_tags?: string[];
+  /** Favorito (maestro o tenant): ordena primero en los listados. */
+  favorite?: boolean;
+}
+
+/** Curaduría del maestro (platform superadmin): vale para todos los tenants. */
+export interface MasterModelPref {
+  model_name: string;
+  enabled: boolean;
+  /** Una o varias etiquetas; acepta un string suelto en el PUT. */
+  recommend_tags: string[];
+  /** Pares libres clave-valor (costos, notas, …). */
+  metadata: Record<string, string>;
+  favorite_rank: number;
+}
+
+/** Curaduría propia del tenant: hereda lo activo del maestro y ajusta. */
+export interface TenantModelPref {
+  model_name: string;
+  enabled: boolean;
+  favorite_rank: number;
+}
+
+/** GET /models/master: catálogo anotado + prefs + huérfanos. */
+export interface MasterPrefsView {
+  models: AiModel[];
+  prefs: Record<string, MasterModelPref>;
+  orphans: string[];
+}
+
+/** GET /models/prefs: lo efectivo + desactivados + filas propias del tenant. */
+export interface TenantPrefsView {
+  models: AiModel[];
+  disabled: string[];
+  mine: Record<string, TenantModelPref>;
 }
 
 export interface Credential {

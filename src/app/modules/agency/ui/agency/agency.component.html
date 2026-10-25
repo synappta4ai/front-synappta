@@ -138,41 +138,17 @@
             <label for="agencyTextModel" class="text-xs font-bold text-ink-on-dark">
               {{ 'AGENCY.STUDIO.P1_BRAIN_LABEL' | translate }}
             </label>
-            <p-select
+            <app-model-select
               inputId="agencyTextModel"
-              [attr.aria-label]="'AGENCY.STUDIO.P1_BRAIN_ARIA' | translate"
-              [options]="modelTextOptions()"
-              optionLabel="label"
-              optionValue="value"
-              [filter]="true"
-              filterBy="label"
-              [filterPlaceholder]="'SHARED.MODEL_FILTER_PLACEHOLDER' | translate"
+              modality="text"
+              [autoLabel]="'AGENCY.STUDIO.MODEL_AUTO' | translate"
+              [extraOptions]="extraTextModels()"
+              [tooltip]="'AGENCY.STUDIO.P1_BRAIN_TOOLTIP' | translate"
               [ngModel]="modelText()"
               (ngModelChange)="modelText.set($event)"
               [ngModelOptions]="{ standalone: true }"
-              styleClass="w-full"
-              appendTo="body"
-              [pTooltip]="'AGENCY.STUDIO.P1_BRAIN_TOOLTIP' | translate"
-              showDelay="400"
-              tooltipPosition="top"
-            >
-              <ng-template #selectedItem let-opt>
-                <span class="flex min-w-0 items-center gap-2">
-                  <span class="truncate">{{ opt.label }}</span>
-                  @if (opt.provider) {
-                    <p-tag [value]="opt.provider" severity="info" styleClass="text-xs shrink-0" />
-                  }
-                </span>
-              </ng-template>
-              <ng-template #item let-opt>
-                <div class="flex w-full items-center justify-between gap-2">
-                  <span class="min-w-0 truncate">{{ opt.label }}</span>
-                  @if (opt.provider) {
-                    <p-tag [value]="opt.provider" severity="info" styleClass="text-xs shrink-0" />
-                  }
-                </div>
-              </ng-template>
-            </p-select>
+              class="block w-full"
+            />
           </div>
           @if (agent() === 'real_estate' || agent() === 'commercial') {
             <div class="flex min-w-0 flex-col gap-2 lg:col-start-2 lg:row-start-2">
@@ -859,35 +835,15 @@
           <span class="text-xs font-bold text-ink-muted-on-dark">{{
             'AGENCY.STUDIO.P3_IMAGE_MODEL' | translate
           }}</span>
-          <p-select
+          <app-model-select
             inputId="agencyImageModel"
-            [attr.aria-label]="'AGENCY.STUDIO.P3_IMAGE_MODEL_ARIA' | translate"
-            [options]="modelImageOptions()"
-            optionLabel="label"
-            optionValue="value"
+            modality="image"
+            [autoLabel]="'AGENCY.STUDIO.MODEL_AUTO' | translate"
             [ngModel]="modelImage()"
             (ngModelChange)="modelImage.set($event)"
             [ngModelOptions]="{ standalone: true }"
-            styleClass="w-72"
-            appendTo="body"
-          >
-            <ng-template #selectedItem let-opt>
-              <span class="flex min-w-0 items-center gap-2">
-                <span class="truncate">{{ opt.label }}</span>
-                @if (opt.provider) {
-                  <p-tag [value]="opt.provider" severity="info" styleClass="text-xs shrink-0" />
-                }
-              </span>
-            </ng-template>
-            <ng-template #item let-opt>
-              <div class="flex w-full items-center justify-between gap-2">
-                <span class="min-w-0 truncate">{{ opt.label }}</span>
-                @if (opt.provider) {
-                  <p-tag [value]="opt.provider" severity="info" styleClass="text-xs shrink-0" />
-                }
-              </div>
-            </ng-template>
-          </p-select>
+            class="block w-72"
+          />
         </div>
 
         <!-- Escenas agrupadas por su ángulo de venta -->
@@ -1264,35 +1220,15 @@
               <span class="text-xs font-bold text-ink-muted-on-dark">{{
                 'AGENCY.STUDIO.P4_VIDEO_MODEL' | translate
               }}</span>
-              <p-select
+              <app-model-select
                 inputId="agencyVideoModel"
-                [attr.aria-label]="'AGENCY.STUDIO.P4_VIDEO_MODEL_ARIA' | translate"
-                [options]="modelVideoOptions()"
-                optionLabel="label"
-                optionValue="value"
+                modality="video"
+                [autoLabel]="'AGENCY.STUDIO.MODEL_AUTO' | translate"
                 [ngModel]="modelVideo()"
                 (ngModelChange)="modelVideo.set($event); onVideoConfigChange()"
                 [ngModelOptions]="{ standalone: true }"
-                styleClass="w-72"
-                appendTo="body"
-              >
-                <ng-template #selectedItem let-opt>
-                  <span class="flex min-w-0 items-center gap-2">
-                    <span class="truncate">{{ opt.label }}</span>
-                    @if (opt.provider) {
-                      <p-tag [value]="opt.provider" severity="info" styleClass="text-xs shrink-0" />
-                    }
-                  </span>
-                </ng-template>
-                <ng-template #item let-opt>
-                  <div class="flex w-full items-center justify-between gap-2">
-                    <span class="min-w-0 truncate">{{ opt.label }}</span>
-                    @if (opt.provider) {
-                      <p-tag [value]="opt.provider" severity="info" styleClass="text-xs shrink-0" />
-                    }
-                  </div>
-                </ng-template>
-              </p-select>
+                class="block w-72"
+              />
             </div>
             <div class="flex flex-col gap-1">
               <span class="text-xs font-bold text-ink-muted-on-dark">{{
@@ -1770,42 +1706,14 @@
                             >
                               <label class="flex items-center gap-1.5">
                                 {{ 'AGENCY.STUDIO.P4_VIDEO_MODEL' | translate }}
-                                <p-select
-                                  [attr.aria-label]="'AGENCY.STUDIO.P4_VIDEO_MODEL_ARIA' | translate"
-                                  [options]="modelVideoOptions()"
-                                  optionLabel="label"
-                                  optionValue="value"
+                                <app-model-select
+                                  modality="video"
+                                  [autoLabel]="'AGENCY.STUDIO.MODEL_AUTO' | translate"
                                   [ngModel]="prompt.videoModel ?? modelVideo()"
                                   (ngModelChange)="setPromptModel(scene.id, null, p, $event)"
                                   [ngModelOptions]="{ standalone: true }"
-                                  styleClass="w-52"
-                                  appendTo="body"
-                                >
-                                  <ng-template #selectedItem let-opt>
-                                    <span class="flex min-w-0 items-center gap-2">
-                                      <span class="truncate">{{ opt.label }}</span>
-                                      @if (opt.provider) {
-                                        <p-tag
-                                          [value]="opt.provider"
-                                          severity="info"
-                                          styleClass="text-xs shrink-0"
-                                        />
-                                      }
-                                    </span>
-                                  </ng-template>
-                                  <ng-template #item let-opt>
-                                    <div class="flex w-full items-center justify-between gap-2">
-                                      <span class="min-w-0 truncate">{{ opt.label }}</span>
-                                      @if (opt.provider) {
-                                        <p-tag
-                                          [value]="opt.provider"
-                                          severity="info"
-                                          styleClass="text-xs shrink-0"
-                                        />
-                                      }
-                                    </div>
-                                  </ng-template>
-                                </p-select>
+                                  class="block w-52"
+                                />
                               </label>
                               <label class="flex items-center gap-1.5">
                                 {{ 'AGENCY.STUDIO.RATIO' | translate }}

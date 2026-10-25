@@ -39,14 +39,16 @@ import { Router } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { AgencyService } from '../../services/agency.service';
+import { ModelCatalogService } from '../../services/model-catalog.service';
+import { ModelSelectComponent } from '../model-select/model-select.component';
 import {
   AiModel,
   ContentItem,
   Credential,
   CredentialProvider,
   GenerateRequest,
-  Modality,
   GeneratedAsset,
+  Modality,
   StatusResponse,
 } from '../../interfaces';
 import { EventsService } from '@modules/events/services';
@@ -412,6 +414,7 @@ function parseAgentEvent(rawEvent: string): { name: string; data: Record<string,
     Popover,
     ToggleSwitch,
     AutogrowDirective,
+    ModelSelectComponent,
     ServerUrlPipe,
     LowerCasePipe,
     TranslatePipe,
@@ -422,6 +425,7 @@ function parseAgentEvent(rawEvent: string): { name: string; data: Record<string,
 })
 export class AgencyComponent {
   private readonly agencyService = inject(AgencyService);
+  private readonly catalog = inject(ModelCatalogService);
   private readonly eventsService = inject(EventsService);
   private readonly formBuilder = inject(NonNullableFormBuilder);
   private readonly session = inject(UserSessionStore);
@@ -552,8 +556,32 @@ export class AgencyComponent {
     }
     return options;
   });
-  protected readonly modelImageOptions = computed(() => this.modelOptionsFor('image'));
-  protected readonly modelVideoOptions = computed(() => this.modelOptionsFor('video'));
+  /** Modelos LLM guardados en admin/models (openrouter/anthropic extra.model):
+   *  van como opciones extra del selector de texto, después del catálogo. */
+  protected readonly extraTextModels = computed<AiModel[]>(() => {
+    const known = new Set(
+      this.models().filter((m) => m.modality === 'text').map((m) => m.name),
+    );
+    const extras: AiModel[] = [];
+    for (const cred of this.credentials()) {
+      if (cred.provider !== 'openrouter' && cred.provider !== 'anthropic') continue;
+      const name = this.credentialModel(cred);
+      if (!name || known.has(name) || extras.some((o) => o.name === name)) continue;
+      known.add(name);
+      extras.push({
+        name,
+        display_name: `${name} · ${cred.provider}`,
+        modality: 'text',
+        generator: '',
+        credential_provider: cred.provider,
+        base_url: '',
+        endpoint: '',
+        gallery_sync: false,
+        defaults: {},
+      });
+    }
+    return extras;
+  });
   protected readonly projectDescription = signal('');
   protected readonly angles = signal<SalesAngle[]>(this.buildAngles(3));
   /** Ids de ángulos tildados: derivado de `angles` para que nunca se
@@ -698,9 +726,10 @@ export class AgencyComponent {
       .pipe(catchError(() => EMPTY))
       .subscribe((projects) => this.projects.set(projects));
 
-    // Catálogo de modelos (por modalidad) para los selectores de cada paso.
-    this.agencyService
-      .listModels()
+    // Catálogo de modelos para la lógica de cada paso (ratios, payloads): la
+    // misma fuente memoizada que alimenta los selectores compartidos.
+    this.catalog
+      .all()
       .pipe(catchError(() => EMPTY))
       .subscribe((models) => this.models.set(models));
 

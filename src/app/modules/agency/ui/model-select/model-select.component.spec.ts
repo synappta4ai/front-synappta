@@ -137,6 +137,27 @@ describe('ModelSelectComponent', () => {
     expect(internals.control.value).toBe('gemini-3-pro-image-preview');
   });
 
+  it('antepone la opción vacía cuando hay autoLabel', async () => {
+    fixture.componentRef.setInput('autoLabel', 'Automático');
+    await loadImages();
+
+    const filtered = internals.filtered();
+    expect(filtered[0]!.name).toBe('');
+    expect(filtered[0]!.display_name).toBe('Automático');
+    expect(filtered.length).toBe(imageCatalog.length + 1);
+    // La opción vacía se autoselecciona como en Agency ('' = automático).
+    expect(internals.control.value).toBe('');
+  });
+
+  it('agrega las opciones extra al final (LLM de la credencial)', async () => {
+    const extra = model('openrouter/mega-9b', 'text', []);
+    fixture.componentRef.setInput('extraOptions', [extra]);
+    await loadImages();
+
+    const names = internals.filtered().map((m) => m.name);
+    expect(names[names.length - 1]).toBe('openrouter/mega-9b');
+  });
+
   it('respeta el valor escrito desde el formulario', async () => {
     fixture.componentRef.setInput('autoSelect', false);
     await loadImages();

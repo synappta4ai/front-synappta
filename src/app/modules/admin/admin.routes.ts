@@ -4,6 +4,7 @@ import { authGuard } from '@guards/auth.guard';
 import { superadminGuard } from '@guards/superadmin.guard';
 
 import { AdminConsoleComponent } from './ui/admin-console/admin-console.component';
+import { AdminModelMasterComponent } from './ui/admin-model-master/admin-model-master.component';
 import { AdminModelsComponent } from './ui/admin-models/admin-models.component';
 import { AdminLogsComponent } from './ui/admin-logs/admin-logs.component';
 import { AdminVideosComponent } from './ui/admin-videos/admin-videos.component';
@@ -23,6 +24,7 @@ export const adminRoutes: Routes = [
     component: AdminConsoleComponent,
     children: [
       { path: 'models', component: AdminModelsComponent },
+      { path: 'maestro', component: AdminModelMasterComponent },
       { path: 'logs', component: AdminLogsComponent },
       { path: 'videos', component: AdminVideosComponent },
       { path: 'imagenes', component: AdminImagesComponent },

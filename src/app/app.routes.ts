@@ -69,6 +69,14 @@ export const routes: Routes = [
         loadChildren: () => import('@modules/gpu/gpu.routes').then((m) => m.gpuRoutes),
       },
       {
+        // "Mis modelos": curaduría propia del tenant (admin del tenant —
+        // el guard vive en el módulo, el back aplica RequireRole(1)).
+        path: 'mis-modelos',
+        canActivate: [authGuard],
+        loadChildren: () =>
+          import('@modules/tenant-models/tenant-models.routes').then((m) => m.tenantModelsRoutes),
+      },
+      {
         // Herramientas del cliente (Hoja de poses, …): cualquier usuario
         // autenticado; el guard vive en cada ruta del módulo si hace falta.
         path: 'tools',

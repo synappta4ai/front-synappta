@@ -62,6 +62,12 @@ export class AdminConsoleComponent {
         routerLinkActiveOptions: { exact: true },
       },
       {
+        label: t('ADMIN.CONSOLE.MENU_MASTER'),
+        icon: 'md md-star',
+        routerLink: '/admin/maestro',
+        routerLinkActiveOptions: { exact: true },
+      },
+      {
         label: t('ADMIN.CONSOLE.MENU_PROVIDERS'),
         icon: 'md md-dashboard',
         disabled: true,

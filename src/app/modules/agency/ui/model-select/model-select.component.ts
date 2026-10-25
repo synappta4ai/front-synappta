@@ -181,6 +181,12 @@ export class ModelSelectComponent implements ControlValueAccessor {
 
   /** Los servidores que corre el propio tenant llevan chip verde con su
    *  nombre comercial; el resto conserva el identificador del catálogo. */
+  /** Etiquetas de recomendación del maestro (null = usa el texto genérico). */
+  protected recommendTag(model: AiModel): string | null {
+    const tags = (model.recommend_tags ?? []).map((t) => t.trim()).filter((t) => t !== '');
+    return tags.length > 0 ? tags.slice(0, 2).join(' · ') : null;
+  }
+
   protected providerTag(provider: CredentialProvider): string {
     switch (provider) {
       case 'ollama':

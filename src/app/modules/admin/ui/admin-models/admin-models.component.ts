@@ -18,6 +18,7 @@ import { Tooltip } from 'primeng/tooltip';
 
 import { AdminService } from '../../services/admin.service';
 import { AdminTenantService } from '../../services/admin-tenant.service';
+import { ModelCatalogService } from '@modules/agency/services';
 import {
   CredentialProviderType,
   TenantCredential,
@@ -58,6 +59,7 @@ export class AdminModelsComponent {
   private readonly adminTenants = inject(AdminTenantService);
   private readonly formBuilder = inject(NonNullableFormBuilder);
   private readonly confirmationService = inject(ConfirmationService);
+  private readonly catalog = inject(ModelCatalogService);
   private readonly translate = inject(TranslateService);
 
   // El tenant se elige una sola vez, en el header de la consola.
@@ -333,6 +335,7 @@ export class AdminModelsComponent {
       )
       .subscribe((credentials) => {
         this.credentials.set(credentials);
+        this.catalog.refresh();
         this.loadModelsOnly(tenantId);
       });
   }
@@ -369,6 +372,7 @@ export class AdminModelsComponent {
           )
           .subscribe((credentials) => {
             this.credentials.set(credentials);
+            this.catalog.refresh();
             this.loadModelsOnly(tenantId);
           });
       },
