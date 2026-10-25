@@ -90,7 +90,7 @@ export class ModelSelectComponent implements ControlValueAccessor {
   readonly provider = input<CredentialProvider | null>(null);
   /** Sólo estos nombres (para herramientas atadas a un modelo concreto). */
   readonly names = input<readonly string[] | null>(null);
-  /** Sólo modelos que acepten imágenes de referencia (max_references > 0). */
+  /** Sólo modelos que acepten imágenes de referencia (max_references > 0 o ruta multi-referencia). */
   readonly requiresReferences = input(false);
   /** Texto ya traducido de la opción vacía ('' = automático); sin valor no hay opción vacía. */
   readonly autoLabel = input<string | null>(null);
@@ -149,7 +149,9 @@ export class ModelSelectComponent implements ControlValueAccessor {
         (!names || names.includes(model.name)) &&
         (!ratio || (model.defaults?.ratios ?? []).includes(ratio)) &&
         (!provider || model.credential_provider === provider) &&
-        (!requiresReferences || (model.max_references ?? 0) > 0),
+        (!requiresReferences ||
+          (model.max_references ?? 0) > 0 ||
+          !!model.reference_endpoint),
     );
     const autoLabel = this.autoLabel();
     const auto: AiModel[] =

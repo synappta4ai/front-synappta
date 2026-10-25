@@ -41,6 +41,7 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { AgencyService } from '../../services/agency.service';
 import { ModelCatalogService } from '../../services/model-catalog.service';
 import { ModelSelectComponent } from '../model-select/model-select.component';
+import { InfoproductComponent } from '../infoproduct/infoproduct.component';
 import {
   AiModel,
   ContentItem,
@@ -109,6 +110,10 @@ type ModelOption = {
 
 /** Experto que analiza el proyecto (valor = workflow del agente en el back). */
 type AgencyAgent = 'commercial' | 'real_estate' | 'cinema';
+
+/** Agente de VideoMachine: no pertenece al flujo de proyecto, tiene su propia vista. */
+const INFOPRODUCT_AGENT = 'infoproduct' as const;
+type AgentChoice = AgencyAgent | typeof INFOPRODUCT_AGENT;
 
 const AGENT_OPTIONS: { value: AgencyAgent; labelKey: string; hintKey: string }[] = [
   {
@@ -415,6 +420,7 @@ function parseAgentEvent(rawEvent: string): { name: string; data: Record<string,
     ToggleSwitch,
     AutogrowDirective,
     ModelSelectComponent,
+    InfoproductComponent,
     ServerUrlPipe,
     LowerCasePipe,
     TranslatePipe,
@@ -443,19 +449,31 @@ export class AgencyComponent {
 
   /** Experto elegido para analizar el proyecto (default: comercial). */
   protected readonly agent = signal<AgencyAgent>('commercial');
+  /** VideoMachine: el agente "Infoproducto" reemplaza el flujo de proyecto. */
+  protected readonly infoproductMode = signal(false);
+  protected readonly agentChoice = computed<AgentChoice>(() =>
+    this.infoproductMode() ? INFOPRODUCT_AGENT : this.agent(),
+  );
   protected readonly agentOptions = computed(() => {
     this.translate.currentLang();
-    return AGENT_OPTIONS.map((o) => ({
-      value: o.value,
-      label: this.translate.instant(o.labelKey),
-      hint: this.translate.instant(o.hintKey),
-    }));
+    return [
+      ...AGENT_OPTIONS.map((o) => ({
+        value: o.value as AgentChoice,
+        label: this.translate.instant(o.labelKey),
+        hint: this.translate.instant(o.hintKey),
+      })),
+      {
+        value: INFOPRODUCT_AGENT as AgentChoice,
+        label: this.translate.instant('VIDEOMACHINE.AGENT_LABEL'),
+        hint: this.translate.instant('VIDEOMACHINE.AGENT_HINT'),
+      },
+    ];
   });
   protected readonly agentLabel = computed(
-    () => this.agentOptions().find((o) => o.value === this.agent())?.label ?? '',
+    () => this.agentOptions().find((o) => o.value === this.agentChoice())?.label ?? '',
   );
   protected readonly agentHint = computed(
-    () => this.agentOptions().find((o) => o.value === this.agent())?.hint ?? '',
+    () => this.agentOptions().find((o) => o.value === this.agentChoice())?.hint ?? '',
   );
   /** Placeholder del contexto, adaptado al experto elegido. */
   protected readonly descriptionPlaceholder = computed(() => {
@@ -4016,7 +4034,13 @@ export class AgencyComponent {
 
   /** Cambia el experto y arranca un hilo nuevo con él: cada agente tiene
    *  su propia personalidad y su propio conversation_id. */
-  protected onAgentChange(agent: AgencyAgent): void {
+  protected onAgentChange(choice: AgentChoice): void {
+    if (choice === INFOPRODUCT_AGENT) {
+      this.infoproductMode.set(true);
+      return;
+    }
+    this.infoproductMode.set(false);
+    const agent = choice;
     if (agent === this.agent()) return;
     this.agent.set(agent);
     this.conversationIds[agent] = '';

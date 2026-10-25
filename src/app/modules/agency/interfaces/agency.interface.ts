@@ -31,6 +31,8 @@ export interface AiModel {
   max_references?: number;
   /** true = LLM con razonamiento (back: reasoning). Solo estos van al Cerebro. */
   reasoning?: boolean;
+  /** Qué lee el modelo además de texto (back: input_modalities): image, video, audio. */
+  input_modalities?: string[];
   defaults: {
     ratios?: string[];
     resolutions?: string[];
