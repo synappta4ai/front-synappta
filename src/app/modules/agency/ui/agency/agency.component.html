@@ -1,4 +1,26 @@
 ﻿<!-- /agency = detectives y redactores por experto: Documentación → Ángulos → Storyboard → Escenas -->
+@if (infoproductMode()) {
+  <!-- VideoMachine · agente Infoproducto: copia un video de referencia con tu producto -->
+  <app-page-container [title]="'VIDEOMACHINE.TITLE' | translate" animate.enter="anim-page">
+    <div class="mb-6 flex max-w-sm flex-col gap-2">
+      <label for="agencyAgentVm" class="text-xs font-bold text-ink-on-dark">
+        {{ 'AGENCY.STUDIO.P1_AGENT_LABEL' | translate }}
+      </label>
+      <p-select
+        inputId="agencyAgentVm"
+        [options]="agentOptions()"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="agentChoice()"
+        (ngModelChange)="onAgentChange($event)"
+        [ngModelOptions]="{ standalone: true }"
+        styleClass="w-full"
+        appendTo="body"
+      />
+    </div>
+    <app-infoproduct />
+  </app-page-container>
+} @else {
 <app-page-container
   [title]="'AGENCY.STUDIO.TITLE' | translate: { agent: agentLabel() }"
   animate.enter="anim-page"
@@ -124,7 +146,7 @@
               [options]="agentOptions()"
               optionLabel="label"
               optionValue="value"
-              [ngModel]="agent()"
+              [ngModel]="agentChoice()"
               (ngModelChange)="onAgentChange($event)"
               [ngModelOptions]="{ standalone: true }"
               styleClass="w-full"
@@ -2731,3 +2753,4 @@
     </form>
   </aside>
 </app-page-container>
+}

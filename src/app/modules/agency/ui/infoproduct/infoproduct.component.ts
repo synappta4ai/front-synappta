@@ -1,0 +1,524 @@
+import { HttpErrorResponse } from '@angular/common/http';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { catchError, EMPTY, finalize, forkJoin, map, of } from 'rxjs';
+
+import { MenuItem } from 'primeng/api';
+import { Button } from 'primeng/button';
+import { Card } from 'primeng/card';
+import { InputText } from 'primeng/inputtext';
+import { Message } from 'primeng/message';
+import { Select } from 'primeng/select';
+import { Steps } from 'primeng/steps';
+import { Tag } from 'primeng/tag';
+import { Textarea } from 'primeng/textarea';
+import { ToggleSwitch } from 'primeng/toggleswitch';
+import { Tooltip } from 'primeng/tooltip';
+
+import { GenerationEventsStore } from '@core/store/generation.events';
+import {
+  AiModel,
+  ComposeTarget,
+  GenerateRequest,
+  VideoAnalysis,
+  VideoBreakdown,
+  VideoFormat,
+  VideoPrompt,
+} from '@modules/agency/interfaces';
+import { AgencyService, InfoproductService, ModelCatalogService } from '@modules/agency/services';
+import { FileAsset } from '@modules/library/interfaces';
+import { LibraryService } from '@modules/library/services';
+import { StudioTake } from '@modules/studio/interfaces';
+import { StudioService } from '@modules/studio/services';
+import { ModelSelectComponent } from '../model-select/model-select.component';
+import {
+  Attachment,
+  attachmentKind,
+  buildTarget,
+  promptForGeneration,
+  snapDuration,
+} from './infoproduct-helpers';
+
+type Step = 1 | 2 | 3;
+
+const FALLBACK_RATIOS = ['16:9', '9:16', '1:1', '4:3', '3:4', '21:9'];
+const FALLBACK_RESOLUTIONS = ['480p', '720p', '1080p'];
+
+/**
+ * VideoMachine · agente "Infoproducto": copia un video de referencia.
+ * 1) el cerebro multimodal desglosa el video (archivo o URL), 2) el usuario
+ * revisa el desglose y adjunta imágenes del producto (y audio), 3) el cerebro
+ * entrega el prompt completo y los ajustes para generar en una sola toma
+ * (o en varias si el video supera el máximo del modelo).
+ */
+@Component({
+  selector: 'app-infoproduct',
+  imports: [
+    FormsModule,
+    TranslatePipe,
+    Button,
+    Card,
+    InputText,
+    Message,
+    Select,
+    Steps,
+    Tag,
+    Textarea,
+    ToggleSwitch,
+    Tooltip,
+    ModelSelectComponent,
+  ],
+  templateUrl: './infoproduct.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class InfoproductComponent {
+  private readonly infoproduct = inject(InfoproductService);
+  private readonly library = inject(LibraryService);
+  private readonly catalog = inject(ModelCatalogService);
+  private readonly agencyService = inject(AgencyService);
+  private readonly studioService = inject(StudioService);
+  private readonly eventsStore = inject(GenerationEventsStore);
+  private readonly translate = inject(TranslateService);
+  private readonly router = inject(Router);
+
+  protected readonly step = signal<Step>(1);
+  protected readonly error = signal<string | null>(null);
+
+  protected readonly stepItems = computed<MenuItem[]>(() => {
+    const keys = ['VIDEOMACHINE.STEP_SOURCE', 'VIDEOMACHINE.STEP_BREAKDOWN', 'VIDEOMACHINE.STEP_PROMPT'];
+    return keys.map((key, i) => ({
+      label: this.translate.instant(key),
+      command: () => this.goTo((i + 1) as Step),
+      disabled: i === 1 ? !this.analysis() && !this.useFormat() : i === 2 ? !this.result() : false,
+    }));
+  });
+
+  // ── Paso 1: fuente ──────────────────────────────────────────────
+  /** false = "Video de referencia → video final"; true = "Formato → video final". */
+  protected readonly useFormat = signal(false);
+  protected readonly formats = signal<readonly VideoFormat[]>([]);
+  protected readonly formatId = signal<string | null>(null);
+  /** El switch solo se habilita cuando existe al menos un formato activo. */
+  protected readonly formatsAvailable = computed(() => this.formats().length > 0);
+
+  protected readonly videoFile = signal<File | null>(null);
+  protected readonly videoUrl = signal('');
+  protected readonly brainModel = signal('');
+  protected readonly analyzing = signal(false);
+  protected readonly analysis = signal<VideoAnalysis | null>(null);
+
+  /** Cerebro: LLMs de texto que leen video (si no hay, todos los de texto). */
+  private readonly textModels = toSignal(this.catalog.byModality('text').pipe(catchError(() => of([] as AiModel[]))), {
+    initialValue: [] as AiModel[],
+  });
+  protected readonly brainNames = computed<readonly string[] | null>(() => {
+    const names = this.textModels()
+      .filter((m) => (m.input_modalities ?? []).includes('video'))
+      .map((m) => m.name);
+    return names.length > 0 ? names : null;
+  });
+
+  protected readonly canAnalyze = computed(() => {
+    if (this.analyzing()) return false;
+    return !!this.videoFile() || this.videoUrl().trim().length > 0;
+  });
+
+  // ── Paso 2: desglose + insumos ──────────────────────────────────
+  protected readonly notes = signal('');
+  protected readonly attachments = signal<readonly Attachment[]>([]);
+  protected readonly uploading = signal(false);
+  protected readonly videoModel = signal<AiModel | null>(null);
+  protected readonly composing = signal(false);
+
+  protected readonly images = computed(() => this.attachments().filter((a) => a.kind === 'image'));
+  protected readonly audios = computed(() => this.attachments().filter((a) => a.kind === 'audio'));
+  protected readonly breakdown = computed<VideoBreakdown | null>(() => this.analysis()?.breakdown ?? null);
+  protected readonly canCompose = computed(
+    () =>
+      !this.composing() &&
+      !this.uploading() &&
+      this.images().length > 0 &&
+      !!this.videoModel() &&
+      (this.useFormat() ? !!this.formatId() : !!this.analysis()),
+  );
+
+  // ── Paso 3: prompt + generación ─────────────────────────────────
+  protected readonly result = signal<VideoPrompt | null>(null);
+  protected readonly segmentPrompts = signal<readonly string[]>([]);
+  protected readonly segmentDurations = signal<readonly number[]>([]);
+  protected readonly ratio = signal('');
+  protected readonly resolution = signal('');
+  protected readonly audio = signal(false);
+  protected readonly launching = signal(false);
+  protected readonly launched = signal<ReadonlySet<number>>(new Set());
+
+  protected readonly ratioOptions = computed(() =>
+    (this.videoModel()?.defaults?.ratios?.length ? this.videoModel()!.defaults.ratios! : FALLBACK_RATIOS).map(
+      (r) => ({ label: r, value: r }),
+    ),
+  );
+  protected readonly resolutionOptions = computed(() =>
+    (this.videoModel()?.defaults?.resolutions?.length
+      ? this.videoModel()!.defaults.resolutions!
+      : FALLBACK_RESOLUTIONS
+    ).map((r) => ({ label: r, value: r })),
+  );
+  protected readonly formatOptions = computed(() =>
+    this.formats().map((f) => ({ label: f.label, value: f.id })),
+  );
+  protected readonly supportsAudio = computed(() => {
+    const model = this.videoModel();
+    return model ? buildTarget(model).supports_audio : false;
+  });
+
+  constructor() {
+    this.infoproduct
+      .listFormats()
+      .pipe(catchError(() => of([] as VideoFormat[])))
+      .subscribe((formats) => this.formats.set(formats));
+  }
+
+  // ── Paso 1 ──────────────────────────────────────────────────────
+  protected onVideoPicked(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    input.value = '';
+    if (!file) return;
+    this.videoFile.set(file);
+    this.videoUrl.set('');
+  }
+
+  protected onUrlInput(value: string): void {
+    this.videoUrl.set(value);
+    if (value.trim()) this.videoFile.set(null);
+  }
+
+  protected clearVideoFile(): void {
+    this.videoFile.set(null);
+  }
+
+  protected toggleFormat(on: boolean): void {
+    if (on && !this.formatsAvailable()) return;
+    this.useFormat.set(on);
+    this.error.set(null);
+  }
+
+  /** Sin video de referencia: el flujo salta directo a los insumos con el formato. */
+  protected continueWithFormat(): void {
+    if (!this.formatId()) return;
+    this.analysis.set(null);
+    this.step.set(2);
+  }
+
+  protected analyze(): void {
+    if (!this.canAnalyze()) return;
+    this.error.set(null);
+    this.analyzing.set(true);
+    const file = this.videoFile();
+    const model = this.brainModel() || undefined;
+
+    const request$ = file
+      ? this.library.uploadFile(file, 'videos', undefined, undefined, 'temp')
+      : of(null as FileAsset | null);
+
+    request$
+      .pipe(
+        catchError((err: unknown) => {
+          this.fail(err, 'VIDEOMACHINE.ERR_UPLOAD');
+          this.analyzing.set(false);
+          return EMPTY;
+        }),
+      )
+      .subscribe((uploaded) => {
+        this.infoproduct
+          .analyze(uploaded ? { file_id: uploaded.id, model } : { url: this.videoUrl().trim(), model })
+          .pipe(
+            catchError((err: unknown) => {
+              this.fail(err, 'VIDEOMACHINE.ERR_ANALYZE');
+              return EMPTY;
+            }),
+            finalize(() => this.analyzing.set(false)),
+          )
+          .subscribe((analysis) => {
+            this.analysis.set(analysis);
+            this.videoFile.set(null);
+            this.step.set(2);
+          });
+      });
+  }
+
+  // ── Paso 2 ──────────────────────────────────────────────────────
+  protected onInputsPicked(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files ?? []);
+    input.value = '';
+    if (files.length === 0) return;
+    this.error.set(null);
+    this.uploading.set(true);
+    const uploads = files.map((file) => {
+      const kind = attachmentKind(file);
+      if (!kind) {
+        this.error.set(this.translate.instant('VIDEOMACHINE.ERR_INPUT_TYPE', { name: file.name }));
+        return of(null);
+      }
+      return this.library.uploadFile(file, kind === 'audio' ? 'audio' : 'images').pipe(
+        map(
+          (asset): Attachment => ({
+            id: asset.id,
+            name: file.name,
+            kind,
+            url: asset.thumbnail_url || asset.url || '',
+          }),
+        ),
+        catchError((err: unknown) => {
+          this.fail(err, 'VIDEOMACHINE.ERR_UPLOAD');
+          return of(null);
+        }),
+      );
+    });
+    forkJoin(uploads)
+      .pipe(finalize(() => this.uploading.set(false)))
+      .subscribe((items) => {
+        const added = items.filter((i): i is Attachment => !!i);
+        if (added.length) this.attachments.update((list) => [...list, ...added]);
+      });
+  }
+
+  protected removeAttachment(id: string): void {
+    this.attachments.update((list) => list.filter((a) => a.id !== id));
+  }
+
+  protected onVideoModelChange(model: AiModel | null): void {
+    this.videoModel.set(model);
+    if (!model) return;
+    // Ajustes por defecto del modelo; un resultado ya compuesto se corrige a sus límites.
+    const target = buildTarget(model);
+    if (this.result()) {
+      this.ratio.set(target.ratios.includes(this.ratio()) ? this.ratio() : (target.ratios[0] ?? this.ratio()));
+      this.resolution.set(
+        target.resolutions.includes(this.resolution()) ? this.resolution() : (target.resolutions[0] ?? this.resolution()),
+      );
+      if (!target.supports_audio) this.audio.set(false);
+    }
+  }
+
+  protected compose(): void {
+    const model = this.videoModel();
+    if (!model || !this.canCompose()) return;
+    this.error.set(null);
+    this.composing.set(true);
+    const target: ComposeTarget = buildTarget(model);
+    this.infoproduct
+      .compose({
+        breakdown: this.analysis()?.breakdown ?? {},
+        model: this.brainModel() || undefined,
+        target,
+        image_file_ids: this.images().map((a) => a.id),
+        audio_file_ids: this.audios().map((a) => a.id),
+        notes: this.notes().trim() || undefined,
+        format_id: this.useFormat() ? (this.formatId() ?? undefined) : undefined,
+      })
+      .pipe(
+        catchError((err: unknown) => {
+          this.fail(err, 'VIDEOMACHINE.ERR_COMPOSE');
+          return EMPTY;
+        }),
+        finalize(() => this.composing.set(false)),
+      )
+      .subscribe((response) => {
+        const vp = response.video_prompt;
+        this.result.set(vp);
+        this.segmentPrompts.set(vp.segments.map((s) => s.prompt));
+        this.segmentDurations.set(
+          vp.segments.map((s) =>
+            snapDuration(Math.round(s.end - s.start) || vp.duration, target.durations, target.max_duration),
+          ),
+        );
+        this.ratio.set(vp.ratio);
+        this.resolution.set(vp.resolution);
+        this.audio.set(vp.generate_audio);
+        this.launched.set(new Set());
+        this.step.set(3);
+      });
+  }
+
+  // ── Paso 3 ──────────────────────────────────────────────────────
+  protected setSegmentPrompt(index: number, value: string): void {
+    this.segmentPrompts.update((list) => list.map((p, i) => (i === index ? value : p)));
+  }
+
+  protected setSegmentDuration(index: number, value: number | string | null): void {
+    const n = Math.max(1, Math.round(Number(value) || 1));
+    this.segmentDurations.update((list) => list.map((d, i) => (i === index ? n : d)));
+  }
+
+  protected ingredientThumb(fileId: string): string {
+    return this.attachments().find((a) => a.id === fileId)?.url ?? '';
+  }
+
+  protected generateSegment(index: number): void {
+    this.launch([index]);
+  }
+
+  protected generateAll(): void {
+    const count = this.result()?.segments.length ?? 0;
+    this.launch(Array.from({ length: count }, (_, i) => i));
+  }
+
+  private launch(indexes: number[]): void {
+    const vp = this.result();
+    const model = this.videoModel();
+    if (!vp || !model || this.launching() || indexes.length === 0) return;
+    this.error.set(null);
+    this.launching.set(true);
+
+    const code = this.takeCode();
+    this.studioService
+      .ensureTakeSlot(`VideoMachine ${new Date().toLocaleDateString()}`, code)
+      .pipe(
+        catchError((err: unknown) => {
+          this.fail(err, 'VIDEOMACHINE.ERR_LAUNCH');
+          this.launching.set(false);
+          return EMPTY;
+        }),
+      )
+      .subscribe(({ project, piece }) => {
+        let pending = indexes.length;
+        let handoff: { index: number; payload: GenerateRequest } | null = null;
+        const settle = () => {
+          pending -= 1;
+          if (pending > 0) return;
+          this.launching.set(false);
+          if (handoff) this.openInStudio(handoff.payload);
+        };
+        for (const index of indexes) {
+          const text = promptForGeneration(this.segmentPrompts()[index] ?? '');
+          const content: GenerateRequest['content'] = [
+            ...vp.ingredients.map((ing) => ({
+              type: 'image' as const,
+              id: ing.file_id,
+              name: this.attachments().find((a) => a.id === ing.file_id)?.name,
+            })),
+            ...(buildTarget(model).audio_reference
+              ? vp.audio_refs.map((ref) => ({
+                  type: 'audio' as const,
+                  id: ref.file_id,
+                  name: this.attachments().find((a) => a.id === ref.file_id)?.name,
+                }))
+              : []),
+            { type: 'text' as const, text },
+          ];
+          const duration = this.segmentDurations()[index] ?? vp.duration;
+          const payload: GenerateRequest = {
+            model: model.name,
+            content,
+            ratio: this.ratio(),
+            duration,
+            resolution: this.resolution(),
+            generate_audio: this.supportsAudio() ? this.audio() : undefined,
+            event_id: project.id,
+            piece_id: piece.id,
+            piece_code: piece.piece_code ?? piece.id,
+            generation_number: Date.now() + index,
+          };
+          const takeId = `pending_${Date.now()}_${index}`;
+          const take: StudioTake = {
+            id: takeId,
+            prompt: text,
+            modelName: model.name,
+            modelDisplayName: model.display_name ?? model.name,
+            modelType: model.type === 'downloaded' ? 'downloaded' : 'api',
+            ratio: this.ratio(),
+            resolution: this.resolution(),
+            duration,
+            status: 'queued',
+            progress: 0,
+            videoUrl: null,
+            error: null,
+            createdAt: Date.now(),
+            ratingGood: false,
+            ratingFinal: false,
+            eventName: project.name,
+            refImages: vp.ingredients.map((ing) => ({
+              id: ing.file_id,
+              name: this.attachments().find((a) => a.id === ing.file_id)?.name ?? ing.tag,
+            })),
+            request: payload,
+          };
+          this.eventsStore.upsert(take);
+          this.agencyService
+            .generate('video', payload)
+            .pipe(
+              catchError((err: unknown) => {
+                this.fail(err, 'VIDEOMACHINE.ERR_LAUNCH');
+                this.eventsStore.remove(takeId);
+                settle();
+                return EMPTY;
+              }),
+            )
+            .subscribe((response) => {
+              this.eventsStore.patch(takeId, {
+                id: response.taskId,
+                costCredits: response.cost_credits ?? 0,
+                costUsd: response.cost_usd ?? 0,
+                transactionId: response.provider_transaction_id || null,
+              });
+              this.eventsStore.track(response.taskId);
+              this.launched.update((set) => new Set(set).add(index));
+              if (!handoff || index < handoff.index) handoff = { index, payload };
+              settle();
+            });
+        }
+      });
+  }
+
+  /** Lleva la generación al Estudio con prompt e insumos cargados (reuso). */
+  private openInStudio(payload: GenerateRequest): void {
+    sessionStorage.setItem('studio:reuse', JSON.stringify(payload));
+    void this.router.navigate(['/studio']);
+  }
+
+  protected goTo(step: Step): void {
+    if (step === 2 && !this.analysis() && !this.useFormat()) return;
+    if (step === 3 && !this.result()) return;
+    this.step.set(step);
+  }
+
+  protected restart(): void {
+    this.step.set(1);
+    this.analysis.set(null);
+    this.result.set(null);
+    this.attachments.set([]);
+    this.notes.set('');
+    this.videoFile.set(null);
+    this.videoUrl.set('');
+    this.error.set(null);
+  }
+
+  private takeCode(): string {
+    const d = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `VM-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+  }
+
+  /** Muestra el mensaje del back si lo hay; si no, el texto genérico de la clave. */
+  private fail(err: unknown, fallbackKey: string): void {
+    let message = '';
+    if (err instanceof HttpErrorResponse) {
+      const body = err.error as { message?: string } | null;
+      message = body?.message ?? '';
+    } else if (err instanceof Error) {
+      message = err.message;
+    }
+    this.error.set(message || this.translate.instant(fallbackKey));
+  }
+}

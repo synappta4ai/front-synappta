@@ -41,11 +41,15 @@ export class LibraryApiRepository {
     category?: string,
     eventId?: string,
     tenantSlug?: string,
+    storage?: 'persistent' | 'temp',
   ): Observable<ApiResponse<FileAsset>> {
     const form = new FormData();
     form.append('file', file);
     if (category) {
       form.append('category', category);
+    }
+    if (storage) {
+      form.append('storage', storage);
     }
     if (eventId) {
       form.append('event_id', eventId);

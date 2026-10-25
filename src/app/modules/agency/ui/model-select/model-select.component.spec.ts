@@ -138,6 +138,28 @@ describe('ModelSelectComponent', () => {
     expect(internals.control.value).toBe('gemini-3-pro-image-preview');
   });
 
+  it('incluye modelos con ruta multi-referencia aunque no declaren max_references', async () => {
+    fixture.componentRef.setInput('modality', 'video');
+    fixture.componentRef.setInput('requiresReferences', true);
+    const videoCatalog: AiModel[] = [
+      {
+        ...model('higgsfield-wan-2-6-reference', 'video', ['16:9'], 'higgsfield'),
+        reference_endpoint: '/wan/v2.6/reference-to-video',
+      },
+      model('higgsfield-kling-3-0-turbo-t2v', 'video', ['16:9'], 'higgsfield'),
+    ];
+    fixture.detectChanges();
+    httpMock
+      .expectOne(`${base}/models/video`)
+      .flush({ success: true, message: 'success', data: videoCatalog });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(internals.filtered().map((m) => m.name)).toEqual([
+      'higgsfield-wan-2-6-reference',
+    ]);
+  });
+
   it('antepone la opción vacía cuando hay autoLabel', async () => {
     fixture.componentRef.setInput('autoLabel', 'Automático');
     await loadImages();
