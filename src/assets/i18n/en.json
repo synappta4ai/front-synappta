@@ -149,6 +149,10 @@
     "MODEL_FILTER_PLACEHOLDER": "Search model...",
     "MODEL_RECOMMENDED": "Recommended",
     "MODEL_FAVORITE": "Favorite",
+    "MODALITY_TEXT": "Text",
+    "MODALITY_IMAGE": "Image",
+    "MODALITY_VIDEO": "Video",
+    "MODALITY_AUDIO": "Audio",
     "NAV": {
       "AVATAR_ALT": "Profile photo",
       "LOGO_ALT": "Synapta logo"

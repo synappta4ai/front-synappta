@@ -35,6 +35,9 @@ type CatalogState =
 
 const LOADING: CatalogState = { status: 'loading', models: [] };
 
+/** Con más modelos que este umbral el buscador se activa solo. */
+const FILTER_AUTO_THRESHOLD = 5;
+
 /**
  * Selector de modelos del catálogo, reusable y por modalidad.
  *
@@ -46,9 +49,12 @@ const LOADING: CatalogState = { status: 'loading', models: [] };
  *
  * Extras opcionales para los consumidores migrados (Agency, Studio):
  * `autoLabel` antepone la opción vacía ("automático"), `extraOptions`
- * agrega modelos fuera del catálogo (p. ej. el LLM de la credencial),
- * `filter` habilita el buscador, `showBadges` muestra worker/VRAM/no
- * disponible (Studio) y `tooltip` el hint del desplegable.
+ * agrega modelos fuera del catálogo (p. ej. el LLM de la credencial,
+ * siempre de la modalidad pedida), `filter` fuerza el buscador (si no,
+ * se activa solo con más de 5 modelos), `showBadges` muestra
+ * worker/VRAM/no disponible (Studio) y `tooltip` el hint del desplegable.
+ * Cada fila lleva su insignia de modalidad (texto, imagen, video, audio)
+ * para distinguir modelos aunque el selector junte varias modalidades.
  *
  * El valor es el `name` del modelo (sirve en `ngModel` y en formularios
  * reactivos); `selectionChange` entrega el modelo completo cuando el consumidor
@@ -90,7 +96,7 @@ export class ModelSelectComponent implements ControlValueAccessor {
   readonly autoLabel = input<string | null>(null);
   /** Modelos fuera del catálogo que se agregan al final (p. ej. LLM de la credencial). */
   readonly extraOptions = input<readonly AiModel[]>([]);
-  /** Muestra el buscador del desplegable (Studio). */
+  /** Fuerza el buscador del desplegable (Studio); si no, aparece solo con más de 5 modelos. */
   readonly filter = input(false);
   /** Muestra badges de worker/VRAM/no disponible (Studio). */
   readonly showBadges = input(false);
@@ -148,8 +154,19 @@ export class ModelSelectComponent implements ControlValueAccessor {
     const autoLabel = this.autoLabel();
     const auto: AiModel[] =
       autoLabel !== null ? [this.autoOption(autoLabel)] : [];
-    return [...auto, ...catalog, ...this.extraOptions()];
+    // Los extras son de la modalidad del selector: un LLM de la credencial
+    // no puede colarse en un desplegable de imagen (ni al revés).
+    const allowed = new Set<Modality>(this.modalities());
+    const extras = this.extraOptions().filter((model) => allowed.has(model.modality));
+    return [...auto, ...catalog, ...extras];
   });
+
+  /** Buscador visible si el consumidor lo pide o si hay más de 5 modelos. */
+  protected readonly showFilter = computed(
+    () =>
+      this.filter() ||
+      this.filtered().filter((model) => model.name !== '').length > FILTER_AUTO_THRESHOLD,
+  );
 
   /** Opción vacía ("automático"): mismo shape para que el p-select la trate igual. */
   private autoOption(label: string): AiModel {

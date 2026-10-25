@@ -13,7 +13,9 @@
     optionValue="name"
     [placeholder]="placeholder() ?? ('SHARED.MODEL_SELECT_PLACEHOLDER' | translate)"
     [showClear]="false"
-    [filter]="filter()"
+    [filter]="showFilter()"
+    filterBy="display_name,name"
+    [filterPlaceholder]="'SHARED.MODEL_FILTER_PLACEHOLDER' | translate"
     [pTooltip]="tooltip() ?? ''"
     [tooltipDisabled]="!tooltip()"
     tooltipPosition="top"
@@ -24,6 +26,13 @@
     <ng-template #selectedItem let-m>
       <span class="flex min-w-0 items-center gap-2">
         <span class="truncate">{{ m.display_name ?? m.name }}</span>
+        @if (m.name) {
+          <p-tag
+            [value]="('SHARED.MODALITY_' + m.modality.toUpperCase()) | translate"
+            severity="secondary"
+            styleClass="text-xs shrink-0"
+          />
+        }
         @if (m.credential_provider) {
           <p-tag
             [value]="providerTag(m.credential_provider)"
@@ -42,6 +51,13 @@
           }
         </div>
         <div class="flex items-center gap-1 shrink-0">
+          @if (m.name) {
+            <p-tag
+              [value]="('SHARED.MODALITY_' + m.modality.toUpperCase()) | translate"
+              severity="secondary"
+              styleClass="text-xs"
+            />
+          }
           @if (m.favorite) {
             <p-tag
               icon="md md-star"

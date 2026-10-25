@@ -36,6 +36,7 @@ function model(
 /** Estado protegido que el test necesita leer. */
 interface Internals {
   filtered: () => readonly AiModel[];
+  showFilter: () => boolean;
   control: FormControl<string>;
 }
 
@@ -150,12 +151,50 @@ describe('ModelSelectComponent', () => {
   });
 
   it('agrega las opciones extra al final (LLM de la credencial)', async () => {
-    const extra = model('openrouter/mega-9b', 'text', []);
-    fixture.componentRef.setInput('extraOptions', [extra]);
-    await loadImages();
+    fixture.componentRef.setInput('modality', 'text');
+    fixture.componentRef.setInput('extraOptions', [model('openrouter/mega-9b', 'text', [])]);
+    fixture.detectChanges();
+
+    httpMock
+      .expectOne(`${base}/models/text`)
+      .flush({ success: true, message: 'success', data: [model('claude-text', 'text', [])] });
+    await fixture.whenStable();
+    fixture.detectChanges();
 
     const names = internals.filtered().map((m) => m.name);
     expect(names[names.length - 1]).toBe('openrouter/mega-9b');
+  });
+
+  it('excluye las opciones extra de otra modalidad', async () => {
+    fixture.componentRef.setInput('extraOptions', [model('openrouter/mega-9b', 'text', [])]);
+    await loadImages();
+
+    expect(internals.filtered().map((m) => m.name)).not.toContain('openrouter/mega-9b');
+  });
+
+  it('activa el buscador solo cuando hay más de 5 modelos', async () => {
+    await loadImages();
+
+    expect(internals.filtered().length).toBe(4);
+    expect(internals.showFilter()).toBe(false);
+  });
+
+  it('activa el buscador cuando hay más de 5 modelos', async () => {
+    await loadImages([
+      ...imageCatalog,
+      model('extra-1', 'image', ['1:1']),
+      model('extra-2', 'image', ['1:1']),
+    ]);
+
+    expect(internals.filtered().length).toBe(6);
+    expect(internals.showFilter()).toBe(true);
+  });
+
+  it('respeta el buscador forzado por el consumidor aunque haya pocos modelos', async () => {
+    fixture.componentRef.setInput('filter', true);
+    await loadImages();
+
+    expect(internals.showFilter()).toBe(true);
   });
 
   it('respeta el valor escrito desde el formulario', async () => {
