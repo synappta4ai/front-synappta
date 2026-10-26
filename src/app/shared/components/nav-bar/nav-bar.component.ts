@@ -106,7 +106,7 @@ export class NavBarComponent {
       {
         label: t('TOOLS.TITLE'),
         icon: 'md md-auto_fix_high',
-        command: (event: Event) => {
+        command: (event: MenuItemCommandEvent) => {
           this.toggleTools(event);
         },
       },
