@@ -106,12 +106,14 @@ export class NavBarComponent {
       {
         label: t('TOOLS.TITLE'),
         icon: 'md md-auto_fix_high',
-        command: (event) => this.toggleTools(event.originalEvent),
+        routerLink: '/tools',
+        routerLinkActiveOptions: { exact: false },
       },
       {
         label: t('ADMIN.CONSOLE.MENU_TITLE'),
         icon: 'md md-settings',
-        items: adminItems,
+        routerLink: '/admin',
+        routerLinkActiveOptions: { exact: false },
       },
     ];
   });
