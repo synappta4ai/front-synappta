@@ -3552,7 +3552,7 @@ main:has(> app-location) {
      .viewer-canvas → lienzo con la forma del aspect ratio (del take
                       seleccionado o del form) que encaja sin recortes. */
 .studio-shell .viewer {
-  --canvas-ar: 1.7778;
+  --canvas-ar: 0.5625;
   flex: 1;
   padding: 4px;
   min-height: 240px;
@@ -3590,6 +3590,41 @@ main:has(> app-location) {
   width: 100%;
   height: 100%;
   object-fit: contain;
+}
+
+/* Video: llena todo el lienzo (9:16 en móvil); sin franjas negras. */
+.studio-shell video.viewer-media {
+  object-fit: cover;
+}
+
+.studio-shell .viewer-canvas:has(.viewer-loading-media) {
+  position: relative;
+}
+
+.studio-shell .viewer-loading-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 48px 24px 20px;
+  text-align: center;
+  color: #fff;
+  background: linear-gradient(to top, rgb(0 0 0 / 0.7), transparent);
+}
+
+.studio-shell .viewer-loading-label {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.studio-shell .viewer-loading-pct {
+  font-size: 22px;
+  font-weight: 800;
 }
 
 .studio-shell .viewer-placeholder {

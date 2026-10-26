@@ -12,6 +12,7 @@ import {
   ElementRef,
 } from '@angular/core';
 import { DatePipe, DecimalPipe, isPlatformBrowser } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { catchError, EMPTY, finalize, forkJoin, of } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -155,7 +156,10 @@ export class StudioComponent {
   // ─── Prompt & params ───────────────────────────────────────────
   protected readonly prompt = signal('');
   protected readonly negativePrompt = signal('');
-  protected readonly ratio = signal('16:9');
+  /** Video/imagen verticales (9:16): el contenido se ve en smartphones. */
+  protected readonly ratio = signal('9:16');
+  /** Animación del visor mientras una toma se encola o se genera. */
+  protected readonly loadingVideo = './assets/tools/animation.mp4';
   protected readonly resolution = signal('720p');
   protected readonly duration = signal(5);
   protected readonly seed = signal('');
@@ -179,13 +183,13 @@ export class StudioComponent {
    */
   protected readonly canvasRatio = computed<{ w: number; h: number }>(() => {
     const take = this.selectedTake();
-    const value = (take?.ratio || this.ratio() || '16:9').trim();
+    const value = (take?.ratio || this.ratio() || '9:16').trim();
     const known = this.ratioOptions.find((r) => r.value === value);
     if (known) {
       return { w: known.w, h: known.h };
     }
     const [w, h] = value.split(':').map((n) => parseFloat(n));
-    return w > 0 && h > 0 ? { w, h } : { w: 16, h: 9 };
+    return w > 0 && h > 0 ? { w, h } : { w: 9, h: 16 };
   });
 
   /** Aspect numérico (w/h) para la CSS var --canvas-ar del visor. */
@@ -1097,6 +1101,18 @@ export class StudioComponent {
           // Payload inválido: se ignora.
         }
       }
+      // Generaciones a lanzar al llegar (VideoMachine): el form queda cargado
+      // con los mismos insumos para repetirlas aquí si algo falla.
+      const auto = sessionStorage.getItem('studio:autostart');
+      if (auto) {
+        sessionStorage.removeItem('studio:autostart');
+        try {
+          const list = JSON.parse(auto) as GenerateRequest[];
+          this.pendingAutostart = Array.isArray(list) ? list : [];
+        } catch {
+          this.pendingAutostart = [];
+        }
+      }
     }
     effect(() => {
       const pending = this.pendingReuse();
@@ -1107,6 +1123,9 @@ export class StudioComponent {
       }
       this.pendingReuse.set(null);
       this.applyReuseRequest(pending.req, pending.prompt);
+      const queued = this.pendingAutostart;
+      this.pendingAutostart = [];
+      queued.forEach((req) => this.launchFromRequest(req));
     });
     this.loadModels();
     this.loadProjects();
@@ -1756,6 +1775,7 @@ export class StudioComponent {
       model: model.name,
       content: [
         ...mentions.map((a) => ({ type: 'image' as const, id: a.id, name: a.filename })),
+        ...this.reusedAudio().map((a) => ({ type: 'audio' as const, id: a.id, name: a.name })),
         { type: 'text' as const, text },
       ],
       ratio,
@@ -1858,8 +1878,8 @@ export class StudioComponent {
         this.agencyService
           .generate(modality, finalPayload)
           .pipe(
-            catchError(() => {
-              this.error.set(this.translate.instant('STUDIO.ERR_START_GENERATION'));
+            catchError((err: unknown) => {
+              this.error.set(this.startErrorMessage(err));
               this.submitting.set(false);
               // Nada se creó en el server: se descarta la take pendiente
               // (en rehacer, la toma original queda intacta para reintentar).
@@ -2024,14 +2044,65 @@ export class StudioComponent {
     this.applyReuseRequest(take.request, take.prompt);
   }
 
+  /** Mensaje del back (escapado: el aviso renderiza HTML) o el genérico. */
+  private startErrorMessage(err: unknown): string {
+    const generic = this.translate.instant('STUDIO.ERR_START_GENERATION') as string;
+    const body = err instanceof HttpErrorResponse ? (err.error as { message?: string } | null) : null;
+    const detail = body?.message?.trim();
+    if (!detail) {
+      return generic;
+    }
+    const safe = detail
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+    return `${generic} ${safe}`;
+  }
+
+  /** Audios de referencia del request reusado (Seedance los acepta como
+      ingredientes): se reenvían al generar aunque el form solo muestre imágenes. */
+  protected readonly reusedAudio = signal<{ id: string; name: string }[]>([]);
+
+  protected clearReusedAudio(): void {
+    this.reusedAudio.set([]);
+  }
+
+  /** Requests a lanzar al instante al llegar desde otro agente (VideoMachine). */
+  private pendingAutostart: GenerateRequest[] = [];
+
+  /** Lanza un request tal cual (insumos + prompt) sin pasar por el form. */
+  private launchFromRequest(req: GenerateRequest): void {
+    const prompt = (req.content ?? []).find((c) => c.type === 'text')?.text ?? '';
+    const model = this.models().find((m) => m.name === req.model);
+    this.submitting.set(true);
+    this.launchGeneration(req, {
+      prompt,
+      modelName: req.model,
+      modelDisplayName: model?.displayName ?? req.model,
+      modelType: model?.type ?? 'api',
+      ratio: req.ratio || '9:16',
+      resolution: req.resolution || this.resolution(),
+      duration: req.duration ?? 0,
+      eventName: null,
+      refImages: (req.content ?? [])
+        .filter((c) => c.type === 'image' && !!c.id)
+        .map((c) => ({ id: String(c.id), name: c.name ?? String(c.id) })),
+    });
+  }
+
   /** Aplica un request guardado al formulario del studio (sin generar). */
   private applyReuseRequest(req: GenerateRequest, prompt: string): void {
     this.setMode('video');
     this.prompt.set(prompt);
-    this.ratio.set(req.ratio || '16:9');
+    this.ratio.set(req.ratio || '9:16');
     this.resolution.set(req.resolution || '720p');
     this.duration.set(req.duration || 5);
     this.seed.set(req.seed ?? '');
+    this.reusedAudio.set(
+      (req.content ?? [])
+        .filter((c) => c.type === 'audio' && !!c.id)
+        .map((c) => ({ id: String(c.id), name: c.name ?? String(c.id) })),
+    );
     const model = this.models().find((m) => m.name === req.model);
     if (model) {
       this.selectedModel.set(model);
