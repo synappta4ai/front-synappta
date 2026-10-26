@@ -1,6 +1,6 @@
 {
   "name": "front-synapta",
-  "version": "1.4.21",
+  "version": "1.4.22",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
