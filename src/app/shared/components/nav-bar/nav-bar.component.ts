@@ -71,41 +71,49 @@ export class NavBarComponent {
     const t = (key: string): string => this.translate.instant(key);
     const roleLevel = this.sessionStore.currentUser()?.role_level;
     const isSuperadmin = roleLevel === 0;
-    // "Tu GPU": emparejamiento de GPUs — accesible para admins del tenant
-    // (el back aplica RequireRole(1) en esos endpoints).
     const isTenantAdmin = roleLevel !== undefined && roleLevel !== null && roleLevel <= 1;
-    const items: MenuItem[] = [
+
+    // Secciones de la consola Admin, agrupadas bajo el menú /admin.
+    const adminItems: MenuItem[] = [
+      { label: t('ADMIN.CONSOLE.MENU_MODELS'), icon: 'md md-memory', routerLink: '/admin/models' },
+      { label: t('ADMIN.CONSOLE.MENU_MASTER'), icon: 'md md-star', routerLink: '/admin/maestro' },
+      { label: t('ADMIN.CONSOLE.MENU_VIDEOS'), icon: 'md md-videocam', routerLink: '/admin/videos' },
+      { label: t('ADMIN.CONSOLE.MENU_IMAGES'), icon: 'md md-image', routerLink: '/admin/imagenes' },
+      { label: t('ADMIN.CONSOLE.MENU_LOGS'), icon: 'md md-list', routerLink: '/admin/logs' },
+      {
+        label: t('ADMIN.CONSOLE.MENU_GPU'),
+        icon: 'md md-desktop_windows',
+        routerLink: '/admin/gpu',
+      },
+      { label: t('ADMIN.CONSOLE.MENU_USERS'), icon: 'md md-people', routerLink: '/admin/users' },
+      { label: t('ADMIN.CONSOLE.MENU_BUCKET'), icon: 'md md-storage', routerLink: '/admin/bucket' },
+      { label: t('ADMIN.CONSOLE.MENU_TENANTS'), icon: 'md md-business', routerLink: '/admin/tenants' },
+    ];
+
+    // Sub-items del menú de herramientas (popover HERRAMIENTAS).
+    const toolsItems: MenuItem[] = [
+      { label: t('TOOLS.POSE_SHEET'), routerLink: '/tools/pose-sheet' },
+      { label: t('TOOLS.LOCATION'), routerLink: '/tools/location' },
+      { label: t('TOOLS.STORYBOARD'), routerLink: '/tools/storyboard' },
+    ];
+
+    return [
       { label: t('APP.ROUTES.AGENCY'), icon: 'md md-work', routerLink: '/agency' },
       { label: t('APP.ROUTES.STUDIO'), icon: 'md md-bolt', routerLink: '/studio' },
       { label: t('APP.ROUTES.PROJECTS'), icon: 'md md-folder', routerLink: '/projects' },
       { label: t('APP.ROUTES.RESOURCES'), icon: 'md md-photo_library', routerLink: '/resources' },
       { label: t('APP.ROUTES.MY_GENERATIONS'), icon: 'md md-movie', routerLink: '/my-generations' },
       {
-        label: t('APP.ROUTES.TOOLS'),
+        label: t('ADMIN.CONSOLE.MENU_TITLE'),
+        icon: 'md md-settings',
+        items: adminItems,
+      },
+      {
+        label: t('TOOLS.TITLE'),
         icon: 'md md-auto_fix_high',
         command: (event) => this.toggleTools(event.originalEvent),
       },
     ];
-    if (isTenantAdmin) {
-      items.push({
-        label: t('APP.ROUTES.GPU'),
-        icon: 'md md-memory',
-        routerLink: '/gpu',
-      });
-      items.push({
-        label: t('APP.ROUTES.TENANT_MODELS'),
-        icon: 'md md-star',
-        routerLink: '/mis-modelos',
-      });
-    }
-    if (isSuperadmin) {
-      items.push({
-        label: t('APP.ROUTES.ADMIN'),
-        icon: 'md md-settings',
-        routerLink: '/admin/models',
-      });
-    }
-    return items;
   });
 
   protected toggleTools(event?: Event): void {

@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
 
 import { authGuard } from '@guards/auth.guard';
-import { superadminGuard } from '@guards/superadmin.guard';
+import { superadminGuard, tenantAdminGuard } from '@core/guards';
 
 import { AdminConsoleComponent } from './ui/admin-console/admin-console.component';
 import { AdminModelMasterComponent } from './ui/admin-model-master/admin-model-master.component';
@@ -17,14 +17,14 @@ import { TenantsComponent } from './ui/tenants/tenants.component';
 export const adminRoutes: Routes = [
   {
     path: '',
-    // Toda la consola es solo para superadmin (role_level 0): el back ya
-    // rechaza los datos con 403 para roles inferiores, acá evitamos
-    // renderizar la consola vacía.
-    canActivate: [authGuard, superadminGuard],
     component: AdminConsoleComponent,
     children: [
-      { path: 'models', component: AdminModelsComponent },
-      { path: 'maestro', component: AdminModelMasterComponent },
+      {
+        path: 'models',
+        canActivate: [tenantAdminGuard],
+        component: AdminModelsComponent,
+      },
+      { path: 'maestro', canActivate: [authGuard, superadminGuard], component: AdminModelMasterComponent },
       { path: 'logs', component: AdminLogsComponent },
       { path: 'videos', component: AdminVideosComponent },
       { path: 'imagenes', component: AdminImagesComponent },

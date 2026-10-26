@@ -12,7 +12,7 @@
           <div class="skel skel-text" aria-hidden="true"></div>
         } @else {
           <p-select
-            [options]="$any(tenantOptions())"
+            [options]="tenantOptions()"
             [ngModel]="selectedTenantId()"
             (ngModelChange)="onTenantChange($event)"
             optionLabel="label"
@@ -42,30 +42,21 @@
     </div>
   </header>
 
-  <!-- Menubar: aparece al elegir tenant y agrupa las secciones por tema -->
-  @if (showMenubar()) {
-    <p-menubar [model]="menuItems()" styleClass="admin-menubar" />
-  }
-
-  <div class="min-h-0 flex-1">
-    @if (selectedTenantId() !== null || isTenantsRoute()) {
-      <div class="h-full overflow-y-auto pb-4">
-        <router-outlet />
-      </div>
-    } @else {
-      <div class="hidden"><router-outlet /></div>
-
-      <div class="flex h-full flex-col items-center justify-center gap-3 pb-10 text-center">
-        <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-2">
-          <i class="md md-business text-2xl text-ink-muted-on-dark"></i>
-        </div>
-        <div>
-          <p class="font-bold text-ink">{{ 'ADMIN.CONSOLE.SELECT_TENANT_TITLE' | translate }}</p>
-          <p class="mt-1 text-sm text-ink-muted-on-dark">
-            {{ 'ADMIN.CONSOLE.SELECT_TENANT_HINT' | translate }}
-          </p>
-        </div>
-      </div>
+  <!-- Pestañas (según rol) -->
+  <p-tabView [(activeIndex)]="activeTabIndex" (onTabChange)="onTabChange($event)" styleClass="admin-tabs">
+    @for (tab of tabs(); track tab.route; let i = $index) {
+      <p-tabPanel>
+        <ng-template pTemplate="header">
+          <div class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium text-ink-on-dark hover:bg-surface-2">
+            <i [class]="tab.icon" class="text-sm"></i>
+            <span>{{ tab.label }}</span>
+          </div>
+        </ng-template>
+      </p-tabPanel>
     }
+  </p-tabView>
+
+  <div class="min-h-0 flex-1 overflow-hidden">
+    <router-outlet />
   </div>
 </div>
