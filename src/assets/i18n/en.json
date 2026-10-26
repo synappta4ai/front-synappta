@@ -1444,6 +1444,8 @@
     "RESOURCE_PLURAL": "resources",
     "NEGATIVE_PLACEHOLDER": "Negative prompt (optional)",
     "REFS_SELECTED_TOOLTIP": "{{count}} references selected",
+    "AUDIO_REFS": "Audio {{count}}",
+    "AUDIO_REFS_TOOLTIP": "{{count}} reference audio(s): tap to remove",
     "DURATION_TOOLTIP": "Duration: {{hint}}",
     "DURATION_LABEL": "Duration",
     "DURATION_HINT": "Model span · up to {{hint}}",

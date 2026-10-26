@@ -1444,6 +1444,8 @@
     "RESOURCE_PLURAL": "recursos",
     "NEGATIVE_PLACEHOLDER": "Prompt negativo (opcional)",
     "REFS_SELECTED_TOOLTIP": "{{count}} referencias seleccionadas",
+    "AUDIO_REFS": "Audio {{count}}",
+    "AUDIO_REFS_TOOLTIP": "{{count}} audio(s) de referencia: toca para quitar",
     "DURATION_TOOLTIP": "Duración: {{hint}}",
     "DURATION_LABEL": "Duración",
     "DURATION_HINT": "Rango del modelo · hasta {{hint}}",
