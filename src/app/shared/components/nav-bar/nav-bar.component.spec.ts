@@ -1,5 +1,7 @@
+import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { provideRouter, Router } from '@angular/router';
 import { provideTranslateService } from '@ngx-translate/core';
 import { MenuItem } from 'primeng/api';
 import { Popover } from 'primeng/popover';
@@ -12,6 +14,10 @@ interface NavBarInternals {
   menuItems: () => MenuItem[];
 }
 
+/** Comodín para que navigateByUrl emita NavigationEnd en rutas inexistentes. */
+@Component({ template: '' })
+class BlankComponent {}
+
 describe('NavBarComponent tools popover', () => {
   let fixture: ComponentFixture<NavBarComponent>;
   let internals: NavBarInternals;
@@ -19,7 +25,7 @@ describe('NavBarComponent tools popover', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [provideTranslateService()],
+      providers: [provideTranslateService(), provideRouter([{ path: '**', component: BlankComponent }])],
     });
     // Solo el popover: evita campana, tema y menubar (servicios con back).
     TestBed.overrideComponent(NavBarComponent, {
@@ -59,5 +65,23 @@ describe('NavBarComponent tools popover', () => {
     toolsItem().command!({});
 
     expect(toggleSpy).not.toHaveBeenCalled();
+  });
+
+  it('marca Herramientas como activa en las subrutas /tools', async () => {
+    const router = TestBed.inject(Router);
+
+    expect(toolsItem().styleClass).toBeFalsy();
+
+    await router.navigateByUrl('/tools/location');
+    fixture.detectChanges();
+    expect(toolsItem().styleClass).toBe('tools-active');
+
+    await router.navigateByUrl('/tools/pose-sheet');
+    fixture.detectChanges();
+    expect(toolsItem().styleClass).toBe('tools-active');
+
+    await router.navigateByUrl('/agency');
+    fixture.detectChanges();
+    expect(toolsItem().styleClass).toBeFalsy();
   });
 });

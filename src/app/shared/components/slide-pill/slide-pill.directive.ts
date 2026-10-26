@@ -26,6 +26,13 @@ export class SlidePillDirective implements OnInit, OnDestroy {
   readonly appSlidePill = input<string>('');
   /** Clase que marca el item activo (se prueban además 'chip-active' y 'p-menubar-item-link-active'). */
   readonly activeClass = input<string>('active');
+  /** Clase en un ancestro que también marca el item como activo
+   *  (ej. 'tools-active' en el <li> del menubar para items command-only
+   *  sin routerLink). Vacío = solo valen las clases del propio item. */
+  readonly activeParentClass = input<string>('');
+  /** Selector del ancestro donde vive esa clase (ej. '.p-menubar-item');
+   *  vacío = padre directo. */
+  readonly activeParentSelector = input<string>('');
   /** Clases extra para la píldora (ej. 'nav-pill'). */
   readonly pillClass = input<string>('');
   /** Si se provee, la píldora vive en el primer descendiente que matchee (ej. '.p-menubar-root-list'). */
@@ -167,6 +174,18 @@ export class SlidePillDirective implements OnInit, OnDestroy {
     for (const candidate of candidates) {
       for (const item of Array.from(items)) {
         if (item.classList.contains(candidate)) {
+          return item;
+        }
+      }
+    }
+    // Items sin link activo propio (command-only del menubar): vale la marca
+    // del ancestro (ej. Herramientas resaltada en /tools/*).
+    const parentClass = this.activeParentClass().trim();
+    if (parentClass) {
+      const parentSelector = this.activeParentSelector().trim();
+      for (const item of Array.from(items)) {
+        const parent = parentSelector ? item.closest(parentSelector) : item.parentElement;
+        if (parent?.classList.contains(parentClass)) {
           return item;
         }
       }

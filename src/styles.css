@@ -1471,6 +1471,22 @@ input {
   color: var(--color-on-accent);
 }
 
+/* Herramientas activa: el item es command-only (sin routerLink) y PrimeNG
+   nunca le pone la clase de link activo. La marca vive en el <li>
+   (styleClass 'tools-active' cuando la ruta es /tools/*) y se pinta igual
+   que el activo — fondo amarillo + píldora deslizante (ver slide-pill). */
+.p-menubar-root-list
+  > .p-menubar-item.tools-active
+  > .p-menubar-item-content
+  > .p-menubar-item-link,
+.p-menubar-root-list
+  > .p-menubar-item.tools-active
+  > .p-menubar-item-content
+  > .p-menubar-item-link:hover {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
 /* Neutraliza los fondos de hover/focus de PrimeNG sobre el content:
    los estados van en el enlace, que llena la fila. */
 .p-menubar .p-menubar-item-content,

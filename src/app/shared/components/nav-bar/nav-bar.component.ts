@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject, viewChild } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { NgOptimizedImage } from '@angular/common';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { filter, map, startWith } from 'rxjs';
 import { MenuItem, MenuItemCommandEvent } from 'primeng/api';
 import { Menubar } from 'primeng/menubar';
 import { Popover } from 'primeng/popover';
@@ -32,7 +34,18 @@ import { SlidePillDirective } from '../slide-pill/slide-pill.directive';
 export class NavBarComponent {
   private readonly sessionStore = inject(UserSessionStore);
   private readonly translate = inject(TranslateService);
+  private readonly router = inject(Router);
   private readonly toolsPopover = viewChild<Popover>('toolsPopover');
+
+  /** Herramientas se resalta como activa en cualquier subruta /tools/*. */
+  private readonly toolsRouteActive = toSignal(
+    this.router.events.pipe(
+      filter((event) => event instanceof NavigationEnd),
+      map((event) => event.urlAfterRedirects.startsWith('/tools')),
+      startWith(this.router.url.startsWith('/tools')),
+    ),
+    { initialValue: false },
+  );
 
   /** Herramientas del cliente (popover HERRAMIENTAS; se amplía sin tocar el back). */
   protected readonly toolItems = computed(() => {
@@ -102,6 +115,9 @@ export class NavBarComponent {
       {
         label: t('TOOLS.TITLE'),
         icon: 'md md-auto_fix_high',
+        // Sin routerLink PrimeNG nunca la marca activa: el resaltado en
+        // /tools/* lo pone esta clase (ver CSS .tools-active + pill).
+        styleClass: this.toolsRouteActive() ? 'tools-active' : undefined,
         // PrimeNG entrega MenuItemCommandEvent ({ originalEvent, item }), no el
         // evento DOM: el popover necesita el originalEvent para anclarse y no
         // romper su listener de click (TypeError: reading 'contains').
