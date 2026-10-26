@@ -54,6 +54,9 @@
 
   <!-- Formulario -->
   <form [formGroup]="form" (ngSubmit)="save()" class="storage-form" novalidate>
+    <section class="form-section" [attr.aria-label]="'ADMIN.STORAGE.SECTION_CONNECTION' | translate">
+      <h4 class="section-title">{{ 'ADMIN.STORAGE.SECTION_CONNECTION' | translate }}</h4>
+      <div class="form-grid">
     <div class="field field-wide">
       <label for="storage-endpoint">
         {{ 'ADMIN.STORAGE.ENDPOINT' | translate }} <span class="required">*</span>
@@ -102,7 +105,12 @@
       />
       <small class="hint">{{ 'ADMIN.STORAGE.REGION_HINT' | translate }}</small>
     </div>
+      </div>
+    </section>
 
+    <section class="form-section" [attr.aria-label]="'ADMIN.STORAGE.SECTION_CREDENTIALS' | translate">
+      <h4 class="section-title">{{ 'ADMIN.STORAGE.SECTION_CREDENTIALS' | translate }}</h4>
+      <div class="form-grid">
     <div class="field">
       <label for="storage-access-key">
         {{ 'ADMIN.STORAGE.ACCESS_KEY' | translate }}
@@ -143,6 +151,8 @@
         <small class="hint">{{ 'ADMIN.STORAGE.SECRET_KEEP' | translate }}</small>
       }
     </div>
+      </div>
+    </section>
 
     <div class="field field-wide">
       <label for="storage-public-base">{{ 'ADMIN.STORAGE.PUBLIC_BASE' | translate }}</label>

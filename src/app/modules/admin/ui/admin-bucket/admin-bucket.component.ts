@@ -10,6 +10,7 @@ import { TenantStorageDialogComponent } from '../tenant-storage-dialog/tenant-st
   imports: [TenantStorageDialogComponent, TranslatePipe],
   templateUrl: './admin-bucket.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { class: 'block h-full min-h-0' },
 })
 export class AdminBucketComponent {
   private readonly adminTenants = inject(AdminTenantService);
