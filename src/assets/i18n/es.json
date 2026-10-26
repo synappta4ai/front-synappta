@@ -468,6 +468,8 @@
       "MENU_USERS": "Usuarios",
       "MENU_BUCKET": "Bucket",
       "MENU_DRIVE": "Google Drive",
+      "MENU_TITLE": "Admin",
+      "MENU_TENANTS": "Tenants",
       "MENU_SOON": "Próximamente"
     },
     "TENANTS": {

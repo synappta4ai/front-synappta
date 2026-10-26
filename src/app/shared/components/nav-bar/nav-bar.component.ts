@@ -104,14 +104,14 @@ export class NavBarComponent {
       { label: t('APP.ROUTES.RESOURCES'), icon: 'md md-photo_library', routerLink: '/resources' },
       { label: t('APP.ROUTES.MY_GENERATIONS'), icon: 'md md-movie', routerLink: '/my-generations' },
       {
-        label: t('ADMIN.CONSOLE.MENU_TITLE'),
-        icon: 'md md-settings',
-        items: adminItems,
-      },
-      {
         label: t('TOOLS.TITLE'),
         icon: 'md md-auto_fix_high',
         command: (event) => this.toggleTools(event.originalEvent),
+      },
+      {
+        label: t('ADMIN.CONSOLE.MENU_TITLE'),
+        icon: 'md md-settings',
+        items: adminItems,
       },
     ];
   });
