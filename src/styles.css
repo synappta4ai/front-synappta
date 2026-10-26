@@ -1489,13 +1489,76 @@ input {
   box-shadow: none;
 }
 
-.p-menubar
-  .p-menubar-root-list:focus-visible
-  .p-menubar-item.p-focus
-  > .p-menubar-item-content
-  .p-menubar-item-link {
-  outline: 2px solid var(--color-focus-ring);
-  outline-offset: 2px;
+/* Submenu (dropdowns) de la consola Admin y Herramientas */
+.p-menubar .p-menubar-submenu-list {
+  border-radius: var(--radius-xl);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+  background: var(--color-surface);
+  border: 1px solid var(--color-surface-border);
+  padding: 4px 0;
+  min-width: 220px;
+}
+
+.p-menubar .p-menubar-submenu .p-menubar-item {
+  padding: 0;
+  border-bottom: 1px solid var(--color-surface-border);
+}
+
+.p-menubar .p-menubar-submenu .p-menubar-item:last-child {
+  border-bottom: none;
+}
+
+/* Estilos generales del enlace del submenú */
+.p-menubar .p-menubar-submenu .p-menubar-item-link {
+  color: var(--color-ink-on-dark);
+  padding: var(--space-3) var(--space-4);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.4;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  text-decoration: none;
+  transition: background-color 0.12s ease;
+}
+
+/* Icono del enlace del submenú */
+.p-menubar .p-menubar-submenu .p-menubar-item-icon {
+  color: var(--color-ink-muted-on-dark);
+  width: 22px;
+  text-align: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+/* Etiqueta del submenú */
+.p-menubar .p-menubar-submenu .p-menubar-item-label {
+  font-weight: 600;
+  color: var(--color-ink-on-dark);
+}
+
+/* Hover sobre el submenú */
+.p-menubar .p-menubar-submenu .p-menubar-item-link:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-ink-on-dark);
+}
+
+/* Activo: resaltado de la subtab */
+.p-menubar .p-menubar-submenu .p-menubar-item-link.p-menubar-item-link-active {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  box-shadow: inset 3px 0 0 var(--color-accent);
+}
+
+.p-menubar .p-menubar-submenu .p-menubar-item-link.p-menubar-item-link-active:hover {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+/* Característica: margin izquierdo para el triángulo de submenú */
+.p-menubar .p-menubar-submenu .p-menubar-item.p-menu-active > .p-menubar-item-content {
+  background: transparent;
 }
 
 .p-menubar .p-menubar-item-link:focus-visible {
