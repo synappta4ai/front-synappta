@@ -24,7 +24,6 @@ import { Textarea } from 'primeng/textarea';
 import { ToggleSwitch } from 'primeng/toggleswitch';
 import { Tooltip } from 'primeng/tooltip';
 
-import { GenerationEventsStore } from '@core/store/generation.events';
 import {
   AiModel,
   ComposeTarget,
@@ -34,11 +33,9 @@ import {
   VideoFormat,
   VideoPrompt,
 } from '@modules/agency/interfaces';
-import { AgencyService, InfoproductService, ModelCatalogService } from '@modules/agency/services';
+import { InfoproductService, ModelCatalogService } from '@modules/agency/services';
 import { FileAsset } from '@modules/library/interfaces';
 import { LibraryService } from '@modules/library/services';
-import { StudioTake } from '@modules/studio/interfaces';
-import { StudioService } from '@modules/studio/services';
 import { ModelSelectComponent } from '../model-select/model-select.component';
 import {
   Attachment,
@@ -50,7 +47,8 @@ import {
 
 type Step = 1 | 2 | 3;
 
-const FALLBACK_RATIOS = ['16:9', '9:16', '1:1', '4:3', '3:4', '21:9'];
+const FALLBACK_RATIOS = ['9:16', '16:9', '1:1', '4:3', '3:4', '21:9'];
+const DEFAULT_VIDEO_MODEL = 'higgsfield-seedance-2-5-reference';
 const FALLBACK_RESOLUTIONS = ['480p', '720p', '1080p'];
 
 /**
@@ -84,9 +82,6 @@ export class InfoproductComponent {
   private readonly infoproduct = inject(InfoproductService);
   private readonly library = inject(LibraryService);
   private readonly catalog = inject(ModelCatalogService);
-  private readonly agencyService = inject(AgencyService);
-  private readonly studioService = inject(StudioService);
-  private readonly eventsStore = inject(GenerationEventsStore);
   private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
 
@@ -158,7 +153,6 @@ export class InfoproductComponent {
   protected readonly ratio = signal('');
   protected readonly resolution = signal('');
   protected readonly audio = signal(false);
-  protected readonly launching = signal(false);
   protected readonly launched = signal<ReadonlySet<number>>(new Set());
 
   protected readonly ratioOptions = computed(() =>
@@ -185,6 +179,16 @@ export class InfoproductComponent {
       .listFormats()
       .pipe(catchError(() => of([] as VideoFormat[])))
       .subscribe((formats) => this.formats.set(formats));
+    // Modelo por defecto: Seedance 2.5 (Higgsfield) con ingredientes de
+    // imagen y audio, para que fondos poco aptos no confundan al generador.
+    this.catalog
+      .byModality('video')
+      .pipe(catchError(() => of([] as AiModel[])))
+      .subscribe((models) => {
+        if (this.videoModel()) return;
+        const preferred = models.find((m) => m.name === DEFAULT_VIDEO_MODEL);
+        if (preferred) this.onVideoModelChange(preferred);
+      });
   }
 
   // ── Paso 1 ──────────────────────────────────────────────────────
@@ -374,116 +378,55 @@ export class InfoproductComponent {
     this.launch(Array.from({ length: count }, (_, i) => i));
   }
 
+  /**
+   * Arma los requests y va directo al Estudio: ahí quedan cargados prompt e
+   * insumos (imágenes y audio) y la generación arranca de inmediato; si algo
+   * falla se repite desde el mismo panel sin volver a subir nada.
+   */
   private launch(indexes: number[]): void {
     const vp = this.result();
     const model = this.videoModel();
-    if (!vp || !model || this.launching() || indexes.length === 0) return;
+    if (!vp || !model || indexes.length === 0) return;
     this.error.set(null);
-    this.launching.set(true);
 
     const code = this.takeCode();
-    this.studioService
-      .ensureTakeSlot(`VideoMachine ${new Date().toLocaleDateString()}`, code)
-      .pipe(
-        catchError((err: unknown) => {
-          this.fail(err, 'VIDEOMACHINE.ERR_LAUNCH');
-          this.launching.set(false);
-          return EMPTY;
-        }),
-      )
-      .subscribe(({ project, piece }) => {
-        let pending = indexes.length;
-        let handoff: { index: number; payload: GenerateRequest } | null = null;
-        const settle = () => {
-          pending -= 1;
-          if (pending > 0) return;
-          this.launching.set(false);
-          if (handoff) this.openInStudio(handoff.payload);
-        };
-        for (const index of indexes) {
-          const text = promptForGeneration(this.segmentPrompts()[index] ?? '');
-          const content: GenerateRequest['content'] = [
-            ...vp.ingredients.map((ing) => ({
-              type: 'image' as const,
-              id: ing.file_id,
-              name: this.attachments().find((a) => a.id === ing.file_id)?.name,
-            })),
-            ...(buildTarget(model).audio_reference
-              ? vp.audio_refs.map((ref) => ({
-                  type: 'audio' as const,
-                  id: ref.file_id,
-                  name: this.attachments().find((a) => a.id === ref.file_id)?.name,
-                }))
-              : []),
-            { type: 'text' as const, text },
-          ];
-          const duration = this.segmentDurations()[index] ?? vp.duration;
-          const payload: GenerateRequest = {
-            model: model.name,
-            content,
-            ratio: this.ratio(),
-            duration,
-            resolution: this.resolution(),
-            generate_audio: this.supportsAudio() ? this.audio() : undefined,
-            event_id: project.id,
-            piece_id: piece.id,
-            piece_code: piece.piece_code ?? piece.id,
-            generation_number: Date.now() + index,
-          };
-          const takeId = `pending_${Date.now()}_${index}`;
-          const take: StudioTake = {
-            id: takeId,
-            prompt: text,
-            modelName: model.name,
-            modelDisplayName: model.display_name ?? model.name,
-            modelType: model.type === 'downloaded' ? 'downloaded' : 'api',
-            ratio: this.ratio(),
-            resolution: this.resolution(),
-            duration,
-            status: 'queued',
-            progress: 0,
-            videoUrl: null,
-            error: null,
-            createdAt: Date.now(),
-            ratingGood: false,
-            ratingFinal: false,
-            eventName: project.name,
-            refImages: vp.ingredients.map((ing) => ({
-              id: ing.file_id,
-              name: this.attachments().find((a) => a.id === ing.file_id)?.name ?? ing.tag,
-            })),
-            request: payload,
-          };
-          this.eventsStore.upsert(take);
-          this.agencyService
-            .generate('video', payload)
-            .pipe(
-              catchError((err: unknown) => {
-                this.fail(err, 'VIDEOMACHINE.ERR_LAUNCH');
-                this.eventsStore.remove(takeId);
-                settle();
-                return EMPTY;
-              }),
-            )
-            .subscribe((response) => {
-              this.eventsStore.patch(takeId, {
-                id: response.taskId,
-                costCredits: response.cost_credits ?? 0,
-                costUsd: response.cost_usd ?? 0,
-                transactionId: response.provider_transaction_id || null,
-              });
-              this.eventsStore.track(response.taskId);
-              this.launched.update((set) => new Set(set).add(index));
-              if (!handoff || index < handoff.index) handoff = { index, payload };
-              settle();
-            });
-        }
-      });
-  }
+    const useAudio = buildTarget(model).audio_reference;
+    const payloads = indexes.map((index) => {
+      const text = promptForGeneration(this.segmentPrompts()[index] ?? '');
+      const content: GenerateRequest['content'] = [
+        ...vp.ingredients.map((ing) => ({
+          type: 'image' as const,
+          id: ing.file_id,
+          name: this.attachments().find((a) => a.id === ing.file_id)?.name,
+        })),
+        ...(useAudio
+          ? vp.audio_refs.map((ref) => ({
+              type: 'audio' as const,
+              id: ref.file_id,
+              name: this.attachments().find((a) => a.id === ref.file_id)?.name,
+            }))
+          : []),
+        { type: 'text' as const, text },
+      ];
+      const payload: GenerateRequest = {
+        model: model.name,
+        content,
+        ratio: this.ratio(),
+        duration: this.segmentDurations()[index] ?? vp.duration,
+        resolution: this.resolution(),
+        generate_audio: this.supportsAudio() ? this.audio() : undefined,
+        // El Estudio resuelve proyecto/pieza al encolar.
+        event_id: '',
+        piece_id: '',
+        piece_code: code,
+        generation_number: 0,
+      };
+      return payload;
+    });
 
-  /** Lleva la generación al Estudio con prompt e insumos cargados (reuso). */
-  private openInStudio(payload: GenerateRequest): void {
-    sessionStorage.setItem('studio:reuse', JSON.stringify(payload));
+    this.launched.update((set) => new Set([...set, ...indexes]));
+    sessionStorage.setItem('studio:reuse', JSON.stringify(payloads[0]));
+    sessionStorage.setItem('studio:autostart', JSON.stringify(payloads));
     void this.router.navigate(['/studio']);
   }
 

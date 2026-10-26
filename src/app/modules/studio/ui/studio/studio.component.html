@@ -396,6 +396,17 @@
         >
           <i class="md md-attach_file"></i> {{ selectedAssetIds().size }}
         </span>
+        @if (reusedAudio().length > 0) {
+          <button
+            type="button"
+            class="foot-chip"
+            [title]="'STUDIO.AUDIO_REFS_TOOLTIP' | translate: { count: reusedAudio().length }"
+            [attr.aria-label]="'STUDIO.AUDIO_REFS_TOOLTIP' | translate: { count: reusedAudio().length }"
+            (click)="clearReusedAudio()"
+          >
+            <i class="md md-close"></i> {{ 'STUDIO.AUDIO_REFS' | translate: { count: reusedAudio().length } }}
+          </button>
+        }
         <p-select
           [ngModel]="resolution()"
           (ngModelChange)="resolution.set($event)"
@@ -684,9 +695,18 @@
               </div>
             }
             @default {
-              <div class="viewer-placeholder">
-                <i class="md md-autorenew md-spin text-3xl"></i>
-                <p>
+              <video
+                class="viewer-media viewer-loading-media"
+                [src]="loadingVideo"
+                autoplay
+                loop
+                [muted]="true"
+                playsinline
+                preload="auto"
+                aria-hidden="true"
+              ></video>
+              <div class="viewer-loading-progress" role="status" aria-live="polite">
+                <p class="viewer-loading-label">
                   {{
                     (take.status === 'queued' ? 'STUDIO.VIEWER_QUEUED' : 'STUDIO.VIEWER_GENERATING')
                       | translate
@@ -695,7 +715,7 @@
                 <div class="progress-track">
                   <div class="progress-fill" [style.--progress]="take.progress / 100 + ''"></div>
                 </div>
-                <p class="muted small">{{ take.progress }}%</p>
+                <p class="viewer-loading-pct">{{ take.progress }}%</p>
               </div>
             }
           }

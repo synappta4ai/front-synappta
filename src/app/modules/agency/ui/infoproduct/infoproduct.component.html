@@ -666,8 +666,6 @@
                 <p-button
                   [label]="'VIDEOMACHINE.GEN_ONE' | translate"
                   icon="md md-play_arrow"
-                  [loading]="launching()"
-                  [disabled]="launching()"
                   (onClick)="generateSegment(i)"
                 />
                 @if (launched().has(i)) {
@@ -683,8 +681,6 @@
             <p-button
               [label]="'VIDEOMACHINE.GEN_ALL' | translate: { count: vp.segments.length }"
               icon="md md-play_arrow"
-              [loading]="launching()"
-              [disabled]="launching()"
               (onClick)="generateAll()"
             />
           }
