@@ -90,11 +90,11 @@ export class NavBarComponent {
       { label: t('ADMIN.CONSOLE.MENU_TENANTS'), icon: 'md md-business', routerLink: '/admin/tenants' },
     ];
 
-    // Sub-items del menú de herramientas (drop-down HERRAMIENTAS).
+    // Sub-items del menú de herramientas (popover HERRAMIENTAS; se amplía sin tocar el back).
     const toolsItems: MenuItem[] = [
-      { label: t('TOOLS.POSE_SHEET'), icon: 'md md-person', routerLink: '/tools/pose-sheet' },
-      { label: t('TOOLS.LOCATION'), icon: 'md md-place', routerLink: '/tools/location' },
-      { label: t('TOOLS.STORYBOARD'), icon: 'md md-movie', routerLink: '/tools/storyboard' },
+      { label: t('TOOLS.POSE_SHEET'), description: t('TOOLS.POSE_SHEET_DESC'), icon: 'md md-person', routerLink: '/tools/pose-sheet' },
+      { label: t('TOOLS.LOCATION'), description: t('TOOLS.LOCATION_DESC'), icon: 'md md-place', routerLink: '/tools/location' },
+      { label: t('TOOLS.STORYBOARD'), description: t('TOOLS.STORYBOARD_DESC'), icon: 'md md-movie', routerLink: '/tools/storyboard' },
     ];
 
     return [
@@ -106,9 +106,9 @@ export class NavBarComponent {
       {
         label: t('TOOLS.TITLE'),
         icon: 'md md-auto_fix_high',
-        routerLink: '/tools',
-        routerLinkActiveOptions: { exact: false },
-        items: toolsItems,
+        command: (event: Event) => {
+          this.toggleTools(event);
+        },
       },
       {
         label: t('ADMIN.CONSOLE.MENU_TITLE'),
