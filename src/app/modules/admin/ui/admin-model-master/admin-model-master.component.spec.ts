@@ -1,3 +1,4 @@
+import type { WritableSignal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideTranslateService } from '@ngx-translate/core';
 import { of } from 'rxjs';
@@ -46,10 +47,14 @@ interface Internals {
   filteredRows(): MasterRowShape[];
   dirty(): boolean;
   setEnabled(name: string, enabled: boolean): void;
-  setRecommendTags(name: string, raw: string | null): void;
+  toggleRecommendTag(name: string, tag: string, checked: boolean): void;
+  addCustomTags(name: string, raw: string | null): string;
+  providerFilter: WritableSignal<string | 'all'>;
+  statusFilter: WritableSignal<'all' | 'active' | 'inactive'>;
   addMeta(name: string, keyInput: HTMLInputElement, valueInput: HTMLInputElement): void;
   removeMeta(name: string, key: string): void;
   setRank(name: string, rank: number | null): void;
+  predefinedTags(): string[];
   save(): void;
 }
 
@@ -102,11 +107,34 @@ describe('AdminModelMasterComponent', () => {
     expect(component.dirty()).toBe(false);
   });
 
-  it('acepta una o varias etiquetas separadas por coma', () => {
-    component.setRecommendTags('gem', 'eficiente, barato , ,EFICIENTE');
-    const row = component.filteredRows().find((r) => r.name === 'gem');
-    expect(row?.recommendTags).toEqual(['eficiente', 'barato']);
+  it('marca y desmarca etiquetas predefinidas con checks', () => {
+    expect(component.predefinedTags()).toContain('eficiente');
+    component.toggleRecommendTag('gem', 'eficiente', true);
+    expect(component.filteredRows().find((r) => r.name === 'gem')?.recommendTags).toEqual([
+      'eficiente',
+    ]);
+    component.toggleRecommendTag('gem', 'EFICIENTE', false);
+    expect(component.filteredRows().find((r) => r.name === 'gem')?.recommendTags).toEqual([]);
     expect(component.dirty()).toBe(true);
+  });
+
+  it('acepta una o varias etiquetas personalizadas separadas por coma', () => {
+    component.addCustomTags('gem', 'top, barato , ,TOP');
+    const row = component.filteredRows().find((r) => r.name === 'gem');
+    expect(row?.recommendTags).toEqual(['top', 'barato']);
+    expect(component.dirty()).toBe(true);
+  });
+
+  it('filtra por estado y por proveedor', () => {
+    component.statusFilter.set('inactive');
+    expect(component.filteredRows().map((r) => r.name)).toEqual(['soul']);
+    component.statusFilter.set('active');
+    expect(component.filteredRows().map((r) => r.name)).toEqual(['gem']);
+    component.statusFilter.set('all');
+    component.providerFilter.set('higgsfield');
+    expect(component.filteredRows().length).toBe(2);
+    component.providerFilter.set('otro');
+    expect(component.filteredRows().length).toBe(0);
   });
 
   it('agrega y quita pares de metadata', () => {
@@ -122,7 +150,7 @@ describe('AdminModelMasterComponent', () => {
   });
 
   it('guarda etiquetas y metadata', () => {
-    component.setRecommendTags('gem', 'top');
+    component.addCustomTags('gem', 'top');
     const key = { value: 'nota' } as HTMLInputElement;
     const value = { value: 'interna' } as HTMLInputElement;
     component.addMeta('gem', key, value);

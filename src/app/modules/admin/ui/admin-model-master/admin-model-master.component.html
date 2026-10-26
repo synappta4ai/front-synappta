@@ -1,5 +1,5 @@
-<div animate.enter="anim-page">
-  <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
+<div class="flex h-full min-h-0 flex-col gap-3" animate.enter="anim-page">
+  <div class="flex flex-wrap items-end justify-between gap-3">
     <div>
       <h3 class="font-bold text-ink-on-dark">{{ 'ADMIN.MODEL_MASTER.TITLE' | translate }}</h3>
       <p class="text-sm text-ink-muted-on-dark">{{ 'ADMIN.MODEL_MASTER.DESC' | translate }}</p>
@@ -15,15 +15,11 @@
   </div>
 
   @if (error(); as message) {
-    <div class="mb-6">
-      <p-message severity="error" [text]="message" styleClass="w-full" />
-    </div>
+    <p-message severity="error" [text]="message" styleClass="w-full" />
   }
 
   @if (saved()) {
-    <div class="mb-6">
-      <p-message severity="success" [text]="'ADMIN.MODEL_MASTER.SAVED' | translate" styleClass="w-full" />
-    </div>
+    <p-message severity="success" [text]="'ADMIN.MODEL_MASTER.SAVED' | translate" styleClass="w-full" />
   }
 
   @if (loading()) {
@@ -34,13 +30,15 @@
       <div class="skel skel-text" aria-hidden="true"></div>
     </div>
   } @else {
-    <div class="mb-4 flex flex-wrap items-center gap-3">
+    <div class="flex flex-wrap items-center gap-2">
       <input
         pInputText
-        class="w-64"
+        class="w-56"
+        size="small"
         [ngModel]="search()"
         (ngModelChange)="search.set($event)"
         [placeholder]="'ADMIN.MODEL_MASTER.SEARCH_PH' | translate"
+        [attr.aria-label]="'ADMIN.MODEL_MASTER.SEARCH_PH' | translate"
       />
       <p-select
         [options]="modalityOptions()"
@@ -48,156 +46,275 @@
         optionValue="value"
         [ngModel]="modalityFilter()"
         (ngModelChange)="modalityFilter.set($event)"
-        styleClass="w-40"
+        styleClass="w-32"
+        size="small"
       />
-      <span class="text-xs text-ink-muted-on-dark">
+      <p-select
+        [options]="providerOptions()"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="providerFilter()"
+        (ngModelChange)="providerFilter.set($event)"
+        [filter]="providerOptions().length > 5"
+        styleClass="w-36"
+        size="small"
+        [attr.aria-label]="'ADMIN.MODEL_MASTER.COL_PROVIDER' | translate"
+      />
+      <p-selectButton
+        [options]="statusOptions()"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="statusFilter()"
+        (ngModelChange)="statusFilter.set($event)"
+        size="small"
+        [allowEmpty]="false"
+        [attr.aria-label]="'ADMIN.MODEL_MASTER.COL_ACTIVE' | translate"
+      />
+      <span class="ml-auto text-xs text-ink-muted-on-dark">
         {{ 'ADMIN.MODEL_MASTER.SUMMARY' | translate: { favorites: favoritesCount(), disabled: disabledCount() } }}
       </span>
     </div>
 
-    <p-table [value]="filteredRows()" dataKey="name" styleClass="w-full">
-      <ng-template pTemplate="header">
-        <tr>
-          <th>{{ 'ADMIN.MODEL_MASTER.COL_MODEL' | translate }}</th>
-          <th>{{ 'ADMIN.MODEL_MASTER.COL_MODALITY' | translate }}</th>
-          <th>{{ 'ADMIN.MODEL_MASTER.COL_PROVIDER' | translate }}</th>
-          <th>{{ 'ADMIN.MODEL_MASTER.COL_ACTIVE' | translate }}</th>
-          <th>{{ 'ADMIN.MODEL_MASTER.COL_TAGS' | translate }}</th>
-          <th>{{ 'ADMIN.MODEL_MASTER.COL_META' | translate }}</th>
-          <th>{{ 'ADMIN.MODEL_MASTER.COL_FAVORITE' | translate }}</th>
-        </tr>
-      </ng-template>
-      <ng-template pTemplate="body" let-row>
-        <tr [class.opacity-50]="!row.enabled">
-          <td>
-            <p class="font-bold">{{ row.model?.display_name ?? row.name }}</p>
-            @if (row.model) {
-              <p class="text-xs opacity-60">{{ row.name }}</p>
-            } @else {
-              <p-tag value="?" severity="danger" styleClass="text-xs" />
-            }
-          </td>
-          <td>
-            @if (row.model?.modality) {
-              <p-tag [value]="row.model.modality" severity="secondary" styleClass="text-xs" />
-            } @else {
-              <span class="text-xs opacity-60">—</span>
-            }
-          </td>
-          <td>
-            @if (row.model?.credential_provider) {
-              <p-tag [value]="row.model.credential_provider" severity="info" styleClass="text-xs" />
-            } @else if (row.model?.type === 'downloaded') {
-              <p-tag value="worker" severity="success" styleClass="text-xs" />
-            } @else {
-              <span class="text-xs opacity-60">—</span>
-            }
-          </td>
-          <td>
-            <p-toggleSwitch
-              [ngModel]="row.enabled"
-              (ngModelChange)="setEnabled(row.name, $event)"
-              [ariaLabel]="'ADMIN.MODEL_MASTER.COL_ACTIVE' | translate"
-            />
-          </td>
-          <td>
-            <div class="flex flex-wrap items-center gap-1">
-              @for (tag of row.recommendTags; track tag) {
-                <p-tag [value]="tag" severity="success" styleClass="text-xs" />
+    <div class="min-h-0 flex-1 overflow-auto rounded-2xl border border-surface-border">
+      <p-table
+        [value]="filteredRows()"
+        [rowTrackBy]="trackByName"
+        dataKey="name"
+        [scrollable]="true"
+        scrollHeight="flex"
+        styleClass="w-full"
+      >
+        <ng-template pTemplate="header">
+          <tr>
+            <th>{{ 'ADMIN.MODEL_MASTER.COL_MODEL' | translate }}</th>
+            <th class="w-24">{{ 'ADMIN.MODEL_MASTER.COL_MODALITY' | translate }}</th>
+            <th class="w-28">{{ 'ADMIN.MODEL_MASTER.COL_PROVIDER' | translate }}</th>
+            <th class="w-20">{{ 'ADMIN.MODEL_MASTER.COL_ACTIVE' | translate }}</th>
+            <th>{{ 'ADMIN.MODEL_MASTER.COL_TAGS' | translate }}</th>
+            <th class="w-28">{{ 'ADMIN.MODEL_MASTER.COL_META' | translate }}</th>
+            <th class="w-28">{{ 'ADMIN.MODEL_MASTER.COL_FAVORITE' | translate }}</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-row>
+          <tr [class.opacity-50]="!row.enabled">
+            <td>
+              <p class="truncate font-bold" [pTooltip]="row.name" showDelay="400" tooltipPosition="top">
+                {{ row.model?.display_name ?? row.name }}
+              </p>
+              @if (row.model) {
+                <p class="truncate text-xs opacity-60">{{ row.name }}</p>
+              } @else {
+                <p-tag value="?" severity="danger" styleClass="text-xs" />
               }
-            </div>
-            <input
-              pInputText
-              class="mt-1 w-44"
-              [ngModel]="row.recommendTags.join(', ')"
-              (ngModelChange)="setRecommendTags(row.name, $event)"
-              [placeholder]="'ADMIN.MODEL_MASTER.TAGS_PH' | translate"
-              [ariaLabel]="'ADMIN.MODEL_MASTER.COL_TAGS' | translate"
-            />
-          </td>
-          <td>
-            <div class="flex flex-wrap items-center gap-1">
-              @for (entry of metaEntries(row); track entry[0]) {
-                <p-tag severity="secondary" styleClass="text-xs">
-                  <span class="font-bold">{{ entry[0] }}</span>
-                  <span>&nbsp;=&nbsp;{{ entry[1] }}</span>
-                  <span
-                    role="button"
-                    tabindex="0"
-                    class="ml-1 cursor-pointer"
-                    (click)="removeMeta(row.name, entry[0])"
-                    (keydown.enter)="removeMeta(row.name, entry[0])"
-                    [attr.aria-label]="entry[0]"
-                    >✕</span
-                  >
-                </p-tag>
+            </td>
+            <td>
+              @if (row.model?.modality) {
+                <p-tag [value]="row.model.modality" severity="secondary" styleClass="text-xs" />
+              } @else {
+                <span class="text-xs opacity-60">—</span>
               }
-            </div>
-            <div class="mt-1 flex items-center gap-1">
-              <input
-                pInputText
-                #metaKey
-                class="w-24"
-                [placeholder]="'ADMIN.MODEL_MASTER.META_KEY_PH' | translate"
-                [ariaLabel]="'ADMIN.MODEL_MASTER.META_KEY_PH' | translate"
+            </td>
+            <td>
+              @if (row.model?.credential_provider) {
+                <p-tag [value]="row.model.credential_provider" severity="info" styleClass="text-xs" />
+              } @else if (row.model?.type === 'downloaded') {
+                <p-tag value="worker" severity="success" styleClass="text-xs" />
+              } @else {
+                <span class="text-xs opacity-60">—</span>
+              }
+            </td>
+            <td>
+              <p-toggleSwitch
+                [ngModel]="row.enabled"
+                (ngModelChange)="setEnabled(row.name, $event)"
+                [ariaLabel]="'ADMIN.MODEL_MASTER.COL_ACTIVE' | translate"
               />
-              <input
-                pInputText
-                #metaValue
-                class="w-24"
-                [placeholder]="'ADMIN.MODEL_MASTER.META_VALUE_PH' | translate"
-                [ariaLabel]="'ADMIN.MODEL_MASTER.META_VALUE_PH' | translate"
-                (keydown.enter)="addMeta(row.name, metaKey, metaValue)"
-              />
-              <p-button
-                icon="md md-add"
-                size="small"
-                [text]="true"
-                [ariaLabel]="'ADMIN.MODEL_MASTER.META_ADD' | translate"
-                [pTooltip]="'ADMIN.MODEL_MASTER.META_ADD' | translate"
-                (onClick)="addMeta(row.name, metaKey, metaValue)"
-              />
-            </div>
-          </td>
-          <td>
-            <div class="flex items-center gap-2">
-              <p-inputNumber
-                [ngModel]="row.favoriteRank"
-                (ngModelChange)="setRank(row.name, $event)"
-                [min]="0"
-                [max]="99"
-                [showButtons]="false"
-                inputStyleClass="w-16"
-                [ariaLabel]="'ADMIN.MODEL_MASTER.COL_FAVORITE' | translate"
-              />
-              @if (row.model === null) {
+            </td>
+            <td>
+              <div class="flex items-center gap-1">
+                <div class="flex min-w-0 flex-1 flex-wrap items-center gap-1">
+                  @for (tag of row.recommendTags; track tag) {
+                    <p-tag [value]="tag" severity="success" styleClass="text-xs" />
+                  } @empty {
+                    <span class="text-xs opacity-60">—</span>
+                  }
+                </div>
                 <p-button
-                  icon="md md-delete"
+                  icon="md md-edit"
                   size="small"
-                  severity="danger"
                   [text]="true"
-                  [pTooltip]="'ADMIN.MODEL_MASTER.ORPHAN_REMOVE' | translate"
+                  [ariaLabel]="'ADMIN.MODEL_MASTER.TAGS_EDIT' | translate"
+                  [pTooltip]="'ADMIN.MODEL_MASTER.TAGS_EDIT' | translate"
                   showDelay="400"
                   tooltipPosition="top"
-                  (onClick)="removeRow(row.name)"
+                  (onClick)="openTags(row.name)"
                 />
-              }
-            </div>
-          </td>
-        </tr>
-      </ng-template>
-      <ng-template pTemplate="emptymessage">
-        <tr>
-          <td colspan="7" class="text-center text-sm opacity-60">
-            {{ 'ADMIN.MODEL_MASTER.EMPTY' | translate }}
-          </td>
-        </tr>
-      </ng-template>
-    </p-table>
+              </div>
+            </td>
+            <td>
+              <p-button
+                [label]="
+                  metaEntries(row).length > 0
+                    ? ('ADMIN.MODEL_MASTER.META_COUNT' | translate: { count: metaEntries(row).length })
+                    : '—'
+                "
+                icon="md md-data_object"
+                size="small"
+                [text]="true"
+                [ariaLabel]="'ADMIN.MODEL_MASTER.COL_META' | translate"
+                [pTooltip]="'ADMIN.MODEL_MASTER.META_EDIT' | translate"
+                showDelay="400"
+                tooltipPosition="top"
+                (onClick)="openMeta(row.name)"
+              />
+            </td>
+            <td>
+              <div class="flex items-center gap-1">
+                <p-inputNumber
+                  [ngModel]="row.favoriteRank"
+                  (ngModelChange)="setRank(row.name, $event)"
+                  [min]="0"
+                  [max]="99"
+                  [showButtons]="false"
+                  inputStyleClass="w-14"
+                  size="small"
+                  [ariaLabel]="'ADMIN.MODEL_MASTER.COL_FAVORITE' | translate"
+                />
+                @if (row.model === null) {
+                  <p-button
+                    icon="md md-delete"
+                    size="small"
+                    severity="danger"
+                    [text]="true"
+                    [pTooltip]="'ADMIN.MODEL_MASTER.ORPHAN_REMOVE' | translate"
+                    showDelay="400"
+                    tooltipPosition="top"
+                    (onClick)="removeRow(row.name)"
+                  />
+                }
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="7" class="text-center text-sm opacity-60">
+              {{ 'ADMIN.MODEL_MASTER.EMPTY' | translate }}
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
 
     @if (orphans().length > 0) {
-      <p-message severity="warn" styleClass="w-full mt-6" [escape]="false"
+      <p-message severity="warn" styleClass="w-full" [escape]="false"
         [text]="'ADMIN.MODEL_MASTER.ORPHANS_HINT' | translate" />
     }
   }
+
+  <!-- Diálogo de etiquetas: checks predefinidas + personalizada (sin perder el foco). -->
+  <p-dialog
+    [visible]="tagsDialogRow() !== null"
+    [header]="'ADMIN.MODEL_MASTER.TAGS_TITLE' | translate"
+    [modal]="true"
+    [dismissableMask]="true"
+    (visibleChange)="onDialogVisible($event)"
+    styleClass="w-[26rem] max-w-[92vw]"
+  >
+    @if (tagsDialogRow(); as name) {
+      <div class="flex flex-col gap-2">
+        @for (tag of predefinedTags(); track tag) {
+          <div class="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-surface-2">
+            <p-checkbox
+              [inputId]="'tag-' + name + '-' + tag"
+              [ngModel]="rowHasTag(name, tag)"
+              [binary]="true"
+              (ngModelChange)="toggleRecommendTag(name, tag, $event)"
+            />
+            <label [for]="'tag-' + name + '-' + tag" class="flex-1 cursor-pointer text-sm">
+              {{ tag }}
+            </label>
+          </div>
+        }
+        <div class="mt-1 flex items-center gap-1">
+          <input
+            pInputText
+            #customTag
+            class="min-w-0 flex-1"
+            size="small"
+            [placeholder]="'ADMIN.MODEL_MASTER.TAGS_CUSTOM_PH' | translate"
+            [attr.aria-label]="'ADMIN.MODEL_MASTER.TAGS_CUSTOM_PH' | translate"
+            (keydown.enter)="customTag.value = addCustomTags(name, customTag.value)"
+          />
+          <p-button
+            icon="md md-add"
+            size="small"
+            [text]="true"
+            [ariaLabel]="'ADMIN.MODEL_MASTER.TAGS_ADD' | translate"
+            [pTooltip]="'ADMIN.MODEL_MASTER.TAGS_ADD' | translate"
+            (onClick)="customTag.value = addCustomTags(name, customTag.value)"
+          />
+        </div>
+      </div>
+    }
+  </p-dialog>
+
+  <!-- Diálogo de metadata: lista existente + alta nueva (sin perder el foco). -->
+  <p-dialog
+    [visible]="metaDialogRow() !== null"
+    [header]="'ADMIN.MODEL_MASTER.META_TITLE' | translate"
+    [modal]="true"
+    [dismissableMask]="true"
+    (visibleChange)="onDialogVisible($event)"
+    styleClass="w-[28rem] max-w-[92vw]"
+  >
+    @if (metaDialogRow(); as name) {
+      <div class="flex flex-col gap-2">
+        @for (entry of metaEntries(rows()[name]!); track entry[0]) {
+          <div class="flex items-center gap-2 rounded-lg bg-surface-2 px-2 py-1.5 text-sm">
+            <span class="min-w-0 flex-1 truncate">
+              <span class="font-bold">{{ entry[0] }}</span>
+              <span class="opacity-60">&nbsp;=&nbsp;{{ entry[1] }}</span>
+            </span>
+            <p-button
+              icon="md md-delete"
+              size="small"
+              severity="danger"
+              [text]="true"
+              [ariaLabel]="'ADMIN.MODEL_MASTER.META_REMOVE' | translate"
+              (onClick)="removeMeta(name, entry[0])"
+            />
+          </div>
+        } @empty {
+          <p class="text-sm opacity-60">{{ 'ADMIN.MODEL_MASTER.META_EMPTY' | translate }}</p>
+        }
+        <div class="mt-1 flex items-center gap-1">
+          <input
+            pInputText
+            #metaKey
+            class="w-28"
+            size="small"
+            [placeholder]="'ADMIN.MODEL_MASTER.META_KEY_PH' | translate"
+            [ariaLabel]="'ADMIN.MODEL_MASTER.META_KEY_PH' | translate"
+          />
+          <input
+            pInputText
+            #metaValue
+            class="min-w-0 flex-1"
+            size="small"
+            [placeholder]="'ADMIN.MODEL_MASTER.META_VALUE_PH' | translate"
+            [ariaLabel]="'ADMIN.MODEL_MASTER.META_VALUE_PH' | translate"
+            (keydown.enter)="addMeta(name, metaKey, metaValue)"
+          />
+          <p-button
+            icon="md md-add"
+            size="small"
+            [ariaLabel]="'ADMIN.MODEL_MASTER.META_ADD' | translate"
+            [pTooltip]="'ADMIN.MODEL_MASTER.META_ADD' | translate"
+            (onClick)="addMeta(name, metaKey, metaValue)"
+          />
+        </div>
+      </div>
+    }
+  </p-dialog>
 </div>

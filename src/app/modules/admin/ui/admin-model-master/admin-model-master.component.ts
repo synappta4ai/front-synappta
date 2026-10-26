@@ -4,10 +4,13 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { catchError, EMPTY, finalize } from 'rxjs';
 
 import { Button } from 'primeng/button';
+import { Checkbox } from 'primeng/checkbox';
+import { Dialog } from 'primeng/dialog';
 import { InputNumber } from 'primeng/inputnumber';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
 import { Select } from 'primeng/select';
+import { SelectButton } from 'primeng/selectbutton';
 import { TableModule } from 'primeng/table';
 import { Tag } from 'primeng/tag';
 import { ToggleSwitch } from 'primeng/toggleswitch';
@@ -32,6 +35,12 @@ function defaultRow(): Pick<MasterRow, 'enabled' | 'recommendTags' | 'metadata' 
   return { enabled: true, recommendTags: [], metadata: {}, favoriteRank: 0 };
 }
 
+/** Etiquetas base sugeridas cuando ninguna fila trae tags (se completa con las usadas). */
+const BASE_TAGS = ['eficiente', 'barato', 'rápido', 'calidad'];
+
+/** Filtro de estado de la tabla. */
+type StatusFilter = 'all' | 'active' | 'inactive';
+
 /**
  * Maestro del catálogo (platform superadmin): decide qué modelos ve cada
  * tenant. Desactivar oculta el modelo en todos los listados y bloquea su
@@ -45,10 +54,13 @@ function defaultRow(): Pick<MasterRow, 'enabled' | 'recommendTags' | 'metadata' 
     FormsModule,
     TranslatePipe,
     Button,
+    Checkbox,
+    Dialog,
     InputNumber,
     InputText,
     Message,
     Select,
+    SelectButton,
     TableModule,
     Tag,
     ToggleSwitch,
@@ -56,6 +68,7 @@ function defaultRow(): Pick<MasterRow, 'enabled' | 'recommendTags' | 'metadata' 
   ],
   templateUrl: './admin-model-master.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { class: 'block h-full min-h-0' },
 })
 export class AdminModelMasterComponent {
   private readonly adminService = inject(AdminService);
@@ -68,6 +81,8 @@ export class AdminModelMasterComponent {
 
   protected readonly search = signal('');
   protected readonly modalityFilter = signal<Modality | 'all'>('all');
+  protected readonly providerFilter = signal<string | 'all'>('all');
+  protected readonly statusFilter = signal<StatusFilter>('all');
 
   /** Estado de trabajo por nombre de modelo (inicializado desde el back). */
   protected readonly rows = signal<Record<string, MasterRow>>({});
@@ -81,11 +96,68 @@ export class AdminModelMasterComponent {
     { label: 'Audio', value: 'audio' as const },
   ]);
 
+  protected readonly providerOptions = computed(() => {
+    const providers = new Set<string>();
+    for (const row of Object.values(this.rows())) {
+      const provider = row.model?.credential_provider;
+      if (provider) {
+        providers.add(provider);
+      } else if (row.model?.type === 'downloaded') {
+        providers.add('worker');
+      }
+    }
+    return [
+      { label: this.translate.instant('ADMIN.MODEL_MASTER.PROVIDER_ALL'), value: 'all' as const },
+      ...[...providers]
+        .sort((a, b) => a.localeCompare(b))
+        .map((provider) => ({ label: provider, value: provider as string })),
+    ];
+  });
+
+  protected readonly statusOptions = computed(() => [
+    { label: this.translate.instant('ADMIN.MODEL_MASTER.STATUS_ALL'), value: 'all' as const },
+    { label: this.translate.instant('ADMIN.MODEL_MASTER.STATUS_ACTIVE'), value: 'active' as const },
+    { label: this.translate.instant('ADMIN.MODEL_MASTER.STATUS_INACTIVE'), value: 'inactive' as const },
+  ]);
+
+  /** Etiquetas predefinidas: unión de las usadas en todas las filas + base. */
+  protected readonly predefinedTags = computed<string[]>(() => {
+    const seen = new Set<string>();
+    const tags: string[] = [];
+    const add = (tag: string): void => {
+      const key = tag.toLowerCase();
+      if (tag !== '' && !seen.has(key)) {
+        seen.add(key);
+        tags.push(tag);
+      }
+    };
+    for (const base of BASE_TAGS) {
+      add(base);
+    }
+    for (const row of Object.values(this.rows())) {
+      for (const tag of row.recommendTags) {
+        add(tag.trim());
+      }
+    }
+    return tags;
+  });
+
   protected readonly filteredRows = computed<MasterRow[]>(() => {
     const query = this.search().trim().toLowerCase();
     const modality = this.modalityFilter();
+    const provider = this.providerFilter();
+    const status = this.statusFilter();
     return Object.values(this.rows()).filter((row) => {
       if (modality !== 'all' && row.model?.modality !== modality) {
+        return false;
+      }
+      if (provider !== 'all' && this.rowProvider(row) !== provider) {
+        return false;
+      }
+      if (status === 'active' && !row.enabled) {
+        return false;
+      }
+      if (status === 'inactive' && row.enabled) {
         return false;
       }
       if (!query) {
@@ -95,6 +167,23 @@ export class AdminModelMasterComponent {
       return haystack.includes(query);
     });
   });
+
+  /** Proveedor efectivo de la fila ('worker' para descargados, '' si se ignora). */
+  private rowProvider(row: MasterRow): string {
+    if (row.model?.credential_provider) {
+      return row.model.credential_provider;
+    }
+    if (row.model?.type === 'downloaded') {
+      return 'worker';
+    }
+    return '';
+  }
+
+  /** trackBy estable: evita que la tabla recree las filas (y robe el foco)
+   *  en cada edición inline (rank, toggles). */
+  protected trackByName(_index: number, row: MasterRow): string {
+    return row.name;
+  }
 
   protected readonly favoritesCount = computed(
     () => Object.values(this.rows()).filter((row) => row.favoriteRank > 0).length,
@@ -159,10 +248,24 @@ export class AdminModelMasterComponent {
     this.patch(name, { enabled });
   }
 
-  /** Etiquetas separadas por coma (una o varias). */
-  protected setRecommendTags(name: string, raw: string | null): void {
-    const seen = new Set<string>();
-    const recommendTags: string[] = [];
+  /** Marca/desmarca una etiqueta predefinida (el diálogo no pierde el foco
+   *  porque vive fuera de la tabla). */
+  protected toggleRecommendTag(name: string, tag: string, checked: boolean): void {
+    const rows = this.rows();
+    const current = rows[name]?.recommendTags ?? [];
+    const key = tag.toLowerCase();
+    const recommendTags = checked
+      ? [...current, ...(current.some((t) => t.toLowerCase() === key) ? [] : [tag])]
+      : current.filter((t) => t.toLowerCase() !== key);
+    this.patch(name, { recommendTags });
+  }
+
+  /** Etiqueta personalizada desde el diálogo (coma = varias). */
+  protected addCustomTags(name: string, raw: string | null): string {
+    const rows = this.rows();
+    const current = rows[name]?.recommendTags ?? [];
+    const seen = new Set(current.map((t) => t.toLowerCase()));
+    const recommendTags = [...current];
     for (const part of (raw ?? '').split(',')) {
       const tag = part.trim();
       const key = tag.toLowerCase();
@@ -173,10 +276,44 @@ export class AdminModelMasterComponent {
       recommendTags.push(tag);
     }
     this.patch(name, { recommendTags });
+    // Devuelve vacío para limpiar el input del diálogo.
+    return '';
   }
 
   protected metaEntries(row: MasterRow): [string, string][] {
     return Object.entries(row.metadata);
+  }
+
+  /** Fila abierta en el diálogo de etiquetas (null = cerrado). */
+  protected readonly tagsDialogRow = signal<string | null>(null);
+  /** Fila abierta en el diálogo de metadata (null = cerrado). */
+  protected readonly metaDialogRow = signal<string | null>(null);
+
+  /** La fila tiene la etiqueta (para el check del diálogo). */
+  protected rowHasTag(name: string, tag: string): boolean {
+    const key = tag.toLowerCase();
+    return (this.rows()[name]?.recommendTags ?? []).some((t) => t.toLowerCase() === key);
+  }
+
+  protected onDialogVisible(visible: boolean): void {
+    if (!visible) {
+      this.closeDialogs();
+    }
+  }
+
+  protected openTags(name: string): void {
+    this.metaDialogRow.set(null);
+    this.tagsDialogRow.set(name);
+  }
+
+  protected openMeta(name: string): void {
+    this.tagsDialogRow.set(null);
+    this.metaDialogRow.set(name);
+  }
+
+  protected closeDialogs(): void {
+    this.tagsDialogRow.set(null);
+    this.metaDialogRow.set(null);
   }
 
   protected addMeta(name: string, keyInput: HTMLInputElement, valueInput: HTMLInputElement): void {
