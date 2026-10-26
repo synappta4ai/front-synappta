@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, viewChild } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { MenuItem } from 'primeng/api';
+import { MenuItem, MenuItemCommandEvent } from 'primeng/api';
 import { Menubar } from 'primeng/menubar';
 import { Popover } from 'primeng/popover';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -91,11 +91,7 @@ export class NavBarComponent {
     ];
 
     // Sub-items del menú de herramientas (popover HERRAMIENTAS; se amplía sin tocar el back).
-    const toolsItems: MenuItem[] = [
-      { label: t('TOOLS.POSE_SHEET'), description: t('TOOLS.POSE_SHEET_DESC'), icon: 'md md-person', routerLink: '/tools/pose-sheet' },
-      { label: t('TOOLS.LOCATION'), description: t('TOOLS.LOCATION_DESC'), icon: 'md md-place', routerLink: '/tools/location' },
-      { label: t('TOOLS.STORYBOARD'), description: t('TOOLS.STORYBOARD_DESC'), icon: 'md md-movie', routerLink: '/tools/storyboard' },
-    ];
+    // Nota: solo toolItems alimenta el popover; no duplicar la lista acá.
 
     return [
       { label: t('APP.ROUTES.AGENCY'), icon: 'md md-work', routerLink: '/agency' },
@@ -106,8 +102,12 @@ export class NavBarComponent {
       {
         label: t('TOOLS.TITLE'),
         icon: 'md md-auto_fix_high',
-        command: (event: any) => {
-          this.toggleTools(event);
+        // PrimeNG entrega MenuItemCommandEvent ({ originalEvent, item }), no el
+        // evento DOM: el popover necesita el originalEvent para anclarse y no
+        // romper su listener de click (TypeError: reading 'contains').
+        command: (event: MenuItemCommandEvent) => {
+          event.originalEvent?.preventDefault?.();
+          this.toggleTools(event.originalEvent);
         },
       },
       {
@@ -122,6 +122,7 @@ export class NavBarComponent {
 
   protected toggleTools(event?: Event): void {
     if (event) {
+      event.stopPropagation?.();
       this.toolsPopover()?.toggle(event);
     }
   }
