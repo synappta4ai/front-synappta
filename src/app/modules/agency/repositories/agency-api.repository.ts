@@ -107,6 +107,17 @@ export class AgencyApiRepository {
     });
   }
 
+  /**
+   * Recalcula costos y forma faltantes desde los payloads guardados.
+   * Idempotente y con alcance al tenant: el front la dispara en cada login.
+   */
+  backfillGenerationCosts(): Observable<ApiResponse<{ scanned: number; updated: number }>> {
+    return this.http.post<ApiResponse<{ scanned: number; updated: number }>>(
+      `${this.apiUrl}/agency/tasks/backfill-costs`,
+      {},
+    );
+  }
+
   /** Two-check rating ("Buena toma"/"Elegida final") of the caller's task. */
   updateTaskRating(taskId: string, good: boolean, final: boolean): Observable<ApiResponse<null>> {
     return this.http.patch<ApiResponse<null>>(`${this.apiUrl}/agency/tasks/rating`, {

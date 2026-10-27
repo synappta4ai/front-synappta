@@ -60,12 +60,12 @@ export class AdminConsoleComponent {
     const roleLevel = isSuperadmin ? 0 : 1;
 
     const baseTabs: TabItem[] = [
+      { label: t('ADMIN.CONSOLE.MENU_LOGS'), route: '/admin/logs', icon: 'md md-list' },
       { label: t('ADMIN.CONSOLE.MENU_MODELS'), route: '/admin/models', icon: 'md md-memory' },
       { label: t('ADMIN.CONSOLE.MENU_MASTER'), route: '/admin/maestro', icon: 'md md-star' },
       { label: t('ADMIN.CONSOLE.MENU_PROVIDERS'), route: '/admin/providers', icon: 'md md-dashboard', disabled: true, title: t('ADMIN.CONSOLE.MENU_SOON') },
       { label: t('ADMIN.CONSOLE.MENU_VIDEOS'), route: '/admin/videos', icon: 'md md-videocam' },
       { label: t('ADMIN.CONSOLE.MENU_IMAGES'), route: '/admin/imagenes', icon: 'md md-image' },
-      { label: t('ADMIN.CONSOLE.MENU_LOGS'), route: '/admin/logs', icon: 'md md-list' },
       { label: t('ADMIN.CONSOLE.MENU_GPU'), route: '/admin/gpu', icon: 'md md-desktop_windows' },
       { label: t('ADMIN.CONSOLE.MENU_USERS'), route: '/admin/users', icon: 'md md-people' },
       { label: t('ADMIN.CONSOLE.MENU_BUCKET'), route: '/admin/bucket', icon: 'md md-storage' },

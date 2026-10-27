@@ -1,7 +1,8 @@
 import { inject, Injectable } from '@angular/core';
-import { Observable, tap } from 'rxjs';
+import { catchError, EMPTY, Observable, tap } from 'rxjs';
 
 import { UserSessionStore } from '@core/store/user.session';
+import { AgencyApiRepository } from '@modules/agency/repositories';
 import { unwrap } from '@utils/unwrap-api-response';
 
 import {
@@ -19,11 +20,22 @@ import { AuthApiRepository } from '../repositories';
 export class AuthService {
   private readonly authApiRepository = inject(AuthApiRepository);
   private readonly sessionStore = inject(UserSessionStore);
+  private readonly agencyApi = inject(AgencyApiRepository);
 
   login(payload: LoginRequest): Observable<TokenResponse> {
     return unwrap(this.authApiRepository.login(payload)).pipe(
       tap((data) => this.sessionStore.login(data.user, data.token, data.tenant_id)),
+      // Rutina de costos: recalcula filas históricas sin gasto (del $0.00)
+      // con cada inicio de sesión. Fire-and-forget: nunca bloquea el login.
+      tap(() => this.backfillCosts()),
     );
+  }
+
+  private backfillCosts(): void {
+    this.agencyApi
+      .backfillGenerationCosts()
+      .pipe(catchError(() => EMPTY))
+      .subscribe();
   }
 
   register(payload: RegisterRequest): Observable<User> {

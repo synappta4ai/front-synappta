@@ -23,6 +23,7 @@ import { Tooltip } from 'primeng/tooltip';
 
 import { UserSessionStore } from '@core/store/user.session';
 import { formatDurationValue } from '@pipes/format-duration.pipe';
+import { AgencyService } from '@modules/agency/services';
 import { AdminService } from '../../services/admin.service';
 import { AdminTenantService } from '../../services/admin-tenant.service';
 import { ServerCommunicationLog } from '../../interfaces';
@@ -73,6 +74,7 @@ interface PhaseTab {
 })
 export class AdminLogsComponent {
   private readonly adminService = inject(AdminService);
+  private readonly agencyService = inject(AgencyService);
   private readonly adminTenants = inject(AdminTenantService);
   private readonly sessionStore = inject(UserSessionStore);
   private readonly translate = inject(TranslateService);
@@ -94,6 +96,10 @@ export class AdminLogsComponent {
 
   protected readonly detail = signal<CommRow | null>(null);
   protected readonly detailVisible = signal(false);
+
+  /** Recupero manual de costos (backfill): repara $0.00 históricos. */
+  protected readonly recovering = signal(false);
+  protected readonly recovered = signal<{ scanned: number; updated: number } | null>(null);
 
   constructor() {
     // Carga inicial y recarga al cambiar el tenant en el header de la consola.
@@ -132,6 +138,32 @@ export class AdminLogsComponent {
   protected search(): void {
     this.page.set(1);
     this.load();
+  }
+
+  /**
+   * Dispara el backfill de costos del tenant: recalcula el gasto faltante
+   * desde los payloads guardados, tanto el informado por el proveedor
+   * (créditos) como el estimado por calculadora local. Idempotente.
+   */
+  protected recoverCosts(): void {
+    if (this.recovering()) return;
+    this.recovering.set(true);
+    this.recovered.set(null);
+    this.error.set(null);
+    this.agencyService
+      .backfillGenerationCosts()
+      .pipe(
+        catchError(() => {
+          this.error.set(this.translate.instant('ADMIN.LOGS.ERRORS.RECOVER'));
+          return EMPTY;
+        }),
+        finalize(() => this.recovering.set(false)),
+      )
+      .subscribe((result) => {
+        this.recovered.set(result);
+        // Las filas reparadas cambian el gasto: recarga la vista.
+        this.load();
+      });
   }
 
   protected prevPage(): void {

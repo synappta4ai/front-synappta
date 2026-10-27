@@ -5,6 +5,16 @@
     </div>
   }
 
+  @if (recovered(); as result) {
+    <div class="mb-6">
+      <p-message
+        severity="success"
+        [text]="'ADMIN.LOGS.RECOVERED' | translate: { scanned: result.scanned, updated: result.updated }"
+        styleClass="w-full"
+      />
+    </div>
+  }
+
   <!-- Filter bar -->
   <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
     <div class="flex items-center gap-2">
@@ -35,6 +45,19 @@
         severity="secondary"
         size="small"
         (onClick)="search()"
+      />
+      <p-button
+        [label]="'ADMIN.LOGS.RECOVER_COSTS' | translate"
+        icon="md md-refresh"
+        severity="secondary"
+        size="small"
+        outlined
+        [loading]="recovering()"
+        [disabled]="recovering()"
+        [pTooltip]="'ADMIN.LOGS.RECOVER_COSTS_HINT' | translate"
+        showDelay="400"
+        tooltipPosition="bottom"
+        (onClick)="recoverCosts()"
       />
     </div>
   </div>

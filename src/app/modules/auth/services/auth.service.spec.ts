@@ -76,6 +76,10 @@ describe('AuthService', () => {
     });
 
     httpMock.expectOne(`${environment.API_URL}/auth/login`).flush(response);
+    // La rutina de costos se dispara en cada login (fire-and-forget).
+    httpMock
+      .expectOne(`${environment.API_URL}/agency/tasks/backfill-costs`)
+      .flush({ success: true, message: 'ok', data: { scanned: 0, updated: 0 } });
   });
 
   it('does not count an expired token as an active session', () => {
@@ -95,6 +99,9 @@ describe('AuthService', () => {
     });
 
     httpMock.expectOne(`${environment.API_URL}/auth/login`).flush(response);
+    httpMock
+      .expectOne(`${environment.API_URL}/agency/tasks/backfill-costs`)
+      .flush({ success: true, message: 'ok', data: { scanned: 0, updated: 0 } });
   });
 
   it('errors on failed login without storing the session', () => {

@@ -909,8 +909,12 @@
       "COST_CREDITS": "{{value}} cr = créditos del proveedor (Higgsfield)",
       "COST_USD": "${{value}} = equivalente en dólares (USD)",
       "COST_TOOLTIP": "Gasto estimado por el proveedor: {{parts}}. Las generaciones fallidas o canceladas se reembolsan.",
+      "RECOVER_COSTS": "Recuperar costos",
+      "RECOVER_COSTS_HINT": "Recalcula el gasto faltante ($0.00) desde los payloads guardados: cubre gasto del proveedor y estimado por calculadora.",
+      "RECOVERED": "Costos revisados: {{scanned}}, reparados: {{updated}}.",
       "ERRORS": {
-        "LOAD": "No se pudieron cargar los logs."
+        "LOAD": "No se pudieron cargar los logs.",
+        "RECOVER": "No se pudo recuperar los costos."
       }
     }
   },

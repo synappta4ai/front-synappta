@@ -909,8 +909,12 @@
       "COST_CREDITS": "{{value}} cr = provider credits (Higgsfield)",
       "COST_USD": "${{value}} = equivalent in US dollars (USD)",
       "COST_TOOLTIP": "Estimated spend reported by the provider: {{parts}}. Failed or cancelled generations are refunded.",
+      "RECOVER_COSTS": "Recover costs",
+      "RECOVER_COSTS_HINT": "Recomputes missing spend ($0.00) from the stored payloads: covers provider-reported and calculator-estimated costs.",
+      "RECOVERED": "Costs scanned: {{scanned}}, fixed: {{updated}}.",
       "ERRORS": {
-        "LOAD": "Could not load the logs."
+        "LOAD": "Could not load the logs.",
+        "RECOVER": "Could not recover costs."
       }
     }
   },

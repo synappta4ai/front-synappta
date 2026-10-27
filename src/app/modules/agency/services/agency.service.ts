@@ -97,6 +97,15 @@ export class AgencyService {
     return unwrap(this.agencyApiRepository.getGenerationCostSummary(filters));
   }
 
+  /**
+   * Recalcula costos y forma faltantes desde los payloads guardados.
+   * Idempotente y con alcance al tenant: cubre tanto el gasto informado
+   * por el proveedor como el estimado por calculadora local.
+   */
+  backfillGenerationCosts(): Observable<{ scanned: number; updated: number }> {
+    return unwrap(this.agencyApiRepository.backfillGenerationCosts());
+  }
+
   listServerCommunications(filters: ServerCommsFilters = {}): Observable<ServerCommsPage> {
     return unwrap(this.agencyApiRepository.listServerCommunications(filters));
   }
