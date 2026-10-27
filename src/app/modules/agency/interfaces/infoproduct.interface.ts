@@ -109,12 +109,18 @@ export interface ComposeTarget {
   max_references: number;
 }
 
+export type IngredientRole = 'person' | 'product';
+
 export interface ComposeRequest {
   breakdown: VideoBreakdown;
   model?: string;
   target: ComposeTarget;
+  target_model?: string;
   image_file_ids: string[];
   audio_file_ids: string[];
+  image_roles?: Record<string, IngredientRole>;
+  fps?: number;
+  aspect_ratio?: string;
   notes?: string;
   format_id?: string;
 }

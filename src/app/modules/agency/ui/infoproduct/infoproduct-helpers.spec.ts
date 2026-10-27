@@ -1,5 +1,11 @@
 import { AiModel } from '@modules/agency/interfaces';
-import { attachmentKind, buildTarget, promptForGeneration, snapDuration } from './infoproduct-helpers';
+import {
+  attachmentKind,
+  buildImageRoles,
+  buildTarget,
+  promptForGeneration,
+  snapDuration,
+} from './infoproduct-helpers';
 
 function model(partial: Partial<AiModel>): AiModel {
   return {
@@ -58,5 +64,14 @@ describe('infoproduct helpers', () => {
     expect(snapDuration(30, [5, 10, 15], 15)).toBe(15);
     expect(snapDuration(2, [5, 10], 10)).toBe(5);
     expect(snapDuration(8, [], 6)).toBe(6);
+  });
+
+  it('maps image roles and defaults them to product', () => {
+    const roles = buildImageRoles([
+      { id: 'a', name: 'a.png', kind: 'image', url: '', role: 'person' },
+      { id: 'b', name: 'b.png', kind: 'image', url: '' },
+      { id: 'c', name: 'c.mp3', kind: 'audio', url: '' },
+    ]);
+    expect(roles).toEqual({ a: 'person', b: 'product' });
   });
 });
