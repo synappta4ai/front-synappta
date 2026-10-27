@@ -260,7 +260,8 @@
       "IN_PROGRESS": "{{count}} in progress",
       "EMPTY": "No generation events yet.",
       "NEW": "new",
-      "VIEW_ALL": "View all events"
+      "VIEW_ALL": "View all events",
+      "ALERTS": "Alerts"
     },
     "ASSET_PICKER": {
       "DEFAULT_TITLE": "Choose library resources",
@@ -283,7 +284,8 @@
       "MODE_DARK": "Dark",
       "SECTION_NOTIFICATIONS": "Notifications",
       "NOTIFICATIONS_VIDEO": "Video alerts",
-      "NOTIFICATIONS_HINT": "We let you know when a video is ready or fails.",
+      "NOTIFICATIONS_HINT": "We let you know when a video is ready or fails. Turning it off silences everything.",
+      "NOTIFICATIONS_DEVICE": "This device",
       "SECTION_ACCENT": "Accent",
       "ACCENT_LIME": "Lime",
       "ACCENT_YELLOW": "Yellow",
@@ -481,6 +483,12 @@
       "SUBTITLE": "Channels notified when a video is ready or fails.",
       "NEW": "New channel",
       "RELOAD": "Reload",
+      "PAIR": "Link device",
+      "PAIR_HINT": "Show a QR to subscribe a phone without login",
+      "PAIR_TITLE": "Link device",
+      "PAIR_EXPLAIN": "Scan the QR with your phone and enable alerts there. Valid for 10 minutes, single use.",
+      "PAIR_GENERATING": "Generating code…",
+      "PAIR_REGENERATE": "Generate another",
       "COL_NAME": "Name",
       "COL_SERVICE": "Service",
       "COL_URL": "Target",
@@ -514,7 +522,8 @@
         "DELETE": "Could not delete the channel.",
         "TEST": "Could not send the test.",
         "NAME_REQUIRED": "Name is required.",
-        "URL_REQUIRED": "The channel URL is required."
+        "URL_REQUIRED": "The channel URL is required.",
+        "PAIR": "Could not generate the QR code."
       }
     },
     "TENANTS": {
@@ -1907,6 +1916,22 @@
     "ACCEPT_BUTTON": "Accept and continue",
     "SAVE_ERROR": "Could not save your acceptance. Check your connection and try again.",
     "ADMIN_NOTE": "By creating the user you declare they gave you authorization to process their data. The user confirms it on first login."
+  },
+  "NOTIFICATIONS": {
+    "DEVICE_UNSUPPORTED": "This browser does not support push notifications.",
+    "DEVICE_NOT_CONFIGURED": "The server has no push configured (missing VAPID keys).",
+    "DEVICE_PERMISSION_DENIED": "Notification permission denied in the browser.",
+    "DEVICE_SUBSCRIBE_FAILED": "Could not subscribe this device."
+  },
+  "PAIR": {
+    "TITLE": "Link device",
+    "EXPLAIN": "This device will receive your account's video alerts.",
+    "ACTIVATE": "Enable on this device",
+    "SUCCESS": "Device linked: you will receive alerts here.",
+    "SUCCESS_HINT": "If you turned video alerts off in your account, turn them back on to receive them.",
+    "NO_CODE": "This link carries no valid code. Ask for a new QR.",
+    "OPEN_APP": "Open the app",
+    "UNSUPPORTED": "This browser does not support push notifications."
   },
   "COOKIEBANNER": {
     "TITLE": "Cookie preferences",

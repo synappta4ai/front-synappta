@@ -15,6 +15,15 @@
         tooltipPosition="bottom"
       />
       <p-button
+        [label]="'ADMIN.NOTIFICATIONS.PAIR' | translate"
+        icon="md md-qr_code"
+        size="small"
+        outlined
+        (onClick)="openPair()"
+        [pTooltip]="'ADMIN.NOTIFICATIONS.PAIR_HINT' | translate"
+        tooltipPosition="bottom"
+      />
+      <p-button
         [label]="'ADMIN.NOTIFICATIONS.NEW' | translate"
         icon="md md-add"
         size="small"
@@ -124,6 +133,37 @@
     </ng-template>
   </p-table>
 </div>
+
+<p-dialog
+  [(visible)]="pairVisible"
+  [modal]="true"
+  [style]="{ width: 'min(92vw, 24rem)' }"
+  [draggable]="false"
+  [resizable]="false"
+  header="{{ 'ADMIN.NOTIFICATIONS.PAIR_TITLE' | translate }}"
+>
+  <div class="flex flex-col items-center gap-3 text-center">
+    <p class="text-sm text-ink-muted-on-dark">{{ 'ADMIN.NOTIFICATIONS.PAIR_EXPLAIN' | translate }}</p>
+    @if (pairBusy()) {
+      <p class="text-sm">{{ 'ADMIN.NOTIFICATIONS.PAIR_GENERATING' | translate }}</p>
+    } @else if (pairQr()) {
+      <img [src]="pairQr()" width="240" height="240" alt="QR" />
+      <p class="font-mono text-xs break-all">{{ pairCode() }}</p>
+      <p-button
+        [label]="'ADMIN.NOTIFICATIONS.PAIR_REGENERATE' | translate"
+        icon="md md-refresh"
+        size="small"
+        text
+        (onClick)="generatePair()"
+      />
+    }
+    @if (pairError()) {
+      <p class="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-400" role="alert">
+        {{ pairError() }}
+      </p>
+    }
+  </div>
+</p-dialog>
 
 <p-dialog
   [(visible)]="dialogVisible"

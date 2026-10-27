@@ -22,6 +22,7 @@ import { UpdateAvatarRequest } from '@modules/auth/interfaces';
 import { LibraryService } from '@modules/library/services';
 import { ThemeService } from '@services/theme.service';
 import { NotificationsPreferencesService } from '@core/services/notifications-preferences.service';
+import { DevicePushService } from '@core/services/device-push.service';
 import { LanguageService, AppLang } from '@services/language.service';
 import { ThemeMode, AccentId, ACCENTS } from '@interfaces/theme.interface';
 import { AUTH } from '@constants/routes';
@@ -46,6 +47,7 @@ export class ThemePanelComponent {
   private readonly translate = inject(TranslateService);
   private readonly languageService = inject(LanguageService);
   private readonly notificationsPrefs = inject(NotificationsPreferencesService);
+  protected readonly devicePush = inject(DevicePushService);
 
   protected readonly popover = viewChild.required<Popover>('popover');
   private readonly avatarInput = viewChild<ElementRef<HTMLInputElement>>('avatarInput');
@@ -103,6 +105,22 @@ export class ThemePanelComponent {
 
   toggleNotifications(): void {
     this.notificationsPrefs.setEnabled(!this.notificationsPrefs.enabled());
+  }
+
+  toggleDevicePush(): void {
+    if (this.devicePush.busy()) {
+      return;
+    }
+    if (this.devicePush.subscribed()) {
+      void this.devicePush.unsubscribe();
+    } else {
+      void this.devicePush.subscribe();
+    }
+  }
+
+  devicePushError(): string | null {
+    const key = this.devicePush.error();
+    return key ? this.translate.instant(key) : null;
   }
 
   onAccentChange(accent: AccentId): void {

@@ -11,12 +11,12 @@
   tooltipPosition="bottom"
   showDelay="400"
 />
-@if (unreadCount() > 0) {
+@if (totalUnread() > 0) {
   <span
     class="bell-count"
     animate.enter="pop"
-    [appCountUp]="unreadCount() > 9 ? 9 : unreadCount()"
-    [appCountUpSuffix]="unreadCount() > 9 ? '+' : ''"
+    [appCountUp]="totalUnread() > 9 ? 9 : totalUnread()"
+    [appCountUpSuffix]="totalUnread() > 9 ? '+' : ''"
   ></span>
 } @else if (hasActive()) {
   <span class="bell-badge" animate.enter="pop"></span>
@@ -81,6 +81,27 @@
       </a>
     }
   </div>
+
+  @if (center.items().length > 0) {
+    <div class="pop-head pop-head--alerts">
+      <span><i class="md md-notifications"></i> {{ 'SHARED.BELL.ALERTS' | translate }}</span>
+    </div>
+    <div class="pop-list">
+      @for (n of center.items().slice(0, 5); track n.id) {
+        <div class="pop-item" [class.pop-unread]="!n.read_at">
+          <span class="pop-thumb icon">
+            <i class="md" [class.md-check_circle]="n.type === 'video-ready'" [class.md-error]="n.type !== 'video-ready'"></i>
+          </span>
+          <span class="pop-info">
+            <span class="pop-title-row">
+              <span class="pop-model">{{ n.title }}</span>
+            </span>
+            <span class="pop-prompt">{{ n.body }}</span>
+          </span>
+        </div>
+      }
+    </div>
+  }
 
   <a routerLink="/studio/events" class="pop-footer">
     {{ 'SHARED.BELL.VIEW_ALL' | translate }} <i class="md md-arrow_forward"></i>

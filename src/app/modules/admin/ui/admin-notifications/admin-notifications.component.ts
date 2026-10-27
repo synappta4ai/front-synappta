@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import QRCode from 'qrcode';
 
 import { Button } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
@@ -14,6 +15,7 @@ import { Tooltip } from 'primeng/tooltip';
 import { AdminTenantService } from '../../services/admin-tenant.service';
 import { AdminApiRepository } from '../../repositories/admin-api.repository';
 import { NotificationChannel, NotificationChannelRequest } from '../../interfaces';
+import { DevicePushService } from '@core/services/device-push.service';
 
 /** Proveedor soportado por shoutrrr + ejemplo de URL. */
 interface ServiceOption {
@@ -62,6 +64,7 @@ export class AdminNotificationsComponent {
   private readonly adminTenants = inject(AdminTenantService);
   private readonly repository = inject(AdminApiRepository);
   private readonly translate = inject(TranslateService);
+  private readonly devicePush = inject(DevicePushService);
 
   protected readonly tenant = this.adminTenants.selectedTenant;
 
@@ -79,6 +82,14 @@ export class AdminNotificationsComponent {
   protected readonly formService = signal<string>('telegram');
   protected readonly formUrl = signal('');
   protected readonly formEnabled = signal(true);
+
+  /** Vinculación por QR: diálogo + código de un solo uso. */
+  protected readonly pairVisible = signal(false);
+  protected readonly pairCode = signal<string | null>(null);
+  protected readonly pairExpires = signal<string | null>(null);
+  protected readonly pairQr = signal<string | null>(null);
+  protected readonly pairBusy = signal(false);
+  protected readonly pairError = signal<string | null>(null);
 
   /** Confirmación de borrado en dos pasos (id del canal pendiente). */
   protected readonly confirmDeleteId = signal<string | null>(null);
@@ -221,6 +232,30 @@ export class AdminNotificationsComponent {
 
   protected cancelDelete(): void {
     this.confirmDeleteId.set(null);
+  }
+
+  // ─── Vincular dispositivo (QR) ─────────────────────────────
+
+  protected openPair(): void {
+    this.pairVisible.set(true);
+    void this.generatePair();
+  }
+
+  protected async generatePair(): Promise<void> {
+    this.pairBusy.set(true);
+    this.pairError.set(null);
+    this.pairQr.set(null);
+    try {
+      const pairing = await this.devicePush.createPairing(this.tenantSlug());
+      this.pairCode.set(pairing.code);
+      this.pairExpires.set(pairing.expires_at);
+      const url = `${window.location.origin}/pair?code=${encodeURIComponent(pairing.code)}`;
+      this.pairQr.set(await QRCode.toDataURL(url, { width: 240, margin: 2 }));
+    } catch {
+      this.pairError.set(this.translate.instant('ADMIN.NOTIFICATIONS.ERRORS.PAIR'));
+    } finally {
+      this.pairBusy.set(false);
+    }
   }
 
   protected confirmDelete(): void {

@@ -23,6 +23,12 @@ export const routes: Routes = [
         path: 'legal',
         loadChildren: () => import('@modules/legal/legal.routes').then((m) => m.legalRoutes),
       },
+      {
+        // Vinculación de dispositivo por QR: pública, el código hace de auth.
+        path: 'pair',
+        loadComponent: () =>
+          import('@modules/pair/ui/pair-device.component').then((m) => m.PairDeviceComponent),
+      },
     ],
   },
   {

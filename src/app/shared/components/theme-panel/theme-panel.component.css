@@ -238,6 +238,12 @@
   color: var(--color-ink-muted-on-dark);
 }
 
+.notif-error {
+  margin: 0;
+  font-size: 0.7rem;
+  color: #f87171;
+}
+
 /* Diálogos de perfil y configuración (p-dialog inline: el scope alcanza) */
 .p-dialog .section {
   margin-bottom: 1rem;

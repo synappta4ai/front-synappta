@@ -1,0 +1,41 @@
+<div class="mx-auto flex min-h-[70vh] w-full max-w-md flex-col items-center justify-center gap-4 px-4 text-center">
+  <i class="md md-notifications text-5xl text-[var(--color-accent)]" aria-hidden="true"></i>
+  <h1 class="text-xl font-bold text-ink">{{ 'PAIR.TITLE' | translate }}</h1>
+
+  @if (!code()) {
+    <p class="text-sm text-ink-muted-on-dark">{{ 'PAIR.NO_CODE' | translate }}</p>
+    <p-button
+      [label]="'PAIR.OPEN_APP' | translate"
+      icon="md md-home"
+      routerLink="/studio"
+    />
+  } @else if (done()) {
+    <p class="rounded-lg bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300" role="status">
+      {{ 'PAIR.SUCCESS' | translate }}
+    </p>
+    <p class="text-xs text-ink-muted-on-dark">{{ 'PAIR.SUCCESS_HINT' | translate }}</p>
+    <p-button
+      [label]="'PAIR.OPEN_APP' | translate"
+      icon="md md-home"
+      routerLink="/studio"
+    />
+  } @else {
+    <p class="text-sm text-ink-muted-on-dark">{{ 'PAIR.EXPLAIN' | translate }}</p>
+    @if (errorMessage()) {
+      <p class="rounded-lg bg-red-500/10 px-4 py-3 text-sm text-red-400" role="alert">
+        {{ errorMessage() }}
+      </p>
+    }
+    <p-button
+      [label]="'PAIR.ACTIVATE' | translate"
+      icon="md md-notifications"
+      [loading]="devicePush.busy()"
+      [disabled]="!devicePush.supported()"
+      (onClick)="activate()"
+    />
+    @if (!devicePush.supported()) {
+      <p class="text-xs text-ink-muted-on-dark">{{ 'PAIR.UNSUPPORTED' | translate }}</p>
+    }
+    <p class="font-mono text-xs text-ink-muted-on-dark">{{ code() }}</p>
+  }
+</div>
