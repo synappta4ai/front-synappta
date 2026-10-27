@@ -1,4 +1,4 @@
-<div animate.enter="anim-page">
+<div animate.enter="anim-page" class="flex h-full min-h-0 flex-col">
   @if (error(); as message) {
     <div class="mb-6">
       <p-message severity="error" [text]="message" [escape]="false" styleClass="w-full" />
@@ -33,9 +33,9 @@
         <div class="skel skel-text" aria-hidden="true"></div>
       </div>
     } @else {
-      <div class="grid items-start gap-6 lg:grid-cols-5">
+      <div class="grid min-h-0 flex-1 gap-6 lg:grid-cols-5">
         <!-- Left: credential form -->
-        <div class="lg:col-span-2">
+        <div class="min-h-0 lg:col-span-2 lg:overflow-y-auto lg:pr-1">
           <div class="rounded-2xl border border-surface-border bg-surface p-6">
             <div class="mb-4 flex items-center gap-3">
               <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
@@ -385,34 +385,82 @@
           </div>
         </div>
 
-        <!-- Right: models table -->
-        <div class="lg:col-span-3">
-          <div class="overflow-hidden rounded-3xl border border-surface-border bg-surface">
+        <!-- Right: provider models (paginated, no page scroll) -->
+        <div class="flex min-h-0 lg:col-span-3">
+          <div class="flex min-h-0 w-full flex-col overflow-hidden rounded-3xl border border-surface-border bg-surface">
             <div class="flex items-center gap-3 border-b border-surface-border px-5 py-4">
               <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
                 <i class="md md-memory text-sm text-accent"></i>
               </div>
-              <div>
+              <div class="min-w-0">
                 <h4 class="font-bold text-ink-on-dark">
                   {{ 'ADMIN.MODELS.MODELS_TITLE' | translate }}
                 </h4>
                 <p class="text-xs text-ink-muted-on-dark">
                   {{
-                    (models().length === 1
+                    (filteredModels().length === 1
                       ? 'ADMIN.MODELS.MODELS_SUBTITLE_SINGULAR'
                       : 'ADMIN.MODELS.MODELS_SUBTITLE_PLURAL'
-                    ) | translate: { count: models().length }
+                    ) | translate: { count: filteredModels().length }
                   }}
                 </p>
               </div>
             </div>
 
+            <!-- Filtros: texto + proveedor + tipo -->
+            <div class="flex flex-wrap items-center gap-2 border-b border-surface-border px-5 py-3">
+              <input
+                pInputText
+                type="search"
+                [ngModel]="search()"
+                (ngModelChange)="search.set($event)"
+                [placeholder]="'ADMIN.MODELS.FILTER_SEARCH' | translate"
+                [attr.aria-label]="'ADMIN.MODELS.FILTER_SEARCH' | translate"
+                class="w-44"
+              />
+              <p-select
+                [ngModel]="providerFilter()"
+                (ngModelChange)="providerFilter.set($event)"
+                [options]="providerFilterOptions()"
+                optionLabel="label"
+                optionValue="value"
+                [placeholder]="'ADMIN.MODELS.FILTER_PROVIDER' | translate"
+                [showClear]="true"
+                appendTo="body"
+                styleClass="w-44"
+              />
+              <p-select
+                [ngModel]="modalityFilter()"
+                (ngModelChange)="modalityFilter.set($event)"
+                [options]="modalityFilterOptions()"
+                optionLabel="label"
+                optionValue="value"
+                [placeholder]="'ADMIN.MODELS.FILTER_TYPE' | translate"
+                [showClear]="true"
+                appendTo="body"
+                styleClass="w-36"
+              />
+              @if (search() || providerFilter() || modalityFilter()) {
+                <p-button
+                  [label]="'ADMIN.MODELS.FILTERS_CLEAR' | translate"
+                  icon="md md-close"
+                  size="small"
+                  severity="secondary"
+                  text
+                  (onClick)="clearFilters()"
+                />
+              }
+            </div>
+
             <p-table
-              [value]="$any(models())"
+              [value]="$any(filteredModels())"
               [tableStyle]="{ 'min-width': '30rem' }"
               [rowHover]="true"
-              [scrollable]="true"
-              scrollHeight="calc(75vh - 16rem)"
+              [paginator]="true"
+              [rows]="10"
+              [rowsPerPageOptions]="[10, 20, 50]"
+              [showCurrentPageReport]="true"
+              currentPageReportTemplate="{first}–{last} / {totalRecords}"
               styleClass="p-datatable-sm"
             >
               <ng-template #header>
@@ -460,204 +508,21 @@
                   </td>
                 </tr>
               </ng-template>
-            </p-table>
-          </div>
-        </div>
-
-        <!-- Right column bottom: worker models (downloaded models) -->
-        <div class="lg:col-span-3 mt-6 lg:mt-0">
-          <div class="overflow-hidden rounded-3xl border border-surface-border bg-surface">
-            <div class="flex items-center gap-3 border-b border-surface-border px-5 py-4">
-              <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
-                <i class="md md-download text-sm text-accent"></i>
-              </div>
-              <div>
-                <h4 class="font-bold text-ink-on-dark">
-                  {{ 'ADMIN.MODELS.WORKER_MODELS_TITLE' | translate }}
-                </h4>
-                <p class="text-xs text-ink-muted-on-dark">
-                  {{
-                    'ADMIN.MODELS.WORKER_MODELS_SUBTITLE'
-                      | translate
-                        : {
-                            count: workerModels().length,
-                          }
-                  }}
-                </p>
-              </div>
-            </div>
-
-            @if (loadingWorkerModels()) {
-              <div class="flex items-center justify-center py-12" aria-busy="true">
-                <p-progressSpinner />
-              </div>
-            } @else if (workerModels().length === 0) {
-              <div
-                class="flex flex-col items-center gap-4 rounded-3xl border border-surface-border bg-surface py-20"
-              >
-                <div class="flex h-16 w-16 items-center justify-center rounded-full bg-surface-2">
-                  <i class="md md-memory text-3xl text-ink-muted-on-dark"></i>
-                </div>
-                <div class="text-center">
-                  <p class="font-bold text-ink-on-dark">
-                    {{ 'ADMIN.MODELS.WORKER_MODELS_EMPTY_TITLE' | translate }}
-                  </p>
-                  <p class="mt-1 text-sm text-ink-muted-on-dark">
-                    {{ 'ADMIN.MODELS.WORKER_MODELS_EMPTY_HINT' | translate }}
-                  </p>
-                </div>
-              </div>
-            } @else {
-              <p-table
-                [value]="workerModels()"
-                [tableStyle]="{ 'min-width': '30rem' }"
-                [rowHover]="true"
-                [scrollable]="true"
-                scrollHeight="calc(75vh - 16rem)"
-                styleClass="p-datatable-sm"
-              >
-                <ng-template #header>
-                  <tr>
-                    <th>{{ 'ADMIN.MODELS.COL_MODEL' | translate }}</th>
-                    <th style="width: 12%" class="text-center">
-                      {{ 'ADMIN.MODELS.COL_MODE' | translate }}
-                    </th>
-                    <th style="width: 16%">{{ 'ADMIN.MODELS.COL_ENGINE' | translate }}</th>
-                    <th style="width: 14%" class="text-center">
-                      {{ 'ADMIN.MODELS.COL_SIZE' | translate }}
-                    </th>
-                    <th style="width: 18%" class="text-center">
-                      {{ 'ADMIN.MODELS.COL_STATE' | translate }}
-                    </th>
-                    <th style="width: 14%" class="text-center">
-                      {{ 'ADMIN.MODELS.COL_ACTIONS' | translate }}
-                    </th>
-                  </tr>
-                </ng-template>
-                <ng-template #body let-m let-i="rowIndex">
-                  <tr animate.enter="anim-item" [style.animation-delay.ms]="i < 8 ? i * 35 : 280">
-                    <td>
+              <ng-template #emptymessage>
+                <tr>
+                  <td colspan="4">
+                    <div class="flex flex-col items-center gap-2 py-10 text-center">
                       <p class="font-bold text-ink-on-dark">
-                        {{ m.label || m.key }}
+                        {{ 'ADMIN.MODELS.NO_RESULTS_TITLE' | translate }}
                       </p>
-                      <p class="text-xs text-ink-muted-on-dark">{{ m.key }}</p>
-                      @if (m.repo) {
-                        <p class="text-xs text-ink-muted-on-dark" truncate>
-                          {{ m.repo }}
-                        </p>
-                      }
-                    </td>
-                    <td class="text-center">
-                      <p-tag [value]="m.mode" [severity]="modalitySeverity(m.mode)" />
-                    </td>
-                    <td>
-                      <span class="text-sm text-ink-muted-on-dark">
-                        {{ m.engine }}
-                      </span>
-                    </td>
-                    <td class="text-center">
-                      {{ formatBytes(m.size_bytes) }}
-                    </td>
-                    <td class="text-center">
-                      @if (m.downloaded) {
-                        <p-tag
-                          [value]="'ADMIN.MODELS.STATE_READY' | translate"
-                          severity="success"
-                          icon="md md-check"
-                        />
-                      } @else if (m.downloading) {
-                        <p-tag
-                          [value]="'ADMIN.MODELS.STATE_DOWNLOADING' | translate"
-                          severity="info"
-                          icon="md md-download"
-                        />
-                        <span class="text-xs text-ink-muted-on-dark block">
-                          {{ m.download_percent.toFixed(0) }}%
-                        </span>
-                      } @else if (m.state === 'failed') {
-                        <p-tag
-                          [value]="'ADMIN.MODELS.STATE_FAILED' | translate"
-                          severity="danger"
-                          icon="md md-error"
-                        />
-                      } @else {
-                        <p-tag
-                          [value]="'ADMIN.MODELS.STATE_IDLE' | translate"
-                          severity="warn"
-                          icon="md md-circle"
-                        />
-                      }
-                      @if (m.download_error) {
-                        <p-tag
-                          value="error"
-                          severity="danger"
-                          styleClass="ml-1"
-                          [pTooltip]="m.download_error"
-                          showDelay="400"
-                        />
-                      }
-                    </td>
-                    <td class="text-center">
-                      @if (m.downloaded) {
-                        <p-button
-                          icon="md md-delete"
-                          severity="danger"
-                          size="small"
-                          text
-                          [loading]="isDeleting(m.key)"
-                          [disabled]="isDeleting(m.key)"
-                          [ariaLabel]="'ADMIN.MODELS.DELETE_WEIGHTS' | translate"
-                          [pTooltip]="'ADMIN.MODELS.DELETE_WEIGHTS' | translate"
-                          showDelay="400"
-                          tooltipPosition="top"
-                          (onClick)="confirmDeleteWorkerModel(m)"
-                        />
-                      } @else if (m.downloading) {
-                        <p-button
-                          icon="md md-cancel"
-                          severity="secondary"
-                          size="small"
-                          text
-                          [loading]="isDownloading(m.key)"
-                          [disabled]="isDownloading(m.key)"
-                          [ariaLabel]="'ADMIN.MODELS.CANCEL_DOWNLOAD' | translate"
-                          [pTooltip]="'ADMIN.MODELS.CANCEL_DOWNLOAD' | translate"
-                          showDelay="400"
-                          tooltipPosition="top"
-                          (onClick)="cancelWorkerModelDownload(m)"
-                        />
-                      } @else {
-                        <p-button
-                          icon="md md-download"
-                          severity="success"
-                          size="small"
-                          text
-                          [loading]="isDownloading(m.key)"
-                          [disabled]="isDownloading(m.key)"
-                          [ariaLabel]="'ADMIN.MODELS.DOWNLOAD_MODEL' | translate"
-                          [pTooltip]="'ADMIN.MODELS.DOWNLOAD_MODEL' | translate"
-                          showDelay="400"
-                          tooltipPosition="top"
-                          (onClick)="downloadWorkerModel(m)"
-                        />
-                      }
-                      @if (m.download_path) {
-                        <p-button
-                          icon="md md-folder"
-                          severity="secondary"
-                          size="small"
-                          text
-                          [ariaLabel]="'ADMIN.MODELS.SHOW_PATH' | translate"
-                          [pTooltip]="m.download_path"
-                          showDelay="400"
-                          tooltipPosition="top"
-                        />
-                      }
-                    </td>
-                  </tr>
-                </ng-template>
-              </p-table>
-            }
+                      <p class="text-sm text-ink-muted-on-dark">
+                        {{ 'ADMIN.MODELS.NO_RESULTS_HINT' | translate }}
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              </ng-template>
+            </p-table>
           </div>
         </div>
       </div>

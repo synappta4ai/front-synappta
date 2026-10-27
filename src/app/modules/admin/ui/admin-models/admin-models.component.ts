@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
-import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { FormsModule, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { catchError, EMPTY, finalize, forkJoin, switchMap, tap } from 'rxjs';
 import { HttpResponse } from '@angular/common/http';
@@ -13,7 +13,6 @@ import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { Select } from 'primeng/select';
 import { Password } from 'primeng/password';
-import { ProgressSpinner } from 'primeng/progressspinner';
 import { Tooltip } from 'primeng/tooltip';
 
 import { AdminService } from '../../services/admin.service';
@@ -24,8 +23,6 @@ import {
   TenantCredential,
   TenantModel,
   UpsertTenantCredentialRequest,
-  WorkerModel,
-  WorkerModelState,
 } from '../../interfaces';
 
 interface ProviderOption {
@@ -37,6 +34,7 @@ interface ProviderOption {
 @Component({
   selector: 'app-admin-models',
   imports: [
+    FormsModule,
     ReactiveFormsModule,
     Button,
     InputText,
@@ -46,7 +44,6 @@ interface ProviderOption {
     ConfirmDialog,
     Select,
     Password,
-    ProgressSpinner,
     Tooltip,
     TranslatePipe,
   ],
@@ -77,11 +74,56 @@ export class AdminModelsComponent {
   protected readonly importing = signal(false);
   protected readonly savedMessage = signal<string | null>(null);
 
-  // ─── Worker models ────────────────────────────────────────────────
-  protected readonly workerModels = signal<WorkerModel[]>([]);
-  protected readonly loadingWorkerModels = signal(false);
-  protected readonly downloading = signal<Record<string, boolean>>({});
-  protected readonly deleting = signal<Record<string, boolean>>({});
+  // ─── Filtros del catálogo de proveedores ──────────────────────────
+  // Los modelos del worker viven en su ruta propia (/admin/gpu): acá solo
+  // proveedores externos (API key del tenant).
+  protected readonly search = signal('');
+  protected readonly providerFilter = signal<string | null>(null);
+  protected readonly modalityFilter = signal<string | null>(null);
+
+  /** Proveedores presentes en el catálogo (para el filtro). */
+  protected readonly providerFilterOptions = computed(() => {
+    const seen = new Map<string, string>();
+    for (const m of this.models()) {
+      if (m.credential_provider && !seen.has(m.credential_provider)) {
+        seen.set(m.credential_provider, this.providerLabel(m.credential_provider));
+      }
+    }
+    return [...seen.entries()]
+      .map(([value, label]) => ({ label, value }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  });
+
+  /** Modalidades presentes en el catálogo (para el filtro). */
+  protected readonly modalityFilterOptions = computed(() => {
+    const seen = new Set<string>();
+    for (const m of this.models()) {
+      if (m.modality) seen.add(m.modality);
+    }
+    return [...seen].sort().map((modality) => ({ label: modality, value: modality }));
+  });
+
+  /** Modelos de proveedor filtrados (proveedor + tipo + texto). */
+  protected readonly filteredModels = computed(() => {
+    const query = this.search().trim().toLowerCase();
+    const provider = this.providerFilter();
+    const modality = this.modalityFilter();
+    return this.models().filter((m) => {
+      if (provider && m.credential_provider !== provider) return false;
+      if (modality && m.modality !== modality) return false;
+      if (query) {
+        const haystack = `${m.display_name ?? ''} ${m.name}`.toLowerCase();
+        if (!haystack.includes(query)) return false;
+      }
+      return true;
+    });
+  });
+
+  protected clearFilters(): void {
+    this.search.set('');
+    this.providerFilter.set(null);
+    this.modalityFilter.set(null);
+  }
 
   protected readonly providerOptions: ProviderOption[] = [
     { label: 'BytePlus', value: 'byteplus', icon: 'md md-videocam' },
@@ -191,18 +233,12 @@ export class AdminModelsComponent {
           return EMPTY;
         }),
       ),
-      workerModels: this.adminService.listWorkerModels().pipe(
-        catchError(() => {
-          this.error.set(this.translate.instant('ADMIN.MODELS.ERRORS.LOAD_WORKER_MODELS'));
-          return EMPTY;
-        }),
-      ),
     })
       .pipe(finalize(() => this.loadingConfig.set(false)))
-      .subscribe(({ models, credentials, workerModels }) => {
+      .subscribe(({ models, credentials }) => {
         this.models.set(models);
         this.credentials.set(credentials);
-        this.workerModels.set(workerModels);
+        this.clearFilters();
       });
   }
 
@@ -463,131 +499,6 @@ export class AdminModelsComponent {
         return 'warn';
     }
   }
-
-  // ─── Worker model actions ─────────────────────────────────────────
-
-  protected isDownloading(key: string): boolean {
-    return !!this.downloading()[key];
-  }
-
-  protected isDeleting(key: string): boolean {
-    return !!this.deleting()[key];
-  }
-
-  protected downloadWorkerModel(model: WorkerModel): void {
-    if (model.downloading || model.downloaded) return;
-
-    this.downloading.update((d) => ({ ...d, [model.key]: true }));
-    this.error.set(null);
-
-    this.adminService
-      .downloadWorkerModel(model.key)
-      .pipe(
-        tap(() => this.loadWorkerModels()),
-        catchError((err: unknown) => {
-          const msg =
-            err && typeof err === 'object' && 'message' in err
-              ? String((err as { message?: unknown }).message)
-              : null;
-          this.error.set(
-            msg || this.translate.instant('ADMIN.MODELS.ERRORS.DOWNLOAD_WORKER_MODEL'),
-          );
-          return EMPTY;
-        }),
-        finalize(() => {
-          this.downloading.update((d) => {
-            const { [model.key]: _removed, ...rest } = d;
-            return rest;
-          });
-        }),
-      )
-      .subscribe();
-  }
-
-  protected cancelWorkerModelDownload(model: WorkerModel): void {
-    if (!model.downloading) return;
-
-    this.downloading.update((d) => ({ ...d, [model.key]: true }));
-    this.error.set(null);
-
-    this.adminService
-      .cancelWorkerModelDownload(model.key)
-      .pipe(
-        tap(() => this.loadWorkerModels()),
-        catchError((err: unknown) => {
-          const msg =
-            err && typeof err === 'object' && 'message' in err
-              ? String((err as { message?: unknown }).message)
-              : null;
-          this.error.set(msg || this.translate.instant('ADMIN.MODELS.ERRORS.CANCEL_DOWNLOAD'));
-          return EMPTY;
-        }),
-        finalize(() => {
-          this.downloading.update((d) => {
-            const { [model.key]: _removed, ...rest } = d;
-            return rest;
-          });
-        }),
-      )
-      .subscribe();
-  }
-
-  protected confirmDeleteWorkerModel(model: WorkerModel): void {
-    this.confirmationService.confirm({
-      message: this.translate.instant('ADMIN.MODELS.CONFIRM_DELETE_WORKER_MODEL', {
-        model: model.label || model.key,
-      }),
-      header: this.translate.instant('ADMIN.MODELS.CONFIRM_DELETE_TITLE'),
-      icon: 'md md-warning',
-      acceptLabel: this.translate.instant('ADMIN.MODELS.CONFIRM_DELETE_ACCEPT'),
-      rejectLabel: this.translate.instant('ADMIN.MODELS.CONFIRM_DELETE_REJECT'),
-      acceptButtonStyleClass: 'p-button-danger',
-      accept: () => {
-        this.deleting.update((d) => ({ ...d, [model.key]: true }));
-        this.error.set(null);
-        this.adminService
-          .deleteWorkerModel(model.key)
-          .pipe(
-            tap(() => this.loadWorkerModels()),
-            catchError((err: unknown) => {
-              const msg =
-                err && typeof err === 'object' && 'message' in err
-                  ? String((err as { message?: unknown }).message)
-                  : null;
-              this.error.set(
-                msg || this.translate.instant('ADMIN.MODELS.ERRORS.DELETE_WORKER_MODEL'),
-              );
-              return EMPTY;
-            }),
-            finalize(() => {
-              this.deleting.update((d) => {
-                const { [model.key]: _removed, ...rest } = d;
-                return rest;
-              });
-            }),
-          )
-          .subscribe();
-      },
-    });
-  }
-
-  private loadWorkerModels(): void {
-    this.loadingWorkerModels.set(true);
-    this.adminService
-      .listWorkerModels()
-      .pipe(
-        catchError(() => EMPTY),
-        finalize(() => this.loadingWorkerModels.set(false)),
-      )
-      .subscribe((models) => this.workerModels.set(models));
-  }
-
-  /** Formatea bytes para mostrar en la UI. */
-  protected formatBytes(bytes: number): string {
-    if (!bytes) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  }
 }
+
+
