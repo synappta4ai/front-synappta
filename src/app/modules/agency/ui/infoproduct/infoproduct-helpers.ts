@@ -1,4 +1,4 @@
-import { AiModel, ComposeTarget } from '@modules/agency/interfaces';
+import { AiModel, ComposeTarget, IngredientRole } from '@modules/agency/interfaces';
 
 /** Insumo adjunto al botón único de imágenes del producto y audio. */
 export interface Attachment {
@@ -7,6 +7,8 @@ export interface Attachment {
   kind: 'image' | 'audio';
   /** Miniatura (imágenes) o URL del archivo. */
   url: string;
+  /** Rol del insumo de imagen; el audio siempre es audio. */
+  role?: IngredientRole;
 }
 
 const IMAGE_EXT = /\.(png|jpe?g|webp|gif|avif)$/i;
@@ -17,6 +19,16 @@ export function attachmentKind(file: Pick<File, 'type' | 'name'>): 'image' | 'au
   if (file.type.startsWith('image/') || IMAGE_EXT.test(file.name)) return 'image';
   if (file.type.startsWith('audio/') || AUDIO_EXT.test(file.name)) return 'audio';
   return null;
+}
+
+/** Roles de las imágenes para el paso 2 (audio siempre se resuelve en el back). */
+export function buildImageRoles(list: readonly Attachment[]): Record<string, IngredientRole> {
+  const roles: Record<string, IngredientRole> = {};
+  for (const item of list) {
+    if (item.kind !== 'image') continue;
+    roles[item.id] = item.role === 'person' ? 'person' : 'product';
+  }
+  return roles;
 }
 
 const DEFAULT_MAX_DURATION = 15;

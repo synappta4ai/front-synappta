@@ -436,6 +436,19 @@
                   </div>
                 }
                 <span class="truncate text-xs text-ink-muted-on-dark" [title]="item.name">{{ item.name }}</span>
+                @if (item.kind === 'image') {
+                  <p-select
+                    [options]="roleOptions()"
+                    optionLabel="label"
+                    optionValue="value"
+                    [ngModel]="item.role ?? 'product'"
+                    (ngModelChange)="setAttachmentRole(item.id, $event)"
+                    [ngModelOptions]="{ standalone: true }"
+                    [ariaLabel]="'VIDEOMACHINE.ROLE_ARIA' | translate: { name: item.name }"
+                    styleClass="w-full"
+                    appendTo="body"
+                  />
+                }
                 <button
                   type="button"
                   class="absolute right-1 top-1 rounded-full bg-surface p-1 text-ink-on-dark hover:text-danger"

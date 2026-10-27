@@ -28,6 +28,7 @@ import {
   AiModel,
   ComposeTarget,
   GenerateRequest,
+  IngredientRole,
   VideoAnalysis,
   VideoBreakdown,
   VideoFormat,
@@ -40,6 +41,7 @@ import { ModelSelectComponent } from '../model-select/model-select.component';
 import {
   Attachment,
   attachmentKind,
+  buildImageRoles,
   buildTarget,
   promptForGeneration,
   snapDuration,
@@ -145,6 +147,10 @@ export class InfoproductComponent {
       !!this.videoModel() &&
       (this.useFormat() ? !!this.formatId() : !!this.analysis()),
   );
+  protected readonly roleOptions = computed(() => [
+    { label: this.translate.instant('VIDEOMACHINE.ROLE_PRODUCT'), value: 'product' as IngredientRole },
+    { label: this.translate.instant('VIDEOMACHINE.ROLE_PERSON'), value: 'person' as IngredientRole },
+  ]);
 
   // ── Paso 3: prompt + generación ─────────────────────────────────
   protected readonly result = signal<VideoPrompt | null>(null);
@@ -281,6 +287,7 @@ export class InfoproductComponent {
             name: file.name,
             kind,
             url: asset.thumbnail_url || asset.url || '',
+            role: kind === 'image' ? 'product' : undefined,
           }),
         ),
         catchError((err: unknown) => {
@@ -299,6 +306,12 @@ export class InfoproductComponent {
 
   protected removeAttachment(id: string): void {
     this.attachments.update((list) => list.filter((a) => a.id !== id));
+  }
+
+  protected setAttachmentRole(id: string, role: IngredientRole): void {
+    this.attachments.update((list) =>
+      list.map((a) => (a.id === id ? { ...a, role: role === 'person' ? 'person' : 'product' } : a)),
+    );
   }
 
   protected onVideoModelChange(model: AiModel | null): void {
@@ -326,8 +339,12 @@ export class InfoproductComponent {
         breakdown: this.analysis()?.breakdown ?? {},
         model: this.brainModel() || undefined,
         target,
+        target_model: target.model,
         image_file_ids: this.images().map((a) => a.id),
         audio_file_ids: this.audios().map((a) => a.id),
+        image_roles: buildImageRoles(this.attachments()),
+        fps: this.analysis()?.meta.fps,
+        aspect_ratio: this.analysis()?.meta.aspect_ratio,
         notes: this.notes().trim() || undefined,
         format_id: this.useFormat() ? (this.formatId() ?? undefined) : undefined,
       })
