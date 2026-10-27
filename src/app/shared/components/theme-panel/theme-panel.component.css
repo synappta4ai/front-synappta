@@ -220,6 +220,18 @@
   font-weight: 700;
 }
 
+.notif-row + .notif-row {
+  margin-top: 0.5rem;
+}
+
+.notif-row.notif-disabled {
+  opacity: 0.55;
+}
+
+.notif-row.notif-disabled .notif-label {
+  cursor: not-allowed;
+}
+
 .notif-label {
   display: flex;
   align-items: center;

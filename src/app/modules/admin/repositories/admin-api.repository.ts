@@ -356,6 +356,30 @@ export class AdminApiRepository {
     );
   }
 
+  /** Envía un push de prueba a mis dispositivos (claves VAPID propias). */
+  testPushNotifications(
+    message = '',
+    tenantSlug?: string,
+  ): Observable<ApiResponse<{ sent_to: number }>> {
+    return this.http.post<ApiResponse<{ sent_to: number }>>(
+      `${this.apiUrl}/push/test`,
+      { message },
+      { ...this.tenantHeaders(tenantSlug) },
+    );
+  }
+
+  /** Graba un aviso de prueba en el centro nativo (campana). */
+  testCenterNotifications(
+    message = '',
+    tenantSlug?: string,
+  ): Observable<ApiResponse<{ message: string }>> {
+    return this.http.post<ApiResponse<{ message: string }>>(
+      `${this.apiUrl}/push/notifications/test`,
+      { message },
+      { ...this.tenantHeaders(tenantSlug) },
+    );
+  }
+
   /** Envía un mensaje de prueba por un canal. */
   testNotificationChannel(
     id: string,

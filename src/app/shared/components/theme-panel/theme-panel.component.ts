@@ -103,7 +103,18 @@ export class ThemePanelComponent {
     this.languageService.setLang(lang);
   }
 
+  /** Los avisos requieren el dispositivo activo (orden: dispositivo → avisos). */
+  protected canToggleVideo(): boolean {
+    if (!this.devicePush.supported()) {
+      return true;
+    }
+    return this.devicePush.subscribed();
+  }
+
   toggleNotifications(): void {
+    if (!this.canToggleVideo()) {
+      return;
+    }
     this.notificationsPrefs.setEnabled(!this.notificationsPrefs.enabled());
   }
 

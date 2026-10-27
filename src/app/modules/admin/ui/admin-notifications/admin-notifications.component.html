@@ -39,6 +39,35 @@
     <p class="rounded-lg bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300" role="status">{{ notice() }}</p>
   }
 
+  <section class="rounded-xl border border-surface-border bg-surface p-3">
+    <h3 class="text-sm font-bold text-ink">{{ 'ADMIN.NOTIFICATIONS.NATIVE_TITLE' | translate }}</h3>
+    <p class="mb-2 text-xs text-ink-muted-on-dark">
+      {{ 'ADMIN.NOTIFICATIONS.NATIVE_SUBTITLE' | translate }}
+    </p>
+    <div class="flex flex-wrap gap-2">
+      <p-button
+        [label]="'ADMIN.NOTIFICATIONS.TEST_PUSH' | translate"
+        icon="md md-smartphone"
+        size="small"
+        outlined
+        [loading]="testingPush()"
+        (onClick)="testPush()"
+        [pTooltip]="'ADMIN.NOTIFICATIONS.TEST_PUSH_HINT' | translate"
+        tooltipPosition="bottom"
+      />
+      <p-button
+        [label]="'ADMIN.NOTIFICATIONS.TEST_CENTER' | translate"
+        icon="md md-notifications"
+        size="small"
+        outlined
+        [loading]="testingCenter()"
+        (onClick)="testCenter()"
+        [pTooltip]="'ADMIN.NOTIFICATIONS.TEST_CENTER_HINT' | translate"
+        tooltipPosition="bottom"
+      />
+    </div>
+  </section>
+
   <p-table [value]="channels()" [loading]="loading()" styleClass="w-full">
     <ng-template #header>
       <tr>

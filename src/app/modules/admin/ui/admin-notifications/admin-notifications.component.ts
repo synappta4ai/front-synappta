@@ -95,6 +95,9 @@ export class AdminNotificationsComponent {
   protected readonly confirmDeleteId = signal<string | null>(null);
   /** Id del canal con prueba en curso. */
   protected readonly testingId = signal<string | null>(null);
+  /** Pruebas de servicios nativos (push web + centro). */
+  protected readonly testingPush = signal(false);
+  protected readonly testingCenter = signal(false);
 
   protected readonly serviceOptions = SERVICE_OPTIONS;
   protected readonly editingMask = signal<string | null>(null);
@@ -208,6 +211,43 @@ export class AdminNotificationsComponent {
         next: () => this.reload(),
         error: () => this.error.set(this.translate.instant('ADMIN.NOTIFICATIONS.ERRORS.SAVE')),
       });
+  }
+
+  protected testPush(): void {
+    this.testingPush.set(true);
+    this.notice.set(null);
+    this.repository.testPushNotifications('', this.tenantSlug()).subscribe({
+      next: (res) => {
+        this.testingPush.set(false);
+        const n = res.data?.sent_to ?? 0;
+        this.notice.set(
+          n > 0
+            ? this.translate.instant('ADMIN.NOTIFICATIONS.TEST_PUSH_OK', { count: n })
+            : this.translate.instant('ADMIN.NOTIFICATIONS.TEST_PUSH_EMPTY'),
+        );
+        setTimeout(() => this.notice.set(null), 3000);
+      },
+      error: (err: { error?: { error?: string } }) => {
+        this.testingPush.set(false);
+        this.error.set(err?.error?.error ?? this.translate.instant('ADMIN.NOTIFICATIONS.ERRORS.TEST'));
+      },
+    });
+  }
+
+  protected testCenter(): void {
+    this.testingCenter.set(true);
+    this.notice.set(null);
+    this.repository.testCenterNotifications('', this.tenantSlug()).subscribe({
+      next: () => {
+        this.testingCenter.set(false);
+        this.notice.set(this.translate.instant('ADMIN.NOTIFICATIONS.TEST_CENTER_OK'));
+        setTimeout(() => this.notice.set(null), 3000);
+      },
+      error: (err: { error?: { error?: string } }) => {
+        this.testingCenter.set(false);
+        this.error.set(err?.error?.error ?? this.translate.instant('ADMIN.NOTIFICATIONS.ERRORS.TEST'));
+      },
+    });
   }
 
   protected test(channel: NotificationChannel): void {

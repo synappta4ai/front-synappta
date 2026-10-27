@@ -133,6 +133,46 @@ export class DevicePushService {
   }
 
   /**
+   * Rota el par VAPID propio del usuario (auto-generado en el back).
+   * Las suscripciones viejas quedan atadas a la clave anterior: tras rotar
+   * se re-suscribe este dispositivo automáticamente.
+   */
+  async rotateKeys(): Promise<string | null> {
+    try {
+      const res = await firstValueFrom(
+        this.http.post<ApiResponse<{ public_key: string }>>(
+          `${this.apiUrl}/push/vapid/rotate`,
+          {},
+        ),
+      );
+      return res.data?.public_key ?? null;
+    } catch {
+      this.error.set('NOTIFICATIONS.DEVICE_SUBSCRIBE_FAILED');
+      return null;
+    }
+  }
+
+  /** Envía un push de prueba a todos mis dispositivos. */
+  async testPush(message?: string): Promise<number> {
+    const res = await firstValueFrom(
+      this.http.post<ApiResponse<{ sent_to: number }>>(`${this.apiUrl}/push/test`, {
+        message: message ?? '',
+      }),
+    );
+    return res.data?.sent_to ?? 0;
+  }
+
+  /** Graba un aviso de prueba en el centro nativo (campana). */
+  async testCenter(message?: string): Promise<void> {
+    await firstValueFrom(
+      this.http.post<ApiResponse<{ message: string }>>(
+        `${this.apiUrl}/push/notifications/test`,
+        { message: message ?? '' },
+      ),
+    );
+  }
+
+  /**
    * Crea un código QR de vinculación (10 min, un solo uso). Requiere login.
    * tenantSlug: la consola admin lo pasa para vincular al tenant gestionado.
    */
@@ -171,8 +211,15 @@ export class DevicePushService {
       const reg = await this.ensureWorker();
       let sub = await reg.pushManager.getSubscription();
       if (!sub) {
-        const { public_key, enabled } = await this.getPublicKey();
-        if (!enabled || !public_key) {
+        // El QR es público (sin login): la clave es la del dueño del código,
+        // no la del endpoint autenticado.
+        const keyRes = await firstValueFrom(
+          this.http.get<ApiResponse<{ public_key: string; enabled: boolean }>>(
+            `${this.apiUrl}/push/pairing/${encodeURIComponent(code)}/public-key`,
+          ),
+        );
+        const public_key = keyRes.data?.public_key ?? '';
+        if (!keyRes.data?.enabled || !public_key) {
           this.error.set('NOTIFICATIONS.DEVICE_NOT_CONFIGURED');
           return false;
         }
