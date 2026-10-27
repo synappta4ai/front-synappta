@@ -7,11 +7,13 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Popover } from 'primeng/popover';
 import { Tooltip } from 'primeng/tooltip';
 import { Dialog } from 'primeng/dialog';
 import { Button } from 'primeng/button';
+import { ToggleSwitch } from 'primeng/toggleswitch';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { UserSessionStore } from '@core/store/user.session';
@@ -19,6 +21,7 @@ import { AuthService } from '@modules/auth/services/auth.service';
 import { UpdateAvatarRequest } from '@modules/auth/interfaces';
 import { LibraryService } from '@modules/library/services';
 import { ThemeService } from '@services/theme.service';
+import { NotificationsPreferencesService } from '@core/services/notifications-preferences.service';
 import { LanguageService, AppLang } from '@services/language.service';
 import { ThemeMode, AccentId, ACCENTS } from '@interfaces/theme.interface';
 import { AUTH } from '@constants/routes';
@@ -29,7 +32,7 @@ const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
 
 @Component({
   selector: 'app-theme-panel',
-  imports: [Popover, Tooltip, Dialog, Button, TranslatePipe],
+  imports: [FormsModule, Popover, Tooltip, Dialog, Button, ToggleSwitch, TranslatePipe],
   templateUrl: './theme-panel.component.html',
   styleUrls: ['./theme-panel.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -42,6 +45,7 @@ export class ThemePanelComponent {
   private readonly router = inject(Router);
   private readonly translate = inject(TranslateService);
   private readonly languageService = inject(LanguageService);
+  private readonly notificationsPrefs = inject(NotificationsPreferencesService);
 
   protected readonly popover = viewChild.required<Popover>('popover');
   private readonly avatarInput = viewChild<ElementRef<HTMLInputElement>>('avatarInput');
@@ -51,6 +55,7 @@ export class ThemePanelComponent {
   readonly currentAccent = this.themeService.currentAccent;
   readonly accents = ACCENTS;
   readonly currentLang = this.languageService.currentLang;
+  readonly notificationsEnabled = this.notificationsPrefs.enabled;
 
   /** Key i18n del nombre del acento (los nombres viven en core/interfaces). */
   protected accentKey(id: AccentId): string {
@@ -94,6 +99,10 @@ export class ThemePanelComponent {
 
   protected setLang(lang: AppLang): void {
     this.languageService.setLang(lang);
+  }
+
+  toggleNotifications(): void {
+    this.notificationsPrefs.setEnabled(!this.notificationsPrefs.enabled());
   }
 
   onAccentChange(accent: AccentId): void {

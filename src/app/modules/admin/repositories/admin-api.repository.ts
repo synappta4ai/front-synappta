@@ -11,6 +11,8 @@ import {
   CreateTenantRequest,
   GeneratedImagesPage,
   GeneratedVideosPage,
+  NotificationChannel,
+  NotificationChannelRequest,
   PermissionDef,
   PlatformUser,
   ServerCommsPage,
@@ -313,6 +315,57 @@ export class AdminApiRepository {
       params,
       ...this.tenantHeaders(tenantSlug),
     });
+  }
+
+  // ─── Notification channels (video ready/failed fan-out) ───────────────
+
+  /** Canales de notificación del tenant (shoutrrr: Slack, Telegram…). */
+  listNotificationChannels(tenantSlug?: string): Observable<ApiResponse<NotificationChannel[]>> {
+    return this.http.get<ApiResponse<NotificationChannel[]>>(`${this.apiUrl}/notify/channels`, {
+      ...this.tenantHeaders(tenantSlug),
+    });
+  }
+
+  createNotificationChannel(
+    payload: NotificationChannelRequest,
+    tenantSlug?: string,
+  ): Observable<ApiResponse<NotificationChannel>> {
+    return this.http.post<ApiResponse<NotificationChannel>>(
+      `${this.apiUrl}/notify/channels`,
+      payload,
+      { ...this.tenantHeaders(tenantSlug) },
+    );
+  }
+
+  updateNotificationChannel(
+    id: string,
+    payload: NotificationChannelRequest,
+    tenantSlug?: string,
+  ): Observable<ApiResponse<NotificationChannel>> {
+    return this.http.put<ApiResponse<NotificationChannel>>(
+      `${this.apiUrl}/notify/channels/${encodeURIComponent(id)}`,
+      payload,
+      { ...this.tenantHeaders(tenantSlug) },
+    );
+  }
+
+  deleteNotificationChannel(id: string, tenantSlug?: string): Observable<ApiResponse<null>> {
+    return this.http.delete<ApiResponse<null>>(
+      `${this.apiUrl}/notify/channels/${encodeURIComponent(id)}`,
+      { ...this.tenantHeaders(tenantSlug) },
+    );
+  }
+
+  /** Envía un mensaje de prueba por un canal. */
+  testNotificationChannel(
+    id: string,
+    tenantSlug?: string,
+  ): Observable<ApiResponse<{ message: string }>> {
+    return this.http.post<ApiResponse<{ message: string }>>(
+      `${this.apiUrl}/notify/channels/${encodeURIComponent(id)}/test`,
+      {},
+      { ...this.tenantHeaders(tenantSlug) },
+    );
   }
 
   // ─── Inference worker: model weight management ────────────────────────

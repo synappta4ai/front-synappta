@@ -69,6 +69,7 @@ export class AdminConsoleComponent {
       { label: t('ADMIN.CONSOLE.MENU_GPU'), route: '/admin/gpu', icon: 'md md-desktop_windows' },
       { label: t('ADMIN.CONSOLE.MENU_USERS'), route: '/admin/users', icon: 'md md-people' },
       { label: t('ADMIN.CONSOLE.MENU_BUCKET'), route: '/admin/bucket', icon: 'md md-storage' },
+      { label: t('ADMIN.CONSOLE.MENU_NOTIFICATIONS'), route: '/admin/notifications', icon: 'md md-notifications' },
       { label: t('ADMIN.CONSOLE.MENU_DRIVE'), route: '/admin/drive', icon: 'md md-folder_open', disabled: true, title: t('ADMIN.CONSOLE.MENU_SOON') },
     ];
 

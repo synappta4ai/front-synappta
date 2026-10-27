@@ -54,6 +54,25 @@ export interface TenantModel {
   credential_configured: boolean;
 }
 
+/** Canal de notificación del tenant (la URL secreta viaja enmascarada). */
+export interface NotificationChannel {
+  id: string;
+  name: string;
+  service: string;
+  url_mask: string;
+  enabled: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Alta/edición de canal: url vacía conserva el secreto guardado. */
+export interface NotificationChannelRequest {
+  name?: string;
+  service?: string;
+  url?: string;
+  enabled?: boolean;
+}
+
 /** Credencial enmascarada (nunca devuelve secretos). */
 export interface TenantCredential {
   id: string;

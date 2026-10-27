@@ -12,6 +12,7 @@ import { AdminImagesComponent } from './ui/admin-images/admin-images.component';
 import { AdminGpuComponent } from './ui/admin-gpu/admin-gpu.component';
 import { AdminUsersComponent } from './ui/admin-users/admin-users.component';
 import { AdminBucketComponent } from './ui/admin-bucket/admin-bucket.component';
+import { AdminNotificationsComponent } from './ui/admin-notifications/admin-notifications.component';
 import { TenantsComponent } from './ui/tenants/tenants.component';
 
 export const adminRoutes: Routes = [
@@ -33,6 +34,9 @@ export const adminRoutes: Routes = [
       { path: 'gpu', component: AdminGpuComponent },
       { path: 'users', component: AdminUsersComponent },
       { path: 'bucket', component: AdminBucketComponent },
+      { path: 'notifications', component: AdminNotificationsComponent },
+      // Tolera el typo histórico del menú: /admin/notications → /admin/notifications.
+      { path: 'notications', redirectTo: 'notifications', pathMatch: 'full' },
       { path: 'tenants', component: TenantsComponent },
       { path: '', redirectTo: 'models', pathMatch: 'full' },
     ],

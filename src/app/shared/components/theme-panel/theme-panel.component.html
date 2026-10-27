@@ -91,6 +91,23 @@
       </div>
     </div>
 
+    <!-- Notifications Section -->
+    <div class="section">
+      <h5 class="section-title">{{ 'SHARED.THEME_PANEL.SECTION_NOTIFICATIONS' | translate }}</h5>
+      <div class="notif-row">
+        <span class="notif-label" (click)="toggleNotifications()">
+          <i class="md md-notifications notif-icon" aria-hidden="true"></i>
+          <span>{{ 'SHARED.THEME_PANEL.NOTIFICATIONS_VIDEO' | translate }}</span>
+        </span>
+        <p-toggleswitch
+          [ngModel]="notificationsEnabled()"
+          (ngModelChange)="toggleNotifications()"
+          [attr.aria-label]="'SHARED.THEME_PANEL.NOTIFICATIONS_VIDEO' | translate"
+        />
+      </div>
+      <p class="notif-hint">{{ 'SHARED.THEME_PANEL.NOTIFICATIONS_HINT' | translate }}</p>
+    </div>
+
     <!-- Accent Section -->
     <div class="section">
       <h5 class="section-title">{{ 'SHARED.THEME_PANEL.SECTION_ACCENT' | translate }}</h5>
