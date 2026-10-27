@@ -12,6 +12,7 @@ import {
   GeneratedVideosPage,
   PermissionDef,
   PlatformUser,
+  ServerCommunicationLog,
   ServerCommsPage,
   Tenant,
   TenantCredential,
@@ -163,6 +164,10 @@ export class AdminService {
     return unwrap(this.adminApiRepository.listServerComms(page, limit, taskId, tenantSlug));
   }
 
+  getServerComm(id: string, tenantSlug?: string): Observable<ServerCommunicationLog> {
+    return unwrap(this.adminApiRepository.getServerComm(id, tenantSlug));
+  }
+
   listGeneratedVideos(
     page = 1,
     limit = 20,
@@ -170,6 +175,30 @@ export class AdminService {
     tenantSlug?: string,
   ): Observable<GeneratedVideosPage> {
     return unwrap(this.adminApiRepository.listGeneratedVideos(page, limit, eventId, tenantSlug));
+  }
+
+  /** Papelera: generaciones borradas hace menos de 30 días. */
+  listTrashLogs(
+    page = 1,
+    limit = 20,
+    resourceType?: string,
+    tenantSlug?: string,
+  ): Observable<GeneratedVideosPage> {
+    return unwrap(
+      this.adminApiRepository.listTrashLogs(page, limit, resourceType, tenantSlug),
+    );
+  }
+
+  trashGenerationLog(id: string, tenantSlug?: string): Observable<{ message: string }> {
+    return unwrap(this.adminApiRepository.trashGenerationLog(id, tenantSlug));
+  }
+
+  restoreGenerationLog(id: string, tenantSlug?: string): Observable<{ message: string }> {
+    return unwrap(this.adminApiRepository.restoreGenerationLog(id, tenantSlug));
+  }
+
+  deleteGenerationLogPermanent(id: string, tenantSlug?: string): Observable<{ message: string }> {
+    return unwrap(this.adminApiRepository.deleteGenerationLogPermanent(id, tenantSlug));
   }
 
   listGeneratedImages(

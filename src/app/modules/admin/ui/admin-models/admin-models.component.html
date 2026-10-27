@@ -407,8 +407,8 @@
               </div>
             </div>
 
-            <!-- Filtros: texto + proveedor + tipo -->
-            <div class="flex flex-wrap items-center gap-2 border-b border-surface-border px-5 py-3">
+            <!-- Filtros en una sola fila: comparten el ancho para dar aire a la lista -->
+            <div class="flex items-center gap-2 border-b border-surface-border px-5 py-3">
               <input
                 pInputText
                 type="search"
@@ -416,7 +416,7 @@
                 (ngModelChange)="search.set($event)"
                 [placeholder]="'ADMIN.MODELS.FILTER_SEARCH' | translate"
                 [attr.aria-label]="'ADMIN.MODELS.FILTER_SEARCH' | translate"
-                class="w-44"
+                class="min-w-0 flex-1"
               />
               <p-select
                 [ngModel]="providerFilter()"
@@ -427,7 +427,7 @@
                 [placeholder]="'ADMIN.MODELS.FILTER_PROVIDER' | translate"
                 [showClear]="true"
                 appendTo="body"
-                styleClass="w-44"
+                styleClass="w-32 shrink-0"
               />
               <p-select
                 [ngModel]="modalityFilter()"
@@ -438,15 +438,19 @@
                 [placeholder]="'ADMIN.MODELS.FILTER_TYPE' | translate"
                 [showClear]="true"
                 appendTo="body"
-                styleClass="w-36"
+                styleClass="w-28 shrink-0"
               />
               @if (search() || providerFilter() || modalityFilter()) {
                 <p-button
-                  [label]="'ADMIN.MODELS.FILTERS_CLEAR' | translate"
                   icon="md md-close"
                   size="small"
                   severity="secondary"
                   text
+                  [attr.aria-label]="'ADMIN.MODELS.FILTERS_CLEAR' | translate"
+                  [pTooltip]="'ADMIN.MODELS.FILTERS_CLEAR' | translate"
+                  showDelay="400"
+                  tooltipPosition="bottom"
+                  styleClass="shrink-0"
                   (onClick)="clearFilters()"
                 />
               }
@@ -456,12 +460,14 @@
               [value]="$any(filteredModels())"
               [tableStyle]="{ 'min-width': '30rem' }"
               [rowHover]="true"
+              [scrollable]="true"
+              scrollHeight="flex"
               [paginator]="true"
               [rows]="10"
               [rowsPerPageOptions]="[10, 20, 50]"
               [showCurrentPageReport]="true"
               currentPageReportTemplate="{first}–{last} / {totalRecords}"
-              styleClass="p-datatable-sm"
+              styleClass="p-datatable-sm min-h-0 flex-1"
             >
               <ng-template #header>
                 <tr>

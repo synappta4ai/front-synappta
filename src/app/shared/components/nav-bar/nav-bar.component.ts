@@ -101,6 +101,7 @@ export class NavBarComponent {
       { label: t('ADMIN.CONSOLE.MENU_USERS'), icon: 'md md-people', routerLink: '/admin/users' },
       { label: t('ADMIN.CONSOLE.MENU_BUCKET'), icon: 'md md-storage', routerLink: '/admin/bucket' },
       { label: t('ADMIN.CONSOLE.MENU_NOTIFICATIONS'), icon: 'md md-notifications', routerLink: '/admin/notifications' },
+      { label: t('ADMIN.CONSOLE.MENU_TRASH'), icon: 'md md-delete', routerLink: '/admin/papelera' },
       { label: t('ADMIN.CONSOLE.MENU_TENANTS'), icon: 'md md-business', routerLink: '/admin/tenants' },
     ];
 

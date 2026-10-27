@@ -197,6 +197,9 @@ export interface ServerCommunicationLog {
   total_duration_ms: number;
   request_body?: string;
   response_body?: string;
+  /** La lista trae preview (4k): true = pedir el texto completo por id. */
+  request_truncated?: boolean;
+  response_truncated?: boolean;
   status_code: number;
   duration_ms: number;
   error_message?: string;
@@ -299,6 +302,8 @@ export interface GeneratedMedia {
   video_fps: number;
   progress: number;
   created_at: string;
+  /** Solo presente en la papelera: cuándo se mandó a trash. */
+  deleted_at?: string;
   // Enriched (LEFT JOIN in the backend)
   event_name: string;
   user_display_name: string;

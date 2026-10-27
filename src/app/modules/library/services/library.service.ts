@@ -63,6 +63,11 @@ export class LibraryService {
     return unwrap(this.libraryApiRepository.listFiles());
   }
 
+  /** Archivos en la papelera (se borran solos a los 30 días). */
+  listTrashedFiles(tenantSlug?: string): Observable<FileAsset[]> {
+    return unwrap(this.libraryApiRepository.listTrashedFiles(tenantSlug));
+  }
+
   getFile(id: string): Observable<FileAsset> {
     return unwrap(this.libraryApiRepository.getFile(id));
   }

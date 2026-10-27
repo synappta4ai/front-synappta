@@ -58,7 +58,7 @@
         </div>
       </div>
     } @else {
-      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div class="grid gap-3 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
         @for (v of filtered(); track v.id; let i = $index) {
           <div
             animate.enter="anim-item"
@@ -89,9 +89,9 @@
                 class="absolute inset-0 flex items-center justify-center bg-scrim/30 opacity-0 transition-opacity group-hover:opacity-100"
               >
                 <div
-                  class="flex h-12 w-12 items-center justify-center rounded-full bg-scrim/90 text-accent"
+                  class="flex h-10 w-10 items-center justify-center rounded-full bg-scrim/90 text-accent"
                 >
-                  <i class="md md-play_arrow ml-0.5 text-lg"></i>
+                  <i class="md md-play_arrow ml-0.5 text-base"></i>
                 </div>
               </div>
               @if (v.video_duration > 0) {
@@ -103,70 +103,58 @@
               }
             </div>
 
-            <!-- Info -->
-            <div class="flex flex-col gap-2 p-4">
+            <!-- Info (compacta) -->
+            <div class="flex flex-col gap-1 p-3">
               <div class="flex items-start justify-between gap-2">
                 <div class="min-w-0">
-                  <p class="truncate font-bold text-ink-on-dark">
+                  <p class="truncate text-sm font-bold text-ink-on-dark">
                     {{ v.event_name || ('ADMIN.VIDEOS.NO_PROJECT' | translate) }}
                   </p>
                   <p class="truncate text-xs text-ink-muted-on-dark">
                     {{ v.piece_code }}
-                    @if (v.piece_name) {
-                      <span> · {{ v.piece_name }}</span>
-                    }
                     @if (v.generation_number) {
                       <span> · G{{ v.generation_number }}</span>
                     }
+                    · {{ v.created_at | date: 'shortDate' }}
                   </p>
                 </div>
                 <p-tag
                   [value]="v.video_resolution || '—'"
                   severity="secondary"
-                  styleClass="shrink-0"
+                  styleClass="shrink-0 text-xs"
                 />
               </div>
 
-              <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-ink-muted-on-dark">
-                <span class="flex items-center gap-1">
-                  <i class="md md-person text-xs"></i>
-                  {{ v.user_display_name || 'u' + (v.user_id ?? '—') }}
+              <div class="flex items-center justify-between border-t border-surface-border pt-1.5">
+                <span class="flex min-w-0 items-center gap-1 truncate text-xs text-ink-muted-on-dark">
+                  <i class="md md-person shrink-0 text-xs"></i>
+                  <span class="truncate">{{ v.user_display_name || 'u' + (v.user_id ?? '—') }}</span>
                 </span>
-                <span class="flex items-center gap-1">
-                  <i class="md md-calendar_month text-xs"></i>
-                  {{ v.created_at | date: 'short' }}
+                <span class="flex shrink-0 items-center">
+                  <p-button
+                    icon="md md-delete_outline"
+                    size="small"
+                    text
+                    severity="danger"
+                    [loading]="trashBusy() === v.id"
+                    [disabled]="trashBusy() === v.id"
+                    (onClick)="trashVideo(v, $event)"
+                    [pTooltip]="'ADMIN.VIDEOS.TRASH' | translate"
+                    showDelay="400"
+                    tooltipPosition="top"
+                    [attr.aria-label]="'ADMIN.VIDEOS.TRASH' | translate"
+                  />
+                  <p-button
+                    icon="md md-play_arrow"
+                    size="small"
+                    text
+                    (onClick)="openPlayer(v)"
+                    [pTooltip]="'ADMIN.VIDEOS.VIEW' | translate"
+                    showDelay="400"
+                    tooltipPosition="top"
+                    [attr.aria-label]="'ADMIN.VIDEOS.VIEW' | translate"
+                  />
                 </span>
-                @if (v.usage_tokens > 0) {
-                  <span class="flex items-center gap-1">
-                    <i class="md md-bolt text-xs"></i>
-                    {{ v.usage_tokens | number: '1.0-0' }} tokens
-                  </span>
-                }
-                @if (v.video_ratio) {
-                  <span class="flex items-center gap-1">
-                    <i class="md md-grid_view text-xs"></i>
-                    {{ v.video_ratio }}
-                  </span>
-                }
-              </div>
-
-              <div
-                class="mt-1 flex items-center justify-between border-t border-surface-border pt-2"
-              >
-                <code
-                  class="truncate text-xs text-ink-muted-on-dark"
-                  [pTooltip]="v.task_id"
-                  showDelay="400"
-                >
-                  {{ v.task_id }}
-                </code>
-                <p-button
-                  icon="md md-play_arrow"
-                  [label]="'ADMIN.VIDEOS.VIEW' | translate"
-                  size="small"
-                  text
-                  (onClick)="openPlayer(v)"
-                />
               </div>
             </div>
           </div>

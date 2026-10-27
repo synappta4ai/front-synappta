@@ -112,6 +112,14 @@ export class LibraryApiRepository {
     return this.http.get<ApiResponse<FileAsset[]>>(`${this.apiUrl}/files`);
   }
 
+  /** Archivos en la papelera (trashed=true, con header de tenant). */
+  listTrashedFiles(tenantSlug?: string): Observable<ApiResponse<FileAsset[]>> {
+    return this.http.get<ApiResponse<FileAsset[]>>(`${this.apiUrl}/files`, {
+      params: { trashed: 'true' },
+      ...(tenantSlug ? { headers: { 'X-Tenant-Slug': tenantSlug } } : {}),
+    });
+  }
+
   getFile(id: string): Observable<ApiResponse<FileAsset>> {
     return this.http.get<ApiResponse<FileAsset>>(`${this.apiUrl}/files/${id}`);
   }

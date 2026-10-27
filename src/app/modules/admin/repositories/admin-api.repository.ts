@@ -6,6 +6,7 @@ import { ApiResponse } from '@interfaces/api.interface';
 import { environment } from '@env/environment';
 
 import { MasterModelPref, MasterPrefsView } from '@modules/agency/interfaces';
+import { FileAsset } from '@modules/library/interfaces';
 import {
   CreateTenantMemberRequest,
   CreateTenantRequest,
@@ -15,6 +16,7 @@ import {
   NotificationChannelRequest,
   PermissionDef,
   PlatformUser,
+  ServerCommunicationLog,
   ServerCommsPage,
   Tenant,
   TenantCredential,
@@ -283,6 +285,14 @@ export class AdminApiRepository {
     );
   }
 
+  /** Una traza con sus bodies completos (la lista trae preview truncado). */
+  getServerComm(id: string, tenantSlug?: string): Observable<ApiResponse<ServerCommunicationLog>> {
+    return this.http.get<ApiResponse<ServerCommunicationLog>>(
+      `${this.apiUrl}/agency/logs/server-communications/${encodeURIComponent(id)}`,
+      { ...this.tenantHeaders(tenantSlug) },
+    );
+  }
+
   /** Videos generados completados, con contexto de proyecto/pieza/usuario. */
   listGeneratedVideos(
     page = 1,
@@ -390,6 +400,63 @@ export class AdminApiRepository {
       {},
       { ...this.tenantHeaders(tenantSlug) },
     );
+  }
+
+  // ─── Papelera de generaciones (videos/imágenes) ──────────────────────
+
+  /** Generaciones en la papelera (borrado hace menos de 30 días). */
+  listTrashLogs(
+    page = 1,
+    limit = 20,
+    resourceType?: string,
+    tenantSlug?: string,
+  ): Observable<ApiResponse<GeneratedVideosPage>> {
+    const params: Record<string, number | string> = { page, limit };
+    if (resourceType) params['resource_type'] = resourceType;
+    return this.http.get<ApiResponse<GeneratedVideosPage>>(`${this.apiUrl}/agency/gallery/trash`, {
+      params,
+      ...this.tenantHeaders(tenantSlug),
+    });
+  }
+
+  /** Manda una generación a la papelera (recuperable 30 días). */
+  trashGenerationLog(id: string, tenantSlug?: string): Observable<ApiResponse<{ message: string }>> {
+    return this.http.put<ApiResponse<{ message: string }>>(
+      `${this.apiUrl}/agency/logs/generation/${encodeURIComponent(id)}/trash`,
+      {},
+      { ...this.tenantHeaders(tenantSlug) },
+    );
+  }
+
+  /** Devuelve una generación de la papelera a la galería. */
+  restoreGenerationLog(
+    id: string,
+    tenantSlug?: string,
+  ): Observable<ApiResponse<{ message: string }>> {
+    return this.http.put<ApiResponse<{ message: string }>>(
+      `${this.apiUrl}/agency/logs/generation/${encodeURIComponent(id)}/restore`,
+      {},
+      { ...this.tenantHeaders(tenantSlug) },
+    );
+  }
+
+  /** Borra una generación para siempre (fila + archivos locales). */
+  deleteGenerationLogPermanent(
+    id: string,
+    tenantSlug?: string,
+  ): Observable<ApiResponse<{ message: string }>> {
+    return this.http.delete<ApiResponse<{ message: string }>>(
+      `${this.apiUrl}/agency/logs/generation/${encodeURIComponent(id)}/permanent`,
+      { ...this.tenantHeaders(tenantSlug) },
+    );
+  }
+
+  /** Archivos en la papelera (recursos subidos). */
+  listTrashedFiles(tenantSlug?: string): Observable<ApiResponse<FileAsset[]>> {
+    return this.http.get<ApiResponse<FileAsset[]>>(`${this.apiUrl}/files`, {
+      params: { trashed: 'true' },
+      ...this.tenantHeaders(tenantSlug),
+    });
   }
 
   // ─── Inference worker: model weight management ────────────────────────

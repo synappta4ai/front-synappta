@@ -215,6 +215,29 @@ export class AdminLogsComponent {
   protected openDetail(row: CommRow): void {
     this.detail.set(row);
     this.detailVisible.set(true);
+    // La lista trae bodies en preview (4k): completa los truncados por id.
+    const slug = this.tenantSlug() ?? undefined;
+    for (const c of [row.generate, row.estimate, row.poll]) {
+      if (!c || (!c.request_truncated && !c.response_truncated)) continue;
+      this.adminService.getServerComm(c.id, slug).subscribe({
+        next: (full) => this.patchDetailComm(full),
+        error: () => {},
+      });
+    }
+  }
+
+  /** Reemplaza una fase del detalle con su versión de bodies completos. */
+  private patchDetailComm(full: ServerCommunicationLog): void {
+    const current = this.detail();
+    if (!current) return;
+    const swap = (c: ServerCommunicationLog | null) =>
+      c && c.id === full.id ? { ...full } : c;
+    this.detail.set({
+      ...current,
+      generate: swap(current.generate),
+      estimate: swap(current.estimate),
+      poll: swap(current.poll),
+    });
   }
 
   /** Latest activity timestamp of a merged row (poll finish → submit). */

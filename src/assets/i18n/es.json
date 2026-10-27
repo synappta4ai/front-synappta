@@ -479,6 +479,7 @@
       "MENU_USERS": "Usuarios",
       "MENU_BUCKET": "Bucket",
       "MENU_NOTIFICATIONS": "Notificaciones",
+      "MENU_TRASH": "Papelera",
       "MENU_DRIVE": "Google Drive",
       "MENU_TITLE": "Admin",
       "MENU_TENANTS": "Tenants",
@@ -842,7 +843,8 @@
       "ERRORS": {
         "LOAD": "No se pudieron cargar los videos generados.",
         "LOAD_ARTIFACTS": "No se pudieron cargar los artefactos del worker.",
-        "DELETE_ARTIFACT": "No se pudo eliminar el artefacto."
+        "DELETE_ARTIFACT": "No se pudo eliminar el artefacto.",
+        "TRASH": "No se pudo mandar el video a la papelera."
       },
       "WORKER_ARTIFACTS_TITLE": "Artefactos del worker",
       "WORKER_ARTIFACTS_SUBTITLE": "{{count}} archivo(s) en disco del worker",
@@ -850,7 +852,8 @@
       "WORKER_ARTIFACTS_EMPTY_HINT": "Los videos e imágenes generados por el worker aparecerán aquí",
       "DOWNLOAD": "Descargar",
       "DELETE": "Eliminar",
-      "DELETE_ARTIFACT": "Eliminar este archivo del disco del worker"
+      "DELETE_ARTIFACT": "Eliminar este archivo del disco del worker",
+      "TRASH": "Mandar a la papelera"
     },
     "IMAGES": {
       "CLOSE": "Cerrar",
@@ -916,12 +919,41 @@
       "CHOOSE_PROJECT": "Elegí un proyecto",
       "CHOOSE_PROJECT_TOOLTIP": "Elegí un proyecto para asignar",
       "SECTIONS_OTHER": "Otros recursos",
+      "TRASH_IMAGE": "Mandar a la papelera",
+      "TRASH_UPLOAD": "Mandar a la papelera",
       "ERRORS": {
         "LOAD_IMAGES": "No se pudieron cargar las imágenes generadas.",
         "LOAD_UPLOADS": "No se pudieron cargar los recursos subidos.",
         "SAVE_INGREDIENT": "No se pudo guardar el ingrediente.",
         "UPLOAD": "No se pudo subir \"{{name}}\".",
-        "DELETE": "No se pudo eliminar el recurso."
+        "DELETE": "No se pudo eliminar el recurso.",
+        "TRASH_IMAGE": "No se pudo mandar la imagen a la papelera.",
+        "TRASH_UPLOAD": "No se pudo mandar el recurso a la papelera."
+      }
+    },
+    "TRASH": {
+      "TITLE": "Papelera",
+      "SUBTITLE": "Videos, imágenes y recursos borrados. Podés recuperarlos o borrarlos para siempre.",
+      "RETENTION": "Lo que lleve <strong>30 días</strong> en la papelera se <strong>borra solo</strong>, para siempre.",
+      "RELOAD": "Recargar",
+      "LOADING": "Cargando papelera…",
+      "TAB_VIDEOS": "Videos ({{count}})",
+      "TAB_IMAGES": "Imágenes ({{count}})",
+      "TAB_FILES": "Archivos ({{count}})",
+      "EMPTY": "La papelera está vacía.",
+      "KIND_VIDEO": "video",
+      "KIND_IMAGE": "imagen",
+      "DELETED_AT": "Borrado",
+      "AUTO_DELETE": "Se borra solo",
+      "RESTORE": "Recuperar",
+      "RESTORED": "Recuperado de la papelera.",
+      "DELETED": "Borrado para siempre.",
+      "DELETE_FOREVER": "Borrar para siempre",
+      "CONFIRM_DELETE": "Confirmar borrado definitivo",
+      "ERRORS": {
+        "LOAD": "No se pudo cargar la papelera.",
+        "RESTORE": "No se pudo recuperar el item.",
+        "DELETE": "No se pudo borrar el item."
       }
     },
     "LOGS": {

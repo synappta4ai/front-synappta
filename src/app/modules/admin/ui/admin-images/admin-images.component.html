@@ -113,7 +113,7 @@
         <p>{{ 'ADMIN.IMAGES.EMPTY_GENERATED_HINT' | translate }}</p>
       </div>
     } @else {
-      <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+      <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
         @for (img of filtered(); track img.id; let i = $index) {
           <div
             animate.enter="anim-item"
@@ -148,13 +148,27 @@
                 </div>
               </div>
             </div>
-            <div class="flex flex-col gap-1 p-3">
+            <div class="flex flex-col gap-1 p-2.5">
               <p class="truncate text-sm font-bold text-ink-on-dark">
                 {{ img.event_name || ('ADMIN.IMAGES.NO_PROJECT' | translate) }}
               </p>
               <div class="flex items-center justify-between text-xs text-ink-muted-on-dark">
-                <span class="truncate">{{ img.piece_code }}</span>
-                <span>{{ img.created_at | date: 'short' }}</span>
+                <span class="min-w-0 flex-1 truncate">{{ img.piece_code }}</span>
+                <span class="shrink-0">{{ img.created_at | date: 'shortDate' }}</span>
+                <p-button
+                  icon="md md-delete_outline"
+                  size="small"
+                  text
+                  severity="danger"
+                  styleClass="!p-1 shrink-0"
+                  [loading]="trashBusy() === img.id"
+                  [disabled]="trashBusy() === img.id"
+                  (onClick)="trashImage(img, $event)"
+                  [pTooltip]="'ADMIN.IMAGES.TRASH_IMAGE' | translate"
+                  showDelay="400"
+                  tooltipPosition="top"
+                  [attr.aria-label]="'ADMIN.IMAGES.TRASH_IMAGE' | translate"
+                />
               </div>
             </div>
           </div>
@@ -339,7 +353,23 @@
                 }
               </div>
               <div class="card-body">
-                <p class="filename" [title]="asset.filename">{{ asset.filename }}</p>
+                <div class="flex items-start justify-between gap-1">
+                  <p class="filename min-w-0 flex-1" [title]="asset.filename">{{ asset.filename }}</p>
+                  <p-button
+                    icon="md md-delete_outline"
+                    size="small"
+                    text
+                    severity="danger"
+                    styleClass="!p-1 shrink-0"
+                    [loading]="trashBusy() === asset.id"
+                    [disabled]="trashBusy() === asset.id"
+                    (onClick)="trashUpload(asset, $event)"
+                    [pTooltip]="'ADMIN.IMAGES.TRASH_UPLOAD' | translate"
+                    showDelay="400"
+                    tooltipPosition="top"
+                    [attr.aria-label]="'ADMIN.IMAGES.TRASH_UPLOAD' | translate"
+                  />
+                </div>
                 @if (asset.ingredients?.length) {
                   @for (ing of asset.ingredients; track ing.id) {
                     <span

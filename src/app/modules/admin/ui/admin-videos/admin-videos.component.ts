@@ -74,6 +74,9 @@ export class AdminVideosComponent {
   protected readonly selected = signal<GeneratedVideo | null>(null);
   protected readonly playerVisible = signal(false);
 
+  /** Id de la generación en tránsito a la papelera. */
+  protected readonly trashBusy = signal<string | null>(null);
+
   // ─── Worker artifacts ─────────────────────────────────────────────
   protected readonly workerArtifacts = signal<WorkerArtifact[]>([]);
   protected readonly loadingArtifacts = signal(false);
@@ -141,6 +144,25 @@ export class AdminVideosComponent {
   protected openPlayer(video: GeneratedVideo): void {
     this.selected.set(video);
     this.playerVisible.set(true);
+  }
+
+  /** Manda el video a la papelera (recuperable 30 días). */
+  protected trashVideo(video: GeneratedVideo, event: Event): void {
+    event.stopPropagation();
+    if (this.trashBusy()) return;
+    this.trashBusy.set(video.id);
+    this.error.set(null);
+    this.adminService.trashGenerationLog(video.id, this.tenantSlug() ?? undefined).subscribe({
+      next: () => {
+        this.trashBusy.set(null);
+        this.videos.update((list) => list.filter((v) => v.id !== video.id));
+        this.total.update((t) => Math.max(0, t - 1));
+      },
+      error: () => {
+        this.trashBusy.set(null);
+        this.error.set(this.translate.instant('ADMIN.VIDEOS.ERRORS.TRASH'));
+      },
+    });
   }
 
   /** First video output URL (server-relative), resolved by serverUrl pipe in template. */

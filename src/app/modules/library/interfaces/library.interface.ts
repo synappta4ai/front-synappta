@@ -65,6 +65,8 @@ export interface FileAsset {
   format: string | null;
   storage: string | null;
   trashed: boolean;
+  /** Solo presente en la papelera: cuándo se mandó a trash. */
+  deleted_at?: string;
   duplicate?: boolean;
   /** IDs de los proyectos (eventos) a los que está asignado el recurso. */
   project_ids?: string[];

@@ -195,6 +195,9 @@ export class AdminImagesComponent {
   protected readonly viewerVisible = signal(false);
   protected readonly selected = signal<GeneratedImage | FileAsset | null>(null);
 
+  /** Id del asset en tránsito a la papelera. */
+  protected readonly trashBusy = signal<string | null>(null);
+
   // ─── Uploaded assets (biblioteca) ─────────────────────────────
   protected readonly assets = signal<FileAsset[]>([]);
   protected readonly assetsTotal = signal(0);
@@ -437,6 +440,46 @@ export class AdminImagesComponent {
   protected totalLabel = computed(() =>
     this.section() === 'generated' ? this.total() : this.assetsTotal(),
   );
+
+  /** Manda una imagen generada a la papelera (recuperable 30 días). */
+  protected trashImage(img: GeneratedImage, event: Event): void {
+    event.stopPropagation();
+    if (this.trashBusy()) return;
+    this.trashBusy.set(img.id);
+    this.error.set(null);
+    this.adminService
+      .trashGenerationLog(img.id, this.selectedTenantSlug() ?? undefined)
+      .subscribe({
+        next: () => {
+          this.trashBusy.set(null);
+          this.images.update((list) => list.filter((v) => v.id !== img.id));
+          this.total.update((t) => Math.max(0, t - 1));
+        },
+        error: () => {
+          this.trashBusy.set(null);
+          this.error.set(this.translate.instant('ADMIN.IMAGES.ERRORS.TRASH_IMAGE'));
+        },
+      });
+  }
+
+  /** Manda un recurso subido a la papelera (recuperable 30 días). */
+  protected trashUpload(asset: FileAsset, event: Event): void {
+    event.stopPropagation();
+    if (this.trashBusy()) return;
+    this.trashBusy.set(asset.id);
+    this.error.set(null);
+    this.libraryService.deleteFile(asset.id, this.selectedTenantSlug() ?? undefined).subscribe({
+      next: () => {
+        this.trashBusy.set(null);
+        this.assets.update((list) => list.filter((a) => a.id !== asset.id));
+        this.assetsTotal.update((t) => Math.max(0, t - 1));
+      },
+      error: () => {
+        this.trashBusy.set(null);
+        this.error.set(this.translate.instant('ADMIN.IMAGES.ERRORS.TRASH_UPLOAD'));
+      },
+    });
+  }
 
   protected openViewer(asset: GeneratedImage | FileAsset): void {
     this.selected.set(asset);
