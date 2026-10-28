@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { CONTACT_EMAIL } from '@constants/contact.constants';
 import { RevealDirective } from '@shared/components/reveal/reveal.directive';
@@ -8,8 +9,9 @@ import { HERO_SLIDES } from '../hero-carousel/hero-slides';
 
 @Component({
   selector: 'app-home',
-  imports: [RouterLink, HeroCarouselComponent, RevealDirective],
+  imports: [RouterLink, TranslatePipe, HeroCarouselComponent, RevealDirective],
   templateUrl: './home.component.html',
+  host: { class: 'dark block bg-background text-ink' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomeComponent {

@@ -1,5 +1,5 @@
 <!-- Header minimal integrado al hero -->
-<header class="absolute inset-x-0 top-0 z-30 bg-surface">
+<header class="absolute inset-x-0 top-0 z-30">
   <div class="mx-auto flex h-14 max-w-[1400px] items-center justify-between px-5 sm:px-8">
     <a routerLink="/" class="inline-flex items-center" aria-label="Synappta — inicio">
       <img
@@ -12,79 +12,120 @@
     </a>
     <a
       [href]="'mailto:' + contactEmail"
-      class="text-xs font-bold tracking-[0.15em] text-ink-on-dark/80 transition-colors hover:text-accent"
-      >Contáctanos</a
+      class="text-xs font-bold tracking-[0.15em] text-ink-muted transition-colors hover:text-accent"
+      >{{ 'HOME.CONTACT' | translate }}</a
     >
   </div>
 </header>
 
-<!-- Hero -->
-<section id="inicio" class="scroll-mt-20 overflow-hidden bg-surface text-ink-on-dark">
-  <div
-    class="mx-auto grid max-w-[1400px] items-center gap-10 px-5 pt-24 pb-12 sm:px-8 lg:grid-cols-2 lg:gap-12 lg:pt-28"
-  >
-    <div animate.enter="anim-page">
-      <h1
-        class="font-black uppercase leading-[0.9] tracking-tight"
-        style="font-size: clamp(2.5rem, 5.2vw, 5rem)"
-      >
-        <span class="block">Hacemos que</span>
-        <span class="block">las ideas</span>
-        <span class="block text-accent">conecten</span>
-      </h1>
-      <p class="mt-6 text-xs font-bold tracking-[0.2em] text-ink-muted-on-dark">Estudio creativo</p>
-      <p class="mt-4 max-w-md text-sm font-normal leading-relaxed text-ink-muted-on-dark">
-        Synapta es un estudio de producción de video y estrategia de contenido generado con IA.
-        Tenemos a disposición los modelos más potentes y formatos de contenido. Aquí podrás crear
-        piezas audiovisuales, desde el concepto a la distribución, para las marcas o comercio que
-        deseen de una manera más fácil.
-      </p>
-      <div class="mt-8">
+<!-- Hero: la propuesta enmarcada, texto a la izquierda y carrusel a la derecha -->
+<section id="inicio" class="scroll-mt-20 overflow-hidden bg-background text-ink">
+  <div class="mx-auto max-w-[1400px] px-5 pt-20 pb-12 sm:px-8 sm:pt-24">
+    <div
+      class="grid items-center gap-8 border border-ink/25 p-5 sm:p-8 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)] lg:gap-10"
+      animate.enter="anim-page"
+    >
+      <div>
+        <h1
+          class="font-black uppercase leading-[0.92] tracking-tight"
+          style="font-size: clamp(2.05rem, 3.6vw, 3.25rem)"
+        >
+          <span class="block">{{ 'HOME.HERO_TITLE_A' | translate }}</span>
+          <span class="block">
+            {{ 'HOME.HERO_TITLE_B_LEAD' | translate }}
+            <span class="text-accent">{{ 'HOME.HERO_TITLE_B' | translate }}</span>
+          </span>
+        </h1>
+        <p class="mt-5 max-w-lg text-sm leading-relaxed text-ink-muted sm:text-base">
+          {{ 'HOME.HERO_SUB' | translate }}
+        </p>
         <a
           [routerLink]="registerUrl"
-          class="inline-flex items-center justify-center rounded-full bg-accent px-7 py-3.5 text-sm font-bold text-on-accent transition-colors hover:bg-accent-hover active:scale-[0.98]"
-          >Prueba nuestro estudio de creación con IA</a
+          class="mt-7 inline-flex items-center gap-2 rounded-full bg-accent px-6 py-3.5 text-sm font-bold text-on-accent transition-colors hover:bg-accent-hover active:scale-[0.99]"
         >
+          {{ 'HOME.HERO_CTA' | translate }}
+        </a>
       </div>
-    </div>
-    <div animate.enter="anim-item">
-      <app-hero-carousel [slides]="slides" />
+      <div animate.enter="anim-item">
+        <app-hero-carousel [slides]="slides" />
+      </div>
     </div>
   </div>
 </section>
 
-<!-- CTA -->
-<section class="relative overflow-hidden border-t border-scrim/20 bg-accent text-on-accent">
-  <div class="mx-auto grid max-w-[1400px] gap-8 px-5 py-14 sm:px-8 sm:py-20 lg:grid-cols-12">
-    <div class="lg:col-span-8" appReveal>
+<!-- Cómo funciona: Idea → Escena → Video -->
+<section class="border-t border-ink/10 bg-background text-ink">
+  <div class="mx-auto max-w-[1400px] px-5 py-14 sm:px-8 sm:py-16">
+    <ol class="flex flex-col gap-8 md:flex-row md:items-start md:gap-6">
+      <li class="flex-1">
+        <h2 class="text-3xl font-black uppercase tracking-tight text-accent">
+          {{ 'HOME.STEPS.IDEA' | translate }}
+        </h2>
+        <p class="mt-1 text-sm leading-snug text-ink-muted sm:text-base">
+          {{ 'HOME.STEPS.IDEA_DESC' | translate }}
+        </p>
+      </li>
+      <li class="hidden shrink-0 pt-3 md:block" aria-hidden="true">
+        <i class="md md-arrow_forward text-3xl text-ink-muted"></i>
+      </li>
+      <li class="flex-1">
+        <h2 class="text-3xl font-black uppercase tracking-tight text-accent">
+          {{ 'HOME.STEPS.SCENE' | translate }}
+        </h2>
+        <p class="mt-1 text-sm leading-snug text-ink-muted sm:text-base">
+          {{ 'HOME.STEPS.SCENE_DESC' | translate }}
+        </p>
+      </li>
+      <li class="hidden shrink-0 pt-3 md:block" aria-hidden="true">
+        <i class="md md-arrow_forward text-3xl text-ink-muted"></i>
+      </li>
+      <li class="flex-1">
+        <h2 class="text-3xl font-black uppercase tracking-tight text-accent">
+          {{ 'HOME.STEPS.VIDEO' | translate }}
+        </h2>
+        <p class="mt-1 text-sm leading-snug text-ink-muted sm:text-base">
+          {{ 'HOME.STEPS.VIDEO_DESC' | translate }}
+        </p>
+      </li>
+    </ol>
+
+    <p class="mt-12 border-t border-ink/10 pt-6 text-xs leading-relaxed text-ink-muted sm:text-sm">
+      {{ 'HOME.TAGS' | translate }}
+    </p>
+  </div>
+</section>
+
+<!-- Cierre: el manifiesto en amarillo -->
+<section class="bg-accent text-on-accent">
+  <div
+    class="mx-auto flex max-w-[1400px] flex-col gap-10 px-5 py-16 sm:px-8 sm:py-20 lg:flex-row lg:items-end lg:justify-between"
+    appReveal
+  >
+    <div>
       <h2
-        class="font-black uppercase leading-[0.95] tracking-tight"
-        style="font-size: clamp(2.5rem, 7vw, 6.5rem)"
+        class="font-black leading-[0.92] tracking-tight"
+        style="font-size: clamp(2.75rem, 7.5vw, 6.75rem)"
       >
-        <span class="block">¿Tienes un</span>
-        <span class="block">proyecto en</span>
-        <span class="block">mente?</span>
+        <span class="block">{{ 'HOME.FINAL_A' | translate }}</span>
+        <span class="block">{{ 'HOME.FINAL_B' | translate }}</span>
+        <span class="block">{{ 'HOME.FINAL_C' | translate }}</span>
       </h2>
-      <div class="mt-10">
-        <a
-          [routerLink]="registerUrl"
-          class="inline-flex items-center gap-3 rounded-full bg-scrim px-8 py-4 text-base font-bold text-ink-on-dark transition-transform duration-200 hover:scale-[1.03] active:scale-[0.98]"
-        >
-          Escríbenos
-          <i class="md md-arrow_forward text-2xl" aria-hidden="true"></i>
-        </a>
-      </div>
+      <a
+        [routerLink]="registerUrl"
+        class="mt-10 inline-flex items-center gap-3 rounded-full bg-scrim px-7 py-4 text-base font-bold text-ink-on-dark transition-transform duration-200 hover:scale-[1.02] active:scale-[0.99]"
+      >
+        {{ 'HOME.FINAL_CTA' | translate }}
+        <i class="md md-arrow_forward text-xl" aria-hidden="true"></i>
+      </a>
     </div>
-    <div class="flex items-end justify-start lg:col-span-4 lg:justify-end" appReveal>
-      <img
-        src="/Media/Synappta letras.png"
-        alt="Synappta"
-        width="573"
-        height="138"
-        loading="lazy"
-        decoding="async"
-        class="h-12 w-auto sm:h-16"
-      />
-    </div>
+    <img
+      src="/Media/Synappta letras.png"
+      alt="Synappta"
+      width="573"
+      height="138"
+      loading="lazy"
+      decoding="async"
+      class="h-9 w-auto self-start sm:h-11 lg:self-end"
+    />
   </div>
 </section>

@@ -28,6 +28,27 @@
       "EDITOR": "Editor de video"
     }
   },
+  "HOME": {
+    "CONTACT": "Contáctanos",
+    "HERO_TITLE_A": "Deja de pelear con la IA,",
+    "HERO_TITLE_B_LEAD": "empieza a",
+    "HERO_TITLE_B": "dirigir",
+    "HERO_SUB": "Basta de tener 50 pestañas abiertas y pasar de una herramienta a otra. Aquí puedes desarrollar toda tu producción en un solo lugar.",
+    "HERO_CTA": "Quiero dirigir mi video",
+    "STEPS": {
+      "IDEA": "Idea",
+      "IDEA_DESC": "Escribe una frase, danos un contexto.",
+      "SCENE": "Escena",
+      "SCENE_DESC": "Crea personajes y storyboard.",
+      "VIDEO": "Video",
+      "VIDEO_DESC": "Genera y descarga."
+    },
+    "TAGS": "Comerciales · Miniseries · Info productos · Storyboards · Hoja de personajes · Reemplazo de fondos · Copia videos virales",
+    "FINAL_A": "No necesitas permiso",
+    "FINAL_B": "ni ser un experto,",
+    "FINAL_C": "Solo una idea.",
+    "FINAL_CTA": "Escribe aquí"
+  },
   "VIDEOMACHINE": {
     "TITLE": "VideoMachine · Infoproducto",
     "AGENT_LABEL": "Infoproducto",

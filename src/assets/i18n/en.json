@@ -28,6 +28,27 @@
       "EDITOR": "Video editor"
     }
   },
+  "HOME": {
+    "CONTACT": "Contact us",
+    "HERO_TITLE_A": "Stop fighting the AI,",
+    "HERO_TITLE_B_LEAD": "start",
+    "HERO_TITLE_B": "directing",
+    "HERO_SUB": "Enough of 50 open tabs and jumping between tools. Here you can run your whole production in one place.",
+    "HERO_CTA": "I want to direct my video",
+    "STEPS": {
+      "IDEA": "Idea",
+      "IDEA_DESC": "Write a sentence, give us context.",
+      "SCENE": "Scene",
+      "SCENE_DESC": "Create characters and a storyboard.",
+      "VIDEO": "Video",
+      "VIDEO_DESC": "Generate and download."
+    },
+    "TAGS": "Ads · Miniseries · Product info · Storyboards · Character sheets · Background replacement · Viral video copies",
+    "FINAL_A": "You don't need permission",
+    "FINAL_B": "or to be an expert,",
+    "FINAL_C": "Just an idea.",
+    "FINAL_CTA": "Write here"
+  },
   "VIDEOMACHINE": {
     "TITLE": "VideoMachine · Infoproduct",
     "AGENT_LABEL": "Infoproduct",

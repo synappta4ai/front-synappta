@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { RouterLink, RouterOutlet } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
+import { filter, map, startWith } from 'rxjs';
 import { TranslatePipe } from '@ngx-translate/core';
 
 import { CONTACT_EMAIL, CONTACT_SOCIALS } from '@constants/contact.constants';
@@ -14,6 +16,17 @@ import { CookieBannerComponent } from '@shared/components/cookie-banner/cookie-b
 })
 export class PublicLayoutComponent {
   private readonly languageService = inject(LanguageService);
+  private readonly router = inject(Router);
+
+  /** La portada no lleva el footer: cierra con su propio bloque amarillo. */
+  protected readonly isHome = toSignal(
+    this.router.events.pipe(
+      filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+      map((e) => e.urlAfterRedirects === '/'),
+      startWith(this.router.url === '/'),
+    ),
+    { initialValue: this.router.url === '/' },
+  );
 
   currentYear = signal(new Date().getFullYear());
 
