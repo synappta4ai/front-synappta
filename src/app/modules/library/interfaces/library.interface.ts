@@ -65,6 +65,8 @@ export interface FileAsset {
   format: string | null;
   storage: string | null;
   trashed: boolean;
+  /** Solo presente en la papelera: cuándo se mandó a trash. */
+  deleted_at?: string;
   duplicate?: boolean;
   /** IDs de los proyectos (eventos) a los que está asignado el recurso. */
   project_ids?: string[];
@@ -223,11 +225,7 @@ export function deriveElementName(filename: string): string {
 
 /** Slug del elemento (sin '@'): el Nombre con separadores → '_'. */
 export function deriveElementSlug(name: string): string {
-  return name
-    .trim()
-    .replace(/\s+/g, '_')
-    .replace(/-+/g, '_')
-    .replace(/_+/g, '_');
+  return name.trim().replace(/\s+/g, '_').replace(/-+/g, '_').replace(/_+/g, '_');
 }
 
 /** ID completo del elemento: '@' + slug ('' si el nombre quedó vacío). */

@@ -1,6 +1,15 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { catchError, EMPTY, finalize } from 'rxjs';
 
 import { Button } from 'primeng/button';
@@ -13,7 +22,10 @@ import { Tabs, Tab, TabList, TabPanel, TabPanels } from 'primeng/tabs';
 import { Tooltip } from 'primeng/tooltip';
 
 import { UserSessionStore } from '@core/store/user.session';
+import { formatDurationValue } from '@pipes/format-duration.pipe';
+import { AgencyService } from '@modules/agency/services';
 import { AdminService } from '../../services/admin.service';
+import { AdminTenantService } from '../../services/admin-tenant.service';
 import { ServerCommunicationLog } from '../../interfaces';
 
 /**
@@ -31,9 +43,10 @@ interface CommRow {
 /** A phase tab inside the detail dialog. */
 interface PhaseTab {
   value: string;
-  label: string;
+  labelKey: string;
   icon: string;
-  badge: string;
+  badgeKey: string;
+  badgeParam?: number;
   comm: ServerCommunicationLog | null;
 }
 
@@ -54,17 +67,24 @@ interface PhaseTab {
     TabPanel,
     TabPanels,
     Tooltip,
+    TranslatePipe,
   ],
   templateUrl: './admin-logs.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AdminLogsComponent {
   private readonly adminService = inject(AdminService);
+  private readonly agencyService = inject(AgencyService);
+  private readonly adminTenants = inject(AdminTenantService);
   private readonly sessionStore = inject(UserSessionStore);
+  private readonly translate = inject(TranslateService);
 
   protected readonly isSuperadmin = computed(
     () => this.sessionStore.currentUser()?.role_level === 0,
   );
+
+  /** Tenant elegido en la consola: sus trazas son las que se listan. */
+  protected readonly tenantSlug = computed(() => this.adminTenants.selectedTenant()?.slug ?? null);
 
   protected readonly comms = signal<ServerCommunicationLog[]>([]);
   protected readonly loading = signal(false);
@@ -77,18 +97,34 @@ export class AdminLogsComponent {
   protected readonly detail = signal<CommRow | null>(null);
   protected readonly detailVisible = signal(false);
 
+  /** Recupero manual de costos (backfill): repara $0.00 históricos. */
+  protected readonly recovering = signal(false);
+  protected readonly recovered = signal<{ scanned: number; updated: number } | null>(null);
+
   constructor() {
-    this.load();
+    // Carga inicial y recarga al cambiar el tenant en el header de la consola.
+    effect(() => {
+      this.tenantSlug();
+      untracked(() => {
+        this.page.set(1);
+        this.load();
+      });
+    });
   }
 
   protected load(): void {
     this.loading.set(true);
     this.error.set(null);
     this.adminService
-      .listServerComms(this.page(), this.limit, this.taskIdFilter().trim() || undefined)
+      .listServerComms(
+        this.page(),
+        this.limit,
+        this.taskIdFilter().trim() || undefined,
+        this.tenantSlug() ?? undefined,
+      )
       .pipe(
         catchError(() => {
-          this.error.set('No se pudieron cargar los logs.');
+          this.error.set(this.translate.instant('ADMIN.LOGS.ERRORS.LOAD'));
           return EMPTY;
         }),
         finalize(() => this.loading.set(false)),
@@ -102,6 +138,32 @@ export class AdminLogsComponent {
   protected search(): void {
     this.page.set(1);
     this.load();
+  }
+
+  /**
+   * Dispara el backfill de costos del tenant: recalcula el gasto faltante
+   * desde los payloads guardados, tanto el informado por el proveedor
+   * (créditos) como el estimado por calculadora local. Idempotente.
+   */
+  protected recoverCosts(): void {
+    if (this.recovering()) return;
+    this.recovering.set(true);
+    this.recovered.set(null);
+    this.error.set(null);
+    this.agencyService
+      .backfillGenerationCosts()
+      .pipe(
+        catchError(() => {
+          this.error.set(this.translate.instant('ADMIN.LOGS.ERRORS.RECOVER'));
+          return EMPTY;
+        }),
+        finalize(() => this.recovering.set(false)),
+      )
+      .subscribe((result) => {
+        this.recovered.set(result);
+        // Las filas reparadas cambian el gasto: recarga la vista.
+        this.load();
+      });
   }
 
   protected prevPage(): void {
@@ -153,6 +215,29 @@ export class AdminLogsComponent {
   protected openDetail(row: CommRow): void {
     this.detail.set(row);
     this.detailVisible.set(true);
+    // La lista trae bodies en preview (4k): completa los truncados por id.
+    const slug = this.tenantSlug() ?? undefined;
+    for (const c of [row.generate, row.estimate, row.poll]) {
+      if (!c || (!c.request_truncated && !c.response_truncated)) continue;
+      this.adminService.getServerComm(c.id, slug).subscribe({
+        next: (full) => this.patchDetailComm(full),
+        error: () => {},
+      });
+    }
+  }
+
+  /** Reemplaza una fase del detalle con su versión de bodies completos. */
+  private patchDetailComm(full: ServerCommunicationLog): void {
+    const current = this.detail();
+    if (!current) return;
+    const swap = (c: ServerCommunicationLog | null) =>
+      c && c.id === full.id ? { ...full } : c;
+    this.detail.set({
+      ...current,
+      generate: swap(current.generate),
+      estimate: swap(current.estimate),
+      poll: swap(current.poll),
+    });
   }
 
   /** Latest activity timestamp of a merged row (poll finish → submit). */
@@ -162,14 +247,16 @@ export class AdminLogsComponent {
   }
 
   /** Aggregate event of the merged row: terminal poll status or in-progress. */
-  protected rowEvent(r: CommRow): { label: string; severity: 'success' | 'danger' | 'info' } {
+  protected rowEvent(r: CommRow): { labelKey: string; severity: 'success' | 'danger' | 'info' } {
     const p = r.poll;
     if (p) {
-      if (p.status_code === 0 || p.error_message) return { label: 'ERROR', severity: 'danger' };
-      if (p.status_code >= 400) return { label: String(p.status_code), severity: 'danger' };
-      return { label: 'COMPLETADO', severity: 'success' };
+      if (p.status_code === 0 || p.error_message) {
+        return { labelKey: 'ADMIN.LOGS.EVENT_ERROR', severity: 'danger' };
+      }
+      if (p.status_code >= 400) return { labelKey: String(p.status_code), severity: 'danger' };
+      return { labelKey: 'ADMIN.LOGS.EVENT_COMPLETED', severity: 'success' };
     }
-    return { label: 'EN CURSO', severity: 'info' };
+    return { labelKey: 'ADMIN.LOGS.EVENT_IN_PROGRESS', severity: 'info' };
   }
 
   /** Final HTTP status shown in the table: terminal poll or submit. */
@@ -185,18 +272,13 @@ export class AdminLogsComponent {
   }
 
   protected rowDurationTitle(r: CommRow): string {
-    if ((r.poll?.total_duration_ms ?? 0) > 0) return 'Tiempo total: envío → resultado';
-    if ((r.generate?.duration_ms ?? 0) > 0) return 'Solo la llamada de envío (aún sin resultado)';
+    if ((r.poll?.total_duration_ms ?? 0) > 0) return 'ADMIN.LOGS.DURATION_TITLE_FULL';
+    if ((r.generate?.duration_ms ?? 0) > 0) return 'ADMIN.LOGS.DURATION_TITLE_SEND';
     return '';
   }
 
   protected formatMs(ms: number): string {
-    if (ms < 1000) return `${ms}ms`;
-    const s = ms / 1000;
-    if (s < 60) return `${s.toFixed(1)}s`;
-    const m = Math.floor(s / 60);
-    const rest = Math.round(s - m * 60);
-    return `${m}m ${rest}s`;
+    return formatDurationValue(ms, 'ms');
   }
 
   /** Elapsed time since submit for tasks still without a terminal poll. */
@@ -208,30 +290,30 @@ export class AdminLogsComponent {
 
   /** The phase tabs of the detail dialog for a merged row. */
   protected phases(r: CommRow): PhaseTab[] {
-    const pollBadge = `POLLING ×${r.poll?.poll_count ?? 0}`;
     const tabs: PhaseTab[] = [
       {
         value: 'generation',
-        label: 'Generación',
+        labelKey: 'ADMIN.LOGS.PHASE_GENERATION',
         icon: 'md md-upload',
-        badge: 'ENVÍO',
+        badgeKey: 'ADMIN.LOGS.BADGE_SENT',
         comm: r.generate,
       },
     ];
     if (r.estimate) {
       tabs.push({
         value: 'estimate',
-        label: 'Gasto estimado',
+        labelKey: 'ADMIN.LOGS.PHASE_ESTIMATE',
         icon: 'md md-description',
-        badge: 'GASTO',
+        badgeKey: 'ADMIN.LOGS.BADGE_SPEND',
         comm: r.estimate,
       });
     }
     tabs.push({
       value: 'polling',
-      label: 'Último polling',
+      labelKey: 'ADMIN.LOGS.PHASE_POLLING',
       icon: 'md md-refresh',
-      badge: pollBadge,
+      badgeKey: 'ADMIN.LOGS.BADGE_POLLING',
+      badgeParam: r.poll?.poll_count ?? 0,
       comm: r.poll,
     });
     return tabs;
@@ -268,12 +350,20 @@ export class AdminLogsComponent {
   protected costTooltip(cost: { credits: number; usd: number }): string {
     const parts: string[] = [];
     if (cost.credits > 0) {
-      parts.push(`${Math.round(cost.credits * 100) / 100} cr = créditos del proveedor (Higgsfield)`);
+      parts.push(
+        this.translate.instant('ADMIN.LOGS.COST_CREDITS', {
+          value: Math.round(cost.credits * 100) / 100,
+        }),
+      );
     }
     if (cost.usd > 0) {
-      parts.push(`$${Math.round(cost.usd * 1000) / 1000} = equivalente en dólares (USD)`);
+      parts.push(
+        this.translate.instant('ADMIN.LOGS.COST_USD', {
+          value: Math.round(cost.usd * 1000) / 1000,
+        }),
+      );
     }
-    return `Gasto estimado por el proveedor: ${parts.join(', ')}. Las generaciones fallidas o canceladas se reembolsan.`;
+    return this.translate.instant('ADMIN.LOGS.COST_TOOLTIP', { parts: parts.join(', ') });
   }
 
   protected statusSeverity(status: number): 'success' | 'danger' | 'warn' {

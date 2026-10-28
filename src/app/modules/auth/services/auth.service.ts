@@ -1,21 +1,41 @@
 import { inject, Injectable } from '@angular/core';
-import { Observable, tap } from 'rxjs';
+import { catchError, EMPTY, Observable, tap } from 'rxjs';
 
-import { ApiResponse } from '@interfaces/api.interface';
 import { UserSessionStore } from '@core/store/user.session';
+import { AgencyApiRepository } from '@modules/agency/repositories';
+import { unwrap } from '@utils/unwrap-api-response';
 
-import { LoginRequest, RegisterRequest, TokenResponse, UpdateAvatarRequest, User } from '../interfaces';
+import {
+  AcceptConsentRequest,
+  Consent,
+  LoginRequest,
+  RegisterRequest,
+  TokenResponse,
+  UpdateAvatarRequest,
+  User,
+} from '../interfaces';
 import { AuthApiRepository } from '../repositories';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly authApiRepository = inject(AuthApiRepository);
   private readonly sessionStore = inject(UserSessionStore);
+  private readonly agencyApi = inject(AgencyApiRepository);
 
   login(payload: LoginRequest): Observable<TokenResponse> {
     return unwrap(this.authApiRepository.login(payload)).pipe(
       tap((data) => this.sessionStore.login(data.user, data.token, data.tenant_id)),
+      // Rutina de costos: recalcula filas históricas sin gasto (del $0.00)
+      // con cada inicio de sesión. Fire-and-forget: nunca bloquea el login.
+      tap(() => this.backfillCosts()),
     );
+  }
+
+  private backfillCosts(): void {
+    this.agencyApi
+      .backfillGenerationCosts()
+      .pipe(catchError(() => EMPTY))
+      .subscribe();
   }
 
   register(payload: RegisterRequest): Observable<User> {
@@ -44,28 +64,14 @@ export class AuthService {
   logout(): void {
     this.sessionStore.logout();
   }
-}
 
-function unwrap<T>(source: Observable<ApiResponse<T>>): Observable<T> {
-  return new Observable<T>((subscriber) => {
-    const subscription = source.subscribe({
-      next: (response) => {
-        // success:false es error real; success:true con data:null es una
-        // respuesta de solo-mensaje (p.ej. logout o confirmaciones).
-        if (response.success === false) {
-          subscriber.error(new Error(response.message || 'Request failed'));
-          return;
-        }
-        if (response.data === null) {
-          subscriber.next(null as T);
-          subscriber.complete();
-          return;
-        }
-        subscriber.next(response.data);
-        subscriber.complete();
-      },
-      error: (err: unknown) => subscriber.error(err),
-    });
-    return () => subscription.unsubscribe();
-  });
+  /** Registra una aceptación legal del usuario en sesión. */
+  acceptConsent(payload: AcceptConsentRequest): Observable<Consent> {
+    return unwrap(this.authApiRepository.acceptConsent(payload));
+  }
+
+  /** Lista las aceptaciones legales del usuario en sesión. */
+  listMyConsents(): Observable<Consent[]> {
+    return unwrap(this.authApiRepository.listMyConsents());
+  }
 }

@@ -1,0 +1,195 @@
+<div animate.enter="anim-page" class="mx-auto flex h-full w-full max-w-6xl flex-col gap-4 px-1 py-1">
+  <header class="flex flex-wrap items-center gap-x-4 gap-y-2">
+    <div class="min-w-0">
+      <h2 class="text-lg font-bold text-ink">{{ 'ADMIN.TRASH.TITLE' | translate }}</h2>
+      <p class="text-xs text-ink-muted-on-dark">{{ 'ADMIN.TRASH.SUBTITLE' | translate }}</p>
+    </div>
+    <div class="ml-auto flex items-center gap-2">
+      <p-button
+        icon="md md-refresh"
+        size="small"
+        outlined
+        [loading]="loading()"
+        (onClick)="reload()"
+        [pTooltip]="'ADMIN.TRASH.RELOAD' | translate"
+        tooltipPosition="bottom"
+      />
+    </div>
+  </header>
+
+  <p-message severity="warn" styleClass="w-full" [escape]="false" text="{{ 'ADMIN.TRASH.RETENTION' | translate }}" />
+
+  @if (error(); as message) {
+    <p-message severity="error" [text]="message" [escape]="false" styleClass="w-full" />
+  }
+  @if (notice(); as note) {
+    <p-message severity="success" [text]="note" styleClass="w-full" />
+  }
+
+  <!-- Tabs -->
+  <div class="flex flex-wrap items-center gap-2">
+    @for (t of tabs; track t.value) {
+      <p-button
+        [label]="
+          t.labelKey
+            | translate
+              : {
+                  count:
+                    t.value === 'videos'
+                      ? videos().length
+                      : t.value === 'images'
+                        ? images().length
+                        : files().length,
+                }
+        "
+        [icon]="t.icon"
+        size="small"
+        [outlined]="tab() !== t.value"
+        (onClick)="setTab(t.value)"
+      />
+    }
+  </div>
+
+  <!-- Filas -->
+  @if (loading()) {
+    <div class="flex items-center justify-center py-16" aria-busy="true">
+      <span class="sr-only">{{ 'ADMIN.TRASH.LOADING' | translate }}</span>
+      <i class="md md-autorenew md-spin text-3xl text-ink-muted-on-dark"></i>
+    </div>
+  } @else if (tab() === 'files') {
+    @if (files().length === 0) {
+      <div class="flex flex-col items-center gap-2 rounded-3xl border border-surface-border bg-surface py-16">
+        <i class="md md-delete_outline text-4xl text-ink-muted-on-dark"></i>
+        <p class="font-bold text-ink-on-dark">{{ 'ADMIN.TRASH.EMPTY' | translate }}</p>
+      </div>
+    } @else {
+      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        @for (f of files(); track f.id) {
+          <div class="flex items-center gap-3 rounded-2xl border border-surface-border bg-surface p-3">
+            @if (f.mime_type?.startsWith('image/')) {
+              <img
+                [src]="thumbOf(f) | serverUrl"
+                [alt]="f.filename"
+                loading="lazy"
+                class="h-14 w-14 shrink-0 rounded-xl bg-surface-2 object-cover"
+              />
+            } @else {
+              <span class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-surface-2">
+                <i class="md md-movie text-xl text-ink-muted-on-dark"></i>
+              </span>
+            }
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-sm font-bold text-ink-on-dark" [title]="f.filename">{{ f.filename }}</p>
+              <p class="text-xs text-ink-muted-on-dark">
+                {{ 'ADMIN.TRASH.DELETED_AT' | translate }}: {{ f.deleted_at | date: 'short' }}
+              </p>
+              <p class="text-xs text-warning">
+                {{ 'ADMIN.TRASH.AUTO_DELETE' | translate }}: {{ autoDeleteAt(f.deleted_at) | date: 'shortDate' }}
+              </p>
+            </div>
+            <div class="flex shrink-0 items-center gap-1">
+              <p-button
+                icon="md md-restore"
+                size="small"
+                text
+                [loading]="busyId() === f.id"
+                (onClick)="restoreFile(f)"
+                [pTooltip]="'ADMIN.TRASH.RESTORE' | translate"
+                tooltipPosition="top"
+              />
+              @if (confirmId() === f.id) {
+                <p-button
+                  icon="md md-check"
+                  size="small"
+                  severity="danger"
+                  [loading]="busyId() === f.id"
+                  (onClick)="confirmDeleteFile(f)"
+                  [pTooltip]="'ADMIN.TRASH.CONFIRM_DELETE' | translate"
+                  tooltipPosition="top"
+                />
+                <p-button icon="md md-close" size="small" text (onClick)="cancelDelete()" />
+              } @else {
+                <p-button
+                  icon="md md-delete_forever"
+                  size="small"
+                  text
+                  severity="danger"
+                  (onClick)="askDelete(f.id)"
+                  [pTooltip]="'ADMIN.TRASH.DELETE_FOREVER' | translate"
+                  tooltipPosition="top"
+                />
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+  } @else {
+    @if (rows().length === 0) {
+      <div class="flex flex-col items-center gap-2 rounded-3xl border border-surface-border bg-surface py-16">
+        <i class="md md-delete_outline text-4xl text-ink-muted-on-dark"></i>
+        <p class="font-bold text-ink-on-dark">{{ 'ADMIN.TRASH.EMPTY' | translate }}</p>
+      </div>
+    } @else {
+      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        @for (item of rows(); track item.id) {
+          <div class="overflow-hidden rounded-2xl border border-surface-border bg-surface">
+            <div class="relative aspect-video bg-scrim">
+              @if (isVideo(item)) {
+                <video [src]="thumbOf(item) | serverUrl" preload="metadata" muted class="h-full w-full object-cover"></video>
+              } @else {
+                <img [src]="thumbOf(item) | serverUrl" [alt]="nameOf(item)" loading="lazy" class="h-full w-full object-cover" />
+              }
+              <p-tag
+                [value]="(tab() === 'videos' ? 'ADMIN.TRASH.KIND_VIDEO' : 'ADMIN.TRASH.KIND_IMAGE') | translate"
+                severity="secondary"
+                styleClass="absolute left-2 top-2 text-xs"
+              />
+            </div>
+            <div class="flex flex-col gap-1 p-3">
+              <p class="truncate text-sm font-bold text-ink-on-dark" [title]="nameOf(item)">{{ nameOf(item) }}</p>
+              <p class="text-xs text-ink-muted-on-dark">
+                {{ 'ADMIN.TRASH.DELETED_AT' | translate }}: {{ item.deleted_at | date: 'short' }}
+              </p>
+              <p class="text-xs text-warning">
+                {{ 'ADMIN.TRASH.AUTO_DELETE' | translate }}: {{ autoDeleteAt(item.deleted_at) | date: 'shortDate' }}
+              </p>
+              <div class="mt-1 flex items-center justify-end gap-1 border-t border-surface-border pt-2">
+                <p-button
+                  icon="md md-restore"
+                  [label]="'ADMIN.TRASH.RESTORE' | translate"
+                  size="small"
+                  text
+                  [loading]="busyId() === item.id"
+                  (onClick)="restoreMedia(item)"
+                />
+                @if (confirmId() === item.id) {
+                  <p-button
+                    icon="md md-check"
+                    size="small"
+                    severity="danger"
+                    [loading]="busyId() === item.id"
+                    (onClick)="confirmDeleteMedia(item)"
+                    [pTooltip]="'ADMIN.TRASH.CONFIRM_DELETE' | translate"
+                    tooltipPosition="top"
+                  />
+                  <p-button icon="md md-close" size="small" text (onClick)="cancelDelete()" />
+                } @else {
+                  <p-button
+                    icon="md md-delete_forever"
+                    size="small"
+                    text
+                    severity="danger"
+                    (onClick)="askDelete(item.id)"
+                    [pTooltip]="'ADMIN.TRASH.DELETE_FOREVER' | translate"
+                    tooltipPosition="top"
+                  />
+                }
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  }
+</div>

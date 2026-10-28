@@ -1,0 +1,31 @@
+/* Panel "Tu GPU": estilos locales del onboarding y el código de emparejamiento. */
+
+.gpu-panel {
+  padding: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Numeros de paso del onboarding: círculo con el acento del tema. */
+.step-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+  font-weight: 600;
+  background-color: var(--p-primary-color, var(--color-accent));
+  color: var(--color-on-accent);
+}
+
+/* Código de emparejamiento: grande y legible desde la otra máquina. */
+.pairing-code {
+  font-size: 2.75rem;
+  font-weight: 700;
+  letter-spacing: 0.35em;
+  /* El padding compensa el letter-spacing final para centrar ópticamente. */
+  padding-left: 0.35em;
+  font-variant-numeric: tabular-nums;
+  color: var(--p-primary-color, var(--color-accent));
+}

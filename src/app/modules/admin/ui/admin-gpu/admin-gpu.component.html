@@ -1,0 +1,127 @@
+<div class="mx-auto flex w-full max-w-5xl flex-col gap-4">
+  <div class="flex flex-wrap items-start justify-between gap-3">
+    <div>
+      <h2 class="text-lg font-bold text-ink">{{ 'ADMIN.GPU.TITLE' | translate }}</h2>
+      <p class="text-sm text-ink-muted-on-dark">{{ 'ADMIN.GPU.SUBTITLE' | translate }}</p>
+    </div>
+    <p-button
+      [label]="'ADMIN.GPU.REFRESH' | translate"
+      icon="md md-refresh"
+      size="small"
+      outlined
+      [loading]="loading()"
+      [disabled]="loading()"
+      (onClick)="load()"
+    />
+  </div>
+
+  @if (error(); as message) {
+    <p-message severity="error" [text]="message" [escape]="false" styleClass="w-full" />
+  }
+
+  @if (loading() && !status()) {
+    <div
+      class="flex items-center justify-center rounded-3xl border border-surface-border bg-surface py-16"
+      aria-busy="true"
+    >
+      <p-progressSpinner />
+    </div>
+  } @else {
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div class="rounded-2xl border border-surface-border bg-surface p-5">
+        <div class="mb-3 flex items-center justify-between">
+          <span class="text-xs font-bold text-ink-muted-on-dark">
+            {{ 'ADMIN.GPU.CONNECTION' | translate }}
+          </span>
+          <i class="md md-desktop_windows text-ink-muted-on-dark"></i>
+        </div>
+        @if (status()?.connected) {
+          <p-tag
+            [value]="'ADMIN.GPU.CONNECTED' | translate"
+            severity="success"
+            icon="md md-check"
+          />
+        } @else if (status()?.configured) {
+          <p-tag
+            [value]="'ADMIN.GPU.DISCONNECTED' | translate"
+            severity="danger"
+            icon="md md-error"
+          />
+        } @else {
+          <p-tag
+            [value]="'ADMIN.GPU.NOT_CONFIGURED' | translate"
+            severity="warn"
+            icon="md md-warning"
+          />
+        }
+      </div>
+
+      <div class="rounded-2xl border border-surface-border bg-surface p-5">
+        <div class="mb-3 flex items-center justify-between">
+          <span class="text-xs font-bold text-ink-muted-on-dark">
+            {{ 'ADMIN.GPU.DEVICE' | translate }}
+          </span>
+          <i class="md md-memory text-ink-muted-on-dark"></i>
+        </div>
+        <p class="truncate font-bold text-ink" [pTooltip]="status()?.device_name ?? ''">
+          {{ status()?.device_name || '—' }}
+        </p>
+        <p class="text-xs text-ink-muted-on-dark">
+          {{ (status()?.cuda_available ? 'ADMIN.GPU.CUDA_ON' : 'ADMIN.GPU.CUDA_OFF') | translate }}
+        </p>
+      </div>
+
+      <div class="rounded-2xl border border-surface-border bg-surface p-5">
+        <div class="mb-3 flex items-center justify-between">
+          <span class="text-xs font-bold text-ink-muted-on-dark">
+            {{ 'ADMIN.GPU.CATALOG' | translate }}
+          </span>
+          <i class="md md-inventory_2 text-ink-muted-on-dark"></i>
+        </div>
+        <p class="text-2xl font-bold text-ink">{{ status()?.model_count ?? 0 }}</p>
+        <p class="text-xs text-ink-muted-on-dark">{{ 'ADMIN.GPU.CATALOG_HINT' | translate }}</p>
+      </div>
+
+      <div class="rounded-2xl border border-surface-border bg-surface p-5">
+        <div class="mb-3 flex items-center justify-between">
+          <span class="text-xs font-bold text-ink-muted-on-dark">
+            {{ 'ADMIN.GPU.WEIGHTS' | translate }}
+          </span>
+          <i class="md md-download text-ink-muted-on-dark"></i>
+        </div>
+        <p class="text-2xl font-bold text-ink">
+          {{ downloaded().length }}
+          <span class="text-sm font-normal text-ink-muted-on-dark"> / {{ models().length }} </span>
+        </p>
+        <p class="text-xs text-ink-muted-on-dark">
+          {{ weightsBytes() | formatBytes }} {{ 'ADMIN.GPU.ON_DISK' | translate }}
+        </p>
+      </div>
+    </div>
+
+    <div
+      class="flex flex-wrap items-center gap-3 rounded-2xl border border-surface-border bg-surface-2 px-5 py-4"
+    >
+      <i class="md md-info text-ink-muted-on-dark"></i>
+      <p class="min-w-0 flex-1 text-sm text-ink-muted-on-dark">
+        {{ 'ADMIN.GPU.HINT' | translate }}
+      </p>
+      <div class="flex flex-wrap gap-2">
+        <p-button
+          [label]="'ADMIN.GPU.MANAGE_WEIGHTS' | translate"
+          icon="md md-memory"
+          size="small"
+          outlined
+          (onClick)="goToModels()"
+        />
+        <p-button
+          [label]="'ADMIN.GPU.PAIR' | translate"
+          icon="md md-link_off"
+          size="small"
+          text
+          (onClick)="goToPairing()"
+        />
+      </div>
+    </div>
+  }
+</div>

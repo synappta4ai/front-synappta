@@ -53,9 +53,14 @@
 }
 
 .user-role {
-  font-size: 0.75rem;
+  font-size: 0.5rem;
   color: var(--color-ink-muted-on-dark);
   font-weight: 700;
+}
+
+.app-version {
+  font-size: 0.5rem;
+  color: var(--color-ink-muted-on-dark);
 }
 
 /* Menu Section */
@@ -197,6 +202,67 @@
 
 .mode-icon {
   font-size: 1rem;
+}
+
+/* Notifications opt-in row */
+.notif-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.75rem;
+  background-color: var(--color-surface-2);
+  border: 1px solid var(--color-surface-border-strong);
+  color: var(--color-ink-on-dark);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.notif-row + .notif-row {
+  margin-top: 0.5rem;
+}
+
+.notif-row.notif-disabled {
+  opacity: 0.55;
+}
+
+.notif-row.notif-disabled .notif-label {
+  cursor: not-allowed;
+}
+
+.notif-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.notif-icon {
+  font-size: 1rem;
+  color: var(--color-ink-muted-on-dark);
+}
+
+.notif-hint {
+  margin: 0;
+  font-size: 0.7rem;
+  color: var(--color-ink-muted-on-dark);
+}
+
+.notif-error {
+  margin: 0;
+  font-size: 0.7rem;
+  color: #f87171;
+}
+
+.notif-error__detail {
+  display: block;
+  margin-top: 0.25rem;
+  font-family: ui-monospace, monospace;
+  font-size: 0.65rem;
+  opacity: 0.85;
+  overflow-wrap: anywhere;
 }
 
 /* Diálogos de perfil y configuración (p-dialog inline: el scope alcanza) */

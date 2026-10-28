@@ -23,16 +23,48 @@ El API al que habla se define en `src/environments/environment.ts`
 (`API_URL`). En desarrollo local: `http://localhost:8099/api/v1`
 (back-synapta; ver `../back-synapta/README.md`).
 
+## Tiempo real (WebSocket)
+
+La URL del socket se define en `SOCKET_URL` de los environments. El
+servidor vive en `../socket` (Go + Echo + Gorilla WebSocket) y expone:
+
+- **Chat por salas**: `GET /ws?id=<id>&room=<room>` — el cliente envía
+  `{ sender, content }` y recibe `{ sender, content, dateTime }`
+  (broadcast a la sala).
+- **REST fallback**: `POST /rest-sw?room=<room>` con el mismo body.
+- **Monitor**: `GET /monitor?role=provider|viewer&id=<id>&monitorId=<id>`
+  — el proveedor envía `{ data }`; el visor recibe
+  `{ type, providerId, data, timestamp }` (`full_state`, `update`,
+  `connect`, `disconnect`).
+
+Cliente: `SocketService` en `src/app/core/services/socket.service.ts`.
+Es un servicio base **genérico** sobre el que se construyen los canales
+concretos (chat/monitor). Expone señales `status`, `messages`,
+`lastMessage` e `isConnected`, y los métodos `connect(options)`,
+`send(payload)`, `close()` y `clearMessages()`. Es SSR-safe (no-op en
+server) y soporta reconexión opcional (`reconnect`, `reconnectDelayMs`,
+`maxReconnectAttempts`).
+
+```ts
+const socket = inject(SocketService);
+socket.connect({
+  path: '/ws',
+  query: { id: userId, room: 'strategy-rom' },
+  reconnect: true,
+});
+socket.send({ sender: userId, content: 'Hola' });
+```
+
 ## Comandos
 
-| Comando | Qué hace |
-|---|---|
-| `npm start` | Dev server con SSR (`ng serve`) |
-| `npm run build` | Build producción (SSR) |
-| `npm run build:dev` | Build configuración `dev` |
-| `npm test` | Unit tests (Vitest, jsdom) |
-| `npm run test:e2e` | E2E con Playwright |
-| `npm run serve:ssr:front-synapta` | Servir el build SSR |
+| Comando                           | Qué hace                        |
+| --------------------------------- | ------------------------------- |
+| `npm start`                       | Dev server con SSR (`ng serve`) |
+| `npm run build`                   | Build producción (SSR)          |
+| `npm run build:dev`               | Build configuración `dev`       |
+| `npm test`                        | Unit tests (Vitest, jsdom)      |
+| `npm run test:e2e`                | E2E con Playwright              |
+| `npm run serve:ssr:front-synapta` | Servir el build SSR             |
 
 Los `pre*` scripts generan `environment.ts` desde `scripts/generate-env.ts`.
 
@@ -62,7 +94,7 @@ Los `pre*` scripts generan `environment.ts` desde `scripts/generate-env.ts`.
   `p-togglebutton`; `p-datepicker` rompe SSR (NG0502); no existe `Boolean` en
   templates (TS2339).
 - **Build junto a `ng serve`**: usar `NG_BUILD_CACHE=0 npx ng build
-  --configuration development` — correr el build sin esto envenena
+--configuration development` — correr el build sin esto envenena
   `.angular/cache`. Si `ng serve` sirve template viejo: reiniciarlo.
 - Login E2E: `POST /api/v1/auth/login-tenant` con credenciales de
   `.env.e2e` (el password contiene un en-dash U+2013: con curl falla el

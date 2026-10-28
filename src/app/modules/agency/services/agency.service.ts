@@ -4,6 +4,7 @@ import { exhaustMap, takeWhile } from 'rxjs/operators';
 
 import {
   AiModel,
+  BriefExtraction,
   CostSummary,
   Credential,
   GenerateRequest,
@@ -20,16 +21,20 @@ import {
   ServerCommsPage,
   StatusResponse,
   SyncAssetResult,
+  TenantModelPref,
+  TenantPrefsView,
   UpsertCredentialRequest,
 } from '../interfaces';
 import { AgencyApiRepository } from '../repositories';
-import { ApiResponse } from '@interfaces/api.interface';
+import { unwrap } from '@utils/unwrap-api-response';
+import { WorkerAddressService } from '../../../core/services/worker-address.service';
 
-const TERMINAL_STATUSES: readonly string[] = ['succeeded', 'failed', 'cancelled'];
+const TERMINAL_STATUSES: readonly string[] = ['succeeded', 'completed', 'failed', 'cancelled'];
 
 @Injectable({ providedIn: 'root' })
 export class AgencyService {
   private readonly agencyApiRepository = inject(AgencyApiRepository);
+  private readonly workerAddress = inject(WorkerAddressService);
 
   listModels(): Observable<AiModel[]> {
     return unwrap(this.agencyApiRepository.listModels());
@@ -37,6 +42,15 @@ export class AgencyService {
 
   listModelsByModality(modality: Modality): Observable<AiModel[]> {
     return unwrap(this.agencyApiRepository.listModelsByModality(modality));
+  }
+
+  /** Curaduría propia del tenant (lo efectivo + desactivados). */
+  getTenantModelPrefs(): Observable<TenantPrefsView> {
+    return unwrap(this.agencyApiRepository.getTenantModelPrefs());
+  }
+
+  upsertTenantModelPrefs(prefs: TenantModelPref[]): Observable<TenantPrefsView> {
+    return unwrap(this.agencyApiRepository.upsertTenantModelPrefs(prefs));
   }
 
   listCredentials(): Observable<Credential[]> {
@@ -52,6 +66,10 @@ export class AgencyService {
   }
 
   generate(modality: Modality, payload: GenerateRequest): Observable<GenerateResponse> {
+    const workerAddr = this.workerAddress.get();
+    if (workerAddr && !payload.worker_addr) {
+      payload = { ...payload, worker_addr: workerAddr };
+    }
     return unwrap(this.agencyApiRepository.generate(modality, payload));
   }
 
@@ -79,6 +97,15 @@ export class AgencyService {
     return unwrap(this.agencyApiRepository.getGenerationCostSummary(filters));
   }
 
+  /**
+   * Recalcula costos y forma faltantes desde los payloads guardados.
+   * Idempotente y con alcance al tenant: cubre tanto el gasto informado
+   * por el proveedor como el estimado por calculadora local.
+   */
+  backfillGenerationCosts(): Observable<{ scanned: number; updated: number }> {
+    return unwrap(this.agencyApiRepository.backfillGenerationCosts());
+  }
+
   listServerCommunications(filters: ServerCommsFilters = {}): Observable<ServerCommsPage> {
     return unwrap(this.agencyApiRepository.listServerCommunications(filters));
   }
@@ -97,6 +124,11 @@ export class AgencyService {
 
   listGeneratedAssets(pieceId: string): Observable<GeneratedAsset[]> {
     return unwrap(this.agencyApiRepository.listGeneratedAssets(pieceId));
+  }
+
+  /** Extrae el texto de un folleto (PDF/DOCX/TXT/MD) para la descripción. */
+  extractBrief(file: File): Observable<BriefExtraction> {
+    return unwrap(this.agencyApiRepository.extractBrief(file));
   }
 
   /** Recent tasks of the authenticated user (take-reel hydration). */
@@ -134,28 +166,4 @@ export class AgencyService {
       takeWhile((status) => !TERMINAL_STATUSES.includes(status.status), true),
     );
   }
-}
-
-function unwrap<T>(source: Observable<ApiResponse<T>>): Observable<T> {
-  return new Observable<T>((subscriber) => {
-    const subscription = source.subscribe({
-      next: (response) => {
-        // success:false es error real; success:true con data:null es una
-        // respuesta de solo-mensaje.
-        if (response.success === false) {
-          subscriber.error(new Error(response.message || 'Request failed'));
-          return;
-        }
-        if (response.data === null) {
-          subscriber.next(null as T);
-          subscriber.complete();
-          return;
-        }
-        subscriber.next(response.data);
-        subscriber.complete();
-      },
-      error: (err: unknown) => subscriber.error(err),
-    });
-    return () => subscription.unsubscribe();
-  });
 }

@@ -52,6 +52,17 @@
                 }
               ]
             },
+            "local": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.local.ts"
+                }
+              ]
+            },
             "production": {
               "budgets": [
                 {
@@ -83,12 +94,21 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": {
+            "allowedHosts": ["localhost"]
+          },
           "configurations": {
             "production": {
               "buildTarget": "front-synapta:build:production"
             },
             "development": {
               "buildTarget": "front-synapta:build:development"
+            },
+            "dev": {
+              "buildTarget": "front-synapta:build:dev"
+            },
+            "local": {
+              "buildTarget": "front-synapta:build:local"
             }
           },
           "defaultConfiguration": "development"

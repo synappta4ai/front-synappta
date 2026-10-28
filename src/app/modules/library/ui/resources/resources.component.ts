@@ -9,43 +9,27 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import {
-  catchError,
-  debounceTime,
-  EMPTY,
-  finalize,
-  lastValueFrom,
-  Subject,
-} from 'rxjs';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { catchError, debounceTime, EMPTY, finalize, lastValueFrom, Subject } from 'rxjs';
 
-import { ConfirmationService } from 'primeng/api';
 import { Button } from 'primeng/button';
-import { ConfirmDialog } from 'primeng/confirmdialog';
-import { Dialog } from 'primeng/dialog';
 import { IconField } from 'primeng/iconfield';
 import { InputIcon } from 'primeng/inputicon';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
-import { Select } from 'primeng/select';
-import { Textarea } from 'primeng/textarea';
 
 import { ServerUrlPipe } from '@pipes/server-url.pipe';
-import { EventsService } from '@modules/events/services';
+import { formatBytesValue } from '@pipes/format-bytes.pipe';
 import {
   AssetSectionKey,
   assetMatchesSection,
-  CreateIngredientRequest,
-  deriveElementName,
-  deriveElementSlug,
-  ElementMetadata,
   FileAsset,
-  FileListFilters,
   FileIngredientRef,
-  IngredientFile,
-  IngredientType,
-  parseElementMetadata,
+  FileListFilters,
 } from '@modules/library/interfaces';
 import { LibraryService } from '@modules/library/services';
+import { SendToEditorButtonComponent } from '@modules/editor/ui/send-to-editor-button/send-to-editor-button.component';
+import { AssetEditDialogComponent } from '@shared/components/asset-edit-dialog/asset-edit-dialog';
 import { ImgFadeDirective } from '@shared/components/img-fade/img-fade.directive';
 import { PageContainerComponent } from '@shared/components/page-container/page-container.component';
 import { downloadRemoteFile } from '@utils/download-url';
@@ -55,48 +39,53 @@ type ResFilter = 'all' | 'images' | 'videos' | 'audio' | AssetSectionKey | 'othe
 
 interface ResOption {
   value: ResFilter;
-  label: string;
+  labelKey: string;
   icon: string;
 }
 
-/** Fila de "propiedades personalizadas" del diálogo Editar elemento. */
-interface PropRow {
+/**
+ * Card de la galería. Los recursos que comparten un ingrediente (personaje,
+ * locación, prop) se muestran juntos: `files` son todas sus imágenes y
+ * `primary` es la más reciente, la que representa la card.
+ */
+interface ResourceGroup {
   key: string;
-  value: string;
+  primary: FileAsset;
+  files: FileAsset[];
+  /** Ingredientes del grupo, sin repetir (un archivo puede tener varios). */
+  ingredients: FileIngredientRef[];
 }
 
-/** Valor sentinela del select Estado (el back guarda '' = sin estado). */
-const STATUS_NONE = 'sin_estado';
+/** Cuántos mini iconos entran en la card antes de resumir con "+N". */
+const GROUP_THUMBS_VISIBLE = 5;
 
 @Component({
   selector: 'app-resources',
   imports: [
     FormsModule,
     PageContainerComponent,
+    AssetEditDialogComponent,
     Button,
-    ConfirmDialog,
-    Dialog,
     IconField,
     InputIcon,
     InputText,
     Message,
-    Select,
-    Textarea,
     DatePipe,
     ServerUrlPipe,
     ImgFadeDirective,
+    SendToEditorButtonComponent,
+    TranslatePipe,
   ],
-  providers: [ConfirmationService, ServerUrlPipe],
+  providers: [ServerUrlPipe],
   templateUrl: './resources.component.html',
   styleUrl: './resources.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ResourcesComponent {
   private readonly libraryService = inject(LibraryService);
-  private readonly eventsService = inject(EventsService);
-  private readonly confirmationService = inject(ConfirmationService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly serverUrl = inject(ServerUrlPipe);
+  private readonly translate = inject(TranslateService);
 
   protected readonly pageSize = 48;
 
@@ -113,93 +102,19 @@ export class ResourcesComponent {
   protected readonly filter = signal<ResFilter>('all');
 
   protected readonly filterOptions: ResOption[] = [
-    { value: 'all', label: 'Todos', icon: 'md md-grid_view' },
-    { value: 'images', label: 'Imágenes', icon: 'md md-image' },
-    { value: 'videos', label: 'Videos', icon: 'md md-videocam' },
-    { value: 'audio', label: 'Audio', icon: 'md md-play_circle' },
-    { value: 'character', label: 'Personaje', icon: 'md md-person' },
-    { value: 'location', label: 'Ubicación', icon: 'md md-place' },
-    { value: 'props', label: 'Props', icon: 'md md-inventory_2' },
-    { value: 'other', label: 'Otros', icon: 'md md-description' },
+    { value: 'all', labelKey: 'LIBRARY.FILTER_ALL', icon: 'md md-grid_view' },
+    { value: 'images', labelKey: 'LIBRARY.FILTER_IMAGES', icon: 'md md-image' },
+    { value: 'videos', labelKey: 'LIBRARY.FILTER_VIDEOS', icon: 'md md-videocam' },
+    { value: 'audio', labelKey: 'LIBRARY.FILTER_AUDIO', icon: 'md md-play_circle' },
+    { value: 'character', labelKey: 'LIBRARY.FILTER_CHARACTER', icon: 'md md-person' },
+    { value: 'location', labelKey: 'LIBRARY.FILTER_LOCATION', icon: 'md md-place' },
+    { value: 'props', labelKey: 'LIBRARY.FILTER_PROPS', icon: 'md md-inventory_2' },
+    { value: 'other', labelKey: 'LIBRARY.FILTER_OTHER', icon: 'md md-description' },
   ];
 
-  protected readonly projectOptions = signal<{ label: string; value: string }[]>([]);
-
-  protected readonly viewerVisible = signal(false);
-  protected readonly selected = signal<FileAsset | null>(null);
-
-  // ── Estado del diálogo "Editar elemento" ────────────────────────────────
-  /** Ingrediente (elemento) vinculado; null = se crea al guardar. */
-  protected readonly editIngId = signal<string | null>(null);
-  protected readonly editType = signal<IngredientType>('character');
-  protected readonly editName = signal('');
-  /** Slug del ID sin '@' (el prefijo se muestra en el campo). */
-  protected readonly editElementId = signal('');
-  protected readonly editVersion = signal('');
-  protected readonly editDescription = signal('');
-  /** Valor del select Estado (STATUS_NONE = sin estado). */
-  protected readonly editStatus = signal(STATUS_NONE);
-  protected readonly editProps = signal<PropRow[]>([]);
-
-  protected readonly savingElement = signal(false);
-  protected readonly pickingImage = signal(false);
-  protected readonly loadingElement = signal(false);
-  /** Archivos vinculados al elemento (grilla izquierda). */
-  protected readonly elementFiles = signal<IngredientFile[]>([]);
-  /** true cuando elementFiles refleja el back (evita vínculos duplicados). */
-  protected readonly filesLoaded = signal(false);
-  protected readonly activeIdx = signal(0);
-  /** Rotación visual de la vista previa (90° por click). */
-  protected readonly rotation = signal(0);
-
-  protected readonly categoryOptions: { value: IngredientType; label: string; icon: string }[] = [
-    { value: 'character', label: 'Personaje', icon: 'md md-person' },
-    { value: 'location', label: 'Ubicación', icon: 'md md-place' },
-    { value: 'prop', label: 'Utilería / Props', icon: 'md md-inventory_2' },
-  ];
-
-  protected readonly statusOptions: { value: string; label: string }[] = [
-    { value: STATUS_NONE, label: 'Sin estado' },
-    { value: 'borrador', label: 'Borrador' },
-    { value: 'en_revision', label: 'En revisión' },
-    { value: 'aprobado', label: 'Aprobado' },
-    { value: 'descartado', label: 'Descartado' },
-  ];
-
-  /** Imágenes a mostrar: las del elemento o, si aún no existe, el recurso. */
-  protected readonly displayFiles = computed<IngredientFile[]>(() => {
-    const files = this.elementFiles();
-    if (files.length > 0) {
-      return files;
-    }
-    const file = this.selected();
-    return file ? [this.toIngredientFile(file)] : [];
-  });
-
-  protected readonly activeFile = computed<IngredientFile | null>(() => {
-    const list = this.displayFiles();
-    if (list.length === 0) {
-      return null;
-    }
-    return list[Math.min(this.activeIdx(), list.length - 1)] ?? list[0] ?? null;
-  });
-
-  protected readonly linkedFileIds = computed<ReadonlySet<string>>(() =>
-    new Set(this.elementFiles().map((file) => file.file_id)),
-  );
-
-  /** Título del elemento en el header del diálogo (@id o filename). */
-  protected readonly elementLabel = computed(() => {
-    const slug = this.editElementId().trim().replace(/^@/, '');
-    if (slug) {
-      return `@${slug}`;
-    }
-    return this.selected()?.filename ?? '';
-  });
-
-  protected readonly assignVisible = signal(false);
-  protected readonly assignProjectId = signal<string | null>(null);
-  protected readonly assigning = signal(false);
+  // ── Modal "Editar elemento" (componente compartido) ─────────────────────
+  protected readonly editorVisible = signal(false);
+  protected readonly editorAsset = signal<FileAsset | null>(null);
 
   protected readonly uploading = signal(false);
   protected readonly uploadProgress = signal<{ done: number; total: number } | null>(null);
@@ -217,21 +132,18 @@ export class ResourcesComponent {
   }
 
   constructor() {
-    this.search$
-      .pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef))
-      .subscribe((value) => {
-        this.searchTerm.set(value);
-        this.page.set(1);
-        this.load();
-      });
+    this.search$.pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef)).subscribe((value) => {
+      this.searchTerm.set(value);
+      this.page.set(1);
+      this.load();
+    });
 
     this.load();
-    this.loadProjects();
   }
 
   // ── Datos ────────────────────────────────────────────────────────────────
 
-  private load(): void {
+  protected load(): void {
     this.loading.set(true);
     this.error.set(null);
     const filters: FileListFilters = {
@@ -243,7 +155,7 @@ export class ResourcesComponent {
       .listFilesPaginated(filters)
       .pipe(
         catchError(() => {
-          this.error.set('No se pudieron cargar los recursos.');
+          this.error.set(this.translate.instant('LIBRARY.ERRORS.LOAD'));
           return EMPTY;
         }),
         finalize(() => this.loading.set(false)),
@@ -251,17 +163,6 @@ export class ResourcesComponent {
       .subscribe((res) => {
         this.files.set([...((res.items ?? []) as FileAsset[])]);
         this.total.set(res.total ?? 0);
-      });
-  }
-
-  private loadProjects(): void {
-    this.eventsService
-      .listEvents()
-      .pipe(catchError(() => EMPTY))
-      .subscribe((events) => {
-        this.projectOptions.set(
-          events.map((event) => ({ label: event.name, value: event.id })),
-        );
       });
   }
 
@@ -309,6 +210,80 @@ export class ResourcesComponent {
     }
   }
 
+  protected readonly groupThumbsVisible = GROUP_THUMBS_VISIBLE;
+
+  /**
+   * Agrupa por ingrediente: dos recursos del mismo personaje/locación/prop
+   * caen en una sola card. Un archivo sin ingredientes queda solo, y si dos
+   * grupos comparten ingrediente (archivos con dos refs) se unen también.
+   */
+  private groupFiles(files: FileAsset[]): ResourceGroup[] {
+    const parent = files.map((_, index) => index);
+    const find = (start: number): number => {
+      let index = start;
+      while (parent[index] !== index) {
+        parent[index] = parent[parent[index]];
+        index = parent[index];
+      }
+      return index;
+    };
+    const union = (a: number, b: number): void => {
+      const rootA = find(a);
+      const rootB = find(b);
+      if (rootA !== rootB) {
+        parent[rootB] = rootA;
+      }
+    };
+
+    const owner = new Map<string, number>();
+    files.forEach((file, index) => {
+      for (const ref of file.ingredients ?? []) {
+        const first = owner.get(ref.id);
+        if (first === undefined) {
+          owner.set(ref.id, index);
+        } else {
+          union(first, index);
+        }
+      }
+    });
+
+    const byRoot = new Map<number, ResourceGroup>();
+    for (let index = 0; index < files.length; index += 1) {
+      const file = files[index];
+      const root = find(index);
+      let group = byRoot.get(root);
+      if (!group) {
+        group = { key: `file:${file.id}`, primary: file, files: [], ingredients: [] };
+        byRoot.set(root, group);
+      }
+      group.files.push(file);
+    }
+
+    // El endpoint devuelve los archivos más nuevos primero: el primero del
+    // grupo (y por lo tanto su miniatura) es el recurso más reciente.
+    return [...byRoot.values()].map((group) => {
+      const ingredients: FileIngredientRef[] = [];
+      const seen = new Set<string>();
+      for (const file of group.files) {
+        for (const ref of file.ingredients ?? []) {
+          if (!seen.has(ref.id)) {
+            seen.add(ref.id);
+            ingredients.push(ref);
+          }
+        }
+      }
+      const first = ingredients[0];
+      return {
+        ...group,
+        ingredients,
+        key: first ? `ing:${first.id}` : group.key,
+      };
+    });
+  }
+
+  /** Una card por ingrediente (o recurso suelto) de la página actual. */
+  protected readonly groups = computed(() => this.groupFiles(this.files()));
+
   protected readonly counts = computed<Record<ResFilter, number>>(() => {
     const counts: Record<ResFilter, number> = {
       all: 0,
@@ -320,7 +295,7 @@ export class ResourcesComponent {
       props: 0,
       other: 0,
     };
-    for (const file of this.files()) {
+    for (const group of this.groups()) {
       counts.all += 1;
       for (const key of [
         'images',
@@ -331,7 +306,7 @@ export class ResourcesComponent {
         'props',
         'other',
       ] as const) {
-        if (this.matchesFilter(file, key)) {
+        if (group.files.some((file) => this.matchesFilter(file, key))) {
           counts[key] += 1;
         }
       }
@@ -339,11 +314,14 @@ export class ResourcesComponent {
     return counts;
   });
 
-  protected readonly filteredFiles = computed(() => {
+  /** Cards que pasan el filtro activo (entra si alguno de sus archivos entra). */
+  protected readonly filteredGroups = computed(() => {
     const filter = this.filter();
     return filter === 'all'
-      ? this.files()
-      : this.files().filter((file) => this.matchesFilter(file, filter));
+      ? this.groups()
+      : this.groups().filter((group) =>
+          group.files.some((file) => this.matchesFilter(file, filter)),
+        );
   });
 
   // ── Subida ───────────────────────────────────────────────────────────────
@@ -370,7 +348,7 @@ export class ResourcesComponent {
       try {
         await lastValueFrom(this.libraryService.uploadFile(file, category));
       } catch {
-        this.error.set(`No se pudo subir "${file.name}".`);
+        this.error.set(this.translate.instant('LIBRARY.ERRORS.UPLOAD', { name: file.name }));
       }
       done += 1;
       this.uploadProgress.set({ done, total: files.length });
@@ -382,331 +360,17 @@ export class ResourcesComponent {
     this.load();
   }
 
-  // ── Editor de elemento ─────────────────────────────────────────────────────
-
-  /** Abre el diálogo "Editar elemento" precargando el primer ingrediente. */
+  /** Abre la modal "Editar elemento" del componente compartido. */
   protected openViewer(file: FileAsset): void {
-    const first = file.ingredients?.[0] ?? null;
-    const derivedName = first?.name ?? deriveElementName(file.filename);
-
-    this.selected.set(file);
-    this.editIngId.set(first?.id ?? null);
-    this.editType.set(this.toIngredientType(first?.type) ?? this.toIngredientType(file.category) ?? 'character');
-    this.editName.set(derivedName);
-    this.editElementId.set(deriveElementSlug(derivedName));
-    this.editVersion.set('');
-    this.editDescription.set('');
-    this.editStatus.set(STATUS_NONE);
-    this.editProps.set([]);
-    this.elementFiles.set([]);
-    this.filesLoaded.set(!first?.id);
-    this.activeIdx.set(0);
-    this.rotation.set(0);
-    this.error.set(null);
-    this.viewerVisible.set(true);
-
-    if (first?.id) {
-      void this.loadElement(first.id);
-    }
+    this.editorAsset.set(file);
+    this.editorVisible.set(true);
   }
 
-  protected onViewerVisibleChange(visible: boolean): void {
-    if (visible) {
-      this.viewerVisible.set(true);
-      return;
-    }
-    this.closeViewer();
+  /** Refleja un asset guardado en la grilla (chip de ingrediente al instante). */
+  protected mergeAsset(saved: FileAsset): void {
+    this.files.update((list) => list.map((item) => (item.id === saved.id ? saved : item)));
   }
 
-  protected closeViewer(): void {
-    this.viewerVisible.set(false);
-    this.selected.set(null);
-    this.editIngId.set(null);
-    this.elementFiles.set([]);
-    this.filesLoaded.set(false);
-    this.activeIdx.set(0);
-    this.rotation.set(0);
-  }
-
-  /** Carga ingrediente + archivos (llamado al abrir y tras guardar). */
-  private async loadElement(id: string): Promise<void> {
-    this.loadingElement.set(true);
-    try {
-      const res = await lastValueFrom(this.libraryService.getIngredient(id));
-      const ing = res ? res.ingredient : null;
-      if (ing) {
-        this.editIngId.set(ing.id);
-        this.editType.set(ing.type);
-        this.editName.set(ing.name);
-        this.editDescription.set(ing.description ?? '');
-        const meta = parseElementMetadata(ing.metadata);
-        this.editElementId.set(
-          (meta.element_id ?? '').replace(/^@/, '') || deriveElementSlug(ing.name),
-        );
-        this.editVersion.set(meta.version ?? '');
-        this.editStatus.set(meta.status?.trim() ? meta.status : STATUS_NONE);
-        this.editProps.set(
-          Object.entries(meta.props ?? {}).map(([key, value]) => ({
-            key,
-            value: String(value ?? ''),
-          })),
-        );
-      }
-      this.elementFiles.set([...(res?.files ?? [])]);
-      this.filesLoaded.set(true);
-      this.clampActive();
-    } catch {
-      this.error.set('No se pudo cargar el elemento.');
-    } finally {
-      this.loadingElement.set(false);
-    }
-  }
-
-  /** Recarga sólo los archivos vinculados (no pisa lo que el usuario escribió). */
-  private async loadElementFiles(id: string): Promise<void> {
-    this.loadingElement.set(true);
-    try {
-      const files = await lastValueFrom(this.libraryService.listIngredientFiles(id));
-      this.elementFiles.set([...(files ?? [])]);
-      this.filesLoaded.set(true);
-      this.clampActive();
-    } catch {
-      this.error.set('No se pudieron cargar las imágenes del elemento.');
-    } finally {
-      this.loadingElement.set(false);
-    }
-  }
-
-  private clampActive(): void {
-    const list = this.elementFiles();
-    if (this.activeIdx() >= list.length) {
-      this.activeIdx.set(Math.max(0, list.length - 1));
-    }
-  }
-
-  /** Recarga la grilla de imágenes del elemento (botón refrescar). */
-  protected reloadFiles(): void {
-    const id = this.editIngId();
-    if (id) {
-      void this.loadElementFiles(id);
-    }
-  }
-
-  protected setActive(index: number): void {
-    this.activeIdx.set(index);
-    this.rotation.set(0);
-  }
-
-  protected rotatePreview(): void {
-    this.rotation.update((deg) => (deg + 90) % 360);
-  }
-
-  /** Regenera el ID del elemento a partir del Nombre (botón ↺). */
-  protected resetElementId(): void {
-    this.editElementId.set(deriveElementSlug(this.editName()));
-  }
-
-  // ── Propiedades personalizadas ─────────────────────────────────────────
-
-  protected addProp(): void {
-    this.editProps.update((rows) => [...rows, { key: '', value: '' }]);
-  }
-
-  protected removeProp(index: number): void {
-    this.editProps.update((rows) => rows.filter((_, i) => i !== index));
-  }
-
-  protected updatePropKey(index: number, key: string): void {
-    this.editProps.update((rows) => rows.map((row, i) => (i === index ? { ...row, key } : row)));
-  }
-
-  protected updatePropValue(index: number, value: string): void {
-    this.editProps.update((rows) => rows.map((row, i) => (i === index ? { ...row, value } : row)));
-  }
-
-  // ── Imágenes del elemento ───────────────────────────────────────────────
-
-  /** Sube una imagen, la vincula al elemento y refresca la grilla izquierda. */
-  protected async onPickImage(event: Event): Promise<void> {
-    const input = event.target as HTMLInputElement;
-    const picked = input.files?.[0];
-    input.value = '';
-    if (!picked || this.pickingImage()) {
-      return;
-    }
-    this.pickingImage.set(true);
-    try {
-      const asset = await lastValueFrom(this.libraryService.uploadFile(picked, 'images'));
-      const id = await this.ensureIngredientId();
-      if (!id || !asset?.id) {
-        throw new Error('missing ingredient');
-      }
-      if (!this.linkedFileIds().has(asset.id)) {
-        await lastValueFrom(this.libraryService.addIngredientFile(id, { file_id: asset.id }));
-      }
-      await this.loadElementFiles(id);
-      this.load();
-    } catch {
-      this.error.set('No se pudo añadir la imagen al elemento.');
-    } finally {
-      this.pickingImage.set(false);
-    }
-  }
-
-  /** Quita la imagen activa del elemento (el archivo queda en la biblioteca). */
-  protected confirmRemoveFile(): void {
-    const ingId = this.editIngId();
-    const active = this.activeFile();
-    if (!ingId || !active) {
-      return;
-    }
-    const filename = active.filename ?? 'esta imagen';
-    this.confirmationService.confirm({
-      message: `¿Quitar <strong>${filename}</strong> del elemento? El archivo sigue en la biblioteca.`,
-      header: 'Quitar imagen',
-      icon: 'md md-warning',
-      acceptButtonProps: { label: 'Quitar', severity: 'danger' },
-      rejectButtonProps: { label: 'Cancelar', severity: 'secondary' },
-      accept: () => {
-        this.libraryService
-          .removeIngredientFile(ingId, active.file_id)
-          .pipe(
-            catchError(() => {
-              this.error.set('No se pudo quitar la imagen del elemento.');
-              return EMPTY;
-            }),
-          )
-          .subscribe(() => {
-            void this.loadElementFiles(ingId);
-            this.load();
-          });
-      },
-    });
-  }
-
-  // ── Guardado ───────────────────────────────────────────────────────────
-
-  /** Crea o actualiza el elemento y lo vincula al recurso actual. */
-  protected async saveElement(): Promise<void> {
-    const file = this.selected();
-    if (!file || this.savingElement()) {
-      return;
-    }
-    const payload = this.buildPayload(file);
-    this.savingElement.set(true);
-    try {
-      let id = this.editIngId();
-      if (id) {
-        await lastValueFrom(this.libraryService.updateIngredient(id, payload));
-      } else {
-        const created = await lastValueFrom(this.libraryService.createIngredient(payload));
-        id = created?.id ?? null;
-        this.editIngId.set(id);
-        this.filesLoaded.set(true);
-      }
-      if (id) {
-        if (!this.filesLoaded()) {
-          await this.loadElementFiles(id);
-        }
-        if (!this.linkedFileIds().has(file.id)) {
-          await lastValueFrom(this.libraryService.addIngredientFile(id, { file_id: file.id }));
-          await this.loadElementFiles(id);
-        }
-        // /files/page no siempre trae `ingredients`: reflejamos el guardado en
-        // la card para que el chip y una reapertura del diálogo lo vean.
-        const saved: FileIngredientRef = {
-          id,
-          type: payload.type ?? 'character',
-          name: payload.name ?? deriveElementName(file.filename),
-        };
-        const ingredients = [
-          saved,
-          ...(file.ingredients ?? []).filter((ref) => ref.id !== saved.id),
-        ];
-        this.files.update((list) =>
-          list.map((item) => (item.id === file.id ? { ...item, ingredients } : item)),
-        );
-        this.selected.update((item) =>
-          item && item.id === file.id ? { ...item, ingredients } : item,
-        );
-      }
-    } catch {
-      this.error.set('No se pudo guardar el elemento.');
-    } finally {
-      this.savingElement.set(false);
-    }
-  }
-
-  private buildPayload(file: FileAsset): CreateIngredientRequest {
-    const name = this.editName().trim() || deriveElementName(file.filename);
-    const props: Record<string, string> = {};
-    for (const row of this.editProps()) {
-      const key = row.key.trim();
-      if (key) {
-        props[key] = row.value;
-      }
-    }
-    const slug = this.editElementId().trim().replace(/^@/, '');
-    const metadata: ElementMetadata = {
-      element_id: slug ? `@${slug}` : '',
-      version: this.editVersion().trim(),
-      status: this.editStatus() === STATUS_NONE ? '' : this.editStatus(),
-      props,
-    };
-    return {
-      type: this.editType(),
-      name,
-      description: this.editDescription().trim(),
-      metadata: JSON.stringify(metadata),
-    };
-  }
-
-  /** Crea el elemento sobre la marcha si se intenta añadir imágenes sin guardar. */
-  private async ensureIngredientId(): Promise<string | null> {
-    const existing = this.editIngId();
-    if (existing) {
-      return existing;
-    }
-    const file = this.selected();
-    if (!file) {
-      return null;
-    }
-    const created = await lastValueFrom(
-      this.libraryService.createIngredient(this.buildPayload(file)),
-    );
-    const id = created?.id ?? null;
-    this.editIngId.set(id);
-    this.filesLoaded.set(true);
-    return id;
-  }
-
-  /** Recurso como archivo del elemento (preview mientras no existe ingrediente). */
-  private toIngredientFile(file: FileAsset): IngredientFile {
-    return {
-      file_id: file.id,
-      role: null,
-      filename: file.filename,
-      url: file.url,
-      thumbnail_url: file.thumbnail_url,
-      mime_type: file.mime_type,
-      category: file.category,
-      format: file.format,
-      size: file.size,
-      created_at: file.created_at,
-    };
-  }
-
-  private toIngredientType(value: string | null | undefined): IngredientType | null {
-    if (value === 'character' || value === 'location') {
-      return value;
-    }
-    if (value === 'prop' || value === 'props') {
-      return 'prop';
-    }
-    return null;
-  }
-
-  /** URL absoluta para handlers de usuario (evita pipes en statements). */
   protected absoluteUrl(url: string | null | undefined): string {
     return this.serverUrl.transform(url);
   }
@@ -715,79 +379,21 @@ export class ResourcesComponent {
     void downloadRemoteFile(url ?? '', filename ?? undefined);
   }
 
-  protected openInTab(url: string | null | undefined): void {
-    if (url) {
-      window.open(url, '_blank', 'noopener,noreferrer');
-    }
-  }
-
-  protected openAssign(): void {
-    this.assignProjectId.set(null);
-    this.assignVisible.set(true);
-  }
-
-  protected confirmAssign(): void {
-    const file = this.selected();
-    const projectId = this.assignProjectId();
-    if (!file || !projectId) {
-      return;
-    }
-    this.assigning.set(true);
-    this.libraryService
-      .linkFileEvent(file.id, projectId)
-      .pipe(
-        catchError(() => {
-          this.error.set('No se pudo asignar el recurso al proyecto.');
-          return EMPTY;
-        }),
-        finalize(() => this.assigning.set(false)),
-      )
-      .subscribe(() => {
-        this.assignVisible.set(false);
-        this.load();
-      });
-  }
-
-  protected confirmDelete(file: FileAsset): void {
-    this.confirmationService.confirm({
-      message: `¿Eliminar el recurso <strong>${file.filename}</strong>? Se moverá a la papelera.`,
-      header: 'Eliminar recurso',
-      icon: 'md md-warning',
-      acceptButtonProps: { label: 'Eliminar', severity: 'danger' },
-      rejectButtonProps: { label: 'Cancelar', severity: 'secondary' },
-      accept: () => {
-        this.libraryService
-          .deleteFile(file.id)
-          .pipe(
-            catchError(() => {
-              this.error.set('No se pudo eliminar el recurso.');
-              return EMPTY;
-            }),
-          )
-          .subscribe(() => {
-            this.closeViewer();
-            this.load();
-          });
-      },
-    });
-  }
-
-  // ── Helpers de plantilla ─────────────────────────────────────────────────
-
   protected formatSize(size: number | null): string {
-    if (!size || size <= 0) {
-      return '—';
-    }
-    if (size < 1024 * 1024) {
-      return `${Math.round(size / 1024)} KB`;
-    }
-    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+    return formatBytesValue(size);
   }
 
   protected ingTypeLabel(type: string | null): string {
-    if (type === 'character') return 'personaje';
-    if (type === 'location') return 'locación';
-    if (type === 'props') return 'prop';
-    return type ?? 'recurso';
+    const key =
+      type === 'character'
+        ? 'LIBRARY.ING_CHARACTER'
+        : type === 'location'
+          ? 'LIBRARY.ING_LOCATION'
+          : type === 'props' || type === 'prop'
+            ? 'LIBRARY.ING_PROP'
+            : null;
+    return key
+      ? this.translate.instant(key)
+      : (type ?? this.translate.instant('LIBRARY.ING_RESOURCE'));
   }
 }

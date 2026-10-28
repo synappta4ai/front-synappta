@@ -11,9 +11,10 @@ import {
   ViewChild,
   ElementRef,
 } from '@angular/core';
-import { DatePipe, isPlatformBrowser } from '@angular/common';
+import { DatePipe, DecimalPipe, isPlatformBrowser } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
-import { catchError, EMPTY, finalize } from 'rxjs';
+import { catchError, EMPTY, finalize, forkJoin, of } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { Button } from 'primeng/button';
@@ -24,10 +25,13 @@ import { PrimeTemplate } from 'primeng/api';
 import { Tag } from 'primeng/tag';
 import { Tooltip } from 'primeng/tooltip';
 import { Message } from 'primeng/message';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import type { GenerateRequest, Modality } from '@modules/agency/interfaces';
 import { AgencyService } from '@modules/agency/services';
+import { ModelSelectComponent } from '@modules/agency/ui/model-select/model-select.component';
 import { LibraryService } from '@modules/library/services';
+import { SendToEditorButtonComponent } from '@modules/editor/ui/send-to-editor-button/send-to-editor-button.component';
 import {
   FileAsset,
   Ingredient,
@@ -44,9 +48,12 @@ import { environment } from '@env/environment';
 import { StudioService } from '../../services/studio.service';
 import { StudioModel, StudioModelType, StudioTake } from '../../interfaces';
 import { AssetPickerDialogComponent } from '@shared/components/index';
+import { AssetEditDialogComponent } from '@shared/components/asset-edit-dialog/asset-edit-dialog';
 import { SlidePillDirective } from '@shared/components/slide-pill/slide-pill.directive';
 import { TiltDirective } from '@shared/components/tilt/tilt.directive';
 import { ImgFadeDirective } from '@shared/components/img-fade/img-fade.directive';
+import { ScrollMirrorDirective } from '@shared/components/scroll-mirror/scroll-mirror.directive';
+import { UiIcon } from '@shared/components/ui-icon/ui-icon.component';
 
 interface RatioOption {
   label: string;
@@ -62,9 +69,9 @@ interface RefSlotDef {
 }
 
 const REF_SLOT_DEFS: RefSlotDef[] = [
-  { key: 'character', label: 'Personaje', hint: 'png, jpeg' },
-  { key: 'location', label: 'Localización', hint: 'png, jpeg' },
-  { key: 'props', label: 'Props', hint: 'png, jpeg' },
+  { key: 'character', label: 'STUDIO.SLOT_CHARACTER', hint: 'png, jpeg' },
+  { key: 'location', label: 'STUDIO.SLOT_LOCATION', hint: 'png, jpeg' },
+  { key: 'props', label: 'STUDIO.SLOT_PROPS', hint: 'png, jpeg' },
 ];
 
 /** Fila del menú @: recurso (filename) o ingrediente (id de elemento o nombre). */
@@ -82,6 +89,7 @@ interface MentionRow {
   imports: [
     FormsModule,
     DatePipe,
+    DecimalPipe,
     Button,
     Dialog,
     Popover,
@@ -90,18 +98,23 @@ interface MentionRow {
     Tag,
     Tooltip,
     Message,
+    TranslatePipe,
     ServerUrlPipe,
     AssetPickerDialogComponent,
+    SendToEditorButtonComponent,
+    ModelSelectComponent,
+    AssetEditDialogComponent,
     SlidePillDirective,
     TiltDirective,
     ImgFadeDirective,
+    ScrollMirrorDirective,
+    UiIcon,
   ],
   templateUrl: './studio.component.html',
   styleUrl: './studio.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '(document:keydown)': 'onShortcut($event)',
-    '(document:click)': 'onDocClick($event)',
     '(window:resize)': 'onWinResize()',
   },
 })
@@ -112,6 +125,7 @@ export class StudioComponent {
   private readonly eventsService = inject(EventsService);
   private readonly sessionStore = inject(UserSessionStore);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly translate = inject(TranslateService);
 
   // ─── Workspace layout (solo UI): anchos de columnas redimensionables ──
   private static readonly COLS_KEY = 'studio:colW';
@@ -144,7 +158,10 @@ export class StudioComponent {
   // ─── Prompt & params ───────────────────────────────────────────
   protected readonly prompt = signal('');
   protected readonly negativePrompt = signal('');
-  protected readonly ratio = signal('16:9');
+  /** Video/imagen verticales (9:16): el contenido se ve en smartphones. */
+  protected readonly ratio = signal('9:16');
+  /** Animación del visor mientras una toma se encola o se genera. */
+  protected readonly loadingVideo = './assets/tools/animation.mp4';
   protected readonly resolution = signal('720p');
   protected readonly duration = signal(5);
   protected readonly seed = signal('');
@@ -168,13 +185,13 @@ export class StudioComponent {
    */
   protected readonly canvasRatio = computed<{ w: number; h: number }>(() => {
     const take = this.selectedTake();
-    const value = (take?.ratio || this.ratio() || '16:9').trim();
+    const value = (take?.ratio || this.ratio() || '9:16').trim();
     const known = this.ratioOptions.find((r) => r.value === value);
     if (known) {
       return { w: known.w, h: known.h };
     }
     const [w, h] = value.split(':').map((n) => parseFloat(n));
-    return w > 0 && h > 0 ? { w, h } : { w: 16, h: 9 };
+    return w > 0 && h > 0 ? { w, h } : { w: 9, h: 16 };
   });
 
   /** Aspect numérico (w/h) para la CSS var --canvas-ar del visor. */
@@ -232,7 +249,9 @@ export class StudioComponent {
     const { min, max } = this.durationRange();
     const fmt = (s: number) =>
       s >= 60 ? `${Math.floor(s / 60)}m${s % 60 ? ' ' + (s % 60) + 's' : ''}` : `${s}s`;
-    return min === max ? `Solo ${fmt(min)}` : `${fmt(min)} – ${fmt(max)}`;
+    return min === max
+      ? this.translate.instant('STUDIO.DURATION_ONLY', { range: fmt(min) })
+      : `${fmt(min)} – ${fmt(max)}`;
   });
 
   // ─── Reference assets ──────────────────────────────────────────
@@ -737,15 +756,16 @@ export class StudioComponent {
     const labels = isAsset
       ? [target.filename]
       : [...new Set([this.mentionLabelOf(target), target.ingredient.name])];
-    const body = labels
-      .map((label) => label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-      .join('|');
+    const body = labels.map((label) => label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
     const re = new RegExp(`@(${body})\\s?`, 'g');
     this.prompt.update((text) => text.replace(re, ''));
     // Quitar la mención también libera sus recursos: selección y slots.
     const removedIds = new Set(
       isAsset ? [target.id] : this.assetsOfIngredient(target).map((a) => a.id),
     );
+    // Quitar la mención también la saca de las refs del reuso: no debe viajar
+    // al generar por el solo hecho de venir de la toma original.
+    this.reusedRefIds.update((ids) => ids.filter((id) => !removedIds.has(id)));
     this.selectedAssetIds.update((prev) => {
       const next = new Set(prev);
       for (const id of removedIds) {
@@ -784,11 +804,11 @@ export class StudioComponent {
   protected ingredientTypeLabel(type: string): string {
     switch (type) {
       case 'character':
-        return 'Personaje';
+        return this.translate.instant('STUDIO.ING_CHARACTER');
       case 'location':
-        return 'Locación';
+        return this.translate.instant('STUDIO.ING_LOCATION');
       case 'prop':
-        return 'Prop';
+        return this.translate.instant('STUDIO.ING_PROP');
       default:
         return type;
     }
@@ -799,7 +819,13 @@ export class StudioComponent {
     this.libraryService
       .listIngredients()
       .pipe(catchError(() => EMPTY))
-      .subscribe((ings) => this.ingredients.set(ings));
+      .subscribe((ings) => {
+        this.ingredients.set(ings);
+        // Un reuso puede setear el prompt antes de que llegue el catálogo: los
+        // @ recién ahora resuelven a sus ingredientes/recursos.
+        this.syncMentionsFromText();
+        this.syncSelectionWithMentions();
+      });
   }
 
   // ─── Proyecto (centralización de recursos) ──────────────
@@ -831,7 +857,7 @@ export class StudioComponent {
   /** Toma mostrada en el modal (null mientras está cerrado). */
   protected readonly detailTake = computed(() =>
     this.takeDetailVisible()
-      ? this.takes().find((t) => t.id === this.takeDetailId()) ?? null
+      ? (this.takes().find((t) => t.id === this.takeDetailId()) ?? null)
       : null,
   );
   /** Nombre del usuario en sesión (las tomas del reel son propias). */
@@ -848,53 +874,42 @@ export class StudioComponent {
   // ─── Historial por día: agrupación del reel + recuperar sesión ──
   protected readonly sessionDate = this.eventsStore.sessionDate;
 
-  // Selector de día del historial: dropdown con los días que tienen
-  // generaciones de video del usuario. Muestra 10 y el scroll al fondo
-  // revela más (y pagina ventanas más viejas contra el backend).
+  // Retención de cámaras: 60 días guardados en el backend. La sección
+  // Studio solo muestra los últimos 7 días con actividad (chips + acordeón).
   private static readonly HISTORY_WINDOW_MS = 60 * 24 * 60 * 60 * 1000;
+  private static readonly HISTORY_VISIBLE_DAYS = 7;
   private static readonly HISTORY_PAGE_LIMIT = 200;
-  /** Ventanas extra auto-cargadas cuando aún no hay 10 días (panel sin
-      overflow: el scroll no dispararía la paginación). */
-  private static readonly MAX_AUTOFILL_FETCHES = 6;
 
-  protected readonly dayMenuOpen = signal(false);
-  /** Días (ISO desc) con generaciones de video, según el backend. */
+  /** Días (ISO desc) con generaciones de video, según el backend (hasta 60d). */
   protected readonly historyDays = signal<{ key: string; label: string; count: number }[]>([]);
-  /** Días visibles del catálogo. */
-  protected readonly dayWindow = signal(10);
-  protected readonly loadingDays = signal(false);
-  protected readonly visibleDayOptions = computed(() =>
-    this.historyDays().slice(0, this.dayWindow()),
+  /** Días visibles en la sección Studio: máximo 7, los más recientes. */
+  protected readonly visibleHistoryDays = computed(() =>
+    this.historyDays().slice(0, StudioComponent.HISTORY_VISIBLE_DAYS),
   );
-
-  /** Borde inferior (ms) de la última ventana consultada; null = sin consultar. */
-  private oldestDayFetchMs: number | null = null;
+  protected readonly loadingDays = signal(false);
   private daysRequested = false;
-  /** La última ventana no trajo generaciones: no hay días más viejos. */
-  private daysExhausted = false;
-  private autoFillFetches = 0;
   private readonly destroyRef = inject(DestroyRef);
 
-  protected toggleDayMenu(): void {
-    const next = !this.dayMenuOpen();
-    this.dayMenuOpen.set(next);
-    if (next) {
-      this.ensureHistoryDays();
-    }
+  /**
+   * Día expandido del reel; null = auto (el más reciente), '' = ninguno.
+   * Acordeón de un solo día abierto para no mostrar una lista
+   * interminable de videos en la columna.
+   */
+  protected readonly openDay = signal<string | null>(null);
+
+  protected isDayOpen(key: string, firstKey: string | null): boolean {
+    const open = this.openDay();
+    const effective = open === null ? firstKey : open === '' ? null : open;
+    return effective === key;
   }
 
-  /** Scroll del panel al fondo: revela días cargados y pagina el backend. */
-  protected onDayPanelScroll(event: Event): void {
-    const el = event.target as HTMLElement;
-    if (el.scrollTop + el.clientHeight < el.scrollHeight - 24) {
-      return;
-    }
-    this.revealMoreHistoryDays();
+  protected toggleDayGroup(key: string, firstKey: string | null): void {
+    this.openDay.set(this.isDayOpen(key, firstKey) ? '' : key);
   }
 
   /** Elige un día del historial (null = volver al reel en vivo). */
   protected pickDay(key: string | null): void {
-    this.dayMenuOpen.set(false);
+    this.openDay.set(null);
     if (!key) {
       this.clearSession();
       return;
@@ -902,65 +917,15 @@ export class StudioComponent {
     this.eventsStore.loadSession(key);
   }
 
-  /** Cierra el dropdown si el click cae fuera del selector. */
-  protected onDocClick(event: MouseEvent): void {
-    if (!this.dayMenuOpen()) {
-      return;
-    }
-    const target = event.target as HTMLElement | null;
-    if (target?.closest?.('.reel-day-select')) {
-      return;
-    }
-    this.dayMenuOpen.set(false);
-  }
-
-  /** Consulta (una sola vez) los días con generaciones recientes. */
+  /** Consulta (una sola vez) los días con generaciones (ventana de 60 días). */
   private ensureHistoryDays(): void {
     if (this.daysRequested || !isPlatformBrowser(this.platformId)) {
       return;
     }
     this.daysRequested = true;
-    this.fetchHistoryDays(Date.now());
-  }
-
-  private revealMoreHistoryDays(): void {
-    if (this.loadingDays()) {
-      return;
-    }
-    if (this.dayWindow() < this.historyDays().length) {
-      this.dayWindow.update((w) => w + 10);
-      return;
-    }
-    if (this.daysExhausted || this.oldestDayFetchMs === null) {
-      return;
-    }
-    this.fetchHistoryDays(this.oldestDayFetchMs - 1);
-  }
-
-  /** Con pocos días el panel no hace scroll: pide la ventana anterior
-      automáticamente hasta llegar a 10 días (o agotar la historia). */
-  private maybeAutoFillDays(): void {
-    if (this.daysExhausted || this.loadingDays()) {
-      return;
-    }
-    if (this.historyDays().length >= 10) {
-      return;
-    }
-    if (this.autoFillFetches >= StudioComponent.MAX_AUTOFILL_FETCHES) {
-      return;
-    }
-    if (this.oldestDayFetchMs === null) {
-      return;
-    }
-    this.autoFillFetches++;
-    this.fetchHistoryDays(this.oldestDayFetchMs - 1);
-  }
-
-  /** Consulta la ventana [to - 60d, to] y mezcla los días al catálogo. */
-  private fetchHistoryDays(toMs: number): void {
     this.loadingDays.set(true);
+    const toMs = Date.now();
     const fromMs = toMs - StudioComponent.HISTORY_WINDOW_MS;
-    this.oldestDayFetchMs = fromMs;
     this.agencyService
       .taskHistory({
         from: new Date(fromMs).toISOString(),
@@ -971,42 +936,22 @@ export class StudioComponent {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         finalize(() => this.loadingDays.set(false)),
-        catchError(() => {
-          this.daysExhausted = true;
-          return EMPTY;
-        }),
+        catchError(() => EMPTY),
       )
       .subscribe((logs) => {
-        // finalize corre recién en complete: bajar el flag acá para que el
-        // auto-relleno pueda encadenar la ventana siguiente.
-        this.loadingDays.set(false);
-        const rows = logs ?? [];
-        if (rows.length === 0) {
-          this.daysExhausted = true;
-          return;
-        }
         const counts = new Map<string, number>();
-        for (const log of rows) {
+        for (const log of logs ?? []) {
           if (!log.task_id || log.task_id === '<no-task>') {
             continue;
           }
           const key = this.dayKey(new Date(log.created_at).getTime());
           counts.set(key, (counts.get(key) ?? 0) + 1);
         }
-        if (counts.size === 0) {
-          this.daysExhausted = true;
-          return;
-        }
-        const merged = new Map(this.historyDays().map((d) => [d.key, d.count]));
-        for (const [key, count] of counts) {
-          merged.set(key, (merged.get(key) ?? 0) + count);
-        }
         this.historyDays.set(
-          [...merged.entries()]
+          [...counts.entries()]
             .sort((a, b) => (a[0] < b[0] ? 1 : -1))
             .map(([key, count]) => ({ key, count, label: this.dayLabel(key) })),
         );
-        this.maybeAutoFillDays();
       });
   }
 
@@ -1055,11 +1000,8 @@ export class StudioComponent {
     },
   );
 
-  /** Etiqueta de la sesión activa ("Hoy", "Ayer" o fecha corta). */
-  protected readonly sessionLabel = computed(() => {
-    const session = this.sessionDate();
-    return session ? this.dayLabel(session) : '';
-  });
+  /** Clave del grupo más reciente (día auto-expandido del acordeón). */
+  protected readonly firstGroupKey = computed(() => this.reelGroups()[0]?.key ?? null);
 
   /** Clave local YYYY-MM-DD de un timestamp. */
   protected dayKey(ts: number): string {
@@ -1071,10 +1013,10 @@ export class StudioComponent {
   /** Etiqueta del día: Hoy / Ayer / fecha corta local. */
   protected dayLabel(key: string): string {
     if (key === this.dayKey(Date.now())) {
-      return 'Hoy';
+      return this.translate.instant('STUDIO.TODAY');
     }
     if (key === this.dayKey(Date.now() - 24 * 60 * 60 * 1000)) {
-      return 'Ayer';
+      return this.translate.instant('STUDIO.YESTERDAY');
     }
     return new Date(`${key}T00:00:00`).toLocaleDateString(undefined, {
       weekday: 'short',
@@ -1085,6 +1027,7 @@ export class StudioComponent {
 
   /** Sale del modo sesión: el reel vuelve a mostrar todos los días. */
   protected clearSession(): void {
+    this.openDay.set(null);
     this.eventsStore.clearSession();
   }
 
@@ -1095,6 +1038,10 @@ export class StudioComponent {
   protected readonly projectDialogVisible = signal(false);
   /** Modal de la biblioteca para elegir referencias ya subidas. */
   protected readonly libraryPickerVisible = signal(false);
+
+  /** Modal "Editar elemento": se abre tras subir una referencia para detallarla. */
+  protected readonly editorVisible = signal(false);
+  protected readonly editorAsset = signal<FileAsset | null>(null);
 
   /** Abre la modal de asignación de proyecto. */
   protected projectAlert(): void {
@@ -1156,20 +1103,39 @@ export class StudioComponent {
           // Payload inválido: se ignora.
         }
       }
+      // Generaciones a lanzar al llegar (VideoMachine): el form queda cargado
+      // con los mismos insumos para repetirlas aquí si algo falla.
+      const auto = sessionStorage.getItem('studio:autostart');
+      if (auto) {
+        sessionStorage.removeItem('studio:autostart');
+        try {
+          const list = JSON.parse(auto) as GenerateRequest[];
+          this.pendingAutostart = Array.isArray(list) ? list : [];
+        } catch {
+          this.pendingAutostart = [];
+        }
+      }
     }
     effect(() => {
       const pending = this.pendingReuse();
-      if (!pending || !this.models().length) {
+      // Espera el catálogo Y la lista de proyectos: así el proyecto de la
+      // generación original (Agencia) se selecciona y su take reel carga.
+      if (!pending || !this.models().length || this.loadingProjects()) {
         return;
       }
       this.pendingReuse.set(null);
       this.applyReuseRequest(pending.req, pending.prompt);
+      const queued = this.pendingAutostart;
+      this.pendingAutostart = [];
+      queued.forEach((req) => this.launchFromRequest(req));
     });
     this.loadModels();
     this.loadProjects();
     this.loadAssets();
     this.loadIngredients();
     this.restoreCols();
+    // Chips de fecha del reel: catálogo de días con actividad (60d, visible 7).
+    this.ensureHistoryDays();
   }
 
   // ─── Columnas redimensionables (gutters entre columnas) ──────────
@@ -1308,7 +1274,7 @@ export class StudioComponent {
       .listModels()
       .pipe(
         catchError(() => {
-          this.error.set('No se pudieron cargar los modelos. ¿Está el backend corriendo?');
+          this.error.set(this.translate.instant('STUDIO.ERR_LOAD_MODELS'));
           return EMPTY;
         }),
         finalize(() => this.loadingModels.set(false)),
@@ -1335,7 +1301,7 @@ export class StudioComponent {
       .listEvents()
       .pipe(
         catchError(() => {
-          this.error.set('No se pudieron cargar los proyectos.');
+          this.error.set(this.translate.instant('STUDIO.ERR_LOAD_PROJECTS'));
           return EMPTY;
         }),
         finalize(() => this.loadingProjects.set(false)),
@@ -1347,9 +1313,18 @@ export class StudioComponent {
       proyecto y el historial por día cede prioridad (se limpia la sesión). */
   protected onProjectChange(projectId: string | null): void {
     this.selectedProjectId.set(projectId);
+    // Cambio manual de proyecto: se descarta cualquier reuso pendiente.
+    this.pendingReuseRefs = null;
+    // Cambiar de proyecto descarta las refs restauradas por un reuso previo.
+    this.reusedRefIds.set([]);
     this.selectedAssetIds.set(new Set());
     this.refSlots.update((slots) => ({ ...slots, character: null, location: null, props: null }));
     this.eventsStore.clearSession();
+    if (projectId) {
+      // Take reel del proyecto: sus generaciones de video entran al historial
+      // del studio (las hechas en la Agencia incluidas).
+      this.eventsStore.hydrateProject(projectId);
+    }
     this.loadAssets();
   }
 
@@ -1370,7 +1345,7 @@ export class StudioComponent {
       .createEvent({ name })
       .pipe(
         catchError(() => {
-          this.error.set('No se pudo crear el proyecto.');
+          this.error.set(this.translate.instant('STUDIO.ERR_CREATE_PROJECT'));
           return EMPTY;
         }),
         finalize(() => this.creatingProject.set(false)),
@@ -1393,17 +1368,84 @@ export class StudioComponent {
       .listFilesPaginated({ page: 1, pageSize: 200, event_id: eventId })
       .pipe(
         catchError(() => EMPTY),
-        finalize(() => this.loadingAssets.set(false)),
+        finalize(() => {
+          this.loadingAssets.set(false);
+          // Si la carga falló, el reuso pendiente no debe aplicar en la próxima.
+          this.pendingReuseRefs = null;
+        }),
       )
       .subscribe((pageData) => {
         const files = [...(pageData.items ?? [])] as FileAsset[];
-        this.assets.set(files);
-        this.autoAssignRefs(files);
+        // Las refs de un reuso traídas por id (fuera de esta página) no se pierden.
+        const keep = new Set([...this.reusedRefIds(), ...this.selectedAssetIds()]);
+        const inFiles = new Set(files.map((a) => a.id));
+        const extras = this.assets().filter((a) => keep.has(a.id) && !inFiles.has(a.id));
+        this.assets.set([...files, ...extras]);
+        // Un reuso trae sus propias referencias por id: mandan sobre las que
+        // el proyecto tenga asignadas (no se pisan con autoAssignRefs).
+        if (this.pendingReuseRefs?.length) {
+          this.restorePendingReuseRefs(files);
+        } else {
+          this.autoAssignRefs(files);
+        }
         // Con la lista definitiva de recursos, re-resolver los @ del prompt
         // (p.ej. un REUSAR que cambió de proyecto antes de que llegaran).
         this.syncMentionsFromText();
         this.syncSelectionWithMentions();
       });
+  }
+
+  /**
+   * Restaura las referencias del request reusado POR ID (no por los @ del
+   * texto): así el video rehecho conserva personajes, locaciones y props
+   * aunque el catálogo @ todavía no haya cargado o el proyecto no las tenga
+   * asignadas (en ese caso se piden a la biblioteca).
+   */
+  private restorePendingReuseRefs(files: FileAsset[]): void {
+    const refs = this.pendingReuseRefs;
+    this.pendingReuseRefs = null;
+    if (!refs?.length) {
+      return;
+    }
+    const known = new Set([...files, ...this.assets()].map((a) => a.id));
+    const missing = refs.filter((r) => !known.has(r.id));
+    if (missing.length === 0) {
+      this.applyReuseRefs(refs);
+      return;
+    }
+    forkJoin(
+      missing.map((r) => this.libraryService.getFile(r.id).pipe(catchError(() => of(null)))),
+    ).subscribe((extra) => {
+      const found = extra.filter((a): a is FileAsset => !!a);
+      if (found.length) {
+        this.assets.update((list) => [
+          ...list,
+          ...found.filter((a) => !list.some((x) => x.id === a.id)),
+        ]);
+      }
+      this.applyReuseRefs(refs);
+    });
+  }
+
+  /** Selecciona y ubica en los slots las refs restauradas (orden del request). */
+  private applyReuseRefs(refs: { id: string }[]): void {
+    const byId = new Map(this.assets().map((a) => [a.id, a]));
+    const picked = refs.map((r) => byId.get(r.id)).filter((a): a is FileAsset => !!a);
+    if (!picked.length) {
+      return;
+    }
+    this.reusedRefIds.set(picked.map((a) => a.id));
+    this.selectedAssetIds.set(new Set(picked.slice(0, this.maxSelectedRefs).map((a) => a.id)));
+    const slots = { ...this.refSlots() };
+    REF_SLOT_DEFS.forEach((slot, i) => {
+      if (picked[i]) {
+        slots[slot.key] = picked[i].id;
+      }
+    });
+    this.refSlots.set(slots);
+    // Las refs restauradas se muestran sin que el usuario tenga que abrir el panel.
+    this.showAssetGallery.set(true);
+    this.refsAutoOpened = true;
   }
 
   /**
@@ -1468,6 +1510,7 @@ export class StudioComponent {
   /** Quita la miniatura de la lista local (sin borrar el asset en el backend). */
   protected removeAsset(assetId: string): void {
     this.assets.update((list) => list.filter((a) => a.id !== assetId));
+    this.reusedRefIds.update((ids) => ids.filter((id) => id !== assetId));
     const next = new Set(this.selectedAssetIds());
     if (next.delete(assetId)) {
       this.selectedAssetIds.set(next);
@@ -1522,7 +1565,7 @@ export class StudioComponent {
     } else {
       if (next.size >= this.maxSelectedRefs) {
         this.flashRefError(
-          `Podés seleccionar hasta ${this.maxSelectedRefs} referencias por generación.`,
+          this.translate.instant('STUDIO.REF_ERR_MAX', { max: this.maxSelectedRefs }),
         );
         return;
       }
@@ -1566,6 +1609,33 @@ export class StudioComponent {
     this.refSlots.set(slots);
   }
 
+  /** Refleja el asset guardado en la grilla local (nombre/chip al instante). */
+  protected onEditorSaved(saved: FileAsset): void {
+    this.assets.update((list) => list.map((item) => (item.id === saved.id ? saved : item)));
+    this.editorAsset.set(saved);
+  }
+
+  /** Tras un cambio de fondo en el editor, refresca el asset abierto. */
+  protected onEditorChanged(): void {
+    const asset = this.editorAsset();
+    if (!asset) {
+      return;
+    }
+    this.libraryService
+      .getFile(asset.id)
+      .pipe(catchError(() => EMPTY))
+      .subscribe((fresh) => {
+        if (fresh) {
+          this.assets.update((list) => list.map((item) => (item.id === fresh.id ? fresh : item)));
+          this.editorAsset.set(fresh);
+        } else {
+          this.removeAsset(asset.id);
+          this.editorVisible.set(false);
+          this.editorAsset.set(null);
+        }
+      });
+  }
+
   /** Muestra el aviso de límite solo en el momento de la violación; se auto-oculta. */
   private flashRefError(message: string): void {
     this.refError.set(message);
@@ -1595,12 +1665,17 @@ export class StudioComponent {
       return;
     }
     if (!/^image\/(png|jpeg)$/.test(file.type)) {
-      this.flashRefError(`"${file.name}" no es una imagen PNG o JPEG.`);
+      this.flashRefError(this.translate.instant('STUDIO.REF_ERR_NOT_IMAGE', { name: file.name }));
       input.value = '';
       return;
     }
     if (file.size > this.maxRefBytes) {
-      this.flashRefError(`"${file.name}" supera el máximo de ${this.maxRefLabel} por referencia.`);
+      this.flashRefError(
+        this.translate.instant('STUDIO.REF_ERR_TOO_BIG', {
+          name: file.name,
+          max: this.maxRefLabel,
+        }),
+      );
       input.value = '';
       return;
     }
@@ -1612,7 +1687,7 @@ export class StudioComponent {
       .uploadFile(file, slot, this.selectedProjectId() ?? undefined)
       .pipe(
         catchError(() => {
-          this.flashRefError(`No se pudo subir "${file.name}". Intentá de nuevo.`);
+          this.flashRefError(this.translate.instant('STUDIO.REF_ERR_UPLOAD', { name: file.name }));
           return EMPTY;
         }),
         finalize(() => {
@@ -1626,6 +1701,9 @@ export class StudioComponent {
         if (!this.selectedAssetIds().has(asset.id)) {
           this.toggleAsset(asset.id);
         }
+        // Abrir el editor para nombrar y detallar la referencia recién subida.
+        this.editorAsset.set(asset);
+        this.editorVisible.set(true);
       });
   }
 
@@ -1675,7 +1753,15 @@ export class StudioComponent {
     // (sin tokens @) porque el backend compila el prompt del texto puro.
     // Los ingredientes citados expanden a TODOS sus recursos.
     this.syncMentionsFromText();
-    const mentions = [...this.mentionedAssets()];
+    // Primero las refs del request reusado (mismo orden y esencia del video
+    // base), después las menciones @: así un reuso conserva sus referencias
+    // aunque los @ del texto ya no resuelvan contra el catálogo actual.
+    const mentions: FileAsset[] = [...this.reusedRefAssets()];
+    for (const asset of this.mentionedAssets()) {
+      if (!mentions.some((a) => a.id === asset.id)) {
+        mentions.push(asset);
+      }
+    }
     for (const ing of this.mentionedIngredients()) {
       for (const asset of this.assetsOfIngredient(ing)) {
         if (!mentions.some((a) => a.id === asset.id)) {
@@ -1695,6 +1781,7 @@ export class StudioComponent {
       model: model.name,
       content: [
         ...mentions.map((a) => ({ type: 'image' as const, id: a.id, name: a.filename })),
+        ...this.reusedAudio().map((a) => ({ type: 'audio' as const, id: a.id, name: a.name })),
         { type: 'text' as const, text },
       ],
       ratio,
@@ -1775,7 +1862,7 @@ export class StudioComponent {
       )
       .pipe(
         catchError(() => {
-          this.error.set('No se pudo preparar el proyecto Studio.');
+          this.error.set(this.translate.instant('STUDIO.ERR_PREPARE_PROJECT'));
           this.submitting.set(false);
           // Nada se creó en el server: se descarta la take pendiente
           // (en rehacer, la toma original queda intacta para reintentar).
@@ -1797,8 +1884,8 @@ export class StudioComponent {
         this.agencyService
           .generate(modality, finalPayload)
           .pipe(
-            catchError(() => {
-              this.error.set('No se pudo iniciar la generación.');
+            catchError((err: unknown) => {
+              this.error.set(this.startErrorMessage(err));
               this.submitting.set(false);
               // Nada se creó en el server: se descarta la take pendiente
               // (en rehacer, la toma original queda intacta para reintentar).
@@ -1857,7 +1944,11 @@ export class StudioComponent {
 
   /** Formato de la toma: "16:9 · 720p · 5s" o "—". */
   protected takeFormatLabel(take: StudioTake): string {
-    const parts = [take.ratio ?? '', take.resolution ?? '', take.duration ? `${take.duration}s` : ''];
+    const parts = [
+      take.ratio ?? '',
+      take.resolution ?? '',
+      take.duration ? `${take.duration}s` : '',
+    ];
     return parts.filter((p) => p !== '').join(' · ') || '—';
   }
 
@@ -1909,20 +2000,42 @@ export class StudioComponent {
   protected costTooltip(take: StudioTake): string {
     const bits: string[] = [];
     if ((take.costCredits ?? 0) > 0) {
-      bits.push(`${this.formatCredits(take.costCredits!)} = créditos del proveedor (Higgsfield)`);
+      bits.push(
+        this.translate.instant('STUDIO.COST_CREDITS_MEANING', {
+          value: this.formatCredits(take.costCredits!),
+        }),
+      );
     }
     if ((take.costUsd ?? 0) > 0) {
-      bits.push(`${this.formatCostUsd(take.costUsd!)} = equivalente en dólares (USD)`);
+      bits.push(
+        this.translate.instant('STUDIO.COST_USD_MEANING', {
+          value: this.formatCostUsd(take.costUsd!),
+        }),
+      );
     }
-    let text = `Gasto estimado por Higgsfield: ${bits.join(', ')}. Las generaciones fallidas o canceladas se reembolsan.`;
+    let text = this.translate.instant('STUDIO.COST_TOOLTIP', { bits: bits.join(', ') });
     if (take.transactionId) {
-      text += ` Transaction ID: ${take.transactionId}`;
+      text += this.translate.instant('STUDIO.COST_TOOLTIP_TX', { id: take.transactionId });
     }
     return text;
   }
 
   /** Reuso pendiente desde /projects (request guardado en sessionStorage). */
   private readonly pendingReuse = signal<{ req: GenerateRequest; prompt: string } | null>(null);
+
+  /** Refs del request reusado pendientes de resolver (ids de la biblioteca). */
+  private pendingReuseRefs: { id: string; name: string }[] | null = null;
+
+  /** Ids de las refs restauradas por el último reuso: se reenvían al generar. */
+  private readonly reusedRefIds = signal<string[]>([]);
+
+  /** Recursos restaurados por el último reuso, en el orden del request. */
+  private readonly reusedRefAssets = computed(() => {
+    const byId = new Map(this.assets().map((a) => [a.id, a]));
+    return this.reusedRefIds()
+      .map((id) => byId.get(id))
+      .filter((a): a is FileAsset => !!a);
+  });
 
   /** Reusar: carga el request original de la toma en el studio (prompt,
       modelo, formato, seed y proyecto) sin generar nada, para que el
@@ -1937,30 +2050,104 @@ export class StudioComponent {
     this.applyReuseRequest(take.request, take.prompt);
   }
 
+  /** Mensaje del back (escapado: el aviso renderiza HTML) o el genérico. */
+  private startErrorMessage(err: unknown): string {
+    const generic = this.translate.instant('STUDIO.ERR_START_GENERATION') as string;
+    const body = err instanceof HttpErrorResponse ? (err.error as { message?: string } | null) : null;
+    const detail = body?.message?.trim();
+    if (!detail) {
+      return generic;
+    }
+    const safe = detail
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+    return `${generic} ${safe}`;
+  }
+
+  /** Audios de referencia del request reusado (Seedance los acepta como
+      ingredientes): se reenvían al generar aunque el form solo muestre imágenes. */
+  protected readonly reusedAudio = signal<{ id: string; name: string }[]>([]);
+
+  protected clearReusedAudio(): void {
+    this.reusedAudio.set([]);
+  }
+
+  /** Requests a lanzar al instante al llegar desde otro agente (VideoMachine). */
+  private pendingAutostart: GenerateRequest[] = [];
+
+  /** Lanza un request tal cual (insumos + prompt) sin pasar por el form. */
+  private launchFromRequest(req: GenerateRequest): void {
+    const prompt = (req.content ?? []).find((c) => c.type === 'text')?.text ?? '';
+    const model = this.models().find((m) => m.name === req.model);
+    this.submitting.set(true);
+    this.launchGeneration(req, {
+      prompt,
+      modelName: req.model,
+      modelDisplayName: model?.displayName ?? req.model,
+      modelType: model?.type ?? 'api',
+      ratio: req.ratio || '9:16',
+      resolution: req.resolution || this.resolution(),
+      duration: req.duration ?? 0,
+      eventName: null,
+      refImages: (req.content ?? [])
+        .filter((c) => c.type === 'image' && !!c.id)
+        .map((c) => ({ id: String(c.id), name: c.name ?? String(c.id) })),
+    });
+  }
+
   /** Aplica un request guardado al formulario del studio (sin generar). */
   private applyReuseRequest(req: GenerateRequest, prompt: string): void {
     this.setMode('video');
     this.prompt.set(prompt);
-    this.ratio.set(req.ratio || '16:9');
+    this.ratio.set(req.ratio || '9:16');
     this.resolution.set(req.resolution || '720p');
     this.duration.set(req.duration || 5);
     this.seed.set(req.seed ?? '');
+    this.reusedAudio.set(
+      (req.content ?? [])
+        .filter((c) => c.type === 'audio' && !!c.id)
+        .map((c) => ({ id: String(c.id), name: c.name ?? String(c.id) })),
+    );
     const model = this.models().find((m) => m.name === req.model);
     if (model) {
       this.selectedModel.set(model);
     }
+    // Referencias originales del request: se restauran POR ID al cargar los
+    // recursos (no dependen de que los @ del texto resuelvan contra el
+    // catálogo actual). Sin esto el video rehecho perdía personajes/props.
+    const refs = (req.content ?? [])
+      .filter((c) => c.type === 'image' && !!c.id)
+      .map((c) => ({ id: String(c.id), name: c.name ?? String(c.id) }));
     // Proyecto de la generación original (si tuvo uno y sigue existiendo):
     // onProjectChange recarga SUS recursos (slots + selección) y limpia la
     // sesión de día.
     const eventId = req.event_id || '';
     if (eventId && this.projects().some((p) => p.id === eventId)) {
       this.onProjectChange(eventId);
+      // Después del cambio (que descarta pendientes): esta carga los aplica.
+      this.pendingReuseRefs = refs;
+    } else if (refs.length) {
+      // Sin proyecto (p.ej. llegada desde Infoproductos): los recursos ya
+      // cargados alcanzan, o se piden por id.
+      this.pendingReuseRefs = refs;
+      this.restorePendingReuseRefs(this.assets());
     }
     // Los @ del prompt restauran los recursos citados: menciones, selección
     // y slots (al llegar los assets del proyecto se re-resuelven solos).
     this.syncMentionsFromText();
     this.syncSelectionWithMentions();
-    setTimeout(() => this.promptTextarea?.focus());
+    // Arrancar al inicio del prompt reusado: con prompts largos el caret caía
+    // al final y el textarea scrolleado, fuera de la vista del overlay.
+    setTimeout(() => {
+      const textarea = this.promptTextarea;
+      if (!textarea) {
+        return;
+      }
+      textarea.focus();
+      textarea.setSelectionRange(0, 0);
+      textarea.scrollTop = 0;
+    });
   }
 
   /** Miniatura pública de una imagen de referencia (asset ya cargado). */
@@ -1994,11 +2181,11 @@ export class StudioComponent {
 
   protected takeStatusLabel(status: StudioTake['status']): string {
     const labels: Record<StudioTake['status'], string> = {
-      queued: 'En cola',
-      running: 'Generando',
-      succeeded: 'Listo',
-      failed: 'Error',
-      cancelled: 'Cancelado',
+      queued: this.translate.instant('STUDIO.STATUS_QUEUED'),
+      running: this.translate.instant('STUDIO.STATUS_RUNNING'),
+      succeeded: this.translate.instant('STUDIO.STATUS_SUCCEEDED'),
+      failed: this.translate.instant('STUDIO.STATUS_FAILED'),
+      cancelled: this.translate.instant('STUDIO.STATUS_CANCELLED'),
     };
     return labels[status];
   }
@@ -2035,10 +2222,6 @@ export class StudioComponent {
       return;
     }
     if (event.key === 'Escape') {
-      if (this.dayMenuOpen()) {
-        this.dayMenuOpen.set(false);
-        return;
-      }
       if (this.mentionMenuOpen()) {
         this.closeMentionMenu();
         return;

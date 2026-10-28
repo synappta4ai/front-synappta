@@ -2,6 +2,10 @@ import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { ThemeService } from './theme.service';
 import { COLOR_PALETTES } from '../interfaces/theme.interface';
+import { environment } from '@env/environment';
+
+/** URL absoluta que usa ThemeService (base del environment + path). */
+const THEME_URL = `${environment.API_URL}/user/preferences/theme`;
 
 describe('ThemeService', () => {
   let httpMock: HttpTestingController;
@@ -11,6 +15,27 @@ describe('ThemeService', () => {
     TestBed.configureTestingModule({
       imports: [HttpClientTestingModule],
       providers: [ThemeService],
+    });
+
+    // jsdom no expone un localStorage funcional: mock mínimo (patrón de
+    // storage.service.spec) para que el fallback de persistencia opere.
+    const store: Record<string, string> = {};
+    Object.defineProperty(window, 'localStorage', {
+      value: {
+        getItem: (key: string) => store[key] ?? null,
+        setItem: (key: string, value: string) => {
+          store[key] = value;
+        },
+        removeItem: (key: string) => {
+          delete store[key];
+        },
+        clear: () => {
+          for (const key of Object.keys(store)) {
+            delete store[key];
+          }
+        },
+      },
+      writable: true,
     });
 
     httpMock = TestBed.inject(HttpTestingController);
@@ -23,7 +48,7 @@ describe('ThemeService', () => {
   function flushPendingRequests(): void {
     try {
       while (true) {
-        const req = httpMock.expectOne('/api/user/preferences/theme');
+        const req = httpMock.expectOne(THEME_URL);
         req.flush(null);
       }
     } catch (e) {
@@ -39,7 +64,7 @@ describe('ThemeService', () => {
     it('should create service instance', () => {
       const service = getService();
       try {
-        const req = httpMock.expectOne('/api/user/preferences/theme');
+        const req = httpMock.expectOne(THEME_URL);
         req.flush(null);
       } catch (e) {
         /* ignore */
@@ -52,7 +77,7 @@ describe('ThemeService', () => {
     it('should set the current palette to blue', () => {
       const service = getService();
       try {
-        const req = httpMock.expectOne('/api/user/preferences/theme');
+        const req = httpMock.expectOne(THEME_URL);
         req.flush(null);
       } catch (e) {
         /* ignore */
@@ -65,7 +90,7 @@ describe('ThemeService', () => {
     it('should set palette to base', () => {
       const service = getService();
       try {
-        const req = httpMock.expectOne('/api/user/preferences/theme');
+        const req = httpMock.expectOne(THEME_URL);
         req.flush(null);
       } catch (e) {
         /* ignore */
@@ -78,7 +103,7 @@ describe('ThemeService', () => {
     it('should set palette to green', () => {
       const service = getService();
       try {
-        const req = httpMock.expectOne('/api/user/preferences/theme');
+        const req = httpMock.expectOne(THEME_URL);
         req.flush(null);
       } catch (e) {
         /* ignore */
@@ -91,7 +116,7 @@ describe('ThemeService', () => {
     it('should set palette to yellow', () => {
       const service = getService();
       try {
-        const req = httpMock.expectOne('/api/user/preferences/theme');
+        const req = httpMock.expectOne(THEME_URL);
         req.flush(null);
       } catch (e) {
         /* ignore */
@@ -104,7 +129,7 @@ describe('ThemeService', () => {
     it('should set palette to orange', () => {
       const service = getService();
       try {
-        const req = httpMock.expectOne('/api/user/preferences/theme');
+        const req = httpMock.expectOne(THEME_URL);
         req.flush(null);
       } catch (e) {
         /* ignore */
@@ -117,7 +142,7 @@ describe('ThemeService', () => {
     it('should set palette to red', () => {
       const service = getService();
       try {
-        const req = httpMock.expectOne('/api/user/preferences/theme');
+        const req = httpMock.expectOne(THEME_URL);
         req.flush(null);
       } catch (e) {
         /* ignore */
@@ -132,7 +157,7 @@ describe('ThemeService', () => {
     it('should set mode to light', () => {
       const service = getService();
       try {
-        const req = httpMock.expectOne('/api/user/preferences/theme');
+        const req = httpMock.expectOne(THEME_URL);
         req.flush(null);
       } catch (e) {
         /* ignore */
@@ -145,7 +170,7 @@ describe('ThemeService', () => {
     it('should set mode to dark', () => {
       const service = getService();
       try {
-        const req = httpMock.expectOne('/api/user/preferences/theme');
+        const req = httpMock.expectOne(THEME_URL);
         req.flush(null);
       } catch (e) {
         /* ignore */
@@ -160,7 +185,7 @@ describe('ThemeService', () => {
     it('should toggle from dark to light', () => {
       const service = getService();
       try {
-        const req = httpMock.expectOne('/api/user/preferences/theme');
+        const req = httpMock.expectOne(THEME_URL);
         req.flush(null);
       } catch (e) {
         /* ignore */
@@ -175,7 +200,7 @@ describe('ThemeService', () => {
     it('should toggle from light to dark', () => {
       const service = getService();
       try {
-        const req = httpMock.expectOne('/api/user/preferences/theme');
+        const req = httpMock.expectOne(THEME_URL);
         req.flush(null);
       } catch (e) {
         /* ignore */
@@ -192,7 +217,7 @@ describe('ThemeService', () => {
     it('should return current theme configuration', () => {
       const service = getService();
       try {
-        const req = httpMock.expectOne('/api/user/preferences/theme');
+        const req = httpMock.expectOne(THEME_URL);
         req.flush(null);
       } catch (e) {
         /* ignore */
@@ -213,7 +238,7 @@ describe('ThemeService', () => {
     it('should return dark theme configuration', () => {
       const service = getService();
       try {
-        const req = httpMock.expectOne('/api/user/preferences/theme');
+        const req = httpMock.expectOne(THEME_URL);
         req.flush(null);
       } catch (e) {
         /* ignore */
@@ -236,7 +261,7 @@ describe('ThemeService', () => {
     it('should return all available color palettes', () => {
       const service = getService();
       try {
-        const req = httpMock.expectOne('/api/user/preferences/theme');
+        const req = httpMock.expectOne(THEME_URL);
         req.flush(null);
       } catch (e) {
         /* ignore */
@@ -248,7 +273,7 @@ describe('ThemeService', () => {
     it('should return non-empty palettes array', () => {
       const service = getService();
       try {
-        const req = httpMock.expectOne('/api/user/preferences/theme');
+        const req = httpMock.expectOne(THEME_URL);
         req.flush(null);
       } catch (e) {
         /* ignore */
@@ -265,7 +290,7 @@ describe('ThemeService', () => {
     it('should have violet as default palette (verified through API)', () => {
       const service = getService();
       try {
-        const req = httpMock.expectOne('/api/user/preferences/theme');
+        const req = httpMock.expectOne(THEME_URL);
         // Return default violet palette in response
         req.flush({
           theme: { palette: 'violet', mode: 'dark' },

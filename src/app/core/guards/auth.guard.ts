@@ -69,3 +69,23 @@ export const moduleGuard = (moduleName: string): CanActivateFn => {
     return true;
   };
 };
+
+/**
+ * No permite el acceso a usuarios autenticados a la pantalla de login
+ */
+export const notAuthGuard: CanActivateFn = async () => {
+  if (isServer()) {
+    return true;
+  }
+
+  const sessionStore = inject(UserSessionStore);
+  const router = inject(Router);
+
+  await sessionStore.waitUntilHydrated();
+
+  if (sessionStore.isLoggedIn()) {
+    return router.createUrlTree([APP_ROUTES.ROOT]);
+  }
+
+  return true;
+};

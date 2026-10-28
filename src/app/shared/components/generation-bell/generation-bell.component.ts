@@ -6,7 +6,9 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { Button } from 'primeng/button';
 import { Popover } from 'primeng/popover';
@@ -14,6 +16,7 @@ import { Tag } from 'primeng/tag';
 import { Tooltip } from 'primeng/tooltip';
 
 import { GenerationEventsStore } from '@core/store/generation.events';
+import { NotificationCenterService } from '@core/services/notification-center.service';
 import { ServerUrlPipe } from '@pipes/server-url.pipe';
 import { CountUpDirective } from '@shared/components/count-up/count-up.directive';
 import { StudioTake } from '@modules/studio/interfaces';
@@ -21,17 +24,28 @@ import { StudioTake } from '@modules/studio/interfaces';
 /**
  * Navbar notification bell: shows a popover with the events (videos/images)
  * currently being generated and their live percentage. Clicking an item
- * opens the /events page with that take focused.
+ * opens the /studio/events page with that take focused.
  */
 @Component({
   selector: 'app-generation-bell',
-  imports: [RouterLink, Button, Popover, Tag, Tooltip, ServerUrlPipe, CountUpDirective],
+  imports: [
+    RouterLink,
+    Button,
+    Popover,
+    Tag,
+    Tooltip,
+    ServerUrlPipe,
+    CountUpDirective,
+    DecimalPipe,
+    TranslatePipe,
+  ],
   templateUrl: './generation-bell.component.html',
   styleUrl: './generation-bell.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GenerationBellComponent {
   protected readonly store = inject(GenerationEventsStore);
+  protected readonly center = inject(NotificationCenterService);
   private readonly popoverRef = viewChild.required<Popover>('popoverRef');
 
   /** Active events (queued/running) first, then the most recent finished. */
@@ -46,10 +60,16 @@ export class GenerationBellComponent {
   /** Finished takes not seen yet (bell shows the count, clears on open). */
   protected readonly unreadCount = computed(() => this.store.unreadCount());
 
+  /** Takes + avisos persistentes del centro nativo. */
+  protected readonly totalUnread = computed(() => this.unreadCount() + this.center.unread());
+
   protected toggle(event: Event): void {
     // Opening the popover acknowledges everything the user can now see.
     if (this.unreadCount() > 0) {
       this.store.markAllRead();
+    }
+    if (this.center.unread() > 0) {
+      void this.center.markAllRead();
     }
     this.popoverRef().toggle(event);
   }

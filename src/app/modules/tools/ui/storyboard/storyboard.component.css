@@ -1,0 +1,423 @@
+/* Storyboard: mismo workspace que Pose Sheet/Location. La columna izquierda
+   scrollea y la barra de generar queda sticky al fondo. */
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 480px;
+  padding: 16px 20px;
+}
+
+.studio-shell {
+  --st-bg: var(--color-surface-2);
+  --st-panel: var(--color-surface);
+  --st-panel-2: var(--color-surface-2);
+  --st-line: var(--color-surface-border);
+  --st-text: var(--color-ink-on-dark);
+  --st-text-2: var(--color-ink-muted-on-dark);
+  --st-muted: var(--color-ink-muted-on-dark);
+  --st-accent: var(--color-accent);
+  --st-ok: var(--color-success);
+  --st-err: var(--color-danger);
+  --st-warn: var(--color-warning);
+
+  display: grid;
+  grid-template-columns: 380px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  gap: 16px;
+  flex: 1 1 auto;
+  min-height: 0;
+  color: var(--color-ink);
+}
+
+.pose-generate-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 2px 2px;
+  background: linear-gradient(to bottom, transparent, var(--st-panel-2) 35%);
+}
+
+.pose-textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--color-surface-border);
+  border-radius: 10px;
+  background: var(--color-surface-2);
+  color: var(--color-ink-on-dark);
+  font-size: 13px;
+}
+
+.pose-textarea::placeholder {
+  color: var(--color-ink-muted-on-dark);
+}
+
+.pose-textarea:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+.pose-textarea {
+  resize: vertical;
+}
+
+.storyboard-story {
+  min-height: 132px;
+  line-height: 1.55;
+}
+
+.storyboard-system {
+  min-height: 150px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+/* Selector de viñetas: cada opción muestra su cantidad y la cuadrícula real. */
+.storyboard-panels {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.storyboard-panel-option {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 8px;
+  border: 1px solid var(--color-surface-border);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--color-ink-muted-on-dark);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    color 120ms ease,
+    background-color 120ms ease,
+    border-color 120ms ease;
+}
+
+.storyboard-panel-option:hover {
+  color: var(--color-ink-on-dark);
+}
+
+.storyboard-panel-option:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+.storyboard-panel-option.active {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.storyboard-panel-option__count {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.storyboard-panel-option__grid {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+}
+
+.storyboard-panel-option__grid span {
+  aspect-ratio: 16 / 9;
+  border: 1px solid currentColor;
+  border-radius: 1px;
+  opacity: 0.55;
+}
+
+.storyboard-panel-option.active .storyboard-panel-option__grid span {
+  opacity: 0.9;
+}
+
+.storyboard-grid-note {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 8px 0 0;
+  color: var(--color-ink-muted-on-dark);
+  font-size: 11px;
+}
+
+.storyboard-ratio {
+  padding: 1px 6px;
+  border: 1px solid var(--color-surface-border);
+  border-radius: 999px;
+  color: var(--color-ink-muted-on-dark);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+/* Referencias: miniatura + selector de tipo (personaje / locación / prop). */
+.storyboard-refs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.storyboard-ref {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--color-surface-border);
+  border-radius: 10px;
+  background: var(--color-surface-2);
+}
+
+.storyboard-ref__thumb {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-scrim);
+}
+
+.storyboard-ref__thumb img {
+  display: block;
+  width: 100%;
+  height: 76px;
+  object-fit: cover;
+}
+
+.storyboard-ref__fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 76px;
+  padding: 6px;
+  color: var(--color-ink-muted-on-dark);
+  font-size: 9px;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.storyboard-ref__fallback .md {
+  font-size: 18px;
+}
+
+.storyboard-ref__remove {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  display: flex;
+  padding: 3px;
+  border: 0;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.7);
+  color: #fff;
+  cursor: pointer;
+}
+
+.storyboard-ref__remove i {
+  font-size: 14px;
+}
+
+.storyboard-ref figcaption {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: 5px 6px 6px;
+}
+
+.storyboard-ref__name {
+  overflow: hidden;
+  color: var(--color-ink-muted-on-dark);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.storyboard-ref__kind {
+  width: 100%;
+  min-width: 0;
+  padding: 3px 4px;
+  border: 1px solid var(--color-surface-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+  color: var(--color-ink-on-dark);
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.storyboard-ref__kind:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+/* Instrucciones avanzadas: colapsadas para no competir con la acción principal. */
+.storyboard-advanced {
+  border: 1px solid var(--color-surface-border);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface);
+}
+
+.storyboard-advanced summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 10px;
+  color: var(--color-ink-muted-on-dark);
+  font-size: 12px;
+  font-weight: 700;
+  list-style: none;
+  cursor: pointer;
+}
+
+.storyboard-advanced summary::-webkit-details-marker {
+  display: none;
+}
+
+.storyboard-advanced summary > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.storyboard-advanced summary .md {
+  transition: transform 120ms ease;
+}
+
+.storyboard-advanced[open] summary .md-expand_more {
+  transform: rotate(180deg);
+}
+
+.storyboard-advanced summary:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+.storyboard-advanced > .panel {
+  border: 0;
+  border-top: 1px solid var(--color-surface-border);
+  border-radius: 0;
+  background: transparent;
+}
+
+/* Visor: hoja horizontal contenida, con acciones debajo. */
+.pose-viewer {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+}
+
+.pose-canvas {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--color-scrim);
+}
+
+.pose-canvas img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 12px;
+}
+
+.pose-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 280px;
+  padding: 24px;
+  border: 1px dashed var(--color-surface-border);
+  border-radius: 12px;
+  color: var(--color-ink-muted-on-dark);
+  font-size: 13px;
+  text-align: center;
+}
+
+.pose-empty i {
+  font-size: 28px;
+}
+
+.pose-loading {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 280px;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--color-scrim);
+}
+
+.pose-loading-media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.pose-loading-progress {
+  position: absolute;
+  bottom: 16px;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.pose-loading-pct {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--color-accent);
+}
+
+.pose-loading-progress .muted {
+  color: var(--color-ink-on-scrim);
+}
+
+.viewer-actions {
+  margin-top: 8px;
+  padding-right: 2px;
+}
+
+@media (max-width: 1100px) {
+  .studio-shell {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    height: auto;
+  }
+
+  .pose-generate-bar {
+    position: static;
+    background: none;
+  }
+
+  .pose-viewer {
+    min-height: 320px;
+  }
+}

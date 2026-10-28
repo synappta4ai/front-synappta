@@ -1,0 +1,385 @@
+<div class="mx-auto flex h-full w-full max-w-5xl flex-col gap-4 overflow-y-auto px-1 py-1">
+  <header class="flex flex-wrap items-center gap-x-4 gap-y-2">
+    <div class="min-w-0">
+      <h2 class="text-lg font-bold text-ink">{{ 'ADMIN.NOTIFICATIONS.TITLE' | translate }}</h2>
+      <p class="text-xs text-ink-muted-on-dark">{{ 'ADMIN.NOTIFICATIONS.SUBTITLE' | translate }}</p>
+    </div>
+    <div class="ml-auto flex items-center gap-2">
+      <p-button
+        icon="md md-refresh"
+        size="small"
+        outlined
+        [loading]="loading()"
+        (onClick)="reload()"
+        [pTooltip]="'ADMIN.NOTIFICATIONS.RELOAD' | translate"
+        tooltipPosition="bottom"
+      />
+      <p-button
+        [label]="'ADMIN.NOTIFICATIONS.PAIR' | translate"
+        icon="md md-qr_code"
+        size="small"
+        outlined
+        (onClick)="openPair()"
+        [pTooltip]="'ADMIN.NOTIFICATIONS.PAIR_HINT' | translate"
+        tooltipPosition="bottom"
+      />
+      <p-button
+        [label]="('ADMIN.NOTIFICATIONS.DEVICES_TITLE' | translate) + ' (' + devices().length + ')'"
+        icon="md md-smartphone"
+        size="small"
+        outlined
+        (onClick)="openDevices()"
+        [pTooltip]="'ADMIN.NOTIFICATIONS.DEVICES_SUBTITLE' | translate"
+        tooltipPosition="bottom"
+      />
+      <p-button
+        [label]="'ADMIN.NOTIFICATIONS.NEW' | translate"
+        icon="md md-add"
+        size="small"
+        (onClick)="openCreate()"
+      />
+    </div>
+  </header>
+
+  @if (error()) {
+    <p class="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-400" role="alert">{{ error() }}</p>
+  }
+  @if (notice()) {
+    <p class="rounded-lg bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300" role="status">{{ notice() }}</p>
+  }
+
+  <section class="rounded-xl border border-surface-border bg-surface p-3">
+    <h3 class="text-sm font-bold text-ink">{{ 'ADMIN.NOTIFICATIONS.NATIVE_TITLE' | translate }}</h3>
+    <p class="mb-2 text-xs text-ink-muted-on-dark">
+      {{ 'ADMIN.NOTIFICATIONS.NATIVE_SUBTITLE' | translate }}
+    </p>
+    <div class="flex flex-wrap gap-2">
+      <p-button
+        [label]="'ADMIN.NOTIFICATIONS.TEST_PUSH' | translate"
+        icon="md md-smartphone"
+        size="small"
+        outlined
+        [loading]="testingPush()"
+        (onClick)="testPush()"
+        [pTooltip]="'ADMIN.NOTIFICATIONS.TEST_PUSH_HINT' | translate"
+        tooltipPosition="bottom"
+      />
+      <p-button
+        [label]="'ADMIN.NOTIFICATIONS.TEST_CENTER' | translate"
+        icon="md md-notifications"
+        size="small"
+        outlined
+        [loading]="testingCenter()"
+        (onClick)="testCenter()"
+        [pTooltip]="'ADMIN.NOTIFICATIONS.TEST_CENTER_HINT' | translate"
+        tooltipPosition="bottom"
+      />
+    </div>
+  </section>
+
+  <p-table [value]="channels()" [loading]="loading()" styleClass="w-full">
+    <ng-template #header>
+      <tr>
+        <th>{{ 'ADMIN.NOTIFICATIONS.COL_NAME' | translate }}</th>
+        <th>{{ 'ADMIN.NOTIFICATIONS.COL_SERVICE' | translate }}</th>
+        <th>{{ 'ADMIN.NOTIFICATIONS.COL_URL' | translate }}</th>
+        <th>{{ 'ADMIN.NOTIFICATIONS.COL_STATUS' | translate }}</th>
+        <th class="text-right">{{ 'ADMIN.NOTIFICATIONS.COL_ACTIONS' | translate }}</th>
+      </tr>
+    </ng-template>
+    <ng-template #body let-channel>
+      <tr>
+        <td class="font-medium">{{ channel.name }}</td>
+        <td class="capitalize">{{ channel.service }}</td>
+        <td class="max-w-56 truncate font-mono text-xs" [title]="channel.url_mask">
+          {{ channel.url_mask }}
+        </td>
+        <td>
+          <p-tag
+            [value]="
+              (channel.enabled
+                ? 'ADMIN.NOTIFICATIONS.ENABLED'
+                : 'ADMIN.NOTIFICATIONS.DISABLED'
+              ) | translate
+            "
+            [severity]="channel.enabled ? 'success' : 'secondary'"
+          />
+        </td>
+        <td>
+          <div class="flex items-center justify-end gap-1">
+            <p-button
+              icon="md md-send"
+              size="small"
+              text
+              [loading]="testingId() === channel.id"
+              (onClick)="test(channel)"
+              [pTooltip]="'ADMIN.NOTIFICATIONS.TEST' | translate"
+              tooltipPosition="bottom"
+            />
+            <p-button
+              [icon]="channel.enabled ? 'md md-notifications_off' : 'md md-notifications'"
+              size="small"
+              text
+              (onClick)="toggleEnabled(channel)"
+              [pTooltip]="
+                (channel.enabled
+                  ? 'ADMIN.NOTIFICATIONS.DISABLE_HINT'
+                  : 'ADMIN.NOTIFICATIONS.ENABLE_HINT'
+                ) | translate
+              "
+              tooltipPosition="bottom"
+            />
+            <p-button
+              icon="md md-edit"
+              size="small"
+              text
+              (onClick)="openEdit(channel)"
+              [pTooltip]="'ADMIN.NOTIFICATIONS.EDIT' | translate"
+              tooltipPosition="bottom"
+            />
+            @if (confirmDeleteId() === channel.id) {
+              <p-button
+                icon="md md-check"
+                size="small"
+                severity="danger"
+                (onClick)="confirmDelete()"
+                [pTooltip]="'ADMIN.NOTIFICATIONS.CONFIRM_DELETE' | translate"
+                tooltipPosition="bottom"
+              />
+              <p-button icon="md md-close" size="small" text (onClick)="cancelDelete()" />
+            } @else {
+              <p-button
+                icon="md md-delete"
+                size="small"
+                text
+                severity="danger"
+                (onClick)="askDelete(channel.id)"
+                [pTooltip]="'ADMIN.NOTIFICATIONS.DELETE' | translate"
+                tooltipPosition="bottom"
+              />
+            }
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+    <ng-template #emptymessage>
+      <tr>
+        <td colspan="5" class="py-8 text-center text-sm text-ink-muted-on-dark">
+          {{ 'ADMIN.NOTIFICATIONS.EMPTY' | translate }}
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</div>
+
+<p-dialog
+  [(visible)]="pairVisible"
+  [modal]="true"
+  [style]="{ width: 'min(92vw, 24rem)' }"
+  [draggable]="false"
+  [resizable]="false"
+  header="{{ 'ADMIN.NOTIFICATIONS.PAIR_TITLE' | translate }}"
+>
+  <div class="flex flex-col items-center gap-3 text-center">
+    <p class="text-sm text-ink-muted-on-dark">{{ 'ADMIN.NOTIFICATIONS.PAIR_EXPLAIN' | translate }}</p>
+    @if (pairBusy()) {
+      <p class="text-sm">{{ 'ADMIN.NOTIFICATIONS.PAIR_GENERATING' | translate }}</p>
+    } @else if (pairQr()) {
+      <img [src]="pairQr()" width="240" height="240" alt="QR" />
+      <p class="font-mono text-xs break-all">{{ pairCode() }}</p>
+      <p-button
+        [label]="'ADMIN.NOTIFICATIONS.PAIR_REGENERATE' | translate"
+        icon="md md-refresh"
+        size="small"
+        text
+        (onClick)="generatePair()"
+      />
+    }
+    @if (pairError()) {
+      <p class="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-400" role="alert">
+        {{ pairError() }}
+      </p>
+    }
+  </div>
+</p-dialog>
+
+<p-dialog
+  [visible]="devicesVisible()"
+  (visibleChange)="$event ? devicesVisible.set(true) : closeDevices()"
+  [modal]="true"
+  [style]="{ width: 'min(92vw, 32rem)' }"
+  [draggable]="false"
+  [resizable]="false"
+  header="{{ 'ADMIN.NOTIFICATIONS.DEVICES_TITLE' | translate }} ({{ devices().length }})"
+>
+  <p class="mb-3 text-xs text-ink-muted-on-dark">
+    {{ 'ADMIN.NOTIFICATIONS.DEVICES_SUBTITLE' | translate }}
+  </p>
+  @if (devicesLoading() && devices().length === 0) {
+    <p class="py-4 text-center text-sm text-ink-muted-on-dark">
+      {{ 'ADMIN.NOTIFICATIONS.DEVICES_LOADING' | translate }}
+    </p>
+  } @else if (devices().length === 0) {
+    <p class="py-4 text-center text-sm text-ink-muted-on-dark">
+      {{ 'ADMIN.NOTIFICATIONS.DEVICES_EMPTY' | translate }}
+    </p>
+  } @else {
+    <ul class="flex flex-col gap-2">
+      @for (device of devices(); track device.id) {
+        <li class="flex items-center gap-3 rounded-xl border border-surface-border px-3 py-2">
+          <i class="md md-smartphone text-lg text-accent" aria-hidden="true"></i>
+          <div class="min-w-0 flex-1">
+            <p class="truncate text-sm font-bold text-ink">
+              {{ device.user_display_name || ('ADMIN.NOTIFICATIONS.DEVICE_UNKNOWN_USER' | translate) }}
+            </p>
+            <p class="truncate text-xs text-ink-muted-on-dark" [title]="device.user_agent">
+              {{ device.user_agent || device.endpoint_host }}
+            </p>
+            <p class="text-xs text-ink-muted-on-dark">
+              {{ device.endpoint_host }} · {{ device.created_at | date: 'short' }}
+            </p>
+          </div>
+          @if (confirmDeviceId() === device.id) {
+            <p-button
+              icon="md md-check"
+              size="small"
+              severity="danger"
+              [loading]="removingDevice()"
+              (onClick)="confirmRemoveDevice(device)"
+              [pTooltip]="'ADMIN.NOTIFICATIONS.DEVICE_MODAL_CONFIRM' | translate"
+              tooltipPosition="bottom"
+            />
+            <p-button
+              icon="md md-close"
+              size="small"
+              text
+              [disabled]="removingDevice()"
+              (onClick)="cancelRemoveDevice()"
+            />
+          } @else {
+            <p-button
+              icon="md md-notifications_off"
+              size="small"
+              text
+              severity="danger"
+              (onClick)="askRemoveDevice(device)"
+              [pTooltip]="'ADMIN.NOTIFICATIONS.DEVICE_REMOVE' | translate"
+              tooltipPosition="bottom"
+            />
+          }
+        </li>
+      }
+    </ul>
+  }
+  <ng-template #footer>
+    <div class="flex justify-end gap-2">
+      <p-button
+        icon="md md-refresh"
+        size="small"
+        text
+        [loading]="devicesLoading()"
+        (onClick)="loadDevices()"
+        [pTooltip]="'ADMIN.NOTIFICATIONS.RELOAD' | translate"
+        tooltipPosition="bottom"
+      />
+      <p-button
+        [label]="'ADMIN.NOTIFICATIONS.CANCEL' | translate"
+        size="small"
+        text
+        [disabled]="removingDevice()"
+        (onClick)="closeDevices()"
+      />
+    </div>
+  </ng-template>
+</p-dialog>
+
+<p-dialog
+  [(visible)]="dialogVisible"
+  [modal]="true"
+  [style]="{ width: 'min(92vw, 28rem)' }"
+  [draggable]="false"
+  [resizable]="false"
+  header="{{ (editingId() ? 'ADMIN.NOTIFICATIONS.EDIT_TITLE' : 'ADMIN.NOTIFICATIONS.NEW_TITLE') | translate }}"
+>
+  <div class="flex flex-col gap-4">
+    <div class="flex flex-col gap-1">
+      <label for="channel-name" class="text-sm font-medium">
+        {{ 'ADMIN.NOTIFICATIONS.FORM_NAME' | translate }}
+      </label>
+      <input
+        id="channel-name"
+        pInputText
+        [(ngModel)]="formName"
+        [placeholder]="'ADMIN.NOTIFICATIONS.FORM_NAME_PH' | translate"
+      />
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label for="channel-service" class="text-sm font-medium">
+        {{ 'ADMIN.NOTIFICATIONS.FORM_SERVICE' | translate }}
+      </label>
+      <p-select
+        inputId="channel-service"
+        [options]="serviceOptions"
+        [(ngModel)]="formService"
+        optionLabel="label"
+        optionValue="value"
+        styleClass="w-full"
+        appendTo="body"
+      />
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label for="channel-url" class="text-sm font-medium">
+        {{ 'ADMIN.NOTIFICATIONS.FORM_URL' | translate }}
+      </label>
+      <input
+        id="channel-url"
+        pInputText
+        [(ngModel)]="formUrl"
+        [placeholder]="serviceExample()"
+        autocomplete="off"
+        spellcheck="false"
+        class="font-mono text-xs"
+      />
+      <small class="text-xs text-ink-muted-on-dark">
+        @if (editingId()) {
+          {{ 'ADMIN.NOTIFICATIONS.FORM_URL_KEEP' | translate: { mask: editingMask() } }}
+        } @else {
+          {{ 'ADMIN.NOTIFICATIONS.FORM_URL_HINT' | translate }}
+        }
+      </small>
+    </div>
+
+    <div class="flex items-center justify-between gap-2">
+      <label for="channel-enabled" class="text-sm font-medium">
+        {{ 'ADMIN.NOTIFICATIONS.FORM_ENABLED' | translate }}
+      </label>
+      <p-toggleswitch inputId="channel-enabled" [(ngModel)]="formEnabled" />
+    </div>
+
+    @if (formError()) {
+      <p class="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-400" role="alert">
+        {{ formError() }}
+      </p>
+    }
+  </div>
+
+  <ng-template #footer>
+    <div class="flex justify-end gap-2">
+      <p-button
+        [label]="'ADMIN.NOTIFICATIONS.CANCEL' | translate"
+        size="small"
+        text
+        (onClick)="dialogVisible.set(false)"
+      />
+      <p-button
+        [label]="'ADMIN.NOTIFICATIONS.SAVE' | translate"
+        icon="md md-check"
+        size="small"
+        [loading]="saving()"
+        (onClick)="save()"
+      />
+    </div>
+  </ng-template>
+</p-dialog>

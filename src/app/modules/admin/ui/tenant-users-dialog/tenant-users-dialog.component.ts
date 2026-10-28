@@ -1,5 +1,16 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { catchError, EMPTY, finalize } from 'rxjs';
 
 import { Button } from 'primeng/button';
@@ -10,6 +21,7 @@ import { Tag } from 'primeng/tag';
 
 import { AdminService } from '../../services/admin.service';
 import { PermissionDef, PlatformUser, Tenant, TenantMember } from '../../interfaces';
+import { ConsentCheckboxesComponent } from '@shared/components/consent-checkboxes/consent-checkboxes.component';
 
 /** Nombres de rol por nivel (solo lectura; el 0 nunca se asigna desde acá). */
 const ROLE_NAMES: Record<number, string> = {
@@ -28,16 +40,29 @@ const ASSIGNABLE_ROLES = [1, 2, 3].map((value) => ({
 
 @Component({
   selector: 'app-tenant-users-dialog',
-  imports: [FormsModule, Dialog, Button, InputText, Message, Tag],
+  imports: [
+    FormsModule,
+    TranslatePipe,
+    Dialog,
+    Button,
+    InputText,
+    Message,
+    Tag,
+    NgTemplateOutlet,
+    ConsentCheckboxesComponent,
+  ],
   templateUrl: './tenant-users-dialog.component.html',
   styleUrls: ['./tenant-users-dialog.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TenantUsersDialogComponent {
   private readonly adminService = inject(AdminService);
+  private readonly translate = inject(TranslateService);
 
   /** Tenant en gestión (null = diálogo cerrado). */
   readonly tenant = input<Tenant | null>(null);
+  /** Embebido como panel de /admin/users, sin diálogo ni overlay. */
+  readonly inline = input(false);
   readonly closed = output<void>();
   /** Notifica a la lista padre que los permisos de la empresa cambiaron. */
   readonly tenantPermissionsChanged = output<{ tenantId: number; permissions: string[] }>();
@@ -58,6 +83,10 @@ export class TenantUsersDialogComponent {
 
   /** Pestaña del formulario de alta: nuevo usuario global o existente. */
   protected readonly mode = signal<'new' | 'existing'>('new');
+  /** Aceptaciones declaradas por el admin (el titular confirma en su primer ingreso). */
+  protected readonly consentTerms = signal(false);
+  protected readonly consentPrivacy = signal(false);
+  protected readonly consentTick = signal(0);
   protected readonly form = {
     username: '',
     password: '',
@@ -77,13 +106,21 @@ export class TenantUsersDialogComponent {
   protected readonly editPerms = signal<Set<string>>(new Set());
 
   protected readonly tenantId = computed(() => this.tenant()?.id ?? 0);
-  protected readonly visible = computed(() => this.tenant() !== null);
-  protected readonly header = computed(() => `Usuarios · ${this.tenant()?.name ?? ''}`);
+  protected readonly visible = computed(() => !this.inline() && this.tenant() !== null);
+
+  constructor() {
+    // Embebido no hay (onShow) del p-dialog: se carga al cambiar el tenant.
+    effect(() => {
+      if (this.inline() && this.tenant() !== null) {
+        this.onShow();
+      }
+    });
+  }
 
   /** Permisos heredados de la empresa (mostrados marcados y bloqueados). */
   protected readonly inherited = computed(() => this.companyPerms());
 
-  /** Se ejecuta cada vez que el diálogo se muestra (p-dialog onShow). */
+  /** Se ejecuta al abrir el diálogo (onShow) o al cambiar de tenant inline. */
   protected onShow(): void {
     this.error.set('');
     this.companyPerms.set(new Set(this.tenant()?.permissions ?? []));
@@ -109,7 +146,7 @@ export class TenantUsersDialogComponent {
       .listTenantMembers(id)
       .pipe(
         catchError(() => {
-          this.error.set('No se pudieron cargar los usuarios del tenant.');
+          this.error.set(this.translate.instant('ADMIN.USERS.ERRORS.LOAD_MEMBERS'));
           return EMPTY;
         }),
         finalize(() => this.loading.set(false)),
@@ -138,7 +175,7 @@ export class TenantUsersDialogComponent {
       .updateTenantPermissions(id, [...this.coPermsDraft()])
       .pipe(
         catchError(() => {
-          this.error.set('No se pudieron guardar los permisos de la empresa.');
+          this.error.set(this.translate.instant('ADMIN.USERS.ERRORS.SAVE_COMPANY'));
           return EMPTY;
         }),
         finalize(() => this.savingCompany.set(false)),
@@ -172,8 +209,13 @@ export class TenantUsersDialogComponent {
   protected createNew(): void {
     const id = this.tenantId();
     if (!id || this.saving()) return;
+    this.consentTick.update((v) => v + 1);
     if (!this.form.username.trim() || this.form.password.length < 8) {
-      this.error.set('Usuario obligatorio y contraseña de al menos 8 caracteres.');
+      this.error.set(this.translate.instant('ADMIN.USERS.ERRORS.CREATE_VALIDATION'));
+      return;
+    }
+    if (!(this.consentTerms() && this.consentPrivacy())) {
+      this.error.set(this.translate.instant('CONSENT.REQUIRED'));
       return;
     }
     this.saving.set(true);
@@ -191,7 +233,11 @@ export class TenantUsersDialogComponent {
       })
       .pipe(
         catchError((err: unknown) => {
-          this.error.set(err instanceof Error ? err.message : 'No se pudo crear el usuario.');
+          this.error.set(
+            err instanceof Error
+              ? err.message
+              : this.translate.instant('ADMIN.USERS.ERRORS.CREATE'),
+          );
           return EMPTY;
         }),
         finalize(() => this.saving.set(false)),
@@ -203,6 +249,8 @@ export class TenantUsersDialogComponent {
         this.form.surname = '';
         this.form.email = '';
         this.form.perms = {};
+        this.consentTerms.set(false);
+        this.consentPrivacy.set(false);
         this.loadMembers();
       });
   }
@@ -218,7 +266,7 @@ export class TenantUsersDialogComponent {
       .listPlatformUsers(q)
       .pipe(
         catchError(() => {
-          this.error.set('No se pudo buscar usuarios.');
+          this.error.set(this.translate.instant('ADMIN.USERS.ERRORS.SEARCH'));
           return EMPTY;
         }),
       )
@@ -248,7 +296,11 @@ export class TenantUsersDialogComponent {
       })
       .pipe(
         catchError((err: unknown) => {
-          this.error.set(err instanceof Error ? err.message : 'No se pudo agregar el usuario.');
+          this.error.set(
+            err instanceof Error
+              ? err.message
+              : this.translate.instant('ADMIN.USERS.ERRORS.ATTACH'),
+          );
           return EMPTY;
         }),
         finalize(() => this.saving.set(false)),
@@ -270,7 +322,7 @@ export class TenantUsersDialogComponent {
       .updateTenantMemberRole(id, member.id, roleLevel)
       .pipe(
         catchError(() => {
-          this.error.set('No se pudo cambiar el rol.');
+          this.error.set(this.translate.instant('ADMIN.USERS.ERRORS.ROLE'));
           this.loadMembers();
           return EMPTY;
         }),
@@ -320,7 +372,7 @@ export class TenantUsersDialogComponent {
       .updateTenantMemberPermissions(id, member.id, [...this.editPerms()])
       .pipe(
         catchError(() => {
-          this.error.set('No se pudieron guardar los permisos.');
+          this.error.set(this.translate.instant('ADMIN.USERS.ERRORS.SAVE_PERMS'));
           return EMPTY;
         }),
         finalize(() => this.saving.set(false)),
@@ -342,7 +394,7 @@ export class TenantUsersDialogComponent {
       .removeTenantMember(id, member.id)
       .pipe(
         catchError(() => {
-          this.error.set('No se pudo quitar al usuario del tenant.');
+          this.error.set(this.translate.instant('ADMIN.USERS.ERRORS.REMOVE'));
           return EMPTY;
         }),
         finalize(() => this.saving.set(false)),

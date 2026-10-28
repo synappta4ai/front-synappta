@@ -67,6 +67,9 @@
 .md-all_inbox::before {
   content: 'all_inbox';
 }
+.md-apartment::before {
+  content: 'apartment';
+}
 .md-alternate_email::before {
   content: 'alternate_email';
 }
@@ -81,6 +84,12 @@
 }
 .md-attach_file::before {
   content: 'attach_file';
+}
+.md-auto_fix_high::before {
+  content: 'auto_fix_high';
+}
+.md-autorenew::before {
+  content: 'autorenew';
 }
 .md-block::before {
   content: 'block';
@@ -115,8 +124,14 @@
 .md-content_copy::before {
   content: 'content_copy';
 }
+.md-content_cut::before {
+  content: 'content_cut';
+}
 .md-dark_mode::before {
   content: 'dark_mode';
+}
+.md-dashboard::before {
+  content: 'dashboard';
 }
 .md-delete::before {
   content: 'delete';
@@ -148,8 +163,14 @@
 .md-folder::before {
   content: 'folder';
 }
+.md-fullscreen::before {
+  content: 'fullscreen';
+}
 .md-folder_open::before {
   content: 'folder_open';
+}
+.md-forum::before {
+  content: 'forum';
 }
 .md-gps_fixed::before {
   content: 'gps_fixed';
@@ -159,6 +180,9 @@
 }
 .md-hourglass_empty::before {
   content: 'hourglass_empty';
+}
+.md-history::before {
+  content: 'history';
 }
 .md-image::before {
   content: 'image';
@@ -180,6 +204,12 @@
 }
 .md-light_mode::before {
   content: 'light_mode';
+}
+.md-lightbulb::before {
+  content: 'lightbulb';
+}
+.md-link_off::before {
+  content: 'link_off';
 }
 .md-list::before {
   content: 'list';
@@ -203,11 +233,17 @@
 .md-movie::before {
   content: 'movie';
 }
+.md-music_note::before {
+  content: 'music_note';
+}
 .md-notifications::before {
   content: 'notifications';
 }
 .md-open_in_new::before {
   content: 'open_in_new';
+}
+.md-pause::before {
+  content: 'pause';
 }
 .md-people::before {
   content: 'people';
@@ -233,11 +269,20 @@
 .md-play_circle::before {
   content: 'play_circle';
 }
+.md-redo::before {
+  content: 'redo';
+}
 .md-refresh::before {
   content: 'refresh';
 }
 .md-remove::before {
   content: 'remove';
+}
+.md-rotate_90::before {
+  content: 'rotate_90_degrees_ccw';
+}
+.md-rotate_left::before {
+  content: 'rotate_left';
 }
 .md-save::before {
   content: 'save';
@@ -248,14 +293,29 @@
 .md-search::before {
   content: 'search';
 }
+.md-send::before {
+  content: 'send';
+}
 .md-settings::before {
   content: 'settings';
+}
+.md-smart-toy::before {
+  content: 'smart_toy';
 }
 .md-storage::before {
   content: 'storage';
 }
+.md-text_fields::before {
+  content: 'text_fields';
+}
 .md-timer::before {
   content: 'timer';
+}
+.md-tune::before {
+  content: 'tune';
+}
+.md-undo::before {
+  content: 'undo';
 }
 .md-upload::before {
   content: 'upload';
@@ -271,6 +331,12 @@
 }
 .md-warning::before {
   content: 'warning';
+}
+.md-zoom_in::before {
+  content: 'zoom_in';
+}
+.md-zoom_out::before {
+  content: 'zoom_out';
 }
 .md-work::before {
   content: 'work';
@@ -292,18 +358,22 @@
    Paleta Figma (no modificar):
      background #DFDFDF · accent #E7FE64 · choice #656565 · secondary #ACACAC
 
-   Contraste (WCAG 2.x):
-     ink #111 / background ............ 14.2:1
-     ink-muted #595959 / background ... 5.3:1
-     choice #656565 / background ...... 4.4:1 (solo iconos/estados; texto usa ink-muted)
-     ink #111 / secondary ............. 8.3:1
-     on-accent #0F0F0F / accent ....... 17.1:1
-     accent / surface ................. 15.2:1 (texto/iconos/líneas solo sobre surface)
-     accent / background .............. 1.2:1 (solo relleno con on-accent, nunca texto)
-     ink-on-dark #F2F2F2 / surface .... 15.2:1 · / surface-2 12.8:1
-     ink-muted-on-dark #A8A8A8 / surface 7.2:1 · / surface-2 6.0:1 · / surface-hover 5.3:1
+    Contraste (WCAG 2.x), tema claro (superficies grises):
+      ink #111 / background ............ 14.2:1
+      ink-muted #595959 / background ... 5.3:1
+      choice #656565 / background ...... 4.4:1 (solo iconos/estados; texto usa ink-muted)
+      ink #111 / secondary ............. 8.3:1
+      on-accent #0F0F0F / accent ....... 17.1:1
+      accent / background .............. 1.2:1 (solo relleno con on-accent, nunca texto)
+      ink-on-dark #141414 / surface .... 7.9:1 · / surface-2 7.3:1
+      ink-muted-on-dark #333333 / surface 5.6:1 · / surface-2 4.9:1
+      ink-on-scrim #F5F5F5 / scrim ..... 15.5:1 · muted #C6C6C6 11.9:1
+      accent / surface ................. ~2:1 (solo bordes/rellenos y acentos, nunca texto;
+                                           el texto sobre acento usa on-accent)
      surface-border-strong / surface .. 4.3:1 · / surface-2 3.6:1 (bordes de inputs)
-     success · warning · danger · info / surface-2 ≥ 4.9:1
+      tags en claro: pastilla teñida oscura + #F5F5F5 →
+        info 5.2:1 · warn 4.9:1 · danger 5.7:1 · success (accent) 17.1:1
+        (en .dark, tinte suave sobre superficie negra, idem ≥ 4.5:1)
      danger-strong #A33A3A / background 4.9:1
    ============================================ */
 @theme {
@@ -322,17 +392,23 @@
   --color-secondary-hover: #bababa;
   --color-secondary-active: #a0a0a0;
 
-  --color-surface: #1c1c1c;
-  --color-surface-2: #2a2a2a;
-  --color-surface-hover: #333333;
-  --color-surface-active: #3d3d3d;
-  --color-surface-border: #3a3a3a;
-  --color-surface-border-strong: #808080;
+  --color-surface: #acacac;
+  --color-surface-2: #a1a1a1;
+  --color-surface-hover: #bcbcbc;
+  --color-surface-active: #c9c9c9;
+  --color-surface-border: #8b8b8b;
+  --color-surface-border-strong: #6b6b6b;
 
   --color-ink: #111111;
   --color-ink-muted: #595959;
-  --color-ink-on-dark: #f2f2f2;
-  --color-ink-muted-on-dark: #a8a8a8;
+  /* En el tema claro las superficies son grises, así que el texto que vive
+     sobre ellas va en negro (los nombres *-on-dark se conservan para no
+     renombrar cientos de usos; en .dark recuperan sus valores claros). */
+  --color-ink-on-dark: #141414;
+  --color-ink-muted-on-dark: #333333;
+  /* Texto sobre scrim/velos oscuros (constantes en ambos temas): siempre claro. */
+  --color-ink-on-scrim: #f5f5f5;
+  --color-ink-muted-on-scrim: #c6c6c6;
   --color-on-accent: #0f0f0f;
 
   --color-scrim: #0f0f0f;
@@ -342,6 +418,18 @@
   --color-danger: #e07a7a;
   --color-danger-strong: #a33a3a;
   --color-info: #7fa8cc;
+  /* Variante legible del azul como TEXTO sobre superficies claras: en el
+     tema blanco #7fa8cc no alcanza contraste (grises brillantes). */
+  --color-info-ink: #0a3a66;
+
+  /* Tipos de recurso del flujo comercial. En claro son tonos oscuros
+     (texto legible sobre los grises); en .dark se aclaran. */
+  --color-kind-character: #0b3d20;
+  --color-kind-location: #5f2200;
+  --color-kind-props: #12306e;
+  --color-kind-product: #42157f;
+  --color-kind-unknown: #333333;
+  --color-prompt-unknown: #6b1a1a;
 
   --color-disabled: var(--color-secondary);
   --color-disabled-ink: var(--color-choice);
@@ -381,8 +469,9 @@
 
 /* ============================================
    Tema oscuro: se activa con la clase .dark en <html>
-   (ThemeService.setMode). Solo se remapean los tokens que
-   dependen del canvas; surface/scrim/accent son constantes.
+   (ThemeService.setMode). Remapea canvas, tintas y la rampa de
+   superficies (en claro son grises, acá vuelven a negro);
+   scrim/accent son constantes.
    Contraste verificado:
      ink #F2F2F2 / background #121212 ....... 16.7:1
      ink-muted #A8A8A8 / background ......... 7.9:1
@@ -394,11 +483,28 @@
   --color-background: #121212;
   --color-ink: #f2f2f2;
   --color-ink-muted: #a8a8a8;
+  --color-ink-on-dark: #f2f2f2;
+  --color-ink-muted-on-dark: #a8a8a8;
+  /* En oscuro las superficies vuelven a ser negras (el tema claro las usa grises). */
+  --color-surface: #1c1c1c;
+  --color-surface-2: #2a2a2a;
+  --color-surface-hover: #333333;
+  --color-surface-active: #3d3d3d;
+  --color-surface-border: #3a3a3a;
+  --color-surface-border-strong: #808080;
   --color-secondary: #2e2e2e;
   --color-secondary-hover: #3a3a3a;
   --color-secondary-active: #242424;
   --color-choice: #9a9a9a;
+  /* En oscuro el azul brillante ya lee bien como texto. */
+  --color-info-ink: #7fa8cc;
   --color-danger-strong: #e07a7a;
+  --color-kind-character: #86d9a4;
+  --color-kind-location: #f0b27a;
+  --color-kind-props: #8ab4f8;
+  --color-kind-product: #c4a7f5;
+  --color-kind-unknown: #b0b0b0;
+  --color-prompt-unknown: #e07a7a;
 }
 
 /* ============================================
@@ -574,7 +680,7 @@ input {
   background: var(--color-accent);
   border: 1px solid var(--color-accent);
   color: var(--color-on-accent);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: var(--space-3) var(--space-4);
   font-family: inherit;
   font-size: 0.75rem;
@@ -623,9 +729,25 @@ input {
 
 /* Contrast: acciones neutras claras (p. ej. cerrar visores) */
 .p-button.p-button-contrast:not(:disabled) {
+  /* En claro: pastilla oscura con texto claro (en .dark se restaura abajo). */
+  background: var(--color-scrim);
+  border-color: var(--color-scrim);
+  color: var(--color-ink-on-scrim);
+}
+
+.dark .p-button.p-button-contrast:not(:disabled) {
   background: var(--color-ink-on-dark);
   border-color: var(--color-ink-on-dark);
   color: var(--color-ink);
+}
+
+/* Text+contrast (campana del navbar, cerrar visores): en .dark la regla de
+   arriba le pintaba fondo claro con icono claro → icono invisible. El botón
+   texto conserva fondo transparente y tinta clara sobre la superficie oscura. */
+.dark .p-button.p-button-text.p-button-contrast:not(:disabled) {
+  background: transparent;
+  border-color: transparent;
+  color: var(--color-ink-on-dark);
 }
 
 .p-button.p-button-danger:not(:disabled) {
@@ -760,7 +882,7 @@ input {
 }
 
 .p-dialog {
-  border-radius: 24px;
+  border-radius: var(--radius-2xl);
   border: 1px solid var(--color-surface-border);
   background: var(--color-surface);
   color: var(--color-ink-on-dark);
@@ -796,7 +918,7 @@ input {
 .p-dialog .p-dialog-header-actions .p-dialog-close-button {
   width: 2.25rem;
   height: 2.25rem;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   color: var(--color-ink-muted-on-dark);
 }
 
@@ -836,7 +958,7 @@ input {
 
 .p-inputtext,
 .p-textarea {
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--color-surface-border-strong);
   padding: var(--space-3) var(--space-4);
   font-family: inherit;
@@ -879,7 +1001,7 @@ input {
    PrimeNG: tablas
    ============================================ */
 .p-datatable {
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   overflow: hidden;
   border: 1px solid var(--color-surface-border);
   color: var(--color-ink-on-dark);
@@ -934,30 +1056,69 @@ input {
 }
 
 .p-tag.p-tag-success {
+  /* En claro: el verde de éxito es el acento sólido con texto negro
+     (el tinte lavado no lee sobre el gris). En .dark se restaura abajo. */
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  border-color: var(--color-accent);
+}
+
+.dark .p-tag.p-tag-success {
   background: color-mix(in srgb, var(--color-success) 14%, var(--color-surface));
   color: var(--color-success);
   border-color: color-mix(in srgb, var(--color-success) 40%, transparent);
 }
 
 .p-tag.p-tag-info {
+  /* En claro: el tinte lavado no lee sobre el gris (1.1:1) — pastilla
+     teñida oscura con texto claro (5.2:1). En .dark se restaura abajo. */
+  background: color-mix(in srgb, var(--color-info) 55%, var(--color-scrim));
+  color: var(--color-ink-on-scrim);
+  border-color: color-mix(in srgb, var(--color-info) 55%, var(--color-scrim));
+}
+
+.dark .p-tag.p-tag-info {
   background: color-mix(in srgb, var(--color-info) 14%, var(--color-surface));
-  color: var(--color-info);
+  color: var(--color-info-ink);
   border-color: color-mix(in srgb, var(--color-info) 40%, transparent);
 }
 
 .p-tag.p-tag-danger {
+  /* En claro: pastilla teñida oscura con texto claro (5.7:1).
+     En .dark se restaura abajo. */
+  background: color-mix(in srgb, var(--color-danger) 55%, var(--color-scrim));
+  color: var(--color-ink-on-scrim);
+  border-color: color-mix(in srgb, var(--color-danger) 55%, var(--color-scrim));
+}
+
+.dark .p-tag.p-tag-danger {
   background: color-mix(in srgb, var(--color-danger) 14%, var(--color-surface));
   color: var(--color-danger);
   border-color: color-mix(in srgb, var(--color-danger) 40%, transparent);
 }
 
 .p-tag.p-tag-warn {
+  /* En claro: pastilla teñida oscura con texto claro (4.9:1).
+     En .dark se restaura abajo. */
+  background: color-mix(in srgb, var(--color-warning) 50%, var(--color-scrim));
+  color: var(--color-ink-on-scrim);
+  border-color: color-mix(in srgb, var(--color-warning) 50%, var(--color-scrim));
+}
+
+.dark .p-tag.p-tag-warn {
   background: color-mix(in srgb, var(--color-warning) 14%, var(--color-surface));
   color: var(--color-warning);
   border-color: color-mix(in srgb, var(--color-warning) 40%, transparent);
 }
 
 .p-tag.p-tag-contrast {
+  /* En claro: pastilla oscura con texto claro (en .dark se restaura abajo). */
+  background: var(--color-scrim);
+  color: var(--color-ink-on-scrim);
+  border-color: var(--color-scrim);
+}
+
+.dark .p-tag.p-tag-contrast {
   background: var(--color-ink-on-dark);
   color: var(--color-ink);
   border-color: var(--color-ink-on-dark);
@@ -977,7 +1138,17 @@ input {
 
 .p-steps .p-steps-list {
   width: 100%;
-  max-width: 800px;
+  max-width: none;
+}
+
+/* Pasos en slots iguales: el stepper queda alineado a todo el ancho del
+   header (mismo borde izquierdo que el título y derecho que el card). */
+.p-steps .p-steps-item {
+  flex: 1 1 0;
+}
+
+.p-steps .p-steps-item .p-steps-item-link {
+  cursor: pointer;
 }
 
 .p-steps .p-steps-item .p-steps-item-number {
@@ -1044,7 +1215,7 @@ input {
    PrimeNG: select
    ============================================ */
 .p-select {
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   min-height: 2.75rem;
   background: var(--color-surface-2);
   color: var(--color-ink-on-dark);
@@ -1065,7 +1236,7 @@ input {
 }
 
 .p-select .p-select-label {
-  padding: var(--space-2) var(--space-4);
+  padding: var(--space-3) var(--space-4);
   font-size: 0.75rem;
   color: var(--color-ink-on-dark);
 }
@@ -1092,7 +1263,7 @@ input {
 .p-select-overlay {
   background: var(--color-surface) !important;
   border: 1px solid var(--color-surface-border) !important;
-  border-radius: 16px !important;
+  border-radius: var(--radius-xl) !important;
   box-shadow: none !important;
   color: var(--color-ink-on-dark) !important;
 }
@@ -1106,7 +1277,7 @@ input {
   padding: var(--space-2) var(--space-4);
   color: var(--color-ink-on-dark) !important;
   font-size: 0.75rem;
-  border-radius: 12px !important;
+  border-radius: var(--radius-lg) !important;
   margin: 2px 6px !important;
   transition: background-color 0.12s ease;
 }
@@ -1161,7 +1332,7 @@ input {
   background: var(--color-surface-2) !important;
   border: 1px solid var(--color-surface-border-strong) !important;
   color: var(--color-ink-on-dark) !important;
-  border-radius: 12px !important;
+  border-radius: var(--radius-lg) !important;
   width: calc(100% - var(--space-4));
   font-size: 0.75rem;
 }
@@ -1211,7 +1382,7 @@ input {
 }
 
 .p-message.p-message-info .p-message-icon {
-  color: var(--color-info);
+  color: var(--color-info-ink);
 }
 
 .p-message.p-message-success {
@@ -1234,13 +1405,13 @@ input {
   background: var(--color-surface);
   color: var(--color-ink-on-dark);
   border: 1px solid var(--color-surface-border);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   box-shadow: none;
 }
 
 .theme-popover.p-popover {
   padding: 0;
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
 }
 
 .theme-popover.p-popover .p-popover-content {
@@ -1330,6 +1501,22 @@ input {
   color: var(--color-on-accent);
 }
 
+/* Herramientas activa: el item es command-only (sin routerLink) y PrimeNG
+   nunca le pone la clase de link activo. La marca vive en el <li>
+   (styleClass 'tools-active' cuando la ruta es /tools/*) y se pinta igual
+   que el activo — fondo amarillo + píldora deslizante (ver slide-pill). */
+.p-menubar-root-list
+  > .p-menubar-item.tools-active
+  > .p-menubar-item-content
+  > .p-menubar-item-link,
+.p-menubar-root-list
+  > .p-menubar-item.tools-active
+  > .p-menubar-item-content
+  > .p-menubar-item-link:hover {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
 /* Neutraliza los fondos de hover/focus de PrimeNG sobre el content:
    los estados van en el enlace, que llena la fila. */
 .p-menubar .p-menubar-item-content,
@@ -1348,13 +1535,76 @@ input {
   box-shadow: none;
 }
 
-.p-menubar
-  .p-menubar-root-list:focus-visible
-  .p-menubar-item.p-focus
-  > .p-menubar-item-content
-  .p-menubar-item-link {
-  outline: 2px solid var(--color-focus-ring);
-  outline-offset: 2px;
+/* Submenu (dropdowns) de la consola Admin y Herramientas */
+.p-menubar .p-menubar-submenu-list {
+  border-radius: var(--radius-xl);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+  background: var(--color-surface);
+  border: 1px solid var(--color-surface-border);
+  padding: 4px 0;
+  min-width: 220px;
+}
+
+.p-menubar .p-menubar-submenu .p-menubar-item {
+  padding: 0;
+  border-bottom: 1px solid var(--color-surface-border);
+}
+
+.p-menubar .p-menubar-submenu .p-menubar-item:last-child {
+  border-bottom: none;
+}
+
+/* Estilos generales del enlace del submenú */
+.p-menubar .p-menubar-submenu .p-menubar-item-link {
+  color: var(--color-ink-on-dark);
+  padding: var(--space-3) var(--space-4);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.4;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  text-decoration: none;
+  transition: background-color 0.12s ease;
+}
+
+/* Icono del enlace del submenú */
+.p-menubar .p-menubar-submenu .p-menubar-item-icon {
+  color: var(--color-ink-muted-on-dark);
+  width: 22px;
+  text-align: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+/* Etiqueta del submenú */
+.p-menubar .p-menubar-submenu .p-menubar-item-label {
+  font-weight: 600;
+  color: var(--color-ink-on-dark);
+}
+
+/* Hover sobre el submenú */
+.p-menubar .p-menubar-submenu .p-menubar-item-link:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-ink-on-dark);
+}
+
+/* Activo: resaltado de la subtab */
+.p-menubar .p-menubar-submenu .p-menubar-item-link.p-menubar-item-link-active {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  box-shadow: inset 3px 0 0 var(--color-accent);
+}
+
+.p-menubar .p-menubar-submenu .p-menubar-item-link.p-menubar-item-link-active:hover {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+/* Característica: margin izquierdo para el triángulo de submenú */
+.p-menubar .p-menubar-submenu .p-menubar-item.p-menu-active > .p-menubar-item-content {
+  background: transparent;
 }
 
 .p-menubar .p-menubar-item-link:focus-visible {
@@ -1372,7 +1622,7 @@ input {
 .p-menubar.p-menubar-mobile .p-menubar-root-list {
   background: var(--color-surface);
   border: 1px solid var(--color-surface-border);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   box-shadow: none;
   padding: var(--space-2);
   gap: 2px !important;
@@ -1383,7 +1633,7 @@ input {
 
 .p-menubar.p-menubar-mobile .p-menubar-item-content {
   min-height: 44px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1398,7 +1648,7 @@ input {
   border: 1px solid var(--color-surface-border) !important;
   color: var(--color-ink-on-dark) !important;
   box-shadow: none !important;
-  border-radius: 16px !important;
+  border-radius: var(--radius-xl) !important;
 }
 
 .gen-bell-popover .p-popover-content {
@@ -1438,7 +1688,7 @@ input {
 .gen-bell-popover .pop-live .dot {
   width: 7px;
   height: 7px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--color-accent);
   animation: gen-bell-pulse 1.6s ease-in-out infinite;
 }
@@ -1482,7 +1732,7 @@ input {
 .gen-bell-popover .pop-thumb {
   width: 74px;
   height: 42px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   object-fit: cover;
   background: var(--color-scrim);
   flex-shrink: 0;
@@ -1492,7 +1742,7 @@ input {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-ink-muted-on-dark);
+  color: var(--color-ink-muted-on-scrim);
 }
 
 .gen-bell-popover .pop-thumb.icon.spin {
@@ -1531,9 +1781,141 @@ input {
   white-space: nowrap;
 }
 
+/* ── Popover HERRAMIENTAS (navbar) ───────────────────────────────
+   Global a propósito: el overlay del popover vive fuera del componente
+   y el CSS encapsulado no lo alcanza (misma razón que gen-bell-popover). */
+.tools-popover {
+  width: 360px;
+  padding: 0 !important;
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-surface-border) !important;
+  color: var(--color-ink-on-dark) !important;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+  border-radius: var(--radius-xl) !important;
+}
+
+.tools-popover .p-popover-content {
+  padding: 6px;
+}
+
+.tools-popover .p-popover-arrow {
+  border-bottom-color: var(--color-surface-border) !important;
+}
+
+.tools-popover .pop-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-ink-muted-on-dark);
+}
+
+.tools-popover .pop-head i {
+  color: var(--color-accent);
+  margin-right: 6px;
+}
+
+.tools-popover .pop-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+.tools-popover .pop-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  color: inherit;
+  transition: background-color 0.12s ease;
+}
+
+.tools-popover .pop-item:hover {
+  background: var(--color-surface-hover);
+}
+
+.tools-popover .pop-item:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Herramienta activa: resaltada como la fila seleccionada. */
+.tools-popover .pop-item.active {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.tools-popover .pop-item.active .pop-model,
+.tools-popover .pop-item.active .pop-prompt,
+.tools-popover .pop-item.active .pop-go {
+  color: var(--color-on-accent);
+}
+
+.tools-popover .pop-item.active .pop-thumb.icon {
+  background: color-mix(in srgb, var(--color-on-accent) 18%, transparent);
+  color: var(--color-on-accent);
+}
+
+.tools-popover .pop-thumb {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-lg);
+  background: var(--color-scrim);
+  flex-shrink: 0;
+}
+
+.tools-popover .pop-thumb.icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-accent);
+}
+
+.tools-popover .pop-thumb.icon i {
+  font-size: 20px;
+}
+
+.tools-popover .pop-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.tools-popover .pop-model {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-ink-on-dark);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tools-popover .pop-prompt {
+  font-size: 12px;
+  color: var(--color-ink-muted-on-dark);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.tools-popover .pop-go {
+  color: var(--color-ink-muted-on-dark);
+  flex-shrink: 0;
+}
+
 .gen-bell-popover .pop-track {
   height: 4px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--color-surface-border);
   overflow: hidden;
   display: block;
@@ -1542,8 +1924,12 @@ input {
 .gen-bell-popover .pop-fill {
   display: block;
   height: 100%;
+  width: 100%;
   background: var(--color-accent);
-  transition: width 0.4s ease;
+  /* scaleX en compositor (sin layout thrash): el progreso llega por --progress 0-1. */
+  transform: scaleX(var(--progress, 0));
+  transform-origin: left center;
+  transition: transform 0.4s ease;
 }
 
 .gen-bell-popover .pop-footer {
@@ -1590,7 +1976,7 @@ app-generation-events ::-webkit-scrollbar-track {
 .studio-shell ::-webkit-scrollbar-thumb,
 app-generation-events ::-webkit-scrollbar-thumb {
   background: var(--color-secondary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 2px solid transparent;
 }
 
@@ -1611,7 +1997,7 @@ app-generation-events {
 .studio-shell .p-select {
   background: var(--st-bg) !important;
   border: 1px solid var(--color-surface-border-strong) !important;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 .studio-shell .p-select:not(.p-disabled):hover {
@@ -1637,7 +2023,7 @@ app-generation-events {
   padding: 0 !important;
   box-sizing: border-box;
   font-size: 12px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 .prompt-foot .p-select .p-select-label {
@@ -1666,7 +2052,7 @@ app-generation-events {
 .asset-popover.p-popover {
   background: var(--color-surface) !important;
   border: 1px solid var(--color-surface-border) !important;
-  border-radius: 16px !important;
+  border-radius: var(--radius-xl) !important;
   box-shadow: none !important;
   width: 260px !important;
 }
@@ -1704,7 +2090,7 @@ app-generation-events {
   align-items: center;
   justify-content: center;
   border: none;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--color-surface-2);
   color: var(--color-ink-muted-on-dark);
   font-size: 10px;
@@ -1720,7 +2106,7 @@ app-generation-events {
 .asset-pop-imgbtn {
   padding: 0;
   border: 1px solid var(--color-surface-border);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   cursor: zoom-in;
   background: var(--color-surface-2);
@@ -1767,7 +2153,7 @@ app-generation-events {
   max-width: 90vw;
   max-height: 82vh;
   object-fit: contain;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 .asset-fullscreen-meta {
@@ -1776,7 +2162,7 @@ app-generation-events {
   gap: 10px;
   max-width: 90vw;
   padding: 6px 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--color-surface);
   border: 1px solid var(--color-surface-border);
   color: var(--color-ink-on-dark);
@@ -1787,7 +2173,7 @@ app-generation-events {
 .duration-popover.p-popover {
   background: var(--color-surface) !important;
   border: 1px solid var(--color-surface-border) !important;
-  border-radius: 16px !important;
+  border-radius: var(--radius-xl) !important;
   box-shadow: none !important;
   color: var(--color-ink-on-dark) !important;
   width: 240px !important;
@@ -1825,7 +2211,7 @@ app-generation-events {
   appearance: none;
   -webkit-appearance: none;
   background: var(--color-surface-border-strong);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   outline: none;
   cursor: pointer;
 }
@@ -1873,13 +2259,13 @@ app-admin-console .mx-auto > .p-tabs .p-tablist {
 app-admin-console .mx-auto > .p-tabs .p-tablist-tab-list {
   background: var(--color-surface);
   border: 1px solid var(--color-surface-border);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   padding: 5px;
   gap: 6px;
 }
 
 app-admin-console .mx-auto > .p-tabs .p-tab {
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 9px 18px;
   min-height: 40px;
   font-size: 12px;
@@ -1922,7 +2308,7 @@ p-selectbutton:has(.section-toggle) {
   gap: 4px;
   background: var(--color-surface);
   border: 1px solid var(--color-surface-border);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   padding: 4px;
 }
 
@@ -1930,7 +2316,7 @@ p-selectbutton:has(.section-toggle) {
   border: none !important;
   background: transparent !important;
   color: var(--color-ink-muted-on-dark) !important;
-  border-radius: 12px !important;
+  border-radius: var(--radius-lg) !important;
   font-size: 12px;
   font-weight: 700;
   padding: 9px 16px;
@@ -1969,7 +2355,7 @@ p-selectbutton:has(.section-toggle) {
 .asset-picker-dialog {
   background: var(--color-surface);
   border: 1px solid var(--color-surface-border);
-  border-radius: 24px;
+  border-radius: var(--radius-2xl);
   overflow: hidden;
 }
 
@@ -1990,19 +2376,43 @@ p-selectbutton:has(.section-toggle) {
    ═══════════════════════════════════════════════════════════════ */
 
 /* ── Lienzo: main estira al Studio ───────────────────────────── */
-/* Solo cuando aloja al studio, main se vuelve flex-column para que
-   el host llene el área bajo la navbar hasta el borde inferior del
-   viewport, sin depender de la altura exacta de la navbar. */
-main:has(> app-studio) {
+/* Solo cuando aloja al studio, main se vuelve flex-column y se
+   topa a la altura del viewport bajo la navbar (64px). Con
+   min-height:0 + overflow:hidden las columnas scrollean por dentro
+   y la página nunca hace scroll hacia abajo. */
+main:has(> app-studio),
+main:has(> app-pose-sheet),
+main:has(> app-location) {
   display: flex;
   flex-direction: column;
+  flex: 1 1 auto;
+  height: calc(100dvh - 64px);
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Apilado (≤1100px): el shell pasa a una sola columna y crece con su
+   contenido, así que main deja de estar topado al viewport y scrollea la
+   página. Con el overflow:hidden y la altura fija, la columna izquierda
+   del Studio quedaba recortada a 0px y no había forma de llegar al resto. */
+@media (max-width: 1100px) {
+  main:has(> app-studio),
+  main:has(> app-pose-sheet),
+  main:has(> app-location) {
+    height: auto;
+    min-height: calc(100dvh - 64px);
+    overflow: visible;
+  }
 }
 
 /* Los hosts de p-dialog cuelgan del grid del shell; display:contents los
    saca del flujo para que no abran una segunda fila que le roba alto a
-   las columnas (su mask es position:fixed y no necesita caja propia). */
+   las columnas (su mask es position:fixed y no necesita caja propia).
+   Los p-popover NO van acá: viven dentro del aside y su panel se ancla
+   al host, así que sacarlos del flujo rompería su posición. */
 .studio-shell p-dialog,
-.studio-shell app-asset-picker-dialog {
+.studio-shell app-asset-picker-dialog,
+.studio-shell app-asset-edit-dialog {
   display: contents;
 }
 
@@ -2013,13 +2423,13 @@ main:has(> app-studio) {
   padding: 4px;
   background: var(--color-surface-2);
   border: 1px solid var(--color-surface-border);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 .projects-tabs .p-tab {
   padding: 6px 16px;
   border: 0;
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   font-size: 12px;
   font-weight: 700;
   color: var(--color-ink-muted-on-dark);
@@ -2074,7 +2484,7 @@ main:has(> app-studio) {
     color 0.15s ease,
     border-color 0.15s ease,
     background 0.15s ease;
-  border-radius: 12px 12px 0 0;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
 .projects-tabs .type-tab:hover:not(.active) {
@@ -2099,7 +2509,7 @@ main:has(> app-studio) {
   font-weight: 700;
   color: var(--color-ink-on-dark);
   background: var(--color-secondary);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   padding: 1px 8px;
 }
 
@@ -2120,10 +2530,10 @@ main:has(> app-studio) {
   gap: 4px;
   max-width: calc(100% - 12px);
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: color-mix(in srgb, var(--color-scrim) 62%, transparent);
   backdrop-filter: blur(4px);
-  color: var(--color-ink-on-dark);
+  color: var(--color-ink-on-scrim);
   font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
@@ -2147,8 +2557,8 @@ main:has(> app-studio) {
   width: 28px;
   height: 28px;
   border: 0;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.55);
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--color-scrim) 55%, transparent);
   color: var(--color-ink-on-dark);
   cursor: pointer;
   transition: background-color 120ms ease;
@@ -2169,7 +2579,7 @@ main:has(> app-studio) {
   display: inline-flex;
   align-items: stretch;
   border: 1px solid var(--color-surface-border);
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   background: var(--color-surface-2);
 }
@@ -2248,7 +2658,7 @@ main:has(> app-studio) {
   gap: 5px;
   padding: 3px 12px;
   border: 1px solid var(--color-surface-border);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: transparent;
   color: var(--color-ink-on-dark);
   font-size: 10px;
@@ -2275,7 +2685,7 @@ main:has(> app-studio) {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
   min-height: 0;
   padding-right: 4px;
 }
@@ -2283,7 +2693,7 @@ main:has(> app-studio) {
 .studio-shell .studio-center {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
   min-width: 0;
   min-height: 0;
   overflow-y: auto;
@@ -2294,7 +2704,7 @@ main:has(> app-studio) {
 .studio-shell .panel {
   background: var(--st-panel);
   border: 1px solid var(--st-line);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   padding: 8px;
 }
 
@@ -2344,7 +2754,7 @@ main:has(> app-studio) {
   align-items: center;
   justify-content: center;
   width: 36px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--color-secondary);
   background: var(--color-secondary);
   color: var(--color-ink);
@@ -2382,7 +2792,7 @@ main:has(> app-studio) {
   justify-content: center;
   gap: 6px;
   padding: 6px 0;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--color-secondary);
   background: var(--color-secondary);
   color: var(--color-ink);
@@ -2422,7 +2832,7 @@ main:has(> app-studio) {
   width: 100%;
   background: var(--st-bg);
   border: 1px solid var(--color-surface-border-strong);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   color: var(--st-text);
   padding: 10px;
   font-size: 14px;
@@ -2447,7 +2857,8 @@ main:has(> app-studio) {
   outline: none;
   resize: none;
   /* Crece con el contenido (el overlay espejo, inset 0, lo sigue);
-     en navegadores sin soporte queda fijo con scroll (fallback). */
+     en navegadores sin soporte queda fijo con scroll (fallback). Al llegar a
+     max-height scrollea por dentro y appScrollMirror arrastra al overlay. */
   field-sizing: content;
   overflow-x: hidden;
   overflow-y: auto;
@@ -2492,14 +2903,25 @@ main:has(> app-studio) {
   word-wrap: break-word;
   overflow: hidden;
   pointer-events: none;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
+  /* Reserva el gutter del scroll como el textarea: si aparece la barra,
+     el overlay no queda más ancho y el espejo no se desfasa. */
+  scrollbar-gutter: stable;
+  /* El scroll interno no se ve, pero se escribe: la directiva appScrollMirror
+     copia el scrollTop del textarea acá cuando el prompt supera max-height
+     (si no, se edita una parte del texto y se ve otra). */
 }
 
 .studio-shell .prompt-wrap .prompt-input {
   position: relative;
+  /* block y no inline-block: el hueco de línea del inline-block dejaba el
+     wrapper 4px más alto que el textarea y el overlay (inset 0) no calzaba
+     exacto al espejar el scroll. */
+  display: block;
   background: transparent;
   color: transparent;
   caret-color: var(--st-text);
+  scrollbar-gutter: stable;
 }
 
 .studio-shell .prompt-wrap .prompt-input::selection {
@@ -2508,13 +2930,23 @@ main:has(> app-studio) {
 }
 
 /* Token del overlay espejado: el innerHTML no lleva el atributo de
-   encapsulación, por eso esta regla tiene que ser global. */
+   encapsulación, por eso esta regla tiene que ser global.
+   Sin padding horizontal: el pill no debe ocupar más que el texto del
+   textarea o el caret se desfasa (el overlay quedaría más ancho). */
 .studio-shell .mention-token {
+  background: color-mix(in srgb, var(--st-accent) 38%, var(--color-surface-2));
+  color: var(--color-on-accent);
+  border-radius: var(--radius-sm);
+  padding: 0;
+  font-weight: inherit;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+/* En oscuro el token vuelve a texto acento sobre tinte (texto negro no lee). */
+.dark .studio-shell .mention-token {
   background: color-mix(in srgb, var(--st-accent) 22%, transparent);
   color: var(--st-accent);
-  border-radius: 5px;
-  padding: 0 4px;
-  font-weight: inherit;
 }
 
 .studio-shell .mention-menu {
@@ -2526,7 +2958,7 @@ main:has(> app-studio) {
   padding: 6px;
   background: var(--st-panel);
   border: 1px solid var(--color-surface-border-strong);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   box-shadow: none;
 }
 
@@ -2551,7 +2983,7 @@ main:has(> app-studio) {
   width: 100%;
   padding: 6px;
   border: none;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: transparent;
   color: var(--st-text);
   cursor: pointer;
@@ -2565,7 +2997,7 @@ main:has(> app-studio) {
 .studio-shell .mention-thumb {
   width: 34px;
   height: 34px;
-  border-radius: 7px;
+  border-radius: var(--radius-md);
   object-fit: cover;
   background: var(--st-bg);
   flex-shrink: 0;
@@ -2591,7 +3023,7 @@ main:has(> app-studio) {
   font-weight: 700;
   color: var(--st-text-2);
   background: var(--st-bg);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   padding: 2px 8px;
 }
 
@@ -2606,7 +3038,7 @@ main:has(> app-studio) {
   justify-content: center;
   width: 34px;
   height: 34px;
-  border-radius: 7px;
+  border-radius: var(--radius-md);
   flex-shrink: 0;
   font-size: 14px;
   background: var(--st-bg);
@@ -2615,7 +3047,7 @@ main:has(> app-studio) {
 }
 
 .studio-shell .mention-ing-icon[data-type='character'] {
-  color: var(--color-info);
+  color: var(--color-info-ink);
   background: color-mix(in srgb, var(--color-info) 14%, var(--color-surface));
   border-color: color-mix(in srgb, var(--color-info) 40%, transparent);
 }
@@ -2667,7 +3099,7 @@ main:has(> app-studio) {
   align-items: center;
   gap: 6px;
   padding: 3px 6px 3px 4px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   border: 1px solid var(--color-surface-border-strong);
   background: var(--st-bg);
 }
@@ -2675,7 +3107,7 @@ main:has(> app-studio) {
 .studio-shell .mention-chip-thumb {
   width: 20px;
   height: 20px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   object-fit: cover;
 }
 
@@ -2696,7 +3128,7 @@ main:has(> app-studio) {
   width: 16px;
   height: 16px;
   border: none;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: transparent;
   color: var(--st-muted);
   cursor: pointer;
@@ -2741,7 +3173,7 @@ main:has(> app-studio) {
   width: 100%;
   padding: 9px 12px;
   margin-bottom: 12px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   border: 1px dashed var(--color-surface-border-strong);
   background: transparent;
   color: var(--st-text);
@@ -2751,13 +3183,18 @@ main:has(> app-studio) {
   transition:
     background-color 0.15s ease,
     color 0.15s ease,
-    border-color 0.15s ease;
+    border-color 0.15s ease,
+    transform 0.12s ease;
 }
 
 .studio-shell .library-picker-btn:hover {
   background: var(--color-surface-hover);
   border-color: var(--color-accent);
   color: var(--color-accent);
+}
+
+.studio-shell .library-picker-btn:active {
+  transform: scale(0.98);
 }
 
 .studio-shell .library-picker-btn .md {
@@ -2777,7 +3214,7 @@ main:has(> app-studio) {
   justify-content: center;
   width: 26px;
   height: 26px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   border: 1px dashed var(--color-surface-border-strong);
   cursor: pointer;
   color: var(--st-text-2);
@@ -2799,13 +3236,14 @@ main:has(> app-studio) {
   justify-content: center;
   gap: 3px;
   border: 1px solid var(--st-line);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: var(--st-bg);
   cursor: pointer;
   overflow: hidden;
   transition:
     border-color 0.15s ease,
-    box-shadow 0.15s ease;
+    box-shadow 0.15s ease,
+    transform 0.12s ease;
 }
 
 .studio-shell .slot.filled {
@@ -2813,6 +3251,16 @@ main:has(> app-studio) {
 }
 
 .studio-shell .slot:hover {
+  border-color: var(--st-accent);
+}
+
+.studio-shell .slot:active {
+  transform: scale(0.97);
+}
+
+.studio-shell .slot:focus-visible {
+  outline: 2px solid var(--st-accent);
+  outline-offset: 2px;
   border-color: var(--st-accent);
 }
 
@@ -2845,13 +3293,14 @@ main:has(> app-studio) {
   align-items: center;
   justify-content: center;
   background: color-mix(in srgb, var(--color-scrim) 55%, transparent);
-  color: var(--color-ink-on-dark);
+  color: var(--color-ink-on-scrim);
   opacity: 0;
   transition: opacity 0.15s ease;
   pointer-events: none;
 }
 
-.studio-shell .slot:hover .slot-replace {
+.studio-shell .slot:hover .slot-replace,
+.studio-shell .slot:focus-within .slot-replace {
   opacity: 1;
 }
 
@@ -2860,16 +3309,16 @@ main:has(> app-studio) {
   position: absolute;
   top: 4px;
   right: 4px;
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
   border: none;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: color-mix(in srgb, var(--color-scrim) 80%, transparent);
-  color: var(--color-ink-on-dark);
-  font-size: 9px;
+  color: var(--color-ink-on-scrim);
+  font-size: 11px;
   cursor: pointer;
   opacity: 0;
   transition:
@@ -2878,8 +3327,15 @@ main:has(> app-studio) {
   z-index: 2;
 }
 
-.studio-shell .slot:hover .slot-clear {
+.studio-shell .slot:hover .slot-clear,
+.studio-shell .slot:focus-within .slot-clear {
   opacity: 1;
+}
+
+.studio-shell .slot-clear:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
 }
 
 .studio-shell .slot-clear:hover {
@@ -2914,7 +3370,7 @@ main:has(> app-studio) {
   gap: 6px;
   margin: 0 0 8px;
   padding: 6px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid color-mix(in srgb, var(--color-danger) 40%, transparent);
   background: color-mix(in srgb, var(--color-danger) 14%, var(--color-surface));
   color: var(--st-err);
@@ -2930,13 +3386,20 @@ main:has(> app-studio) {
 .studio-shell .asset-thumb {
   position: relative;
   aspect-ratio: 1;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   border: 2px solid var(--st-line);
   padding: 0;
   cursor: pointer;
   background: var(--st-bg);
   min-width: 0;
+  transition:
+    border-color 0.15s ease,
+    transform 0.12s ease;
+}
+
+.studio-shell .asset-thumb:active {
+  transform: scale(0.96);
 }
 
 .studio-shell .asset-thumb:hover {
@@ -2954,23 +3417,50 @@ main:has(> app-studio) {
   border-color: var(--st-accent);
 }
 
-/* Botón ver (popover) sobre la miniatura */
+.studio-shell .asset-thumb:focus-visible {
+  outline: 2px solid var(--st-accent);
+  outline-offset: 1px;
+  border-color: var(--st-accent);
+}
+
+/* Botón ver (esquina inferior derecha de la miniatura): es un botón real
+   en esquina para no tapar el click de selección de la miniatura. */
 .studio-shell .asset-eye {
   position: absolute;
-  inset: 0;
+  right: 4px;
+  bottom: 4px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--color-scrim) 60%, transparent);
-  color: var(--color-ink-on-dark);
-  font-size: 12px;
+  border: none;
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--color-scrim) 80%, transparent);
+  color: var(--color-ink-on-scrim);
+  font-size: 13px;
+  cursor: pointer;
   opacity: 0;
-  transition: opacity 0.12s ease;
+  transition:
+    opacity 0.12s ease,
+    background-color 0.12s ease;
+  z-index: 2;
 }
 
-.studio-shell .asset-thumb:hover .asset-eye {
+.studio-shell .asset-thumb:hover .asset-eye,
+.studio-shell .asset-thumb:focus-within .asset-eye {
   opacity: 1;
+}
+
+.studio-shell .asset-eye:hover {
+  background: var(--st-accent);
+  color: var(--color-on-accent);
+}
+
+.studio-shell .asset-eye:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
 }
 
 .studio-shell .asset-check {
@@ -2982,7 +3472,7 @@ main:has(> app-studio) {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--st-accent);
   color: var(--color-on-accent);
   font-size: 7px;
@@ -3012,18 +3502,24 @@ main:has(> app-studio) {
   position: absolute;
   top: 2px;
   left: 2px;
-  width: 13px;
-  height: 13px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 999px;
+  border: none;
+  border-radius: var(--radius-full);
   background: color-mix(in srgb, var(--color-scrim) 80%, transparent);
-  color: var(--color-ink-on-dark);
-  font-size: 7px;
+  color: var(--color-ink-on-scrim);
+  font-size: 11px;
   cursor: pointer;
   z-index: 2;
   transition: background-color 0.12s ease;
+}
+
+.studio-shell .asset-remove:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
 }
 
 .studio-shell .asset-remove:hover {
@@ -3046,7 +3542,7 @@ main:has(> app-studio) {
   gap: 5px;
   padding: 0 10px;
   height: 32px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--color-surface-border-strong);
   background: var(--st-bg);
   color: var(--st-text-2);
@@ -3068,7 +3564,7 @@ main:has(> app-studio) {
 /* El resto del select (fondo, borde, label, dropdown) lo pisa el bloque
    global `.studio-shell .p-select` de más arriba; solo el radio queda acá. */
 .studio-shell .p-select {
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 .studio-shell .p-message {
@@ -3095,7 +3591,7 @@ main:has(> app-studio) {
   width: 15px;
   max-height: 13px;
   border: 1.5px solid currentColor;
-  border-radius: 2.5px;
+  border-radius: 2var (--radius-sm);
   opacity: 0.85;
   flex-shrink: 0;
 }
@@ -3107,7 +3603,7 @@ main:has(> app-studio) {
   justify-content: center;
   gap: 8px;
   padding: 10px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   border: none;
   background: var(--color-accent);
   color: var(--color-on-accent);
@@ -3131,13 +3627,21 @@ main:has(> app-studio) {
   background: var(--color-accent-active);
 }
 
-/* CTA siempre visible: absorbe el espacio libre y queda fijo al fondo
-   de la columna aunque el contenido superior desborde. */
-.studio-shell .studio-left .generate-btn {
+/* CTA siempre visible: el wrapper absorbe el espacio libre y queda fijo al
+   fondo de la columna aunque el contenido superior desborde (el sticky en
+   el botón solo no sirve: su padre lo ajusta exacto y no tiene recorrido). */
+.studio-shell .studio-left .generate-wrap {
   margin-top: auto;
   position: sticky;
   bottom: 0;
-  z-index: 1;
+  z-index: 2;
+  padding: 10px 0 2px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    color-mix(in srgb, var(--color-surface) 88%, transparent) 45%
+  );
+  backdrop-filter: blur(10px);
 }
 
 .studio-shell .generate-btn:active:not(:disabled) {
@@ -3157,13 +3661,13 @@ main:has(> app-studio) {
      .viewer-canvas → lienzo con la forma del aspect ratio (del take
                       seleccionado o del form) que encaja sin recortes. */
 .studio-shell .viewer {
-  --canvas-ar: 1.7778;
+  --canvas-ar: 0.5625;
   flex: 1;
   padding: 4px;
   min-height: 240px;
   /* El lienzo no debe empujar la página: máx ~viewport menos header/meta. */
   max-height: calc(100dvh - 130px);
-  border-radius: 24px;
+  border-radius: var(--radius-2xl);
   /* border: 1px solid var(--st-line); */
   /* background: var(--color-surface); */
   display: flex;
@@ -3179,7 +3683,7 @@ main:has(> app-studio) {
   width: min(100cqw, calc(100cqh * var(--canvas-ar)));
   max-width: 100%;
   max-height: 100%;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: var(--color-scrim);
   box-shadow: 0 0 0 1px var(--st-line);
   display: flex;
@@ -3197,12 +3701,47 @@ main:has(> app-studio) {
   object-fit: contain;
 }
 
+/* Video: llena todo el lienzo (9:16 en móvil); sin franjas negras. */
+.studio-shell video.viewer-media {
+  object-fit: cover;
+}
+
+.studio-shell .viewer-canvas:has(.viewer-loading-media) {
+  position: relative;
+}
+
+.studio-shell .viewer-loading-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 48px 24px 20px;
+  text-align: center;
+  color: #fff;
+  background: linear-gradient(to top, rgb(0 0 0 / 0.7), transparent);
+}
+
+.studio-shell .viewer-loading-label {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.studio-shell .viewer-loading-pct {
+  font-size: 22px;
+  font-weight: 800;
+}
+
 .studio-shell .viewer-placeholder {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 10px;
-  color: var(--st-muted);
+  color: var(--color-ink-muted-on-scrim);
   padding: 24px;
   text-align: center;
 }
@@ -3242,7 +3781,7 @@ main:has(> app-studio) {
   width: 260px;
   max-width: 80%;
   height: 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--st-line);
   overflow: hidden;
 }
@@ -3255,8 +3794,12 @@ main:has(> app-studio) {
 
 .studio-shell .progress-fill {
   height: 100%;
+  width: 100%;
   background: var(--st-accent);
-  transition: width 0.4s ease;
+  /* scaleX en compositor (sin layout thrash): el progreso llega por --progress 0-1. */
+  transform: scaleX(var(--progress, 0));
+  transform-origin: left center;
+  transition: transform 0.4s ease;
 }
 
 /* ── Take reel ───────────────────────────────────────────────── */
@@ -3288,7 +3831,7 @@ main:has(> app-studio) {
   display: flex;
   gap: 10px;
   padding: 8px;
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   border: 1px solid var(--st-line);
   background: var(--st-panel);
   cursor: pointer;
@@ -3317,7 +3860,7 @@ main:has(> app-studio) {
 .studio-shell .take-thumb {
   width: 96px;
   height: 54px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   object-fit: cover;
   background: var(--st-bg);
   flex-shrink: 0;
@@ -3348,7 +3891,34 @@ main:has(> app-studio) {
 .studio-shell .take-foot {
   display: flex;
   align-items: center;
+  /* Con varias imágenes de referencia la fila no cabe en una sola línea:
+     wrap lleva los controls a otra fila en vez de desbordar la card. */
+  flex-wrap: wrap;
   gap: 6px;
+}
+
+/* Los controles (tag, calificación, REUSAR, costo) nunca se comprimen:
+   el flex-shrink por defecto colapsaba el rating-group (con overflow
+  :hidden recortaba los checks) cuando la tira de thumbs empujaba. */
+.studio-shell .take-foot > .p-tag,
+.studio-shell .take-foot .rating-group,
+.studio-shell .take-foot .rating-redo,
+.studio-shell .take-foot .take-cost,
+.studio-shell .take-foot .rating-expand {
+  flex-shrink: 0;
+}
+
+/* Tira de referencias: ocupa lo que queda, se alinea a la derecha y
+   recorta en vez de desbordar; si no cabe, wrap la baja de fila. */
+.studio-shell .take-foot .ref-strip {
+  min-width: 0;
+  margin-top: 0;
+  justify-content: flex-end;
+  overflow: hidden;
+}
+
+.studio-shell .take-foot .ref-strip .ref-thumb {
+  flex-shrink: 0;
 }
 
 .studio-shell .take-foot .time {
@@ -3365,7 +3935,7 @@ main:has(> app-studio) {
   color: var(--color-ink);
   background: var(--st-panel-2, rgba(255, 255, 255, 0.06));
   border: 1px solid var(--st-line, rgba(255, 255, 255, 0.1));
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   padding: 1px 8px;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
@@ -3396,7 +3966,7 @@ main:has(> app-studio) {
   justify-content: center;
   width: 26px;
   height: 26px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--st-line, rgba(255, 255, 255, 0.1));
   background: transparent;
   color: var(--color-ink-muted);
@@ -3426,7 +3996,7 @@ main:has(> app-studio) {
   aspect-ratio: var(--canvas-ar, 1.7778);
   max-height: 52vh;
   width: 100%;
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   overflow: hidden;
   background: rgba(0, 0, 0, 0.35);
   display: flex;
@@ -3495,17 +4065,19 @@ main:has(> app-studio) {
   font-size: 11px;
   font-weight: 500;
   padding: 2px 6px;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   background: var(--st-panel-2, rgba(255, 255, 255, 0.06));
   border: 1px solid var(--st-line, rgba(255, 255, 255, 0.1));
 }
 
 .take-detail-dialog .take-detail-prompt {
-  border-left: 3px solid var(--st-accent, rgba(255, 255, 255, 0.2));
-  padding: 4px 12px;
+  padding: 8px 12px;
   display: flex;
   flex-direction: column;
   gap: 4px;
+  border: 1px solid var(--st-line, rgba(255, 255, 255, 0.1));
+  border-radius: var(--radius-lg);
+  background: var(--st-panel-2, rgba(255, 255, 255, 0.06));
 }
 
 .take-detail-dialog .take-detail-prompt p {
@@ -3534,16 +4106,42 @@ main:has(> app-studio) {
   gap: 6px;
 }
 
-.studio-shell .reel-day-head {
+/* Cabecera colapsable del día (acordeón: un día abierto a la vez). */
+.studio-shell button.reel-day-head {
   display: flex;
+  width: 100%;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
+  font-family: inherit;
   font-size: 11px;
   font-weight: 700;
   text-transform: capitalize;
   color: var(--color-ink-muted);
-  padding: 0 2px 3px;
+  padding: 4px 2px 5px;
+  background: transparent;
+  border: 0;
   border-bottom: 1px solid var(--st-line);
+  cursor: pointer;
+}
+
+.studio-shell button.reel-day-head:hover {
+  color: var(--st-text);
+}
+
+.studio-shell .reel-day-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.studio-shell .reel-day-head .md {
+  font-size: 14px;
+  transition: transform 0.15s ease;
+}
+
+.studio-shell .reel-day-head .md.open {
+  transform: rotate(180deg);
 }
 
 .studio-shell .session-chip {
@@ -3555,7 +4153,7 @@ main:has(> app-studio) {
   color: var(--st-accent);
   background: color-mix(in srgb, var(--st-accent) 14%, transparent);
   border: 1px solid color-mix(in srgb, var(--st-accent) 35%, transparent);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   padding: 2px 6px;
   white-space: nowrap;
 }
@@ -3575,86 +4173,58 @@ main:has(> app-studio) {
   font-size: 12px;
 }
 
-/* Selector de día del historial (dropdown con scroll infinito). */
-.studio-shell .reel-day-select {
-  position: relative;
+/* Chips de fecha del historial (7 días, siempre visibles, con wrap):
+   al tocar un día el reel filtra a ese día; "En vivo" vuelve al reel. */
+.studio-shell .day-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
-.studio-shell .reel-day-trigger {
+.studio-shell .day-chip {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  height: 24px;
-  padding: 0 4px 0 8px;
+  gap: 6px;
+  min-height: 28px;
+  padding: 2px 10px;
   font-family: inherit;
-  font-size: 11px;
-  color: var(--st-text);
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  color: var(--st-text-2);
   background: var(--st-panel-2);
   border: 1px solid var(--st-line);
-  border-radius: 8px;
+  border-radius: var(--radius-full);
   cursor: pointer;
+  transition:
+    color 120ms ease,
+    border-color 120ms ease,
+    background-color 120ms ease;
 }
 
-.studio-shell .reel-day-trigger:hover {
+.studio-shell .day-chip:hover {
+  color: var(--st-text);
   border-color: var(--st-text-2);
 }
 
-.studio-shell .reel-day-trigger .md {
-  font-size: 14px;
-  color: var(--st-text-2);
-  transition: transform 0.15s ease;
+.studio-shell .day-chip.active {
+  color: var(--color-on-accent);
+  background: var(--color-accent);
+  border-color: transparent;
 }
 
-.studio-shell .reel-day-trigger .md.open {
-  transform: rotate(180deg);
-}
-
-.studio-shell .reel-day-panel {
-  position: absolute;
-  top: calc(100% + 4px);
-  right: 0;
-  z-index: 50;
-  width: 200px;
-  max-height: 264px;
-  overflow-y: auto;
-  padding: 4px;
-  background: var(--st-panel);
-  border: 1px solid var(--st-line);
-  border-radius: 10px;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
-}
-
-.studio-shell .reel-day-option {
-  display: flex;
-  width: 100%;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 5px 8px;
-  font-family: inherit;
-  font-size: 11.5px;
-  text-align: left;
-  color: var(--st-text);
-  background: transparent;
-  border: 0;
-  border-radius: 7px;
-  cursor: pointer;
-}
-
-.studio-shell .reel-day-option:hover {
-  background: var(--st-panel-2);
-}
-
-.studio-shell .reel-day-option.active {
-  background: color-mix(in srgb, var(--st-accent) 18%, transparent);
-}
-
-.studio-shell .reel-day-count {
+.studio-shell .day-chip-count {
   font-size: 10px;
-  color: var(--st-text-2);
-  background: var(--st-panel-2);
-  border-radius: 999px;
+  font-weight: 700;
+  border-radius: var(--radius-full);
   padding: 1px 6px;
+  background: color-mix(in srgb, currentColor 14%, transparent);
+}
+
+.studio-shell .day-chips .reel-day-hint {
+  width: 100%;
+  padding: 2px 4px;
+  text-align: left;
 }
 
 .studio-shell .reel-day-hint {
@@ -3690,7 +4260,7 @@ main:has(> app-studio) {
 .studio-shell .ref-thumb {
   width: 22px;
   height: 22px;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   object-fit: cover;
   border: 1px solid var(--st-line);
   background: var(--st-bg);
@@ -3706,7 +4276,7 @@ main:has(> app-studio) {
   display: inline-flex;
   align-items: stretch;
   border: 1px solid var(--st-line);
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   background: var(--st-panel-2);
 }
@@ -3786,7 +4356,7 @@ main:has(> app-studio) {
   align-items: center;
   gap: 4px;
   border: 1px solid var(--st-line);
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
   background: var(--st-panel-2);
   color: var(--st-muted);
   font-size: 9px;
@@ -3826,6 +4396,8 @@ main:has(> app-studio) {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  max-height: 40dvh;
+  overflow-y: auto;
 }
 
 .studio-shell .queue-item {
@@ -3833,7 +4405,7 @@ main:has(> app-studio) {
   align-items: center;
   gap: 8px;
   padding: 8px 10px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--st-line);
   background: var(--st-panel);
   font-size: 12px;
@@ -3872,10 +4444,19 @@ main:has(> app-studio) {
   white-space: nowrap;
 }
 
-/* ── Ajustes responsive ──────────────────────────────────────── */
+/* ── Ajustes responsive ────────────────────────────────────────
+   El alto del visor en el layout apilado lo define studio.component.css
+   (height con clamp + min-height 0): acá ya no va un min-height fijo, que
+   peleaba con ese clamp y volvía a dejar el lienzo más alto que el ancho. */
 @media (max-width: 1100px) {
-  .studio-shell .viewer {
-    min-height: 300px;
+  /* CTA del prompt: en una columna que ya no scrollea por dentro, el
+     sticky al fondo solo dejaba el degradado flotando sobre el visor. */
+  .studio-shell .studio-left .generate-wrap {
+    margin-top: 0;
+    position: static;
+    padding: 0;
+    background: none;
+    backdrop-filter: none;
   }
 }
 
@@ -3892,7 +4473,7 @@ main:has(> app-studio) {
 /* ── Modal de proyecto: contraste en tema oscuro ───────────────
    El overlay se monta en body: global, sin encapsular. */
 .studio-project-dialog {
-  border-radius: 24px;
+  border-radius: var(--radius-2xl);
   overflow: hidden;
 }
 
@@ -3923,7 +4504,7 @@ main:has(> app-studio) {
 .studio-project-dialog .p-select {
   background: var(--st-panel);
   border: 1px solid var(--st-line);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 .studio-project-dialog .p-select:not(.p-disabled):hover {
@@ -4065,14 +4646,14 @@ main:has(> app-studio) {
   position: relative;
   overflow: hidden;
   background: var(--color-surface-hover);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .skel-light {
   position: relative;
   overflow: hidden;
   background: color-mix(in srgb, var(--color-ink) 10%, transparent);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .skel::after,
@@ -4101,7 +4682,7 @@ main:has(> app-studio) {
 .skel-avatar {
   width: 40px;
   height: 40px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
 }
 
 /* ============================================
@@ -4165,7 +4746,7 @@ main:has(> app-studio) {
 }
 
 .seg-pill.nav-pill {
-  border-radius: 999px;
+  border-radius: var(--radius-full);
 }
 
 .seg-on .p-menubar-item-link.p-menubar-item-link-active,
@@ -4338,7 +4919,7 @@ main:has(> app-studio) {
 .pulse-dot {
   width: 8px;
   height: 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--color-accent);
   position: relative;
   flex-shrink: 0;
@@ -4370,7 +4951,7 @@ main:has(> app-studio) {
   display: inline-flex;
   align-items: center;
   padding: 1px 6px;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   background: var(--color-surface-2);
   border: 1px solid var(--color-surface-border-strong);
   border-bottom-width: 2px;
@@ -4400,5 +4981,668 @@ main:has(> app-studio) {
 }
 
 .p-iconfield p-inputicon {
-  margin-top: -6px !important;
+  margin-top: -7px !important;
+  margin-right: 16px !important;
+}
+
+/* ── Popover de generación de la Agencia (paso 3 storyboard / paso 4 videos):
+     cola de generación en curso + take reel con calificaciones ─────────── */
+.agency-reel-popover {
+  /* En móvil no puede exceder el viewport. */
+  width: min(380px, calc(100vw - 24px));
+  padding: 0 !important;
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-surface-border) !important;
+  color: var(--color-ink-on-dark) !important;
+  box-shadow: none !important;
+  border-radius: var(--radius-xl) !important;
+}
+
+.agency-reel-popover .p-popover-content {
+  padding: 0;
+}
+
+.agency-reel-popover .p-popover-arrow::before {
+  border-bottom-color: var(--color-surface-border) !important;
+  border-top-color: transparent !important;
+}
+
+.agency-reel-popover .reel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--color-surface-border);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-ink-muted-on-dark);
+}
+
+.agency-reel-popover .reel-head i {
+  color: var(--color-accent);
+  margin-right: 6px;
+}
+
+.agency-reel-popover .reel-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-accent);
+}
+
+.agency-reel-popover .reel-live .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent);
+  animation: agency-reel-pulse 1.6s ease-in-out infinite;
+}
+
+.agency-reel-popover .reel-empty {
+  padding: 22px 14px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--color-ink-muted-on-dark);
+}
+
+.agency-reel-popover .reel-section {
+  padding: 10px 14px 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted-on-dark);
+}
+
+.agency-reel-popover .reel-list {
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+.agency-reel-popover .reel-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--color-surface-border);
+}
+
+.agency-reel-popover .reel-item:last-child {
+  border-bottom: 0;
+}
+
+.agency-reel-popover .reel-thumb {
+  width: 74px;
+  height: 42px;
+  border-radius: var(--radius-lg);
+  object-fit: cover;
+  background: var(--color-scrim);
+  flex-shrink: 0;
+}
+
+.agency-reel-popover .reel-thumb.icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-ink-muted-on-dark);
+}
+
+.agency-reel-popover .reel-thumb.icon.spin {
+  color: var(--color-accent);
+}
+
+.agency-reel-popover .reel-thumb.icon.danger {
+  color: var(--color-danger);
+}
+
+.agency-reel-popover .reel-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.agency-reel-popover .reel-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.agency-reel-popover .reel-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-ink-on-dark);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agency-reel-popover .reel-sub {
+  font-size: 12px;
+  color: var(--color-ink-muted-on-dark);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agency-reel-popover .reel-error {
+  font-size: 12px;
+  color: var(--color-danger);
+}
+
+.agency-reel-popover .reel-track {
+  display: block;
+  height: 4px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-border);
+  overflow: hidden;
+}
+
+.agency-reel-popover .reel-fill {
+  display: block;
+  height: 100%;
+  background: var(--color-accent);
+}
+
+.agency-reel-popover .reel-fill.indeterminate {
+  width: 40%;
+  animation: agency-reel-indeterminate 1.4s ease-in-out infinite;
+}
+
+.agency-reel-popover .reel-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.agency-reel-popover .reel-studio {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-surface-border);
+  background: var(--color-surface-2);
+  color: var(--color-ink-on-dark);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.agency-reel-popover .reel-studio:hover {
+  border-color: var(--color-accent);
+  background: var(--color-surface-hover);
+}
+
+.agency-reel-popover .reel-studio:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+@keyframes agency-reel-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@keyframes agency-reel-indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(250%);
+  }
+}
+
+.p-toggleswitch-handle {
+  top: 15% !important;
+}
+
+/* ── Chat asistente del agente experto (/agency) ───────────
+   Panel lateral fijo: burbujas del usuario/experto, typing y
+   formulario. Mismos tokens que el resto de la página. */
+.agency-chat-fab {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgb(0 0 0 / 25%);
+  transition:
+    background-color 120ms ease,
+    transform 120ms ease;
+}
+
+.agency-chat-fab:hover {
+  background: var(--color-accent-hover);
+  transform: translateY(-1px);
+}
+
+.agency-chat-fab i {
+  font-size: 24px;
+}
+
+.agency-chat-panel {
+  position: fixed;
+  right: 24px;
+  bottom: 88px;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  width: min(380px, calc(100vw - 32px));
+  height: min(520px, calc(100vh - 140px));
+  border: 1px solid var(--color-surface-border);
+  border-radius: var(--radius-xl);
+  background: var(--color-background);
+  box-shadow: 0 12px 40px rgb(0 0 0 / 30%);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(8px);
+  transition:
+    opacity 140ms ease,
+    transform 140ms ease,
+    visibility 140ms ease;
+}
+
+.agency-chat-panel.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.agency-chat-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-surface-border);
+}
+
+.agency-chat-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-ink-on-dark);
+}
+
+/* Transparencia IA: el interlocutor se identifica como asistente artificial. */
+.agency-chat-ai {
+  display: inline-block;
+  vertical-align: 1px;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--color-accent) 16%, transparent);
+  color: var(--color-accent);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.agency-chat-sub {
+  font-size: 11px;
+  color: var(--color-ink-muted-on-dark);
+}
+
+.agency-chat-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-ink-muted-on-dark);
+  cursor: pointer;
+  transition:
+    color 120ms ease,
+    background-color 120ms ease;
+}
+
+.agency-chat-close:hover {
+  color: var(--color-ink-on-dark);
+  background: var(--color-surface-2);
+}
+
+.agency-chat-log {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  overflow-y: auto;
+}
+
+.agency-chat-empty {
+  font-size: 13px;
+  color: var(--color-ink-muted-on-dark);
+}
+
+.agency-chat-msg {
+  max-width: 85%;
+  padding: 8px 12px;
+  border-radius: var(--radius-lg);
+  font-size: 13px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  background: var(--color-surface-2);
+  color: var(--color-ink-on-dark);
+}
+
+.agency-chat-msg.user {
+  align-self: flex-end;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.agency-chat-msg.assistant {
+  align-self: flex-start;
+  border: 1px solid var(--color-surface-border);
+  background: transparent;
+}
+
+.agency-chat-msg.typing {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  width: fit-content;
+}
+
+.agency-chat-msg.typing span {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--color-ink-muted-on-dark);
+  animation: agency-chat-blink 1.2s infinite ease-in-out;
+}
+
+.agency-chat-msg.typing span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.agency-chat-msg.typing span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* Fila de actividad de herramientas del asistente: qué está consultando o
+ * ejecutando el agente en el turno actual (proyectos, modelos, generación). */
+.agency-chat-tool {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  width: fit-content;
+  max-width: 100%;
+  padding: 4px 10px;
+  border: 1px solid var(--color-surface-border);
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  color: var(--color-ink-muted-on-dark);
+  background: transparent;
+}
+
+.agency-chat-tool.error {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.agency-chat-tool-icon {
+  font-weight: 700;
+}
+
+.agency-chat-tool-name {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--color-ink-on-dark);
+}
+
+.agency-chat-tool-summary {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@keyframes agency-chat-blink {
+  0%,
+  80%,
+  100% {
+    opacity: 0.25;
+  }
+
+  40% {
+    opacity: 1;
+  }
+}
+
+.agency-chat-input {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 12px;
+  border-top: 1px solid var(--color-surface-border);
+}
+
+.agency-chat-input textarea {
+  resize: none;
+}
+
+/* ============================================
+   Recursos del flujo comercial
+   Color por tipo de foto + editor del prompt con resaltado.
+   ============================================ */
+.photo-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.375rem;
+  border: 1px solid var(--color-surface-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-2);
+  color: var(--color-ink-on-dark);
+  font-size: 0.75rem;
+  line-height: 1rem;
+  transition:
+    border-color 0.2s var(--ease-app),
+    background-color 0.2s var(--ease-app);
+}
+
+.photo-chip:hover {
+  border-color: currentColor;
+}
+
+.photo-chip--character {
+  color: var(--color-kind-character);
+}
+
+.photo-chip--location {
+  color: var(--color-kind-location);
+}
+
+.photo-chip--props {
+  color: var(--color-kind-props);
+}
+
+.photo-chip--product {
+  color: var(--color-kind-product);
+}
+
+.photo-chip--unknown {
+  color: var(--color-kind-unknown);
+}
+
+.photo-chip--assigned {
+  border-color: currentColor;
+  background: color-mix(in srgb, currentColor 20%, var(--color-surface-2));
+  font-weight: 600;
+}
+
+.photo-kind-select .p-select-label {
+  padding: 0.2rem 0.4rem;
+  font-size: 0.7rem;
+  line-height: 1rem;
+}
+
+.photo-kind-select .p-select-dropdown {
+  width: 1.5rem;
+}
+
+.prompt-editor {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--color-surface-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-2);
+  transition:
+    border-color 0.2s var(--ease-app),
+    box-shadow 0.2s var(--ease-app);
+}
+
+.prompt-editor:focus-within {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 1px var(--color-accent);
+}
+
+.prompt-editor__mirror {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  pointer-events: none;
+  scrollbar-width: none;
+}
+
+.prompt-editor__mirror::-webkit-scrollbar {
+  display: none;
+}
+
+.prompt-editor__pre,
+.prompt-editor__input {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  font-family: inherit;
+  font-size: 0.875rem;
+  line-height: 1.625;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+.prompt-editor__pre {
+  min-height: 100%;
+  color: var(--color-ink-on-dark);
+}
+
+.prompt-editor__input {
+  position: relative;
+  display: block;
+  width: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: transparent;
+  caret-color: var(--color-ink-on-dark);
+  resize: none;
+}
+
+.prompt-editor__input::placeholder {
+  color: var(--color-ink-muted-on-dark);
+}
+
+.prompt-editor__input::selection {
+  background: color-mix(in srgb, var(--color-accent) 45%, transparent);
+}
+
+.prompt-tone-character {
+  color: var(--color-kind-character);
+  font-weight: 600;
+}
+
+.prompt-tone-location {
+  color: var(--color-kind-location);
+  font-weight: 600;
+}
+
+.prompt-tone-props {
+  color: var(--color-kind-props);
+  font-weight: 600;
+}
+
+.prompt-tone-product {
+  color: var(--color-kind-product);
+  font-weight: 600;
+}
+
+.prompt-tone-unknown {
+  color: var(--color-prompt-unknown);
+  font-weight: 600;
+  text-decoration: underline wavy;
+}
+
+/* ============================================
+   Consola /admin: menubar compacto, agrupado por temas.
+   ============================================ */
+.p-menubar.admin-menubar {
+  background: var(--color-surface);
+  border: 1px solid var(--color-surface-border);
+  border-radius: var(--radius-xl);
+  padding: 2px 6px;
+  gap: 2px;
+}
+
+.p-menubar.admin-menubar .p-menubar-root-list {
+  gap: 2px !important;
+}
+
+.p-menubar.admin-menubar .p-menubar-item-link {
+  color: var(--color-ink-muted);
+  font-size: 0.8125rem;
+  padding: 0 10px;
+  border-radius: var(--radius-lg);
+  gap: 6px;
+}
+
+.p-menubar.admin-menubar .p-menubar-item-link:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-ink);
+}
+
+.p-menubar.admin-menubar .p-menubar-item-link.p-menubar-item-link-active,
+.p-menubar.admin-menubar .p-menubar-item-link.p-menubar-item-link-active:hover {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.p-menubar.admin-menubar .p-menubar-root-list > .p-menubar-item > .p-menubar-item-content {
+  min-height: 32px;
+}
+
+.p-menubar.admin-menubar .p-menubar-item.p-disabled .p-menubar-item-link {
+  opacity: 0.45;
+}
+
+.p-menubar.admin-menubar .p-menubar-separator {
+  border-left: 1px solid var(--color-surface-border);
+  height: 18px;
+  align-self: center;
+  margin: 0 4px;
 }

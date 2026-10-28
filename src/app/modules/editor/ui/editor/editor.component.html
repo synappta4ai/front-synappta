@@ -1,0 +1,813 @@
+<div class="ed-shell" animate.enter="anim-page">
+  <!-- Barra superior -->
+  <header class="ed-top">
+    <div class="ed-top__group">
+      <i class="md md-movie ed-top__icon" aria-hidden="true"></i>
+      <input
+        class="ed-input ed-name"
+        type="text"
+        maxlength="80"
+        [value]="store.project().name"
+        [placeholder]="'EDITOR.UNTITLED' | translate"
+        [attr.aria-label]="'EDITOR.NAME' | translate"
+        (input)="setProjectName($event)"
+      />
+      <select
+        class="ed-input ed-select"
+        [attr.aria-label]="'EDITOR.OPEN' | translate"
+        (change)="onSelectProject($event)"
+      >
+        <option value="">{{ 'EDITOR.OPEN' | translate }}</option>
+        @for (p of projects(); track p.id) {
+          <option [value]="p.id" [selected]="p.id === projectId()">{{ p.name }}</option>
+        }
+      </select>
+      <button type="button" class="ed-btn" (click)="newProject()">
+        <i class="md md-add" aria-hidden="true"></i>{{ 'EDITOR.NEW' | translate }}
+      </button>
+      <button
+        type="button"
+        class="ed-btn ed-btn--icon"
+        [disabled]="!projectId()"
+        [title]="'EDITOR.DELETE_PROJECT' | translate"
+        [attr.aria-label]="'EDITOR.DELETE_PROJECT' | translate"
+        (click)="deleteProject()"
+      >
+        <i class="md md-delete" aria-hidden="true"></i>
+      </button>
+    </div>
+
+    <div class="ed-top__group">
+      <span class="ed-save-state" aria-live="polite">
+        @if (saving()) {
+          {{ 'EDITOR.SAVING' | translate }}
+        } @else if (store.dirty()) {
+          {{ 'EDITOR.UNSAVED' | translate }}
+        } @else if (projectId()) {
+          <i class="md md-check" aria-hidden="true"></i>{{ 'EDITOR.SAVED' | translate }}
+        }
+      </span>
+      <label class="ed-label" for="ed-format">{{ 'EDITOR.FORMAT' | translate }}</label>
+      <select id="ed-format" class="ed-input ed-select" (change)="setFormat($event)">
+        @for (f of formats; track f.value) {
+          <option [value]="f.value" [selected]="f.value === formatValue()">{{ f.label }}</option>
+        }
+      </select>
+      <button
+        type="button"
+        class="ed-btn ed-btn--primary"
+        [disabled]="!canExport()"
+        [title]="
+          store.duration() > maxSeconds
+            ? ('EDITOR.EXPORT_TOO_LONG' | translate: { max: maxSeconds })
+            : ('EDITOR.EXPORT_HINT' | translate)
+        "
+        (click)="openExport()"
+      >
+        <i class="md md-upload" aria-hidden="true"></i>{{ 'EDITOR.EXPORT' | translate }}
+      </button>
+    </div>
+  </header>
+
+  @if (notice(); as n) {
+    <div class="ed-notice" [class.ed-notice--error]="n.kind === 'error'" role="alert">
+      <span>{{ n.text }}</span>
+      <button
+        type="button"
+        class="ed-notice__x"
+        [attr.aria-label]="'EDITOR.DISMISS' | translate"
+        (click)="dismissNotice()"
+      >
+        <i class="md md-close" aria-hidden="true"></i>
+      </button>
+    </div>
+  }
+
+  <!-- Zona principal: riel · assets · vista previa · propiedades -->
+  <div class="ed-main" [style.grid-template-columns]="workspaceColumns()">
+    <nav class="ed-rail" [attr.aria-label]="'EDITOR.PANELS' | translate">
+      <button
+        type="button"
+        class="ed-rail__btn"
+        [class.active]="leftTab() === 'assets'"
+        [attr.aria-pressed]="leftTab() === 'assets'"
+        [title]="'EDITOR.ASSETS' | translate"
+        [attr.aria-label]="'EDITOR.ASSETS' | translate"
+        (click)="setLeftTab('assets')"
+      >
+        <i class="md md-folder" aria-hidden="true"></i>
+      </button>
+      <button
+        type="button"
+        class="ed-rail__btn"
+        [class.active]="leftTab() === 'text'"
+        [attr.aria-pressed]="leftTab() === 'text'"
+        [title]="'EDITOR.TEXT_PANEL' | translate"
+        [attr.aria-label]="'EDITOR.TEXT_PANEL' | translate"
+        (click)="setLeftTab('text')"
+      >
+        <i class="md md-text_fields" aria-hidden="true"></i>
+      </button>
+    </nav>
+
+    <section class="ed-left" [attr.aria-label]="'EDITOR.ASSETS' | translate">
+      @if (leftTab() === 'assets') {
+        <div class="ed-left__head">
+          <h2 class="ed-left__title">{{ 'EDITOR.ASSETS' | translate }}</h2>
+          <span class="ed-spacer"></span>
+          <button type="button" class="ed-btn" (click)="importOpen.set(true)">
+            <i class="md md-history" aria-hidden="true"></i
+            >{{ 'EDITOR.IMPORT_GENERATIONS' | translate }}
+          </button>
+          <label class="ed-btn ed-btn--accent" [class.ed-btn--busy]="importing()">
+            <i class="md md-upload" aria-hidden="true"></i>{{ 'EDITOR.IMPORT' | translate }}
+            <input
+              type="file"
+              class="ed-sr"
+              multiple
+              accept="video/*,image/*,audio/*"
+              [disabled]="importing()"
+              (change)="onFilesPicked($event)"
+            />
+          </label>
+        </div>
+        @if (importing()) {
+          <p class="ed-muted ed-importing" role="status">{{ 'EDITOR.IMPORTING' | translate }}</p>
+        }
+        <div class="ed-assets">
+          @for (a of store.project().assets; track a.id) {
+            <div class="ed-asset" draggable="true" (dragstart)="onAssetDragStart($event, a)">
+              <button
+                type="button"
+                class="ed-asset__thumb"
+                [title]="'EDITOR.ADD' | translate"
+                [attr.aria-label]="('EDITOR.ADD' | translate) + ': ' + a.name"
+                (click)="addAsset(a)"
+              >
+                @switch (a.kind) {
+                  @case ('image') {
+                    <img [src]="a.thumb | serverUrl" alt="" loading="lazy" draggable="false" />
+                  }
+                  @case ('video') {
+                    @if (a.thumb) {
+                      <img [src]="a.thumb | serverUrl" alt="" loading="lazy" draggable="false" />
+                    } @else {
+                      <i class="md md-movie" aria-hidden="true"></i>
+                    }
+                  }
+                  @default {
+                    <i class="md md-music_note" aria-hidden="true"></i>
+                  }
+                }
+                @if (a.duration > 0) {
+                  <span class="ed-asset__dur">{{ formatRuler(a.duration) }}</span>
+                }
+                <span class="ed-asset__add" aria-hidden="true"><i class="md md-add"></i></span>
+              </button>
+              <span class="ed-asset__name" [title]="a.name">{{ a.name }}</span>
+              <button
+                type="button"
+                class="ed-asset__x"
+                [title]="'EDITOR.REMOVE_ASSET' | translate"
+                [attr.aria-label]="('EDITOR.REMOVE_ASSET' | translate) + ': ' + a.name"
+                (click)="removeAsset(a, $event)"
+              >
+                <i class="md md-close" aria-hidden="true"></i>
+              </button>
+            </div>
+          } @empty {
+            <div class="ed-empty-state">
+              <i class="md md-folder" aria-hidden="true"></i>
+              <p>{{ 'EDITOR.ASSETS_EMPTY' | translate }}</p>
+              <p class="ed-muted">{{ 'EDITOR.ASSETS_EMPTY_HINT' | translate }}</p>
+            </div>
+          }
+        </div>
+        <p class="ed-muted ed-hint">{{ 'EDITOR.UPLOAD_HINT' | translate }}</p>
+      } @else {
+        <div class="ed-left__head">
+          <h2 class="ed-left__title">{{ 'EDITOR.TEXT_PANEL' | translate }}</h2>
+          <span class="ed-spacer"></span>
+          <button type="button" class="ed-btn ed-btn--accent" (click)="addText()">
+            <i class="md md-add" aria-hidden="true"></i>{{ 'EDITOR.ADD_TEXT' | translate }}
+          </button>
+        </div>
+        <div class="ed-textlist">
+          @for (t of store.project().texts; track t.id) {
+            <button
+              type="button"
+              class="ed-textitem"
+              [class.sel]="store.selection()?.id === t.id"
+              (click)="selectText(t)"
+            >
+              <i class="md md-text_fields" aria-hidden="true"></i>
+              <span>{{ t.text }}</span>
+            </button>
+          } @empty {
+            <div class="ed-empty-state">
+              <i class="md md-text_fields" aria-hidden="true"></i>
+              <p>{{ 'EDITOR.TEXT_EMPTY' | translate }}</p>
+            </div>
+          }
+        </div>
+      }
+    </section>
+
+    <div
+      class="ed-split ed-split--v"
+      role="separator"
+      aria-orientation="vertical"
+      [attr.aria-label]="'EDITOR.RESIZE_LEFT' | translate"
+      (pointerdown)="startResize($event, 'left')"
+      (pointermove)="onResizeMove($event)"
+      (pointerup)="endResize($event)"
+      (pointercancel)="endResize($event)"
+    ></div>
+
+    <!-- Vista previa -->
+    <section class="ed-preview" [attr.aria-label]="'EDITOR.PREVIEW' | translate">
+      <div class="ed-stage-box">
+        <div
+          #stage
+          class="ed-stage"
+          [style.aspect-ratio]="stageRatio()"
+          [style.--ed-ratio]="stageRatioValue()"
+        >
+          <video
+            #video
+            class="ed-video"
+            [class.ed-hidden]="!!stillImage()"
+            playsinline
+            preload="auto"
+            (loadedmetadata)="onVideoLoaded()"
+            (ended)="onVideoEnded()"
+          ></video>
+          @if (stillImage()) {
+            <img class="ed-still" [src]="stillImage()" alt="" />
+          }
+          <video #overlayVideo class="ed-video ed-overlay" muted playsinline preload="auto"></video>
+          @if (overlayStill()) {
+            <img class="ed-still" [src]="overlayStill()" alt="" />
+          }
+          @for (t of visibleTexts(); track t.id) {
+            <span
+              class="ed-overlay-text"
+              [style.left.%]="t.x * 100"
+              [style.top.%]="t.y * 100"
+              [style.transform]="'translate(' + -t.x * 100 + '%, ' + -t.y * 100 + '%)'"
+              [style.font-size]="'calc(' + (t.size / store.project().width) * 100 + 'cqw)'"
+              [style.color]="t.color"
+              >{{ t.text }}</span
+            >
+          }
+          @if (store.duration() === 0) {
+            <p class="ed-stage__empty">{{ 'EDITOR.EMPTY_STAGE' | translate }}</p>
+          }
+        </div>
+      </div>
+      <div class="ed-transport">
+        <span class="ed-timecode" aria-live="off">
+          <b>{{ timecode() }}</b> / {{ totalTimecode() }}
+        </span>
+        <button
+          type="button"
+          class="ed-btn ed-btn--icon ed-btn--ghost"
+          [disabled]="store.duration() <= 0"
+          [title]="(playing() ? 'EDITOR.PAUSE' : 'EDITOR.PLAY') | translate"
+          [attr.aria-label]="(playing() ? 'EDITOR.PAUSE' : 'EDITOR.PLAY') | translate"
+          (click)="togglePlay()"
+        >
+          <i
+            class="md"
+            [class.md-pause]="playing()"
+            [class.md-play_arrow]="!playing()"
+            aria-hidden="true"
+          ></i>
+        </button>
+        <button
+          type="button"
+          class="ed-btn ed-btn--icon ed-btn--ghost"
+          [title]="'EDITOR.FULLSCREEN' | translate"
+          [attr.aria-label]="'EDITOR.FULLSCREEN' | translate"
+          (click)="fullscreen()"
+        >
+          <i class="md md-fullscreen" aria-hidden="true"></i>
+        </button>
+      </div>
+    </section>
+
+    <div
+      class="ed-split ed-split--v"
+      role="separator"
+      aria-orientation="vertical"
+      [attr.aria-label]="'EDITOR.RESIZE_RIGHT' | translate"
+      (pointerdown)="startResize($event, 'right')"
+      (pointermove)="onResizeMove($event)"
+      (pointerup)="endResize($event)"
+      (pointercancel)="endResize($event)"
+    ></div>
+
+    <!-- Propiedades -->
+    <aside class="ed-props" [attr.aria-label]="'EDITOR.INSPECTOR' | translate">
+      @if (store.selectedVideo(); as c) {
+        <h2 class="ed-panel__title">{{ 'EDITOR.INSPECTOR' | translate }}</h2>
+        <p class="ed-clip-name" [title]="c.label">{{ c.label }}</p>
+        @if (c.kind === 'video') {
+          <div class="ed-field">
+            <label for="ed-v-in">{{ 'EDITOR.IN' | translate }}</label>
+            <input
+              id="ed-v-in"
+              class="ed-input"
+              type="number"
+              min="0"
+              step="0.1"
+              [value]="c.in"
+              (change)="setVideo(c, 'in', $event)"
+            />
+          </div>
+          <div class="ed-field">
+            <label for="ed-v-out">{{ 'EDITOR.OUT' | translate }}</label>
+            <input
+              id="ed-v-out"
+              class="ed-input"
+              type="number"
+              min="0"
+              step="0.1"
+              [value]="c.out"
+              (change)="setVideo(c, 'out', $event)"
+            />
+          </div>
+          <div class="ed-field">
+            <label for="ed-v-vol">{{ 'EDITOR.VOLUME' | translate }}</label>
+            <input
+              id="ed-v-vol"
+              type="range"
+              min="0"
+              max="2"
+              step="0.05"
+              [value]="c.volume ?? 1"
+              (input)="setVideo(c, 'volume', $event)"
+            />
+          </div>
+        } @else {
+          <div class="ed-field">
+            <label for="ed-v-len">{{ 'EDITOR.LENGTH' | translate }}</label>
+            <input
+              id="ed-v-len"
+              class="ed-input"
+              type="number"
+              min="0.1"
+              step="0.1"
+              [value]="c.length ?? 3"
+              (change)="setVideo(c, 'length', $event)"
+            />
+          </div>
+        }
+        @if ((c.track ?? 0) > 0) {
+          <div class="ed-field">
+            <label for="ed-v-start">{{ 'EDITOR.START' | translate }}</label>
+            <input
+              id="ed-v-start"
+              class="ed-input"
+              type="number"
+              min="0"
+              step="0.1"
+              [value]="c.start ?? 0"
+              (change)="setVideo(c, 'start', $event)"
+            />
+          </div>
+        }
+        <div class="ed-row">
+          <button type="button" class="ed-btn" (click)="store.moveVideo(c.id, -1)">
+            <i class="md md-chevron_right ed-flip" aria-hidden="true"></i
+            >{{ 'EDITOR.MOVE_LEFT' | translate }}
+          </button>
+          <button type="button" class="ed-btn" (click)="store.moveVideo(c.id, 1)">
+            {{ 'EDITOR.MOVE_RIGHT' | translate
+            }}<i class="md md-chevron_right" aria-hidden="true"></i>
+          </button>
+        </div>
+      } @else if (store.selectedAudio(); as c) {
+        <h2 class="ed-panel__title">{{ 'EDITOR.INSPECTOR' | translate }}</h2>
+        <p class="ed-clip-name" [title]="c.label">{{ c.label }}</p>
+        <div class="ed-field">
+          <label for="ed-a-start">{{ 'EDITOR.START' | translate }}</label>
+          <input
+            id="ed-a-start"
+            class="ed-input"
+            type="number"
+            min="0"
+            step="0.1"
+            [value]="c.start"
+            (change)="setAudio(c, 'start', $event)"
+          />
+        </div>
+        <div class="ed-field">
+          <label for="ed-a-in">{{ 'EDITOR.IN' | translate }}</label>
+          <input
+            id="ed-a-in"
+            class="ed-input"
+            type="number"
+            min="0"
+            step="0.1"
+            [value]="c.in"
+            (change)="setAudio(c, 'in', $event)"
+          />
+        </div>
+        <div class="ed-field">
+          <label for="ed-a-out">{{ 'EDITOR.OUT' | translate }}</label>
+          <input
+            id="ed-a-out"
+            class="ed-input"
+            type="number"
+            min="0"
+            step="0.1"
+            [value]="c.out"
+            (change)="setAudio(c, 'out', $event)"
+          />
+        </div>
+        <div class="ed-field">
+          <label for="ed-a-vol">{{ 'EDITOR.VOLUME' | translate }}</label>
+          <input
+            id="ed-a-vol"
+            type="range"
+            min="0"
+            max="2"
+            step="0.05"
+            [value]="c.volume ?? 1"
+            (input)="setAudio(c, 'volume', $event)"
+          />
+        </div>
+      } @else if (store.selectedText(); as c) {
+        <h2 class="ed-panel__title">{{ 'EDITOR.INSPECTOR' | translate }}</h2>
+        <div class="ed-field">
+          <label for="ed-t-text">{{ 'EDITOR.TEXT' | translate }}</label>
+          <textarea
+            id="ed-t-text"
+            class="ed-input"
+            rows="3"
+            maxlength="300"
+            [value]="c.text"
+            (input)="setTextContent(c, $event)"
+          ></textarea>
+        </div>
+        <div class="ed-field">
+          <label for="ed-t-start">{{ 'EDITOR.START' | translate }}</label>
+          <input
+            id="ed-t-start"
+            class="ed-input"
+            type="number"
+            min="0"
+            step="0.1"
+            [value]="c.start"
+            (change)="setText(c, 'start', $event)"
+          />
+        </div>
+        <div class="ed-field">
+          <label for="ed-t-end">{{ 'EDITOR.END' | translate }}</label>
+          <input
+            id="ed-t-end"
+            class="ed-input"
+            type="number"
+            min="0"
+            step="0.1"
+            [value]="c.end"
+            (change)="setText(c, 'end', $event)"
+          />
+        </div>
+        <div class="ed-field">
+          <label for="ed-t-size">{{ 'EDITOR.SIZE' | translate }}</label>
+          <input
+            id="ed-t-size"
+            class="ed-input"
+            type="number"
+            min="8"
+            max="300"
+            step="2"
+            [value]="c.size"
+            (change)="setText(c, 'size', $event)"
+          />
+        </div>
+        <div class="ed-field">
+          <label for="ed-t-x">{{ 'EDITOR.POS_X' | translate }}</label>
+          <input
+            id="ed-t-x"
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            [value]="c.x"
+            (input)="setText(c, 'x', $event)"
+          />
+        </div>
+        <div class="ed-field">
+          <label for="ed-t-y">{{ 'EDITOR.POS_Y' | translate }}</label>
+          <input
+            id="ed-t-y"
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            [value]="c.y"
+            (input)="setText(c, 'y', $event)"
+          />
+        </div>
+        <div class="ed-field">
+          <label for="ed-t-color">{{ 'EDITOR.COLOR' | translate }}</label>
+          <input
+            id="ed-t-color"
+            type="color"
+            [value]="c.color.toLowerCase()"
+            (input)="setTextColor(c, $event)"
+          />
+        </div>
+      } @else {
+        <div class="ed-empty-state ed-empty-state--center">
+          <i class="md md-tune" aria-hidden="true"></i>
+          <p class="ed-empty-title">{{ 'EDITOR.INSPECTOR_EMPTY_TITLE' | translate }}</p>
+          <p class="ed-muted">{{ 'EDITOR.INSPECTOR_EMPTY' | translate }}</p>
+        </div>
+      }
+      @if (store.selection()) {
+        <button type="button" class="ed-btn ed-btn--danger" (click)="store.removeSelected()">
+          <i class="md md-delete" aria-hidden="true"></i>{{ 'EDITOR.REMOVE' | translate }}
+        </button>
+      }
+    </aside>
+  </div>
+
+  <!-- Divisor de la línea de tiempo -->
+  <div
+    class="ed-split ed-split--h"
+    role="separator"
+    aria-orientation="horizontal"
+    [attr.aria-label]="'EDITOR.RESIZE_TIMELINE' | translate"
+    (pointerdown)="startResize($event, 'timeline')"
+    (pointermove)="onResizeMove($event)"
+    (pointerup)="endResize($event)"
+    (pointercancel)="endResize($event)"
+  ></div>
+
+  <!-- Línea de tiempo multipista -->
+  <section
+    class="ed-timeline"
+    [style.height.px]="timelineHeight()"
+    [attr.aria-label]="'EDITOR.TIMELINE' | translate"
+  >
+    <div class="ed-tl-toolbar">
+      <button
+        type="button"
+        class="ed-btn ed-btn--icon ed-btn--ghost"
+        [disabled]="store.duration() <= 0"
+        [title]="('EDITOR.SPLIT' | translate) + ' (S)'"
+        [attr.aria-label]="'EDITOR.SPLIT' | translate"
+        (click)="split()"
+      >
+        <i class="md md-content_cut" aria-hidden="true"></i>
+      </button>
+      <button
+        type="button"
+        class="ed-btn ed-btn--icon ed-btn--ghost"
+        [disabled]="!store.selection()"
+        [title]="('EDITOR.REMOVE' | translate) + ' (Supr)'"
+        [attr.aria-label]="'EDITOR.REMOVE' | translate"
+        (click)="store.removeSelected()"
+      >
+        <i class="md md-delete" aria-hidden="true"></i>
+      </button>
+      <span class="ed-tl-sep" aria-hidden="true"></span>
+      <button
+        type="button"
+        class="ed-btn ed-btn--icon ed-btn--ghost"
+        [disabled]="!store.canUndo()"
+        [title]="('EDITOR.UNDO' | translate) + ' (Ctrl+Z)'"
+        [attr.aria-label]="'EDITOR.UNDO' | translate"
+        (click)="store.undo()"
+      >
+        <i class="md md-undo" aria-hidden="true"></i>
+      </button>
+      <button
+        type="button"
+        class="ed-btn ed-btn--icon ed-btn--ghost"
+        [disabled]="!store.canRedo()"
+        [title]="('EDITOR.REDO' | translate) + ' (Ctrl+Y)'"
+        [attr.aria-label]="'EDITOR.REDO' | translate"
+        (click)="store.redo()"
+      >
+        <i class="md md-redo" aria-hidden="true"></i>
+      </button>
+      <span class="ed-tl-sep" aria-hidden="true"></span>
+      <button type="button" class="ed-btn" (click)="addTrack('video')">
+        <i class="md md-add" aria-hidden="true"></i>{{ 'EDITOR.ADD_VIDEO_TRACK' | translate }}
+      </button>
+      <button type="button" class="ed-btn" (click)="addTrack('audio')">
+        <i class="md md-add" aria-hidden="true"></i>{{ 'EDITOR.ADD_AUDIO_TRACK' | translate }}
+      </button>
+      <button type="button" class="ed-btn" (click)="addTrack('text')">
+        <i class="md md-add" aria-hidden="true"></i>{{ 'EDITOR.ADD_TEXT_TRACK' | translate }}
+      </button>
+      <span class="ed-spacer"></span>
+      <button
+        type="button"
+        class="ed-btn ed-btn--icon ed-btn--ghost"
+        [title]="'EDITOR.ZOOM_OUT' | translate"
+        [attr.aria-label]="'EDITOR.ZOOM_OUT' | translate"
+        (click)="zoomBy(-10)"
+      >
+        <i class="md md-zoom_out" aria-hidden="true"></i>
+      </button>
+      <input
+        id="ed-zoom"
+        class="ed-zoom"
+        type="range"
+        min="10"
+        max="200"
+        step="5"
+        [value]="zoom()"
+        [attr.aria-label]="'EDITOR.ZOOM' | translate"
+        (input)="setZoom($event)"
+      />
+      <button
+        type="button"
+        class="ed-btn ed-btn--icon ed-btn--ghost"
+        [title]="'EDITOR.ZOOM_IN' | translate"
+        [attr.aria-label]="'EDITOR.ZOOM_IN' | translate"
+        (click)="zoomBy(10)"
+      >
+        <i class="md md-zoom_in" aria-hidden="true"></i>
+      </button>
+    </div>
+
+    <div class="ed-tl">
+      <div class="ed-tl-labels" aria-hidden="true">
+        <div class="ed-tl-label ed-tl-label--ruler"></div>
+        @for (row of rows(); track row.key) {
+          <div
+            class="ed-tl-label"
+            [style.height.px]="row.height"
+            [class.ed-tl-label--overlay]="row.kind === 'video' && row.index > 0"
+          >
+            @switch (row.kind) {
+              @case ('text') {
+                <i class="md md-text_fields"></i>
+              }
+              @case ('video') {
+                <i class="md md-videocam"></i>
+              }
+              @default {
+                <i class="md md-music_note"></i>
+              }
+            }
+            <span class="ed-tl-name">
+              @switch (row.kind) {
+                @case ('text') {
+                  {{ 'EDITOR.TRACK_TEXT' | translate }}
+                }
+                @case ('video') {
+                  {{ 'EDITOR.TRACK_VIDEO' | translate }}
+                }
+                @default {
+                  {{ 'EDITOR.TRACK_AUDIO' | translate }}
+                }
+              }
+              {{ trackNumber(row.kind, row.index) }}
+            </span>
+            @if (row.index === 0) {
+              <button
+                type="button"
+                class="ed-tl-add"
+                [title]="'EDITOR.ADD_TRACK' | translate"
+                [attr.aria-label]="'EDITOR.ADD_TRACK' | translate"
+                (click)="addTrack(row.kind)"
+              >
+                <i class="md md-add" aria-hidden="true"></i>
+              </button>
+            } @else {
+              <button
+                type="button"
+                class="ed-tl-add ed-tl-add--del"
+                [title]="'EDITOR.REMOVE_TRACK' | translate"
+                [attr.aria-label]="'EDITOR.REMOVE_TRACK' | translate"
+                (click)="removeTrack(row.kind, row.index, $event)"
+              >
+                <i class="md md-delete" aria-hidden="true"></i>
+              </button>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="ed-tl-scroll">
+        <div
+          #tlContent
+          class="ed-tl-content"
+          [style.width.px]="timelineWidth()"
+          (click)="onTimelineClick($event)"
+        >
+          <div
+            class="ed-ruler"
+            (pointerdown)="onRulerDown($event)"
+            (pointermove)="onRulerMove($event)"
+          >
+            @for (tick of ticks(); track tick.left) {
+              <span class="ed-tick" [style.left.px]="tick.left">{{ tick.label }}</span>
+            }
+          </div>
+
+          @for (row of rows(); track row.key) {
+            <div
+              class="ed-track"
+              [class.ed-track--drop]="dropTarget() === row.kind + '-' + row.index"
+              [class.ed-track--overlay]="row.kind === 'video' && row.index > 0"
+              [style.height.px]="row.height"
+              (dragover)="onTrackDragOver($event, row.kind, row.index)"
+              (dragleave)="onTrackDragLeave()"
+              (drop)="onTrackDrop($event, row.kind, row.index)"
+            >
+              @for (b of row.blocks; track b.id) {
+                @if (row.kind === 'video') {
+                  @let clip = videoById(b.id);
+                  @if (clip) {
+                    <button
+                      type="button"
+                      class="ed-block ed-block--video"
+                      [class.sel]="store.selection()?.id === b.id"
+                      [style.left.px]="b.left"
+                      [style.width.px]="b.width"
+                      [style.top.px]="b.top"
+                      [title]="clip.label"
+                      (click)="selectVideo(clip, $event)"
+                      (pointerdown)="row.index > 0 ? startDrag($event, 'video', clip) : null"
+                      (pointermove)="row.index > 0 ? onDragMove($event) : null"
+                      (pointerup)="row.index > 0 ? endDrag($event) : null"
+                    >
+                      <span class="ed-block__label">{{ clip.label }}</span>
+                      <span class="ed-block__dur">{{ (b.width / zoom()).toFixed(1) }}s</span>
+                    </button>
+                  }
+                } @else if (row.kind === 'audio') {
+                  @let clip = audioById(b.id);
+                  @if (clip) {
+                    <div
+                      class="ed-block ed-block--audio"
+                      role="button"
+                      tabindex="0"
+                      [class.sel]="store.selection()?.id === b.id"
+                      [style.left.px]="b.left"
+                      [style.width.px]="b.width"
+                      [style.top.px]="b.top"
+                      [title]="clip.label"
+                      (pointerdown)="startDrag($event, 'audio', clip)"
+                      (pointermove)="onDragMove($event)"
+                      (pointerup)="endDrag($event)"
+                      (pointercancel)="endDrag($event)"
+                      (click)="$event.stopPropagation()"
+                      (keydown.enter)="store.select({ track: 'audio', id: b.id })"
+                    >
+                      <span class="ed-block__text">{{ clip.label }}</span>
+                    </div>
+                  }
+                } @else {
+                  @let clip = textById(b.id);
+                  @if (clip) {
+                    <div
+                      class="ed-block ed-block--text"
+                      role="button"
+                      tabindex="0"
+                      [class.sel]="store.selection()?.id === b.id"
+                      [style.left.px]="b.left"
+                      [style.width.px]="b.width"
+                      [style.top.px]="b.top"
+                      [title]="clip.text"
+                      (pointerdown)="startDrag($event, 'text', clip)"
+                      (pointermove)="onDragMove($event)"
+                      (pointerup)="endDrag($event)"
+                      (pointercancel)="endDrag($event)"
+                      (click)="$event.stopPropagation()"
+                      (keydown.enter)="store.select({ track: 'text', id: b.id })"
+                    >
+                      <span class="ed-block__text">{{ clip.text }}</span>
+                    </div>
+                  }
+                }
+              }
+            </div>
+          }
+
+          <div
+            class="ed-playhead"
+            [style.left.px]="store.playhead() * zoom()"
+            aria-hidden="true"
+          ></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <app-import-generations-dialog [(visible)]="importOpen" (imported)="onImported($event)" />
+  <app-export-dialog
+    [(visible)]="exportOpen"
+    [projectId]="projectId()"
+    [project]="store.project()"
+  />
+</div>

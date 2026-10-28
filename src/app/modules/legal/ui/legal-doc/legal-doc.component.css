@@ -1,0 +1,64 @@
+/* Hoja de documento legal (páginas públicas). */
+
+.legal-doc {
+  width: 100%;
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 40px 24px 64px;
+  color: var(--color-ink-on-dark);
+}
+
+.legal-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 20px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-ink-muted-on-dark);
+  text-decoration: none;
+}
+
+.legal-back:hover {
+  color: var(--color-accent);
+}
+
+.legal-doc h1 {
+  margin: 0 0 6px;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+.legal-updated {
+  margin: 0 0 28px;
+  font-size: 13px;
+  color: var(--color-ink-muted-on-dark);
+}
+
+.legal-doc section {
+  margin-bottom: 22px;
+}
+
+.legal-doc h2 {
+  margin: 0 0 8px;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.legal-doc section p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--color-ink-muted-on-dark);
+  white-space: pre-wrap;
+}
+
+.legal-note {
+  margin-top: 32px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-surface-border);
+  font-size: 12.5px;
+  color: var(--color-ink-muted-on-dark);
+}

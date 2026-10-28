@@ -1,0 +1,63 @@
+@if (visible()) {
+  <div
+    class="cookie-banner"
+    role="dialog"
+    aria-modal="false"
+    [attr.aria-label]="'COOKIEBANNER.TITLE' | translate"
+    animate.enter="anim-item"
+  >
+    @if (!expanded()) {
+      <p class="cookie-text">
+        {{ 'COOKIEBANNER.TEXT' | translate }}
+        <a [routerLink]="['/legal/cookies']">{{ 'COOKIEBANNER.POLICY_LINK' | translate }}</a>
+      </p>
+      <div class="cookie-actions">
+        <p-button
+          [label]="'COOKIEBANNER.NECESSARY_ONLY' | translate"
+          severity="secondary"
+          [outlined]="true"
+          size="small"
+          (onClick)="acceptNecessary()"
+        />
+        <p-button
+          [label]="'COOKIEBANNER.CONFIGURE' | translate"
+          severity="secondary"
+          [text]="true"
+          size="small"
+          (onClick)="expanded.set(true)"
+        />
+        <p-button
+          [label]="'COOKIEBANNER.ACCEPT_ALL' | translate"
+          size="small"
+          (onClick)="acceptAll()"
+        />
+      </div>
+    } @else {
+      <p class="cookie-title">{{ 'COOKIEBANNER.TITLE' | translate }}</p>
+      <div class="cookie-option">
+        <p-checkbox [ngModel]="true" [binary]="true" [disabled]="true" inputId="cookie-nec" />
+        <label for="cookie-nec">
+          <strong>{{ 'COOKIEBANNER.NECESSARY' | translate }}</strong>
+          <span>{{ 'COOKIEBANNER.NECESSARY_DESC' | translate }}</span>
+        </label>
+      </div>
+      <div class="cookie-option">
+        <p-checkbox [(ngModel)]="analytics" [binary]="true" inputId="cookie-ana" />
+        <label for="cookie-ana">
+          <strong>{{ 'COOKIEBANNER.ANALYTICS' | translate }}</strong>
+          <span>{{ 'COOKIEBANNER.ANALYTICS_DESC' | translate }}</span>
+        </label>
+      </div>
+      <div class="cookie-option">
+        <p-checkbox [(ngModel)]="marketing" [binary]="true" inputId="cookie-mkt" />
+        <label for="cookie-mkt">
+          <strong>{{ 'COOKIEBANNER.MARKETING' | translate }}</strong>
+          <span>{{ 'COOKIEBANNER.MARKETING_DESC' | translate }}</span>
+        </label>
+      </div>
+      <div class="cookie-actions">
+        <p-button [label]="'COOKIEBANNER.SAVE' | translate" size="small" (onClick)="saveCustom()" />
+      </div>
+    }
+  </div>
+}

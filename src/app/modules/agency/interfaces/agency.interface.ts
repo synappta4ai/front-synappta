@@ -1,5 +1,14 @@
-export type Modality = 'video' | 'image' | 'text';
-export type CredentialProvider = 'byteplus' | 'gemini' | 'anthropic' | 'openrouter';
+/** Modalidades del catálogo del back; `audio` cubre los modelos de voz. */
+export type Modality = 'video' | 'image' | 'text' | 'audio';
+export type CredentialProvider =
+  | 'byteplus'
+  | 'gemini'
+  | 'anthropic'
+  | 'higgsfield'
+  | 'openrouter'
+  /** Servidores OpenAI-compatibles del propio tenant (sin API key). */
+  | 'ollama'
+  | 'lmstudio';
 export type TaskStatus =
   'pending' | 'processing' | 'completed' | 'succeeded' | 'failed' | 'cancelled';
 
@@ -12,11 +21,66 @@ export interface AiModel {
   base_url: string;
   endpoint: string;
   gallery_sync: boolean;
+  /** Ruta i2v gemela del modelo (back: image_endpoint). */
+  image_endpoint?: string;
+  /** Ruta multi-referencia (back: reference_endpoint): habilita adjuntar
+   *  varias fotos reales a la generación de video. */
+  reference_endpoint?: string;
+  /** Cuántas imágenes de referencia acepta el modelo (back: max_references).
+   *  0/undefined = no admite referencias. */
+  max_references?: number;
+  /** true = LLM con razonamiento (back: reasoning). Solo estos van al Cerebro. */
+  reasoning?: boolean;
+  /** Qué lee el modelo además de texto (back: input_modalities): image, video, audio. */
+  input_modalities?: string[];
   defaults: {
     ratios?: string[];
     resolutions?: string[];
     durations?: number[];
   };
+  /** 'downloaded' = corre en el inference worker del tenant (back: type). */
+  type?: string;
+  /** Detalle del worker para modelos downloaded (back: downloaded):
+   *  available=false = listado pero no ejecutable. */
+  downloaded?: { vram_gb?: number; available?: boolean } | null;
+  /** Badge de curaduría: el maestro marca los modelos eficientes. */
+  recommended?: boolean;
+  /** Etiquetas de recomendación del maestro (vacío = no recomendado). */
+  recommend_tags?: string[];
+  /** Favorito (maestro o tenant): ordena primero en los listados. */
+  favorite?: boolean;
+}
+
+/** Curaduría del maestro (platform superadmin): vale para todos los tenants. */
+export interface MasterModelPref {
+  model_name: string;
+  enabled: boolean;
+  /** Una o varias etiquetas; acepta un string suelto en el PUT. */
+  recommend_tags: string[];
+  /** Pares libres clave-valor (costos, notas, …). */
+  metadata: Record<string, string>;
+  favorite_rank: number;
+}
+
+/** Curaduría propia del tenant: hereda lo activo del maestro y ajusta. */
+export interface TenantModelPref {
+  model_name: string;
+  enabled: boolean;
+  favorite_rank: number;
+}
+
+/** GET /models/master: catálogo anotado + prefs + huérfanos. */
+export interface MasterPrefsView {
+  models: AiModel[];
+  prefs: Record<string, MasterModelPref>;
+  orphans: string[];
+}
+
+/** GET /models/prefs: lo efectivo + desactivados + filas propias del tenant. */
+export interface TenantPrefsView {
+  models: AiModel[];
+  disabled: string[];
+  mine: Record<string, TenantModelPref>;
 }
 
 export interface Credential {
@@ -68,6 +132,9 @@ export interface GenerateRequest {
   piece_code: string;
   generation_number: number;
   user_id?: number;
+  /** Dirección del inference worker de este usuario para modelos downloaded.
+   * Si se envía, el back lo usa en vez de BM_WORKER_ADDR global. */
+  worker_addr?: string;
 }
 
 export interface OutputResource {
@@ -156,6 +223,8 @@ export interface GenerationLog {
   piece_name: string | null;
   user_display_name: string | null;
   created_at: string;
+  /** Fin de la generación (el back lo pone en NOW() al completar). Sirve para el tiempo transcurrido. */
+  updated_at?: string | null;
 }
 
 export interface GenerationLogsPage {
@@ -223,6 +292,14 @@ export interface ModelAsset {
   reference_uri: string | null;
   error_message: string | null;
   created_at: string;
+}
+
+/** Resultado de POST /agency/brief/extract: texto plano del folleto subido. */
+export interface BriefExtraction {
+  filename: string;
+  text: string;
+  chars: number;
+  truncated: boolean;
 }
 
 export interface GeneratedAsset {

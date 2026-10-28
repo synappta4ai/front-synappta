@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
 import { superadminGuard } from '@core/guards';
 
-import { authGuard } from '@guards/auth.guard';
+import { authGuard, notAuthGuard } from '@guards/auth.guard';
 import { PrivateLayoutComponent } from '@shared/components/layouts/private-layout/private-layout.component';
 import { PublicLayoutComponent } from '@shared/components/layouts/public-layout/public-layout.component';
 
@@ -16,7 +16,18 @@ export const routes: Routes = [
       },
       {
         path: 'auth',
+        canActivate: [notAuthGuard],
         loadChildren: () => import('@modules/auth/auth.routes').then((m) => m.authRoutes),
+      },
+      {
+        path: 'legal',
+        loadChildren: () => import('@modules/legal/legal.routes').then((m) => m.legalRoutes),
+      },
+      {
+        // Vinculación de dispositivo por QR: pública, el código hace de auth.
+        path: 'pair',
+        loadComponent: () =>
+          import('@modules/pair/ui/pair-device.component').then((m) => m.PairDeviceComponent),
       },
     ],
   },
@@ -34,36 +45,11 @@ export const routes: Routes = [
         canActivate: [authGuard],
         loadChildren: () => import('@modules/studio/studio.routes').then((m) => m.studioRoutes),
       },
-      // {
-      //   path: 'video',
-      //   canActivate: [authGuard],
-      //   loadChildren: () => import('@modules/video/video.routes').then((m) => m.videoRoutes),
-      // },
-      // {
-      //   // /events muestra los eventos de generación; el CRUD de eventos
-      //   // (proyectos de agencia) vive en /events/manage.
-      //   path: 'events',
-      //   canActivate: [authGuard],
-      //   children: [
-      //     {
-      //       path: '',
-      //       title: 'Eventos de generación',
-      //       loadComponent: () =>
-      //         import('@modules/studio/ui/generation-events/generation-events.component').then(
-      //           (m) => m.GenerationEventsComponent,
-      //         ),
-      //     },
-      //     {
-      //       path: 'manage',
-      //       title: 'Eventos',
-      //       loadChildren: () => import('@modules/events/events.routes').then((m) => m.eventsRoutes),
-      //     },
-      //   ],
-      // },
       {
         path: 'projects',
         canActivate: [authGuard],
-        loadChildren: () => import('@modules/projects/projects.routes').then((m) => m.projectsRoutes),
+        loadChildren: () =>
+          import('@modules/projects/projects.routes').then((m) => m.projectsRoutes),
       },
       {
         path: 'resources',
@@ -76,18 +62,37 @@ export const routes: Routes = [
         loadChildren: () =>
           import('@modules/agency/agency.routes').then((m) => m.myGenerationsRoutes),
       },
-      // Rutas antiguas (español): redirigen a las rutas en inglés.
-      { path: 'recursos', redirectTo: 'resources', pathMatch: 'full' },
-      { path: 'mis-generaciones', redirectTo: 'my-generations', pathMatch: 'full' },
       {
         path: 'admin',
         canActivate: [authGuard, superadminGuard],
         loadChildren: () => import('@modules/admin/admin.routes').then((m) => m.adminRoutes),
       },
+      {
+        // "Tu GPU": emparejar las máquinas con GPU del equipo (admin del
+        // tenant, role_level ≤ 1 — el guard vive en el módulo).
+        path: 'gpu',
+        canActivate: [authGuard],
+        loadChildren: () => import('@modules/gpu/gpu.routes').then((m) => m.gpuRoutes),
+      },
+      {
+        // "Mis modelos": curaduría propia del tenant (admin del tenant —
+        // el guard vive en el módulo, el back aplica RequireRole(1)).
+        path: 'mis-modelos',
+        canActivate: [authGuard],
+        loadChildren: () =>
+          import('@modules/tenant-models/tenant-models.routes').then((m) => m.tenantModelsRoutes),
+      },
+      {
+        // Herramientas del cliente (Hoja de poses, …): cualquier usuario
+        // autenticado; el guard vive en cada ruta del módulo si hace falta.
+        path: 'tools',
+        canActivate: [authGuard],
+        loadChildren: () => import('@modules/tools/tools.routes').then((m) => m.toolsRoutes),
+      },
     ],
   },
   {
     path: '**',
-    redirectTo: '/agency',
+    redirectTo: '/studio',
   },
 ];

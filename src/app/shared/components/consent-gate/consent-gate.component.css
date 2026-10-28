@@ -1,0 +1,19 @@
+/* Gate de primer ingreso: modal bloqueante de aceptación legal. */
+
+.consent-gate-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--color-ink-on-dark);
+}
+
+.consent-gate-body {
+  margin: 0 0 14px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--color-ink-muted-on-dark);
+}
+
+.consent-gate-error {
+  margin-top: 12px;
+}

@@ -1,6 +1,9 @@
+import { CurrencyPipe, DatePipe } from '@angular/common';
+import { formatDurationValue } from '@pipes/format-duration.pipe';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { catchError, EMPTY, finalize, forkJoin, of } from 'rxjs';
 
 import { Button } from 'primeng/button';
@@ -28,11 +31,21 @@ import type { AssetSectionKey, FileAsset } from '@modules/library/interfaces';
 type ResourceFilter = 'all' | AssetSectionKey | 'other';
 import { ServerUrlPipe } from '@core/pipes/server-url.pipe';
 import { AssetPickerDialogComponent, PageContainerComponent } from '@shared/components/index';
+import { UiIcon } from '@shared/components/ui-icon/ui-icon.component';
+
+const SECTION_LABEL_KEYS: Record<AssetSectionKey, string> = {
+  character: 'PROJECTS.FILTERS.CHARACTER',
+  location: 'PROJECTS.FILTERS.LOCATION',
+  props: 'PROJECTS.FILTERS.PROPS',
+};
 
 @Component({
   selector: 'app-projects',
   imports: [
     FormsModule,
+    CurrencyPipe,
+    DatePipe,
+    TranslatePipe,
     PageContainerComponent,
     Button,
     Card,
@@ -51,6 +64,7 @@ import { AssetPickerDialogComponent, PageContainerComponent } from '@shared/comp
     AssetPickerDialogComponent,
     ServerUrlPipe,
     Tooltip,
+    UiIcon,
   ],
   providers: [ConfirmationService],
   templateUrl: './projects.component.html',
@@ -63,6 +77,7 @@ export class ProjectsComponent {
   private readonly confirmationService = inject(ConfirmationService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly translate = inject(TranslateService);
 
   // ─── State ──────────────────────────────────────────────────────
   protected readonly projects = signal<readonly Event[]>([]);
@@ -104,7 +119,7 @@ export class ProjectsComponent {
       .listEvents(this.showInactive())
       .pipe(
         catchError(() => {
-          this.error.set('No se pudieron cargar los proyectos.');
+          this.error.set(this.translate.instant('PROJECTS.ERRORS.LOAD'));
           return EMPTY;
         }),
         finalize(() => this.loading.set(false)),
@@ -144,7 +159,7 @@ export class ProjectsComponent {
       })
       .pipe(
         catchError(() => {
-          this.error.set('No se pudo crear el proyecto.');
+          this.error.set(this.translate.instant('PROJECTS.ERRORS.CREATE'));
           return EMPTY;
         }),
         finalize(() => this.saving.set(false)),
@@ -158,17 +173,23 @@ export class ProjectsComponent {
 
   protected confirmDeleteProject(project: Event): void {
     this.confirmationService.confirm({
-      message: `¿Eliminar el proyecto "${project.name}"? Se eliminarán también sus programas y piezas.`,
-      header: 'Eliminar proyecto',
+      message: this.translate.instant('PROJECTS.CONFIRM_DELETE_MESSAGE', { name: project.name }),
+      header: this.translate.instant('PROJECTS.CONFIRM_DELETE_TITLE'),
       icon: 'md md-warning',
-      acceptButtonProps: { label: 'Eliminar', severity: 'danger' },
-      rejectButtonProps: { label: 'Cancelar', severity: 'secondary' },
+      acceptButtonProps: {
+        label: this.translate.instant('PROJECTS.CONFIRM_DELETE_ACCEPT'),
+        severity: 'danger',
+      },
+      rejectButtonProps: {
+        label: this.translate.instant('PROJECTS.CONFIRM_DELETE_REJECT'),
+        severity: 'secondary',
+      },
       accept: () => {
         this.eventsService
           .deleteEvent(project.id)
           .pipe(
             catchError(() => {
-              this.error.set('No se pudo eliminar el proyecto.');
+              this.error.set(this.translate.instant('PROJECTS.ERRORS.DELETE'));
               return EMPTY;
             }),
           )
@@ -221,6 +242,37 @@ export class ProjectsComponent {
       });
   }
 
+  /** Costo total (USD) de las generaciones del proyecto abierto. */
+  protected readonly projectCost = computed(() =>
+    this.generations().reduce((sum, log) => sum + (log.estimated_cost ?? 0), 0),
+  );
+
+  /** Tiempo total de generación (s) del proyecto abierto. */
+  protected readonly projectTime = computed(() =>
+    this.generations().reduce((sum, log) => sum + this.elapsedOf(log), 0),
+  );
+
+  /** Segundos que tardó la generación: updated_at - created_at (0 si falta). */
+  protected elapsedOf(log: GenerationLog): number {
+    const start = new Date(log.created_at).getTime();
+    const end = log.updated_at ? new Date(log.updated_at).getTime() : NaN;
+    if (Number.isNaN(start)) {
+      return 0;
+    }
+    const done = Number.isNaN(end) ? start : end;
+    return Math.max(0, (done - start) / 1000);
+  }
+
+  protected elapsedLabel(log: GenerationLog): string {
+    const secs = this.elapsedOf(log);
+    return secs > 0 ? formatDurationValue(secs, 's') : '—';
+  }
+
+  protected projectTimeLabel(): string {
+    const secs = this.projectTime();
+    return secs > 0 ? formatDurationValue(secs, 's') : '—';
+  }
+
   /** Salida principal del log (video o imagen). */
   protected logOutput(log: GenerationLog): string {
     return log.outputs?.[0]?.localUrl || log.outputs?.[0]?.url || '';
@@ -236,14 +288,14 @@ export class ProjectsComponent {
   /** Opciones del filtro (iconos verificados en el subset local .md-*). */
   protected readonly resourceFilterOptions: {
     value: ResourceFilter;
-    label: string;
+    labelKey: string;
     icon: string;
   }[] = [
-    { value: 'all', label: 'Todos', icon: 'md md-grid_view' },
-    { value: 'character', label: 'Personaje', icon: 'md md-person' },
-    { value: 'location', label: 'Ubicación', icon: 'md md-place' },
-    { value: 'props', label: 'Utilería / Props', icon: 'md md-inventory_2' },
-    { value: 'other', label: 'Otros', icon: 'md md-image' },
+    { value: 'all', labelKey: 'PROJECTS.FILTERS.ALL', icon: 'md md-grid_view' },
+    { value: 'character', labelKey: 'PROJECTS.FILTERS.CHARACTER', icon: 'md md-person' },
+    { value: 'location', labelKey: 'PROJECTS.FILTERS.LOCATION', icon: 'md md-place' },
+    { value: 'props', labelKey: 'PROJECTS.FILTERS.PROPS', icon: 'md md-inventory_2' },
+    { value: 'other', labelKey: 'PROJECTS.FILTERS.OTHER', icon: 'md md-image' },
   ];
 
   /** Cantidad de recursos por sección, para los contadores de los chips. */
@@ -266,21 +318,19 @@ export class ProjectsComponent {
 
   /** Recursos agrupados por sección, igual que la galería de la biblioteca
       (Personaje / Ubicación / Props + Otros), respetando el filtro activo. */
-  protected readonly fileGroups = computed<{ label: string; files: FileAsset[] }[]>(() => {
+  protected readonly fileGroups = computed<{ labelKey: string; files: FileAsset[] }[]>(() => {
     const list = this.projectFiles();
     const filter = this.resourceFilter();
-    const groups: { key: ResourceFilter; label: string; files: FileAsset[] }[] = [
+    const groups: { key: ResourceFilter; labelKey: string; files: FileAsset[] }[] = [
       ...ASSET_SECTIONS.map((s) => ({
         key: s.key as ResourceFilter,
-        label: s.label,
+        labelKey: SECTION_LABEL_KEYS[s.key],
         files: list.filter((f) => assetMatchesSection(f, s.key)),
       })),
       {
         key: 'other',
-        label: 'Otros recursos',
-        files: list.filter(
-          (f) => !ASSET_SECTIONS.some((s) => assetMatchesSection(f, s.key)),
-        ),
+        labelKey: 'PROJECTS.SECTIONS.OTHER',
+        files: list.filter((f) => !ASSET_SECTIONS.some((s) => assetMatchesSection(f, s.key))),
       },
     ];
     return (filter === 'all' ? groups : groups.filter((g) => g.key === filter)).filter(
@@ -303,15 +353,13 @@ export class ProjectsComponent {
       assets.map((a) =>
         this.libraryService.linkFileEvent(a.id, projectId).pipe(
           catchError(() => {
-            this.error.set(`No se pudo asignar "${a.filename}".`);
+            this.error.set(this.translate.instant('PROJECTS.ERRORS.ASSIGN', { name: a.filename }));
             return of(null);
           }),
         ),
       ),
     )
-      .pipe(
-        finalize(() => this.assigning.set(false)),
-      )
+      .pipe(finalize(() => this.assigning.set(false)))
       .subscribe(() => {
         this.flashSaved();
         this.loadDetail(projectId);
@@ -328,7 +376,7 @@ export class ProjectsComponent {
       .unlinkFileEvent(file.id, projectId)
       .pipe(
         catchError(() => {
-          this.error.set('No se pudo quitar el recurso.');
+          this.error.set(this.translate.instant('PROJECTS.ERRORS.UNASSIGN'));
           return EMPTY;
         }),
       )
@@ -343,12 +391,6 @@ export class ProjectsComponent {
     this.brokenThumbs.update((set) => new Set(set).add(id));
   }
 
-  protected logDate(log: GenerationLog): string {
-    return new Date(log.created_at).toLocaleDateString(undefined, {
-      day: '2-digit',
-      month: 'short',
-    });
-  }
 
   /** Alterna la calificación de una generación (una o ninguna, como el
       studio): parche optimista + persistencia en el backend. */
@@ -361,7 +403,7 @@ export class ProjectsComponent {
       .pipe(
         catchError(() => {
           this.patchLog(log, { rating_good: log.rating_good, rating_final: log.rating_final });
-          this.error.set('No se pudo guardar la calificación.');
+          this.error.set(this.translate.instant('PROJECTS.ERRORS.RATING'));
           return EMPTY;
         }),
       )
@@ -376,7 +418,7 @@ export class ProjectsComponent {
       .pipe(
         catchError(() => {
           this.patchLog(log, { rating_good: log.rating_good, rating_final: log.rating_final });
-          this.error.set('No se pudo guardar la calificación.');
+          this.error.set(this.translate.instant('PROJECTS.ERRORS.RATING'));
           return EMPTY;
         }),
       )

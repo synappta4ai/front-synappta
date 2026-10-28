@@ -19,7 +19,22 @@ export type CredentialProviderType =
   | 'gemini'
   | 'anthropic'
   | 'higgsfield'
-  | 'openrouter';
+  | 'openrouter'
+  /** Servidores OpenAI-compatibles del propio tenant (Ollama, LM Studio):
+   *  no llevan API key, solo base URL, y sus modelos se descubren en vivo. */
+  | 'ollama'
+  | 'lmstudio'
+  /** Nubes de inferencia hospedadas: el tenant trae su API key y el catálogo
+   *  lista en vivo los modelos que esa key alcanza. RunPod suma el id de su
+   *  serverless endpoint (un endpoint = un modelo: runpod/<endpoint-id>). */
+  | 'runpod'
+  | 'together'
+  | 'deepinfra'
+  | 'gmi'
+  | 'baseten'
+  | 'vultr'
+  | 'digitalocean'
+  | 'coreweave';
 
 /** Modelo del catálogo anotado con el estado de credenciales del tenant. */
 export interface TenantModel {
@@ -37,6 +52,35 @@ export interface TenantModel {
     durations?: number[];
   };
   credential_configured: boolean;
+}
+
+/** Canal de notificación del tenant (la URL secreta viaja enmascarada). */
+export interface NotificationChannel {
+  id: string;
+  name: string;
+  service: string;
+  url_mask: string;
+  enabled: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Dispositivo con push suscripto (vista admin: sin secretos push). */
+export interface PushDevice {
+  id: string;
+  user_id: number;
+  user_display_name: string;
+  user_agent: string;
+  endpoint_host: string;
+  created_at: string;
+}
+
+/** Alta/edición de canal: url vacía conserva el secreto guardado. */
+export interface NotificationChannelRequest {
+  name?: string;
+  service?: string;
+  url?: string;
+  enabled?: boolean;
 }
 
 /** Credencial enmascarada (nunca devuelve secretos). */
@@ -163,6 +207,9 @@ export interface ServerCommunicationLog {
   total_duration_ms: number;
   request_body?: string;
   response_body?: string;
+  /** La lista trae preview (4k): true = pedir el texto completo por id. */
+  request_truncated?: boolean;
+  response_truncated?: boolean;
   status_code: number;
   duration_ms: number;
   error_message?: string;
@@ -184,6 +231,54 @@ export interface ServerCommsPage {
   page: number;
   limit: number;
   total_pages: number;
+}
+
+// ─── Worker model management (inference worker) ────────────────────────
+
+/** Estado de descarga de un modelo en el worker. */
+export interface WorkerModelState {
+  key: string;
+  state: 'idle' | 'downloading' | 'ready' | 'failed' | 'cancelled' | 'deleted';
+  progress: number;
+  bytes_downloaded: number;
+  total_bytes: number;
+  error: string;
+}
+
+/** Modelo del worker con su estado de descarga y ubicación en disco. */
+export interface WorkerModel {
+  key: string;
+  label: string;
+  mode: 'image' | 'video' | 'tts' | 'audio';
+  engine: 'diffusers' | 'v1_bridge' | 'mock';
+  pipeline: string;
+  repo: string | null;
+  steps: number;
+  vram_gb: number;
+  family: string;
+  available: boolean;
+  downloaded: boolean;
+  downloading: boolean;
+  download_percent: number;
+  size_bytes: number;
+  download_error: string | null;
+  download_path: string | null;
+  notes: string | null;
+}
+
+/** Estado en vivo del worker de inferencia (`GET /worker/status`). */
+export interface WorkerStatus {
+  configured: boolean;
+  connected: boolean;
+  device_name?: string;
+  cuda_available: boolean;
+  model_count: number;
+}
+
+/** Artefacto generado expuesto por el artifact server del worker. */
+export interface WorkerArtifact {
+  name: string;
+  size_bytes: number;
 }
 
 // ─── Generated videos gallery ────────────────────────────────
@@ -217,6 +312,8 @@ export interface GeneratedMedia {
   video_fps: number;
   progress: number;
   created_at: string;
+  /** Solo presente en la papelera: cuándo se mandó a trash. */
+  deleted_at?: string;
   // Enriched (LEFT JOIN in the backend)
   event_name: string;
   user_display_name: string;
@@ -236,3 +333,32 @@ export interface GeneratedVideosPage {
 export type GeneratedImagesPage = GeneratedVideosPage;
 export type GeneratedImage = GeneratedMedia;
 export type GeneratedVideo = GeneratedMedia;
+
+/**
+ * Bucket (S3/MinIO) del tenant, tal como lo devuelve la API. `configured`
+ * false significa que el tenant guarda sus archivos en el disco local.
+ * Los secretos nunca llegan en claro: solo la máscara y `has_secret`.
+ */
+export interface TenantStorageConfig {
+  configured: boolean;
+  endpoint?: string;
+  bucket?: string;
+  region?: string;
+  public_base?: string;
+  enabled: boolean;
+  access_key_id?: string;
+  has_secret: boolean;
+  updated_at?: string;
+}
+
+/** Payload para guardar el bucket de un tenant (credenciales cifradas). */
+export interface TenantStorageConfigRequest {
+  endpoint: string;
+  bucket: string;
+  region?: string;
+  /** Se puede omitir al actualizar: el back conserva la guardada. */
+  access_key_id?: string;
+  secret_access_key?: string;
+  public_base?: string;
+  enabled?: boolean;
+}

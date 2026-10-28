@@ -40,3 +40,20 @@ export interface UpdateAvatarRequest {
   avatar_file_id?: string;
   avatar_url?: string;
 }
+
+/** Aceptación registrada (POST /consents, prueba Ley 1581). */
+export interface Consent {
+  id: number;
+  user_id: number;
+  doc_type: string;
+  doc_version: string;
+  accepted_at: string;
+  method: string;
+}
+
+/** Cuerpo de POST /consents: el back estampa fecha, ip y user agent. */
+export interface AcceptConsentRequest {
+  doc_type: string;
+  doc_version: string;
+  method: string;
+}

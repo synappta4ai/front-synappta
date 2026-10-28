@@ -4,3 +4,4 @@ export * from './convert-file-to-base64';
 export * from './download-file-from-base4';
 export * from './error-catch';
 export * from './download-url';
+export * from './unwrap-api-response';

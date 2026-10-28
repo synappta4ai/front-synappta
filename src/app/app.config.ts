@@ -7,11 +7,13 @@ import {
 } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-import { provideRouter } from '@angular/router';
+import { TitleStrategy, provideRouter } from '@angular/router';
 
 import { routes } from './app.routes';
+import { LanguageService } from '@services/language.service';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 
+import { AppTitleStrategy } from '@services/app-title.strategy';
 import { authInterceptor } from '@interceptors/auth.interceptor';
 
 import Aura from '@primeuix/themes/aura';
@@ -27,6 +29,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
+    { provide: TitleStrategy, useClass: AppTitleStrategy },
     provideClientHydration(withEventReplay()),
     provideHttpClient(withFetch(), withInterceptors([authInterceptor])),
     provideAnimationsAsync(),
@@ -50,12 +53,16 @@ export const appConfig: ApplicationConfig = {
       prefix: './assets/i18n/',
       suffix: '.json',
     }),
+    provideAppInitializer(() => {
+      // Idiomas: restaura el idioma persistido en cualquier ruta (incluidas las
+      // páginas públicas, que no montan el theme-panel).
+      inject(LanguageService).init();
+    }),
     provideAppInitializer(async () => {
       // All inject() calls stay synchronous: after the first await the
       // injection context is gone (NG0203) and the call would throw.
       const sessionStore = inject(UserSessionStore);
       const appStore = inject(AppStore);
-      const agencyService = inject(AgencyService);
       const eventsStore = inject(GenerationEventsStore);
       await sessionStore.init();
       await appStore.init();
@@ -63,24 +70,15 @@ export const appConfig: ApplicationConfig = {
       // Take-reel hydration: restore recent generations after a reload so the
       // studio queue/reel survive F5. Skipped for anonymous sessions — no
       // useless API calls (or bootstrap delay) on the public pages.
-      if (!sessionStore.isLoggedIn()) {
+      if (sessionStore.isLoggedIn()) {
+        try {
+          console.log('init eventsStore', { sessionStore: sessionStore.isLoggedIn() });
+
+          await eventsStore.hydrate();
+        } catch (error) {
+          console.error('Error hydrating generation events:', error);
+        }
         return;
-      }
-      try {
-        const models = await firstValueFrom(agencyService.listModels());
-        eventsStore.applyCatalog(
-          models.map((m) => ({
-            name: m.name,
-            displayName: m.display_name || m.name,
-            type:
-              (m as { type?: string }).type === 'downloaded'
-                ? ('downloaded' as const)
-                : ('api' as const),
-          })),
-        );
-        eventsStore.hydrate();
-      } catch {
-        // Offline or not authenticated: the reel simply starts empty.
       }
     }),
   ],

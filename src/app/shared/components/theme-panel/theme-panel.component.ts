@@ -2,44 +2,52 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
-  OnInit,
   computed,
   inject,
   signal,
   viewChild,
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Popover } from 'primeng/popover';
 import { Tooltip } from 'primeng/tooltip';
 import { Dialog } from 'primeng/dialog';
 import { Button } from 'primeng/button';
-import { TranslateService } from '@ngx-translate/core';
+import { ToggleSwitch } from 'primeng/toggleswitch';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { UserSessionStore } from '@core/store/user.session';
 import { AuthService } from '@modules/auth/services/auth.service';
 import { UpdateAvatarRequest } from '@modules/auth/interfaces';
 import { LibraryService } from '@modules/library/services';
 import { ThemeService } from '@services/theme.service';
+import { NotificationsPreferencesService } from '@core/services/notifications-preferences.service';
+import { DevicePushService } from '@core/services/device-push.service';
+import { LanguageService, AppLang } from '@services/language.service';
 import { ThemeMode, AccentId, ACCENTS } from '@interfaces/theme.interface';
 import { AUTH } from '@constants/routes';
+import { environment } from '@env/environment';
 
 /** Tamaño máximo de la foto de perfil: 5 MB. */
 const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
 
 @Component({
   selector: 'app-theme-panel',
-  imports: [Popover, Tooltip, Dialog, Button],
+  imports: [FormsModule, Popover, Tooltip, Dialog, Button, ToggleSwitch, TranslatePipe],
   templateUrl: './theme-panel.component.html',
   styleUrls: ['./theme-panel.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ThemePanelComponent implements OnInit {
+export class ThemePanelComponent {
   private readonly themeService = inject(ThemeService);
   private readonly sessionStore = inject(UserSessionStore);
   private readonly authService = inject(AuthService);
   private readonly libraryService = inject(LibraryService);
   private readonly router = inject(Router);
   private readonly translate = inject(TranslateService);
+  private readonly languageService = inject(LanguageService);
+  private readonly notificationsPrefs = inject(NotificationsPreferencesService);
+  protected readonly devicePush = inject(DevicePushService);
 
   protected readonly popover = viewChild.required<Popover>('popover');
   private readonly avatarInput = viewChild<ElementRef<HTMLInputElement>>('avatarInput');
@@ -48,7 +56,13 @@ export class ThemePanelComponent implements OnInit {
   readonly currentMode = this.themeService.currentMode;
   readonly currentAccent = this.themeService.currentAccent;
   readonly accents = ACCENTS;
-  readonly currentLang = this.translate.currentLang;
+  readonly currentLang = this.languageService.currentLang;
+  readonly notificationsEnabled = this.notificationsPrefs.enabled;
+
+  /** Key i18n del nombre del acento (los nombres viven en core/interfaces). */
+  protected accentKey(id: AccentId): string {
+    return `SHARED.THEME_PANEL.ACCENT_${id.toUpperCase()}`;
+  }
 
   protected readonly profileVisible = signal(false);
   protected readonly settingsVisible = signal(false);
@@ -57,6 +71,8 @@ export class ThemePanelComponent implements OnInit {
   protected readonly avatarUploading = signal(false);
   protected readonly avatarError = signal('');
   private readonly avatarLoadFailed = signal(false);
+
+  readonly VERSION = environment.APP_VERSION;
 
   /** URL del avatar: foto del usuario si la hay; iniciales como fallback. */
   readonly userAvatarUrl = computed(() => {
@@ -73,17 +89,6 @@ export class ThemePanelComponent implements OnInit {
     this.popover().toggle(event);
   }
 
-  ngOnInit(): void {
-    try {
-      const lang = localStorage.getItem('app-lang');
-      if (lang === 'es' || lang === 'en') {
-        this.translate.use(lang).subscribe();
-      }
-    } catch {
-      // Sin almacenamiento o SSR: se mantiene el idioma por defecto.
-    }
-  }
-
   protected openProfile(): void {
     this.popover().hide();
     this.profileVisible.set(true);
@@ -94,13 +99,61 @@ export class ThemePanelComponent implements OnInit {
     this.settingsVisible.set(true);
   }
 
-  protected setLang(lang: 'es' | 'en'): void {
-    this.translate.use(lang).subscribe();
-    try {
-      localStorage.setItem('app-lang', lang);
-    } catch {
-      // Sin almacenamiento: el idioma vive solo en la sesión.
+  protected setLang(lang: AppLang): void {
+    this.languageService.setLang(lang);
+  }
+
+  /** Toggle único: encendido = dispositivo suscripto + avisos activos. */
+  protected allNotificationsOn(): boolean {
+    return this.notificationsPrefs.enabled() && this.devicePush.subscribed();
+  }
+
+  async toggleAllNotifications(): Promise<void> {
+    if (this.devicePush.busy()) {
+      return;
     }
+    if (this.allNotificationsOn()) {
+      this.notificationsPrefs.setEnabled(false);
+      return;
+    }
+    if (!this.devicePush.supported()) {
+      return;
+    }
+    if (!this.devicePush.subscribed()) {
+      const ok = await this.devicePush.subscribe();
+      if (!ok) {
+        return;
+      }
+    }
+    this.notificationsPrefs.setEnabled(true);
+  }
+
+  devicePushError(): string | null {
+    const key = this.devicePush.error();
+    if (!key) {
+      return null;
+    }
+    const params: Record<string, string> = {};
+    const detail = this.devicePush.errorDetail();
+    // DEVICE_HTTP_ERROR necesita status/detail; el resto muestra el detalle aparte.
+    if (key === 'NOTIFICATIONS.DEVICE_HTTP_ERROR' && detail) {
+      const m = detail.match(/HTTP (\d+):\s*(.*)/);
+      params['status'] = m?.[1] ?? '';
+      params['detail'] = (m?.[2] ?? detail).slice(0, 200);
+      return this.translate.instant(key, params);
+    }
+    return this.translate.instant(key, { status: '', detail: detail ?? '' });
+  }
+
+  devicePushDetail(): string | null {
+    if (!this.devicePush.error()) {
+      return null;
+    }
+    const detail = this.devicePush.errorDetail();
+    if (!detail || this.devicePush.error() === 'NOTIFICATIONS.DEVICE_HTTP_ERROR') {
+      return null;
+    }
+    return detail;
   }
 
   onAccentChange(accent: AccentId): void {
@@ -135,11 +188,11 @@ export class ThemePanelComponent implements OnInit {
       return;
     }
     if (!file.type.startsWith('image/')) {
-      this.avatarError.set('Selecciona un archivo de imagen.');
+      this.avatarError.set(this.translate.instant('SHARED.THEME_PANEL.ERROR_PICK_IMAGE'));
       return;
     }
     if (file.size > AVATAR_MAX_BYTES) {
-      this.avatarError.set('La imagen no puede superar los 5 MB.');
+      this.avatarError.set(this.translate.instant('SHARED.THEME_PANEL.ERROR_IMAGE_TOO_BIG'));
       return;
     }
     this.uploadAvatar(file);
@@ -161,13 +214,20 @@ export class ThemePanelComponent implements OnInit {
           },
           error: (err: unknown) => {
             this.avatarUploading.set(false);
-            this.avatarError.set(this.describeError(err, 'No se pudo guardar la foto.'));
+            this.avatarError.set(
+              this.describeError(
+                err,
+                this.translate.instant('SHARED.THEME_PANEL.ERROR_SAVE_PHOTO'),
+              ),
+            );
           },
         });
       },
       error: (err: unknown) => {
         this.avatarUploading.set(false);
-        this.avatarError.set(this.describeError(err, 'No se pudo subir la imagen.'));
+        this.avatarError.set(
+          this.describeError(err, this.translate.instant('SHARED.THEME_PANEL.ERROR_UPLOAD_PHOTO')),
+        );
       },
     });
   }
@@ -185,7 +245,9 @@ export class ThemePanelComponent implements OnInit {
       },
       error: (err: unknown) => {
         this.avatarUploading.set(false);
-        this.avatarError.set(this.describeError(err, 'No se pudo quitar la foto.'));
+        this.avatarError.set(
+          this.describeError(err, this.translate.instant('SHARED.THEME_PANEL.ERROR_REMOVE_PHOTO')),
+        );
       },
     });
   }

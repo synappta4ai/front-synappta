@@ -53,7 +53,18 @@ Thumbs.db
 # Secrets
 .env
 .env.*
+/env
+/env.e2e
 !.env.example
 
 # Dev server and tool logs
 *.log
+
+# Local AI tooling and scratch design notes
+.agents/
+.claude/
+.junie/
+.windsurf/
+.playwright-cli/
+DESIGN.md
+agent/

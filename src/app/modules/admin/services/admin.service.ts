@@ -2,8 +2,9 @@ import { inject, Injectable } from '@angular/core';
 import { HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
-import { ApiResponse } from '@interfaces/api.interface';
+import { unwrap } from '@utils/unwrap-api-response';
 
+import { MasterModelPref, MasterPrefsView } from '@modules/agency/interfaces';
 import {
   CreateTenantMemberRequest,
   CreateTenantRequest,
@@ -11,14 +12,21 @@ import {
   GeneratedVideosPage,
   PermissionDef,
   PlatformUser,
+  ServerCommunicationLog,
   ServerCommsPage,
   Tenant,
   TenantCredential,
   TenantMember,
   TenantModel,
+  TenantStorageConfig,
+  TenantStorageConfigRequest,
   TenantUser,
   UpdateTenantPermissionsRequest,
   UpsertTenantCredentialRequest,
+  WorkerArtifact,
+  WorkerModel,
+  WorkerModelState,
+  WorkerStatus,
 } from '../interfaces';
 import { AdminApiRepository } from '../repositories';
 
@@ -38,7 +46,10 @@ export class AdminService {
     return unwrap(this.adminApiRepository.deactivateTenant(id));
   }
 
-  updateTenantPermissions(id: number, permissions: string[]): Observable<{ permissions: string[] }> {
+  updateTenantPermissions(
+    id: number,
+    permissions: string[],
+  ): Observable<{ permissions: string[] }> {
     return unwrap(this.adminApiRepository.updateTenantPermissions(id, { permissions }));
   }
 
@@ -63,6 +74,16 @@ export class AdminService {
     return unwrap(this.adminApiRepository.deleteTenantCredential(id, provider));
   }
 
+  // ─── Maestro del catálogo (platform superadmin, vale para todos) ───
+
+  getMasterModelPrefs(): Observable<MasterPrefsView> {
+    return unwrap(this.adminApiRepository.getMasterModelPrefs());
+  }
+
+  upsertMasterModelPrefs(prefs: MasterModelPref[]): Observable<MasterPrefsView> {
+    return unwrap(this.adminApiRepository.upsertMasterModelPrefs(prefs));
+  }
+
   /** Descarga el archivo de exportación de credenciales (secretos en claro). */
   exportTenantCredentials(id: number): Observable<HttpResponse<Blob>> {
     return this.adminApiRepository.exportTenantCredentials(id);
@@ -71,6 +92,23 @@ export class AdminService {
   /** Importa credenciales desde el archivo de exportación. */
   importTenantCredentials(id: number, file: File): Observable<{ imported: number }> {
     return unwrap(this.adminApiRepository.importTenantCredentials(id, file));
+  }
+
+  // ─── Per-tenant object storage (platform superadmin) ───
+
+  getTenantStorage(id: number): Observable<TenantStorageConfig> {
+    return unwrap(this.adminApiRepository.getTenantStorage(id));
+  }
+
+  saveTenantStorage(
+    id: number,
+    payload: TenantStorageConfigRequest,
+  ): Observable<TenantStorageConfig> {
+    return unwrap(this.adminApiRepository.saveTenantStorage(id, payload));
+  }
+
+  deleteTenantStorage(id: number): Observable<null> {
+    return unwrap(this.adminApiRepository.deleteTenantStorage(id));
   }
 
   listTenantUsers(id: number): Observable<TenantUser[]> {
@@ -87,12 +125,22 @@ export class AdminService {
     return unwrap(this.adminApiRepository.createTenantMember(id, payload));
   }
 
-  updateTenantMemberRole(tenantId: number, userId: number, roleLevel: number): Observable<{ role_level: number; role_name: string }> {
+  updateTenantMemberRole(
+    tenantId: number,
+    userId: number,
+    roleLevel: number,
+  ): Observable<{ role_level: number; role_name: string }> {
     return unwrap(this.adminApiRepository.updateTenantMemberRole(tenantId, userId, roleLevel));
   }
 
-  updateTenantMemberPermissions(tenantId: number, userId: number, permissions: string[]): Observable<{ permissions: string[] }> {
-    return unwrap(this.adminApiRepository.updateTenantMemberPermissions(tenantId, userId, permissions));
+  updateTenantMemberPermissions(
+    tenantId: number,
+    userId: number,
+    permissions: string[],
+  ): Observable<{ permissions: string[] }> {
+    return unwrap(
+      this.adminApiRepository.updateTenantMemberPermissions(tenantId, userId, permissions),
+    );
   }
 
   removeTenantMember(tenantId: number, userId: number): Observable<null> {
@@ -107,39 +155,90 @@ export class AdminService {
     return unwrap(this.adminApiRepository.listPermissionCatalog());
   }
 
-  listServerComms(page = 1, limit = 20, taskId?: string): Observable<ServerCommsPage> {
-    return unwrap(this.adminApiRepository.listServerComms(page, limit, taskId));
+  listServerComms(
+    page = 1,
+    limit = 20,
+    taskId?: string,
+    tenantSlug?: string,
+  ): Observable<ServerCommsPage> {
+    return unwrap(this.adminApiRepository.listServerComms(page, limit, taskId, tenantSlug));
   }
 
-  listGeneratedVideos(page = 1, limit = 20, eventId?: string): Observable<GeneratedVideosPage> {
-    return unwrap(this.adminApiRepository.listGeneratedVideos(page, limit, eventId));
+  getServerComm(id: string, tenantSlug?: string): Observable<ServerCommunicationLog> {
+    return unwrap(this.adminApiRepository.getServerComm(id, tenantSlug));
   }
 
-  listGeneratedImages(page = 1, limit = 20, eventId?: string): Observable<GeneratedImagesPage> {
-    return unwrap(this.adminApiRepository.listGeneratedImages(page, limit, eventId));
+  listGeneratedVideos(
+    page = 1,
+    limit = 20,
+    eventId?: string,
+    tenantSlug?: string,
+  ): Observable<GeneratedVideosPage> {
+    return unwrap(this.adminApiRepository.listGeneratedVideos(page, limit, eventId, tenantSlug));
   }
-}
 
-function unwrap<T>(source: Observable<ApiResponse<T>>): Observable<T> {
-  return new Observable<T>((subscriber) => {
-    const subscription = source.subscribe({
-      next: (response) => {
-        // success:false es error real; success:true con data:null es una
-        // respuesta de solo-mensaje (p.ej. "file added to ingredient").
-        if (response.success === false) {
-          subscriber.error(new Error(response.message || 'Request failed'));
-          return;
-        }
-        if (response.data === null) {
-          subscriber.next(null as T);
-          subscriber.complete();
-          return;
-        }
-        subscriber.next(response.data);
-        subscriber.complete();
-      },
-      error: (err: unknown) => subscriber.error(err),
-    });
-    return () => subscription.unsubscribe();
-  });
+  /** Papelera: generaciones borradas hace menos de 30 días. */
+  listTrashLogs(
+    page = 1,
+    limit = 20,
+    resourceType?: string,
+    tenantSlug?: string,
+  ): Observable<GeneratedVideosPage> {
+    return unwrap(
+      this.adminApiRepository.listTrashLogs(page, limit, resourceType, tenantSlug),
+    );
+  }
+
+  trashGenerationLog(id: string, tenantSlug?: string): Observable<{ message: string }> {
+    return unwrap(this.adminApiRepository.trashGenerationLog(id, tenantSlug));
+  }
+
+  restoreGenerationLog(id: string, tenantSlug?: string): Observable<{ message: string }> {
+    return unwrap(this.adminApiRepository.restoreGenerationLog(id, tenantSlug));
+  }
+
+  deleteGenerationLogPermanent(id: string, tenantSlug?: string): Observable<{ message: string }> {
+    return unwrap(this.adminApiRepository.deleteGenerationLogPermanent(id, tenantSlug));
+  }
+
+  listGeneratedImages(
+    page = 1,
+    limit = 20,
+    eventId?: string,
+    tenantSlug?: string,
+  ): Observable<GeneratedImagesPage> {
+    return unwrap(this.adminApiRepository.listGeneratedImages(page, limit, eventId, tenantSlug));
+  }
+
+  // ─── Inference worker: model weight management ────────────────────────
+
+  workerStatus(): Observable<WorkerStatus> {
+    return unwrap(this.adminApiRepository.workerStatus());
+  }
+
+  listWorkerModels(): Observable<WorkerModel[]> {
+    return unwrap(this.adminApiRepository.listWorkerModels());
+  }
+
+  downloadWorkerModel(key: string, cancel = false): Observable<WorkerModelState> {
+    return unwrap(this.adminApiRepository.downloadWorkerModel(key, cancel));
+  }
+
+  cancelWorkerModelDownload(key: string): Observable<WorkerModelState> {
+    return unwrap(this.adminApiRepository.cancelWorkerModelDownload(key));
+  }
+
+  deleteWorkerModel(key: string): Observable<WorkerModelState> {
+    return unwrap(this.adminApiRepository.deleteWorkerModel(key));
+  }
+
+  // ─── Inference worker: artifacts ──────────────────────────────────────
+
+  listWorkerArtifacts(): Observable<WorkerArtifact[]> {
+    return unwrap(this.adminApiRepository.listWorkerArtifacts());
+  }
+
+  deleteWorkerArtifact(name: string): Observable<{ deleted: string; ok: boolean }> {
+    return unwrap(this.adminApiRepository.deleteWorkerArtifact(name));
+  }
 }

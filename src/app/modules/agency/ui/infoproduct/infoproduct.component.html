@@ -1,0 +1,719 @@
+<div class="flex flex-col gap-6">
+  @if (error(); as message) {
+    <div aria-live="assertive">
+      <p-message severity="error" [text]="message" styleClass="w-full" />
+    </div>
+  }
+
+  <div class="mb-8">
+    <p-steps
+      [model]="stepItems()"
+      [activeIndex]="step() - 1"
+      [readonly]="false"
+      styleClass="custom-steps"
+    />
+  </div>
+
+  <!-- ───────────── Paso 1: fuente ───────────── -->
+  @if (step() === 1) {
+    <p-card styleClass="phase-card">
+      <ng-template #header>
+        <div class="flex flex-wrap items-center gap-3 border-b border-surface-border px-6 py-4">
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
+            <i class="md md-movie text-lg text-accent"></i>
+          </div>
+          <div>
+            <h2 class="text-lg font-bold text-ink-on-dark">
+              {{ 'VIDEOMACHINE.SOURCE_TITLE' | translate }}
+            </h2>
+            <p class="text-sm text-ink-muted-on-dark">
+              {{ 'VIDEOMACHINE.SOURCE_SUBTITLE' | translate }}
+            </p>
+          </div>
+        </div>
+      </ng-template>
+
+      <div class="flex flex-col gap-6">
+      <!-- Switch: video de referencia ↔ formato -->
+      <div class="flex flex-wrap items-center gap-4 rounded-xl border border-surface-border bg-surface-2 px-4 py-3">
+        <span
+          class="text-xs font-bold"
+          [class.text-ink-on-dark]="!useFormat()"
+          [class.text-ink-muted-on-dark]="useFormat()"
+        >
+          {{ 'VIDEOMACHINE.MODE_REFERENCE' | translate }}
+        </span>
+        <span
+          [pTooltip]="formatsAvailable() ? '' : ('VIDEOMACHINE.MODE_FORMAT_LOCKED' | translate)"
+          tooltipPosition="top"
+        >
+          <p-toggleswitch
+            inputId="vmUseFormat"
+            [ngModel]="useFormat()"
+            (ngModelChange)="toggleFormat($event)"
+            [ngModelOptions]="{ standalone: true }"
+            [disabled]="!formatsAvailable()"
+            [attr.aria-label]="'VIDEOMACHINE.MODE_SWITCH_ARIA' | translate"
+          />
+        </span>
+        <span
+          class="text-xs font-bold"
+          [class.text-ink-on-dark]="useFormat()"
+          [class.text-ink-muted-on-dark]="!useFormat()"
+        >
+          {{ 'VIDEOMACHINE.MODE_FORMAT' | translate }}
+        </span>
+        <small class="ml-auto text-ink-muted-on-dark">
+          @if (!formatsAvailable()) {
+            {{ 'VIDEOMACHINE.MODE_FORMAT_LOCKED' | translate }}
+          } @else if (useFormat()) {
+            {{ 'VIDEOMACHINE.MODE_HINT_FORMAT' | translate }}
+          } @else {
+            {{ 'VIDEOMACHINE.MODE_HINT_REFERENCE' | translate }}
+          }
+        </small>
+      </div>
+
+      @if (useFormat()) {
+        <div class="flex max-w-md flex-col gap-2">
+          <label for="vmFormat" class="text-xs font-bold text-ink-on-dark">
+            {{ 'VIDEOMACHINE.FORMAT_LABEL' | translate }}
+          </label>
+          <p-select
+            inputId="vmFormat"
+            [options]="formatOptions()"
+            optionLabel="label"
+            optionValue="value"
+            [ngModel]="formatId()"
+            (ngModelChange)="formatId.set($event)"
+            [ngModelOptions]="{ standalone: true }"
+            [placeholder]="'VIDEOMACHINE.FORMAT_PLACEHOLDER' | translate"
+            styleClass="w-full"
+            appendTo="body"
+          />
+        </div>
+        <div>
+          <p-button
+            [label]="'VIDEOMACHINE.CONTINUE' | translate"
+            icon="md md-arrow_forward"
+            iconPos="right"
+            [disabled]="!formatId()"
+            (onClick)="continueWithFormat()"
+          />
+        </div>
+      } @else {
+        <div class="grid gap-6 lg:grid-cols-2">
+          <!-- Archivo -->
+          <div class="flex flex-col gap-2">
+            <span class="text-xs font-bold text-ink-on-dark">
+              {{ 'VIDEOMACHINE.UPLOAD_LABEL' | translate }}
+            </span>
+            <div class="flex flex-wrap items-center gap-3">
+              <label
+                for="vmVideoFile"
+                class="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-xs font-bold text-on-accent transition-colors hover:bg-accent-hover active:scale-[0.98]"
+              >
+                <i class="md md-upload"></i>
+                {{ 'VIDEOMACHINE.UPLOAD_VIDEO' | translate }}
+              </label>
+              <input
+                id="vmVideoFile"
+                type="file"
+                class="sr-only"
+                accept="video/mp4,video/quicktime,video/webm,video/x-matroska,.mp4,.mov,.webm,.mkv"
+                (change)="onVideoPicked($event)"
+              />
+              @if (videoFile(); as file) {
+                <span class="inline-flex items-center gap-2 text-sm text-ink-on-dark">
+                  <i class="md md-movie text-accent"></i>
+                  {{ file.name }}
+                  <button
+                    type="button"
+                    class="text-ink-muted-on-dark hover:text-danger"
+                    [attr.aria-label]="'VIDEOMACHINE.REMOVE' | translate"
+                    (click)="clearVideoFile()"
+                  >
+                    <i class="md md-close"></i>
+                  </button>
+                </span>
+              }
+            </div>
+            <small class="text-ink-muted-on-dark">{{ 'VIDEOMACHINE.UPLOAD_HINT' | translate }}</small>
+          </div>
+
+          <!-- URL (casilla aparte) -->
+          <div class="flex flex-col gap-2">
+            <label for="vmVideoUrl" class="text-xs font-bold text-ink-on-dark">
+              {{ 'VIDEOMACHINE.URL_LABEL' | translate }}
+            </label>
+            <input
+              pInputText
+              id="vmVideoUrl"
+              type="url"
+              class="w-full"
+              [ngModel]="videoUrl()"
+              (ngModelChange)="onUrlInput($event)"
+              [ngModelOptions]="{ standalone: true }"
+              [placeholder]="'VIDEOMACHINE.URL_PLACEHOLDER' | translate"
+            />
+            <small class="text-ink-muted-on-dark">{{ 'VIDEOMACHINE.URL_HINT' | translate }}</small>
+          </div>
+        </div>
+
+        <div class="flex max-w-md flex-col gap-2">
+          <label for="vmBrain" class="text-xs font-bold text-ink-on-dark">
+            {{ 'VIDEOMACHINE.BRAIN_LABEL' | translate }}
+          </label>
+          <app-model-select
+            inputId="vmBrain"
+            modality="text"
+            [names]="brainNames()"
+            [autoLabel]="'VIDEOMACHINE.BRAIN_AUTO' | translate"
+            [tooltip]="'VIDEOMACHINE.BRAIN_TOOLTIP' | translate"
+            [filter]="true"
+            [ngModel]="brainModel()"
+            (ngModelChange)="brainModel.set($event)"
+            [ngModelOptions]="{ standalone: true }"
+            class="block w-full"
+          />
+        </div>
+
+        <div class="flex flex-wrap items-center gap-4 border-t border-surface-border pt-5">
+          <p-button
+            [label]="(analyzing() ? 'VIDEOMACHINE.ANALYZING' : 'VIDEOMACHINE.ANALYZE') | translate"
+            icon="md md-play_arrow"
+            [loading]="analyzing()"
+            [disabled]="!canAnalyze()"
+            (onClick)="analyze()"
+          />
+          @if (analyzing()) {
+            <small class="text-ink-muted-on-dark" aria-live="polite">
+              {{ 'VIDEOMACHINE.ANALYZING_HINT' | translate }}
+            </small>
+          }
+        </div>
+      }
+      </div>
+    </p-card>
+  }
+
+  <!-- ───────────── Paso 2: desglose + insumos ───────────── -->
+  @if (step() === 2) {
+    <div class="grid gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+      <!-- Desglose -->
+      <p-card styleClass="phase-card">
+        <ng-template #header>
+          <div class="flex flex-wrap items-center gap-3 border-b border-surface-border px-6 py-4">
+            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
+              <i class="md md-edit_note text-lg text-accent"></i>
+            </div>
+            <div>
+              <h2 class="text-lg font-bold text-ink-on-dark">
+                {{ 'VIDEOMACHINE.BREAKDOWN_TITLE' | translate }}
+              </h2>
+              <p class="text-sm text-ink-muted-on-dark">
+                {{ 'VIDEOMACHINE.BREAKDOWN_SUBTITLE' | translate }}
+              </p>
+            </div>
+            @if (analysis()?.cached) {
+              <p-tag
+                styleClass="ml-auto"
+                severity="info"
+                [value]="'VIDEOMACHINE.CACHED' | translate"
+              />
+            }
+          </div>
+        </ng-template>
+
+        <div class="flex min-w-0 flex-col gap-5">
+        @if (analysis(); as a) {
+          @if (breakdown(); as b) {
+            @if (b.summary) {
+              <p class="text-sm text-ink-on-dark">{{ b.summary }}</p>
+            }
+            <div class="flex flex-wrap gap-2">
+              @if (b.video_type) {
+                <p-tag [value]="b.video_type" />
+              }
+              <p-tag severity="secondary" [value]="a.meta.duration_sec + ' s'" />
+              <p-tag severity="secondary" [value]="a.meta.aspect_ratio" />
+              <p-tag
+                severity="secondary"
+                [value]="a.meta.cuts_count + ' ' + ('VIDEOMACHINE.CUTS' | translate)"
+              />
+              <p-tag severity="secondary" [value]="a.meta.width + '×' + a.meta.height + ' · ' + a.meta.fps + ' fps'" />
+            </div>
+
+            <dl class="grid gap-3 text-sm sm:grid-cols-2">
+              @if (b.pacing) {
+                <div>
+                  <dt class="text-xs font-bold text-ink-muted-on-dark">{{ 'VIDEOMACHINE.PACING' | translate }}</dt>
+                  <dd class="text-ink-on-dark">{{ b.pacing }}</dd>
+                </div>
+              }
+              @if (b.hook) {
+                <div>
+                  <dt class="text-xs font-bold text-ink-muted-on-dark">{{ 'VIDEOMACHINE.HOOK' | translate }}</dt>
+                  <dd class="text-ink-on-dark">{{ b.hook }}</dd>
+                </div>
+              }
+              <div>
+                <dt class="text-xs font-bold text-ink-muted-on-dark">{{ 'VIDEOMACHINE.PERSON' | translate }}</dt>
+                <dd class="text-ink-on-dark">
+                  {{ b.has_person ? (b.person?.description || ('VIDEOMACHINE.YES' | translate)) : ('VIDEOMACHINE.NO' | translate) }}
+                </dd>
+              </div>
+              <div>
+                <dt class="text-xs font-bold text-ink-muted-on-dark">{{ 'VIDEOMACHINE.MOTION' | translate }}</dt>
+                <dd class="text-ink-on-dark">
+                  {{ b.has_motion_graphics ? (b.motion_graphics || ('VIDEOMACHINE.YES' | translate)) : ('VIDEOMACHINE.NO' | translate) }}
+                </dd>
+              </div>
+              @if (b.animation_style) {
+                <div>
+                  <dt class="text-xs font-bold text-ink-muted-on-dark">{{ 'VIDEOMACHINE.ANIMATION' | translate }}</dt>
+                  <dd class="text-ink-on-dark">{{ b.animation_style }}</dd>
+                </div>
+              }
+              @if (b.setting_and_lighting) {
+                <div>
+                  <dt class="text-xs font-bold text-ink-muted-on-dark">{{ 'VIDEOMACHINE.SETTING' | translate }}</dt>
+                  <dd class="text-ink-on-dark">{{ b.setting_and_lighting }}</dd>
+                </div>
+              }
+              @if (b.product_presentation) {
+                <div>
+                  <dt class="text-xs font-bold text-ink-muted-on-dark">{{ 'VIDEOMACHINE.PRODUCT_PRESENTATION' | translate }}</dt>
+                  <dd class="text-ink-on-dark">{{ b.product_presentation }}</dd>
+                </div>
+              }
+              <div>
+                <dt class="text-xs font-bold text-ink-muted-on-dark">{{ 'VIDEOMACHINE.MUSIC' | translate }}</dt>
+                <dd class="text-ink-on-dark">
+                  {{ b.music?.present ? (b.music.description || b.music.genre) : ('VIDEOMACHINE.NO' | translate) }}
+                </dd>
+              </div>
+              <div>
+                <dt class="text-xs font-bold text-ink-muted-on-dark">{{ 'VIDEOMACHINE.VOICEOVER' | translate }}</dt>
+                <dd class="text-ink-on-dark">
+                  {{ b.voiceover?.present ? (b.voiceover.transcript || b.voiceover.tone) : ('VIDEOMACHINE.NO' | translate) }}
+                </dd>
+              </div>
+              @if (b.call_to_action) {
+                <div>
+                  <dt class="text-xs font-bold text-ink-muted-on-dark">{{ 'VIDEOMACHINE.CTA' | translate }}</dt>
+                  <dd class="text-ink-on-dark">{{ b.call_to_action }}</dd>
+                </div>
+              }
+            </dl>
+
+            @if (b.shots?.length) {
+              <div class="overflow-x-auto">
+                <table class="w-full min-w-[32rem] text-left text-sm">
+                  <caption class="pb-2 text-left font-bold text-ink-on-dark">
+                    {{ 'VIDEOMACHINE.SHOTS' | translate }}
+                  </caption>
+                  <thead class="text-xs text-ink-muted-on-dark">
+                    <tr>
+                      <th scope="col" class="py-1 pr-3">#</th>
+                      <th scope="col" class="py-1 pr-3">{{ 'VIDEOMACHINE.COL_TIME' | translate }}</th>
+                      <th scope="col" class="py-1 pr-3">{{ 'VIDEOMACHINE.COL_SHOT' | translate }}</th>
+                      <th scope="col" class="py-1">{{ 'VIDEOMACHINE.COL_DESCRIPTION' | translate }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (shot of b.shots; track shot.index) {
+                      <tr class="border-t border-surface-border align-top">
+                        <td class="py-2 pr-3 text-ink-muted-on-dark">{{ shot.index }}</td>
+                        <td class="whitespace-nowrap py-2 pr-3">{{ shot.start }}–{{ shot.end }} s</td>
+                        <td class="py-2 pr-3">
+                          {{ shot.shot_type }}
+                          @if (shot.camera_movement) {
+                            <span class="text-ink-muted-on-dark"> · {{ shot.camera_movement }}</span>
+                          }
+                        </td>
+                        <td class="py-2 text-ink-muted-on-dark">{{ shot.description }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+
+            @if (b.on_screen_text?.length) {
+              <div class="text-sm">
+                <h3 class="font-bold text-ink-on-dark">{{ 'VIDEOMACHINE.TEXT_ON_SCREEN' | translate }}</h3>
+                <ul class="mt-1 list-disc pl-5 text-ink-muted-on-dark">
+                  @for (t of b.on_screen_text; track $index) {
+                    <li>{{ t.time }} · “{{ t.text }}” — {{ t.style }}</li>
+                  }
+                </ul>
+              </div>
+            }
+
+            @if (b.replication_notes?.length) {
+              <div class="text-sm">
+                <h3 class="font-bold text-ink-on-dark">{{ 'VIDEOMACHINE.REPLICATION_NOTES' | translate }}</h3>
+                <ul class="mt-1 list-disc pl-5 text-ink-muted-on-dark">
+                  @for (n of b.replication_notes; track $index) {
+                    <li>{{ n }}</li>
+                  }
+                </ul>
+              </div>
+            }
+          }
+        } @else {
+          <p class="text-sm text-ink-muted-on-dark">{{ 'VIDEOMACHINE.FORMAT_MODE_HINT' | translate }}</p>
+        }
+
+        <div class="flex flex-col gap-2 border-t border-surface-border pt-5">
+          <label for="vmNotes" class="text-xs font-bold text-ink-on-dark">
+            {{ 'VIDEOMACHINE.NOTES_LABEL' | translate }}
+          </label>
+          <textarea
+            pTextarea
+            id="vmNotes"
+            rows="3"
+            class="w-full"
+            [ngModel]="notes()"
+            (ngModelChange)="notes.set($event)"
+            [ngModelOptions]="{ standalone: true }"
+            [placeholder]="'VIDEOMACHINE.NOTES_PLACEHOLDER' | translate"
+          ></textarea>
+        </div>
+        </div>
+      </p-card>
+
+      <!-- Insumos -->
+      <p-card styleClass="phase-card">
+        <ng-template #header>
+          <div class="flex flex-wrap items-center gap-3 border-b border-surface-border px-6 py-4">
+            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
+              <i class="md md-inventory_2 text-lg text-accent"></i>
+            </div>
+            <div>
+              <h2 class="text-lg font-bold text-ink-on-dark">
+                {{ 'VIDEOMACHINE.INPUTS_TITLE' | translate }}
+              </h2>
+              <p class="text-sm text-ink-muted-on-dark">
+                {{ 'VIDEOMACHINE.INPUTS_SUBTITLE' | translate }}
+              </p>
+            </div>
+          </div>
+        </ng-template>
+
+        <div class="flex min-w-0 flex-col gap-5">
+
+        <div class="flex flex-col gap-2">
+          <label
+            for="vmInputs"
+            class="inline-flex w-fit cursor-pointer items-center gap-2 rounded-xl border border-surface-border bg-surface-2 px-4 py-2.5 text-xs font-bold text-ink-on-dark transition-colors hover:border-accent active:scale-[0.98]"
+          >
+            <i class="md md-attach_file text-accent"></i>
+            {{ (uploading() ? 'VIDEOMACHINE.UPLOADING' : 'VIDEOMACHINE.ATTACH') | translate }}
+          </label>
+          <input
+            id="vmInputs"
+            type="file"
+            class="sr-only"
+            multiple
+            accept="image/png,image/jpeg,image/webp,audio/*,.mp3,.wav,.flac,.m4a,.aac,.ogg"
+            [disabled]="uploading()"
+            (change)="onInputsPicked($event)"
+          />
+          <small class="text-ink-muted-on-dark">{{ 'VIDEOMACHINE.ATTACH_HINT' | translate }}</small>
+        </div>
+
+        @if (attachments().length > 0) {
+          <ul class="grid grid-cols-3 gap-3">
+            @for (item of attachments(); track item.id) {
+              <li class="relative flex flex-col gap-1 rounded-xl border border-surface-border bg-surface-2 p-2">
+                @if (item.kind === 'image') {
+                  <img [src]="item.url" [alt]="item.name" class="aspect-square w-full rounded-lg object-cover" />
+                } @else {
+                  <div class="flex aspect-square w-full items-center justify-center rounded-lg bg-surface text-xs font-bold text-ink-on-dark">
+                    {{ 'VIDEOMACHINE.AUDIO' | translate }}
+                  </div>
+                }
+                <span class="truncate text-xs text-ink-muted-on-dark" [title]="item.name">{{ item.name }}</span>
+                @if (item.kind === 'image') {
+                  <p-select
+                    [options]="roleOptions()"
+                    optionLabel="label"
+                    optionValue="value"
+                    [ngModel]="item.role ?? 'product'"
+                    (ngModelChange)="setAttachmentRole(item.id, $event)"
+                    [ngModelOptions]="{ standalone: true }"
+                    [ariaLabel]="'VIDEOMACHINE.ROLE_ARIA' | translate: { name: item.name }"
+                    styleClass="w-full"
+                    appendTo="body"
+                  />
+                }
+                <button
+                  type="button"
+                  class="absolute right-1 top-1 rounded-full bg-surface p-1 text-ink-on-dark hover:text-danger"
+                  [attr.aria-label]="'VIDEOMACHINE.REMOVE' | translate"
+                  (click)="removeAttachment(item.id)"
+                >
+                  <i class="md md-close"></i>
+                </button>
+              </li>
+            }
+          </ul>
+        }
+
+        <div class="grid gap-5 sm:grid-cols-2">
+          <div class="flex min-w-0 flex-col gap-2">
+            <label for="vmBrainCompose" class="text-xs font-bold text-ink-on-dark">
+              {{ 'VIDEOMACHINE.BRAIN_COMPOSE_LABEL' | translate }}
+            </label>
+            <app-model-select
+              inputId="vmBrainCompose"
+              modality="text"
+              [names]="brainNames()"
+              [autoLabel]="'VIDEOMACHINE.BRAIN_AUTO' | translate"
+              [tooltip]="'VIDEOMACHINE.BRAIN_COMPOSE_TOOLTIP' | translate"
+              [filter]="true"
+              [ngModel]="brainModel()"
+              (ngModelChange)="brainModel.set($event)"
+              [ngModelOptions]="{ standalone: true }"
+              class="block w-full"
+            />
+          </div>
+
+          <div class="flex min-w-0 flex-col gap-2">
+            <label for="vmVideoModel" class="text-xs font-bold text-ink-on-dark">
+              {{ 'VIDEOMACHINE.VIDEO_MODEL_LABEL' | translate }}
+            </label>
+            <app-model-select
+              inputId="vmVideoModel"
+              modality="video"
+              [requiresReferences]="true"
+              [showBadges]="true"
+              [filter]="true"
+              [autoSelect]="false"
+              [placeholder]="'VIDEOMACHINE.VIDEO_MODEL_PLACEHOLDER' | translate"
+              (selectionChange)="onVideoModelChange($event)"
+              [ngModel]="videoModel()?.name ?? ''"
+              [ngModelOptions]="{ standalone: true }"
+              class="block w-full"
+            />
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3 border-t border-surface-border pt-5">
+          <p-button
+            [label]="(composing() ? 'VIDEOMACHINE.COMPOSING' : 'VIDEOMACHINE.COMPOSE') | translate"
+            icon="md md-check"
+            [loading]="composing()"
+            [disabled]="!canCompose()"
+            (onClick)="compose()"
+          />
+          <p-button
+            [label]="'VIDEOMACHINE.BACK' | translate"
+            severity="secondary"
+            [text]="true"
+            icon="md md-arrow_back"
+            (onClick)="goTo(1)"
+          />
+        </div>
+        @if (images().length === 0) {
+          <small class="text-ink-muted-on-dark">{{ 'VIDEOMACHINE.NEED_IMAGE' | translate }}</small>
+        }
+        </div>
+      </p-card>
+    </div>
+  }
+
+  <!-- ───────────── Paso 3: prompt y ajustes ───────────── -->
+  @if (step() === 3) {
+    @if (result(); as vp) {
+      <p-card styleClass="phase-card">
+        <ng-template #header>
+          <div class="flex flex-wrap items-center gap-3 border-b border-surface-border px-6 py-4">
+            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
+              <i class="md md-check text-lg text-accent"></i>
+            </div>
+            <div>
+              <h2 class="text-lg font-bold text-ink-on-dark">
+                {{ 'VIDEOMACHINE.RESULT_TITLE' | translate }}
+              </h2>
+              <p class="text-sm text-ink-muted-on-dark">
+                {{ 'VIDEOMACHINE.RESULT_SUBTITLE' | translate }}
+              </p>
+            </div>
+            <p-tag
+              styleClass="ml-auto"
+              severity="secondary"
+              [value]="videoModel()?.display_name || vp.model"
+            />
+          </div>
+        </ng-template>
+
+        <div class="flex flex-col gap-5">
+
+        @if (vp.segments.length > 1) {
+          <p-message
+            severity="info"
+            [text]="'VIDEOMACHINE.SEGMENTS_NOTICE' | translate: { count: vp.segments.length }"
+            styleClass="w-full"
+          />
+        }
+        @for (w of vp.warnings; track $index) {
+          <p-message severity="warn" [text]="w" styleClass="w-full" />
+        }
+
+        <!-- Ajustes -->
+        <div class="flex flex-wrap items-end gap-4">
+          <div class="flex flex-col gap-1">
+            <label for="vmResolution" class="text-xs font-bold text-ink-on-dark">
+              {{ 'VIDEOMACHINE.RESOLUTION' | translate }}
+            </label>
+            <p-select
+              inputId="vmResolution"
+              [options]="resolutionOptions()"
+              optionLabel="label"
+              optionValue="value"
+              [ngModel]="resolution()"
+              (ngModelChange)="resolution.set($event)"
+              [ngModelOptions]="{ standalone: true }"
+              appendTo="body"
+            />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label for="vmRatio" class="text-xs font-bold text-ink-on-dark">
+              {{ 'VIDEOMACHINE.RATIO' | translate }}
+            </label>
+            <p-select
+              inputId="vmRatio"
+              [options]="ratioOptions()"
+              optionLabel="label"
+              optionValue="value"
+              [ngModel]="ratio()"
+              (ngModelChange)="ratio.set($event)"
+              [ngModelOptions]="{ standalone: true }"
+              appendTo="body"
+            />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label for="vmAudio" class="text-xs font-bold text-ink-on-dark">
+              {{ 'VIDEOMACHINE.AUDIO_TOGGLE' | translate }}
+            </label>
+            <p-toggleswitch
+              inputId="vmAudio"
+              [ngModel]="audio()"
+              (ngModelChange)="audio.set($event)"
+              [ngModelOptions]="{ standalone: true }"
+              [disabled]="!supportsAudio()"
+            />
+          </div>
+        </div>
+
+        <!-- Ingredientes -->
+        <div class="flex flex-col gap-2">
+          <h3 class="text-xs font-bold text-ink-on-dark">{{ 'VIDEOMACHINE.INGREDIENTS' | translate }}</h3>
+          <ul class="flex flex-wrap gap-3">
+            @for (ing of vp.ingredients; track ing.file_id) {
+              <li class="flex items-center gap-2 rounded-xl border border-surface-border bg-surface-2 p-2">
+                <img [src]="ingredientThumb(ing.file_id)" [alt]="ing.tag" class="h-12 w-12 rounded-lg object-cover" />
+                <div class="text-xs">
+                  <div class="font-bold text-ink-on-dark">
+                    <span class="rounded bg-accent px-1.5 py-0.5 text-[11px] text-on-accent">{{ ing.tag }}</span>
+                  </div>
+                  <div class="max-w-40 text-ink-muted-on-dark">{{ ing.role }}</div>
+                </div>
+              </li>
+            }
+            @for (ref of vp.audio_refs; track ref.file_id) {
+              <li class="flex items-center gap-2 rounded-xl border border-surface-border bg-surface-2 p-2 text-xs">
+                <div>
+                  <div class="font-bold text-ink-on-dark">
+                    <span class="rounded bg-accent px-1.5 py-0.5 text-[11px] text-on-accent">{{ ref.tag }}</span>
+                    <span class="text-ink-muted-on-dark"> · {{ ref.kind }}</span>
+                  </div>
+                  <div class="max-w-40 text-ink-muted-on-dark">{{ ref.note }}</div>
+                </div>
+              </li>
+            }
+          </ul>
+          <small class="text-ink-muted-on-dark">{{ 'VIDEOMACHINE.REF_TAG_HINT' | translate }}</small>
+        </div>
+
+        <!-- Segmentos / prompt -->
+        <div class="flex flex-col gap-4">
+          @for (segment of vp.segments; track segment.index; let i = $index) {
+            <article class="flex flex-col gap-2 rounded-xl border border-surface-border bg-surface-2 p-4">
+              <div class="flex flex-wrap items-center gap-3">
+                <h3 class="text-sm font-bold text-ink-on-dark">
+                  @if (vp.segments.length > 1) {
+                    {{ 'VIDEOMACHINE.SEGMENT' | translate: { n: segment.index } }}
+                    <span class="font-normal text-ink-muted-on-dark">· {{ segment.start }}–{{ segment.end }} s</span>
+                  } @else {
+                    {{ 'VIDEOMACHINE.PROMPT_LABEL' | translate }}
+                  }
+                </h3>
+                <label class="ml-auto flex items-center gap-2 text-xs text-ink-muted-on-dark" [for]="'vmDur' + i">
+                  {{ 'VIDEOMACHINE.DURATION_S' | translate }}
+                  <input
+                    pInputText
+                    [id]="'vmDur' + i"
+                    type="number"
+                    min="1"
+                    class="w-20"
+                    [ngModel]="segmentDurations()[i]"
+                    (ngModelChange)="setSegmentDuration(i, $event)"
+                    [ngModelOptions]="{ standalone: true }"
+                  />
+                </label>
+              </div>
+              <textarea
+                pTextarea
+                rows="8"
+                class="w-full"
+                [attr.aria-label]="'VIDEOMACHINE.PROMPT_LABEL' | translate"
+                [ngModel]="segmentPrompts()[i]"
+                (ngModelChange)="setSegmentPrompt(i, $event)"
+                [ngModelOptions]="{ standalone: true }"
+              ></textarea>
+              <div class="flex flex-wrap items-center gap-3">
+                <p-button
+                  [label]="'VIDEOMACHINE.GEN_ONE' | translate"
+                  icon="md md-play_arrow"
+                  (onClick)="generateSegment(i)"
+                />
+                @if (launched().has(i)) {
+                  <small class="text-success" aria-live="polite">{{ 'VIDEOMACHINE.LAUNCHED' | translate }}</small>
+                }
+              </div>
+            </article>
+          }
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3">
+          @if (vp.segments.length > 1) {
+            <p-button
+              [label]="'VIDEOMACHINE.GEN_ALL' | translate: { count: vp.segments.length }"
+              icon="md md-play_arrow"
+              (onClick)="generateAll()"
+            />
+          }
+          <p-button
+            [label]="'VIDEOMACHINE.BACK' | translate"
+            severity="secondary"
+            [text]="true"
+            icon="md md-arrow_back"
+            (onClick)="goTo(2)"
+          />
+          <p-button
+            [label]="'VIDEOMACHINE.RESTART' | translate"
+            severity="secondary"
+            [text]="true"
+            icon="md md-refresh"
+            (onClick)="restart()"
+          />
+        </div>
+        </div>
+      </p-card>
+    }
+  }
+</div>

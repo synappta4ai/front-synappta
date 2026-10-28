@@ -1,0 +1,95 @@
+@if (loading()) {
+  <p class="muted small">{{ 'SHARED.MODEL_SELECT_LOADING' | translate }}</p>
+} @else if (failed()) {
+  <p class="muted small">{{ 'SHARED.MODEL_SELECT_ERROR' | translate }}</p>
+} @else if (empty()) {
+  <p class="muted small">{{ 'SHARED.MODEL_SELECT_EMPTY' | translate }}</p>
+} @else {
+  <p-select
+    [inputId]="inputId()"
+    [formControl]="control"
+    [options]="filtered()"
+    optionLabel="display_name"
+    optionValue="name"
+    [placeholder]="placeholder() ?? ('SHARED.MODEL_SELECT_PLACEHOLDER' | translate)"
+    [showClear]="false"
+    [filter]="showFilter()"
+    filterBy="display_name,name"
+    [filterPlaceholder]="'SHARED.MODEL_FILTER_PLACEHOLDER' | translate"
+    [pTooltip]="tooltip() ?? ''"
+    [tooltipDisabled]="!tooltip()"
+    tooltipPosition="top"
+    showDelay="400"
+    class="w-full"
+    appendTo="body"
+  >
+    <ng-template #selectedItem let-m>
+      <span class="flex min-w-0 items-center gap-2">
+        <span class="truncate">{{ m.display_name ?? m.name }}</span>
+        @if (m.name) {
+          <p-tag
+            [value]="('SHARED.MODALITY_' + m.modality.toUpperCase()) | translate"
+            severity="secondary"
+            styleClass="text-xs shrink-0"
+          />
+        }
+        @if (m.credential_provider) {
+          <p-tag
+            [value]="providerTag(m.credential_provider)"
+            [severity]="isLocalProvider(m.credential_provider) ? 'success' : 'info'"
+            styleClass="text-xs shrink-0"
+          />
+        }
+      </span>
+    </ng-template>
+    <ng-template #item let-m>
+      <div class="flex items-center justify-between gap-2 w-full">
+        <div class="min-w-0">
+          <p class="font-bold truncate">{{ m.display_name ?? m.name }}</p>
+          @if (m.name) {
+            <p class="text-xs opacity-60 truncate">{{ m.name }}</p>
+          }
+        </div>
+        <div class="flex items-center gap-1 shrink-0">
+          @if (m.name) {
+            <p-tag
+              [value]="('SHARED.MODALITY_' + m.modality.toUpperCase()) | translate"
+              severity="secondary"
+              styleClass="text-xs"
+            />
+          }
+          @if (m.favorite) {
+            <p-tag
+              icon="md md-star"
+              [value]="'SHARED.MODEL_FAVORITE' | translate"
+              severity="warn"
+              styleClass="text-xs"
+            />
+          }
+          @if (m.recommended) {
+            <p-tag
+              [value]="recommendTag(m) ?? ('SHARED.MODEL_RECOMMENDED' | translate)"
+              severity="success"
+              styleClass="text-xs"
+            />
+          }
+          @if (showBadges() && isDownloaded(m) && workerLabel(); as badge) {
+            <p-tag [value]="badge" severity="success" styleClass="text-xs" />
+            @if (vramGb(m); as vram) {
+              <p-tag [value]="vram + ' GB'" severity="secondary" styleClass="text-xs" />
+            }
+          } @else if (m.credential_provider) {
+            <p-tag
+              [value]="providerTag(m.credential_provider)"
+              [severity]="isLocalProvider(m.credential_provider) ? 'success' : 'info'"
+              styleClass="text-xs shrink-0"
+            />
+          }
+          @if (showBadges() && isUnavailable(m) && unavailableLabel(); as unavailable) {
+            <p-tag [value]="unavailable" severity="danger" styleClass="text-xs" />
+          }
+        </div>
+      </div>
+    </ng-template>
+  </p-select>
+}

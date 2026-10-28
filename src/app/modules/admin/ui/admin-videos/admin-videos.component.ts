@@ -1,7 +1,16 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { catchError, EMPTY, finalize } from 'rxjs';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { catchError, EMPTY, finalize, tap } from 'rxjs';
 
 import { Button } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
@@ -10,11 +19,14 @@ import { Tag } from 'primeng/tag';
 import { Message } from 'primeng/message';
 import { Dialog } from 'primeng/dialog';
 import { Tooltip } from 'primeng/tooltip';
+import { ProgressSpinner } from 'primeng/progressspinner';
 
 import { UserSessionStore } from '@core/store/user.session';
 import { AdminService } from '../../services/admin.service';
-import { GeneratedVideo } from '../../interfaces';
+import { AdminTenantService } from '../../services/admin-tenant.service';
+import { GeneratedVideo, WorkerArtifact } from '../../interfaces';
 import { ServerUrlPipe } from '@pipes/server-url.pipe';
+import { formatDurationValue } from '@pipes/format-duration.pipe';
 import { TiltDirective } from '@shared/components/tilt/tilt.directive';
 
 @Component({
@@ -29,20 +41,27 @@ import { TiltDirective } from '@shared/components/tilt/tilt.directive';
     Tag,
     Message,
     Dialog,
+    ProgressSpinner,
     Tooltip,
     ServerUrlPipe,
     TiltDirective,
+    TranslatePipe,
   ],
   templateUrl: './admin-videos.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AdminVideosComponent {
   private readonly adminService = inject(AdminService);
+  private readonly adminTenants = inject(AdminTenantService);
   private readonly sessionStore = inject(UserSessionStore);
+  private readonly translate = inject(TranslateService);
 
   protected readonly isSuperadmin = computed(
     () => this.sessionStore.currentUser()?.role_level === 0,
   );
+
+  /** Tenant elegido en la consola: sus videos son los que se listan. */
+  protected readonly tenantSlug = computed(() => this.adminTenants.selectedTenant()?.slug ?? null);
 
   protected readonly videos = signal<GeneratedVideo[]>([]);
   protected readonly loading = signal(false);
@@ -55,18 +74,34 @@ export class AdminVideosComponent {
   protected readonly selected = signal<GeneratedVideo | null>(null);
   protected readonly playerVisible = signal(false);
 
+  /** Id de la generación en tránsito a la papelera. */
+  protected readonly trashBusy = signal<string | null>(null);
+
+  // ─── Worker artifacts ─────────────────────────────────────────────
+  protected readonly workerArtifacts = signal<WorkerArtifact[]>([]);
+  protected readonly loadingArtifacts = signal(false);
+  protected readonly deletingArtifact = signal<Record<string, boolean>>({});
+
   constructor() {
-    this.load();
+    // Carga inicial y recarga al cambiar el tenant en el header de la consola.
+    effect(() => {
+      this.tenantSlug();
+      untracked(() => {
+        this.page.set(1);
+        this.load();
+      });
+    });
+    this.loadWorkerArtifacts();
   }
 
   protected load(): void {
     this.loading.set(true);
     this.error.set(null);
     this.adminService
-      .listGeneratedVideos(this.page(), this.limit)
+      .listGeneratedVideos(this.page(), this.limit, undefined, this.tenantSlug() ?? undefined)
       .pipe(
         catchError(() => {
-          this.error.set('No se pudieron cargar los videos generados.');
+          this.error.set(this.translate.instant('ADMIN.VIDEOS.ERRORS.LOAD'));
           return EMPTY;
         }),
         finalize(() => this.loading.set(false)),
@@ -111,6 +146,25 @@ export class AdminVideosComponent {
     this.playerVisible.set(true);
   }
 
+  /** Manda el video a la papelera (recuperable 30 días). */
+  protected trashVideo(video: GeneratedVideo, event: Event): void {
+    event.stopPropagation();
+    if (this.trashBusy()) return;
+    this.trashBusy.set(video.id);
+    this.error.set(null);
+    this.adminService.trashGenerationLog(video.id, this.tenantSlug() ?? undefined).subscribe({
+      next: () => {
+        this.trashBusy.set(null);
+        this.videos.update((list) => list.filter((v) => v.id !== video.id));
+        this.total.update((t) => Math.max(0, t - 1));
+      },
+      error: () => {
+        this.trashBusy.set(null);
+        this.error.set(this.translate.instant('ADMIN.VIDEOS.ERRORS.TRASH'));
+      },
+    });
+  }
+
   /** First video output URL (server-relative), resolved by serverUrl pipe in template. */
   protected outputUrl(video: GeneratedVideo): string {
     const out = video.outputs?.find((o) => o.type === 'video') ?? video.outputs?.[0];
@@ -118,10 +172,60 @@ export class AdminVideosComponent {
   }
 
   protected formatDuration(seconds: number): string {
-    if (!seconds || seconds <= 0) return '—';
-    if (seconds < 60) return `${seconds}s`;
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}m ${s}s`;
+    return formatDurationValue(seconds, 's');
+  }
+
+  // ─── Worker artifacts ─────────────────────────────────────────────
+
+  protected loadWorkerArtifacts(): void {
+    this.loadingArtifacts.set(true);
+    this.adminService
+      .listWorkerArtifacts()
+      .pipe(
+        catchError(() => {
+          this.error.set(this.translate.instant('ADMIN.VIDEOS.ERRORS.LOAD_ARTIFACTS'));
+          return EMPTY;
+        }),
+        finalize(() => this.loadingArtifacts.set(false)),
+      )
+      .subscribe((artifacts) => this.workerArtifacts.set(artifacts ?? []));
+  }
+
+  protected isDeletingArtifact(name: string): boolean {
+    return !!this.deletingArtifact()[name];
+  }
+
+  protected deleteWorkerArtifact(name: string): void {
+    this.deletingArtifact.update((d) => ({ ...d, [name]: true }));
+    this.error.set(null);
+    this.adminService
+      .deleteWorkerArtifact(name)
+      .pipe(
+        tap(() => this.loadWorkerArtifacts()),
+        catchError((err: unknown) => {
+          const msg =
+            err && typeof err === 'object' && 'message' in err
+              ? String((err as { message?: unknown }).message)
+              : null;
+          this.error.set(msg || this.translate.instant('ADMIN.VIDEOS.ERRORS.DELETE_ARTIFACT'));
+          return EMPTY;
+        }),
+        finalize(() => {
+          this.deletingArtifact.update((d) => {
+            const { [name]: _removed, ...rest } = d;
+            return rest;
+          });
+        }),
+      )
+      .subscribe();
+  }
+
+  /** Formatea bytes para mostrar en la UI. */
+  protected formatBytes(bytes: number): string {
+    if (!bytes) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   }
 }

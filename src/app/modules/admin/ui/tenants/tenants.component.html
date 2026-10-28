@@ -1,4 +1,4 @@
-<app-page-container title="Gestión de Tenants" animate.enter="anim-page">
+<app-page-container [title]="'ADMIN.TENANTS.TITLE' | translate" animate.enter="anim-page">
   @if (error(); as message) {
     <div class="mb-6">
       <p-message severity="error" [text]="message" [escape]="false" styleClass="w-full" />
@@ -18,7 +18,7 @@
       </div>
       <div>
         <p class="text-2xl font-bold text-ink-on-dark" [appCountUp]="tenants().length"></p>
-        <p class="text-sm text-ink-muted-on-dark">Total Tenants</p>
+        <p class="text-sm text-ink-muted-on-dark">{{ 'ADMIN.TENANTS.STAT_TOTAL' | translate }}</p>
       </div>
     </div>
     <div
@@ -34,7 +34,7 @@
           class="text-2xl font-bold text-ink-on-dark"
           [appCountUp]="tenants().filter((t) => t.active).length"
         ></p>
-        <p class="text-sm text-ink-muted-on-dark">Activos</p>
+        <p class="text-sm text-ink-muted-on-dark">{{ 'ADMIN.TENANTS.STAT_ACTIVE' | translate }}</p>
       </div>
     </div>
     <div
@@ -50,7 +50,9 @@
           class="text-2xl font-bold text-ink-on-dark"
           [appCountUp]="tenants().filter((t) => !t.active).length"
         ></p>
-        <p class="text-sm text-ink-muted-on-dark">Inactivos</p>
+        <p class="text-sm text-ink-muted-on-dark">
+          {{ 'ADMIN.TENANTS.STAT_INACTIVE' | translate }}
+        </p>
       </div>
     </div>
   </div>
@@ -62,7 +64,9 @@
         <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
           <i class="md md-add_circle text-lg text-accent"></i>
         </div>
-        <h2 class="text-lg font-bold text-ink-on-dark">Crear Nuevo Tenant</h2>
+        <h2 class="text-lg font-bold text-ink-on-dark">
+          {{ 'ADMIN.TENANTS.CREATE_TITLE' | translate }}
+        </h2>
       </div>
     </ng-template>
 
@@ -74,35 +78,40 @@
     >
       <div class="flex flex-1 flex-col gap-2">
         <label for="tenant-name" class="text-xs font-bold text-ink-on-dark">
-          Nombre <span class="text-danger">*</span>
+          {{ 'ADMIN.TENANTS.NAME_LABEL' | translate }} <span class="text-danger">*</span>
         </label>
         <input
           pInputText
           id="tenant-name"
           type="text"
+          name="organization"
+          autocomplete="organization"
           formControlName="name"
-          placeholder="Ej: Empresa XYZ"
+          [placeholder]="'ADMIN.TENANTS.NAME_PLACEHOLDER' | translate"
           class="w-full"
         />
-        <small class="text-ink-muted-on-dark">Nombre descriptivo del tenant</small>
+        <small class="text-ink-muted-on-dark">{{ 'ADMIN.TENANTS.NAME_HINT' | translate }}</small>
       </div>
       <div class="flex flex-1 flex-col gap-2">
         <label for="tenant-slug" class="text-xs font-bold text-ink-on-dark">
-          Slug <span class="text-danger">*</span>
+          {{ 'ADMIN.TENANTS.SLUG_LABEL' | translate }} <span class="text-danger">*</span>
         </label>
         <input
           pInputText
           id="tenant-slug"
           type="text"
+          name="slug"
+          autocomplete="off"
+          spellcheck="false"
           formControlName="slug"
-          placeholder="Ej: empresa-xyz"
+          [placeholder]="'ADMIN.TENANTS.SLUG_PLACEHOLDER' | translate"
           class="w-full"
         />
-        <small class="text-ink-muted-on-dark">Identificador URL: minúsculas, números, guion o guion bajo (2–55)</small>
+        <small class="text-ink-muted-on-dark">{{ 'ADMIN.TENANTS.SLUG_HINT' | translate }}</small>
       </div>
       <p-button
         type="submit"
-        label="Crear Tenant"
+        [label]="'ADMIN.TENANTS.CREATE_BUTTON' | translate"
         icon="md md-add"
         [loading]="creating()"
         [disabled]="creating()"
@@ -117,7 +126,7 @@
       class="flex flex-col gap-2 rounded-3xl border border-surface-border bg-surface p-6"
       aria-busy="true"
     >
-      <span class="sr-only">Cargando tenants…</span>
+      <span class="sr-only">{{ 'ADMIN.TENANTS.LOADING' | translate }}</span>
       <div class="skel skel-title" aria-hidden="true"></div>
       <div class="skel skel-text" aria-hidden="true"></div>
       <div class="skel skel-text" aria-hidden="true"></div>
@@ -131,10 +140,16 @@
               <i class="md md-list text-lg text-accent"></i>
             </div>
             <div>
-              <h2 class="text-lg font-bold text-ink-on-dark">Lista de Tenants</h2>
+              <h2 class="text-lg font-bold text-ink-on-dark">
+                {{ 'ADMIN.TENANTS.LIST_TITLE' | translate }}
+              </h2>
               <p class="text-sm text-ink-muted-on-dark">
-                {{ tenants().length }} tenants configurados · sus modelos y API keys se gestionan en
-                la pestaña "Modelos"
+                {{
+                  (tenants().length === 1
+                    ? 'ADMIN.TENANTS.LIST_SUBTITLE_SINGULAR'
+                    : 'ADMIN.TENANTS.LIST_SUBTITLE_PLURAL'
+                  ) | translate: { count: tenants().length }
+                }}
               </p>
             </div>
           </div>
@@ -149,11 +164,15 @@
       >
         <ng-template #header>
           <tr>
-            <th style="width: 30%">Nombre</th>
-            <th style="width: 18%">Slug</th>
-            <th style="width: 22%">Creado</th>
-            <th style="width: 12%" class="text-center">Estado</th>
-            <th style="width: 18%" class="text-center">Acciones</th>
+            <th style="width: 30%">{{ 'ADMIN.TENANTS.COL_NAME' | translate }}</th>
+            <th style="width: 18%">{{ 'ADMIN.TENANTS.COL_SLUG' | translate }}</th>
+            <th style="width: 22%">{{ 'ADMIN.TENANTS.COL_CREATED' | translate }}</th>
+            <th style="width: 12%" class="text-center">
+              {{ 'ADMIN.TENANTS.COL_STATUS' | translate }}
+            </th>
+            <th style="width: 18%" class="text-center">
+              {{ 'ADMIN.TENANTS.COL_ACTIONS' | translate }}
+            </th>
           </tr>
         </ng-template>
         <ng-template #body let-tenant let-i="rowIndex">
@@ -184,24 +203,34 @@
             </td>
             <td class="text-center">
               @if (tenant.active) {
-                <p-tag value="Activo" severity="success" />
+                <p-tag [value]="'ADMIN.TENANTS.ACTIVE' | translate" severity="success" />
               } @else {
-                <p-tag value="Inactivo" severity="danger" />
+                <p-tag [value]="'ADMIN.TENANTS.INACTIVE' | translate" severity="danger" />
               }
             </td>
             <td class="text-center">
               <div class="inline-flex items-center gap-1">
                 <p-button
-                  label="Usuarios"
+                  [label]="'ADMIN.TENANTS.USERS' | translate"
                   icon="md md-people"
                   size="small"
                   text
                   [disabled]="!tenant.active"
                   (onClick)="openUsers(tenant)"
                 />
+                <p-button
+                  [label]="'ADMIN.TENANTS.STORAGE' | translate"
+                  icon="md md-storage"
+                  size="small"
+                  text
+                  [pTooltip]="'ADMIN.TENANTS.STORAGE_HINT' | translate"
+                  tooltipPosition="top"
+                  [disabled]="!tenant.active"
+                  (onClick)="openStorage(tenant)"
+                />
                 @if (tenant.active) {
                   <p-button
-                    label="Desactivar"
+                    [label]="'ADMIN.TENANTS.DEACTIVATE' | translate"
                     icon="md md-block"
                     severity="danger"
                     size="small"
@@ -221,9 +250,11 @@
                   <i class="md md-business text-3xl text-ink-muted-on-dark"></i>
                 </div>
                 <div class="text-center">
-                  <p class="font-bold text-ink-on-dark">No hay tenants configurados</p>
+                  <p class="font-bold text-ink-on-dark">
+                    {{ 'ADMIN.TENANTS.EMPTY_TITLE' | translate }}
+                  </p>
                   <p class="mt-1 text-sm text-ink-muted-on-dark">
-                    Crea tu primer tenant para comenzar
+                    {{ 'ADMIN.TENANTS.EMPTY_HINT' | translate }}
                   </p>
                 </div>
               </div>
@@ -239,4 +270,6 @@
     (closed)="closeUsers()"
     (tenantPermissionsChanged)="onTenantPermissionsChanged($event)"
   />
+
+  <app-tenant-storage-dialog [tenant]="storageTenant()" (closed)="closeStorage()" />
 </app-page-container>

@@ -30,6 +30,7 @@ import { FileAsset } from '@modules/library/interfaces';
 import { PageContainerComponent, AssetPickerDialogComponent } from '@shared/components/index';
 import { ServerUrlPipe } from '@pipes/server-url.pipe';
 import { ImgFadeDirective } from '@shared/components/img-fade/img-fade.directive';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-video',
@@ -52,6 +53,7 @@ import { ImgFadeDirective } from '@shared/components/img-fade/img-fade.directive
     ServerUrlPipe,
     AssetPickerDialogComponent,
     ImgFadeDirective,
+    TranslatePipe,
   ],
   templateUrl: './video.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -62,6 +64,7 @@ export class VideoComponent {
   private readonly libraryService = inject(LibraryService);
   private readonly formBuilder = inject(NonNullableFormBuilder);
   private readonly route = inject(ActivatedRoute);
+  private readonly translate = inject(TranslateService);
 
   protected readonly submitting = signal(false);
   protected readonly polling = signal(false);
@@ -179,7 +182,7 @@ export class VideoComponent {
       .uploadFile(file, 'images', project.id)
       .pipe(
         catchError(() => {
-          this.error.set(`No se pudo subir "${file.name}".`);
+          this.error.set(this.translate.instant('VIDEO.ERRORS.UPLOAD_REF', { name: file.name }));
           return EMPTY;
         }),
         finalize(() => {
@@ -221,7 +224,7 @@ export class VideoComponent {
       .listVideoModels()
       .pipe(
         catchError(() => {
-          this.error.set('No se pudieron cargar los modelos de video.');
+          this.error.set(this.translate.instant('VIDEO.ERRORS.LOAD_MODELS'));
           return EMPTY;
         }),
         finalize(() => this.loadingModels.set(false)),
@@ -236,7 +239,7 @@ export class VideoComponent {
       .listEvents()
       .pipe(
         catchError(() => {
-          this.error.set('No se pudieron cargar los proyectos.');
+          this.error.set(this.translate.instant('VIDEO.ERRORS.LOAD_PROJECTS'));
           return EMPTY;
         }),
         finalize(() => this.loadingProjects.set(false)),
@@ -269,7 +272,7 @@ export class VideoComponent {
       .listPieces({ event_id: project.id })
       .pipe(
         catchError(() => {
-          this.error.set('No se pudieron cargar las piezas del proyecto.');
+          this.error.set(this.translate.instant('VIDEO.ERRORS.LOAD_PIECES'));
           return EMPTY;
         }),
         finalize(() => this.loadingPieces.set(false)),
@@ -355,7 +358,7 @@ export class VideoComponent {
       })
       .pipe(
         catchError(() => {
-          this.error.set('No se pudo crear la pieza.');
+          this.error.set(this.translate.instant('VIDEO.ERRORS.CREATE_PIECE'));
           return EMPTY;
         }),
         finalize(() => this.savingPiece.set(false)),
@@ -436,7 +439,7 @@ export class VideoComponent {
       .generateVideo(payload)
       .pipe(
         catchError(() => {
-          this.error.set('No se pudo iniciar la generación.');
+          this.error.set(this.translate.instant('VIDEO.ERRORS.START_GENERATION'));
           this.submitting.set(false);
           return EMPTY;
         }),
@@ -448,7 +451,7 @@ export class VideoComponent {
           .pollVideoUntilDone(response.taskId)
           .pipe(
             catchError(() => {
-              this.error.set('Error al consultar el estado de la tarea.');
+              this.error.set(this.translate.instant('VIDEO.ERRORS.POLL_STATUS'));
               this.polling.set(false);
               return EMPTY;
             }),
@@ -463,7 +466,9 @@ export class VideoComponent {
               this.resultUrl.set(out?.localUrl ?? out?.url ?? null);
               this.polling.set(false);
             } else if (status.status === 'failed' || status.status === 'cancelled') {
-              this.error.set(status.error ?? 'La generación falló.');
+              this.error.set(
+                status.error ?? this.translate.instant('VIDEO.ERRORS.GENERATION_FAILED'),
+              );
               this.polling.set(false);
             }
           });

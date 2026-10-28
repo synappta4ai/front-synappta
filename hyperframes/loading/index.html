@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1280, height=720" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1280px;
+        height: 720px;
+        overflow: hidden;
+        background: #0f0f0f;
+      }
+      #stage {
+        position: absolute;
+        inset: 0;
+      }
+      #scene {
+        display: block;
+        width: 1280px;
+        height: 720px;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="stage"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="3"
+      data-width="1280"
+      data-height="720"
+    >
+      <svg id="scene" viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="pulseGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="1" />
+            <stop offset="30%" stop-color="#a78bfa" stop-opacity="0.95" />
+            <stop offset="70%" stop-color="#7c3aed" stop-opacity="0.5" />
+            <stop offset="100%" stop-color="#7c3aed" stop-opacity="0" />
+          </radialGradient>
+
+          <!-- Neurona: soma central + dendritas + axón con botones terminales.
+               El axón apunta a la derecha (hacia la sinapsis en x=640). -->
+          <g id="neuron">
+            <g stroke="#f2f2f2" stroke-width="10" stroke-linecap="round" fill="none">
+              <!-- dendritas (ramificaciones del soma) -->
+              <path d="M 262 322 Q 208 282 156 270" />
+              <path d="M 156 270 Q 136 264 120 270" />
+              <path d="M 246 342 Q 178 332 122 334" />
+              <path d="M 246 378 Q 178 390 122 398" />
+              <path d="M 262 398 Q 208 440 158 458" />
+              <path d="M 158 458 Q 140 466 124 462" />
+              <path d="M 300 306 Q 296 246 288 198" />
+              <path d="M 288 198 Q 276 180 260 174" />
+              <path d="M 288 198 Q 300 178 316 176" />
+              <path d="M 300 414 Q 304 474 312 522" />
+              <path d="M 312 522 Q 300 540 284 546" />
+              <path d="M 312 522 Q 324 542 340 544" />
+              <!-- axón -->
+              <path stroke-width="12" d="M 354 360 L 596 360" />
+              <!-- botones terminales (presinapsis) -->
+              <path stroke-width="9" d="M 596 360 Q 612 348 622 334" />
+              <path stroke-width="9" d="M 596 360 Q 614 356 626 352" />
+              <path stroke-width="9" d="M 596 360 Q 612 372 622 386" />
+            </g>
+            <!-- soma y núcleo -->
+            <circle cx="300" cy="360" r="54" fill="#f2f2f2" />
+            <circle cx="306" cy="354" r="20" fill="#7c3aed" opacity="0.4" />
+          </g>
+        </defs>
+
+        <!-- Neurona izquierda -->
+        <use href="#neuron" />
+
+        <!-- Neurona derecha: espejo sobre x = 640 -->
+        <use href="#neuron" transform="translate(1280,0) scale(-1,1)" />
+
+        <!-- Pulso izquierda -> centro (hacia la sinapsis) -->
+        <g id="pulse-lr" style="opacity: 0">
+          <circle cx="300" cy="360" r="26" fill="url(#pulseGlow)" />
+          <circle cx="300" cy="360" r="6" fill="#ffffff" />
+        </g>
+
+        <!-- Pulso derecha -> centro (hacia la sinapsis) -->
+        <g id="pulse-rl" style="opacity: 0">
+          <circle cx="980" cy="360" r="26" fill="url(#pulseGlow)" />
+          <circle cx="980" cy="360" r="6" fill="#ffffff" />
+        </g>
+      </svg>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+
+      // Ida: soma izquierdo -> botones terminales (0s - 1.5s)
+      tl.fromTo("#pulse-lr", { x: 0 }, { x: 296, duration: 1.5, ease: "sine.inOut" }, 0);
+      tl.fromTo("#pulse-lr", { opacity: 0 }, { opacity: 1, duration: 0.3, ease: "sine.out" }, 0);
+      tl.to("#pulse-lr", { opacity: 0, duration: 0.35, ease: "sine.in" }, 1.15);
+
+      // Vuelta: soma derecho -> botones terminales (1.5s - 3s)
+      tl.fromTo("#pulse-rl", { x: 0 }, { x: -296, duration: 1.5, ease: "sine.inOut" }, 1.5);
+      tl.fromTo("#pulse-rl", { opacity: 0 }, { opacity: 1, duration: 0.3, ease: "sine.out" }, 1.5);
+      tl.to("#pulse-rl", { opacity: 0, duration: 0.35, ease: "sine.in" }, 2.65);
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>

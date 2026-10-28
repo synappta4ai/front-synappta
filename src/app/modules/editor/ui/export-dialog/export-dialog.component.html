@@ -1,0 +1,110 @@
+<p-dialog
+  [visible]="visible()"
+  (visibleChange)="visible.set($event)"
+  [modal]="true"
+  [dismissableMask]="!busy()"
+  [draggable]="false"
+  [resizable]="false"
+  [header]="'EDITOR.EXPORT_DIALOG.TITLE' | translate"
+  [style]="{ width: 'min(620px, 94vw)' }"
+  appendTo="body"
+>
+  <div class="ex">
+    <p class="ex-note">
+      <i class="md md-download" aria-hidden="true"></i>
+      {{ 'EDITOR.EXPORT_DIALOG.NOTE' | translate }}
+    </p>
+
+    @if (!ready()) {
+      <fieldset class="ex-formats" [disabled]="busy()">
+        <legend class="ex-legend">{{ 'EDITOR.EXPORT_DIALOG.FORMAT' | translate }}</legend>
+        @for (f of formats; track f.value) {
+          <button
+            type="button"
+            class="ex-format"
+            [class.active]="format() === f.value"
+            [disabled]="busy()"
+            [attr.aria-pressed]="format() === f.value"
+            (click)="pick(f.value)"
+          >
+            <span class="ex-format__dot" aria-hidden="true"></span>
+            <span class="ex-format__body">
+              <span class="ex-format__name">{{ f.labelKey | translate }}</span>
+              <span class="ex-format__desc">{{ f.descKey | translate }}</span>
+            </span>
+          </button>
+        }
+      </fieldset>
+    }
+
+    @if (busy()) {
+      <div class="ex-progress" role="status" aria-live="polite">
+        <span>
+          {{
+            (job()?.status === 'queued'
+              ? 'EDITOR.EXPORT_DIALOG.QUEUED'
+              : 'EDITOR.EXPORT_DIALOG.RENDERING'
+            ) | translate
+          }}
+        </span>
+        <span class="ex-bar" aria-hidden="true"><span [style.width.%]="progress()"></span></span>
+        <span class="ex-pct">{{ progress() }}%</span>
+      </div>
+    }
+
+    @if (ready() && !saved()) {
+      <div class="ex-ready" role="status">
+        <i class="md md-check" aria-hidden="true"></i>
+        <div>
+          <p class="ex-ready__title">{{ 'EDITOR.EXPORT_DIALOG.READY' | translate }}</p>
+          <p class="ex-muted">{{ 'EDITOR.EXPORT_DIALOG.READY_HINT' | translate }}</p>
+        </div>
+      </div>
+    }
+
+    @if (saved()) {
+      <div class="ex-ready" role="status">
+        <i class="md md-check" aria-hidden="true"></i>
+        <div>
+          <p class="ex-ready__title">{{ 'EDITOR.EXPORT_DIALOG.SAVED_TITLE' | translate }}</p>
+          <p class="ex-muted">{{ 'EDITOR.EXPORT_DIALOG.SAVED_HINT' | translate }}</p>
+        </div>
+      </div>
+    }
+
+    @if (error(); as e) {
+      <p class="ex-error" role="alert">{{ e }}</p>
+    }
+  </div>
+
+  <div class="ex-foot">
+    <button type="button" class="ex-btn" [disabled]="busy() || saving()" (click)="close()">
+      {{ (saved() ? 'EDITOR.EXPORT_DIALOG.CLOSE' : 'EDITOR.EXPORT_DIALOG.CANCEL') | translate }}
+    </button>
+    @if (!ready() && !saved()) {
+      <button
+        type="button"
+        class="ex-btn ex-btn--primary"
+        [disabled]="busy() || starting() || !projectId()"
+        (click)="render()"
+      >
+        <i class="md md-movie" aria-hidden="true"></i>
+        {{
+          (starting() ? 'EDITOR.EXPORT_DIALOG.STARTING' : 'EDITOR.EXPORT_DIALOG.RENDER') | translate
+        }}
+      </button>
+    } @else if (ready() && !saved()) {
+      <button
+        type="button"
+        class="ex-btn ex-btn--primary"
+        [disabled]="saving()"
+        (click)="saveToPc()"
+      >
+        <i class="md md-download" aria-hidden="true"></i>
+        {{
+          (saving() ? 'EDITOR.EXPORT_DIALOG.SAVING' : 'EDITOR.EXPORT_DIALOG.SAVE_PC') | translate
+        }}
+      </button>
+    }
+  </div>
+</p-dialog>

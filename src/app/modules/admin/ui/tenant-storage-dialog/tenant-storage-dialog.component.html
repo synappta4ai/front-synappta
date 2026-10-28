@@ -1,0 +1,257 @@
+<ng-template #panel>
+  <p class="storage-intro">{{ 'ADMIN.STORAGE.INTRO' | translate }}</p>
+
+  @if (error(); as message) {
+    <p-message severity="error" [text]="message" [escape]="false" styleClass="w-full" />
+  }
+  @if (notice(); as message) {
+    <p-message severity="success" [text]="message" [escape]="false" styleClass="w-full" />
+  }
+
+  <!-- Estado actual -->
+  <div class="status-box">
+    <div class="status-head">
+      <span class="status-label">{{ 'ADMIN.STORAGE.STATUS_TITLE' | translate }}</span>
+      @if (loading()) {
+        <span class="status-hint">{{ 'ADMIN.STORAGE.LOADING' | translate }}</span>
+      } @else if (bucketActive()) {
+        <p-tag [value]="'ADMIN.STORAGE.STATUS_BUCKET' | translate" severity="success" />
+      } @else if (configured()) {
+        <p-tag [value]="'ADMIN.STORAGE.STATUS_DISABLED' | translate" severity="warn" />
+      } @else {
+        <p-tag [value]="'ADMIN.STORAGE.STATUS_LOCAL' | translate" severity="secondary" />
+      }
+    </div>
+
+    @if (configured()) {
+      <div class="status-grid">
+        <div>
+          <span class="status-key">{{ 'ADMIN.STORAGE.BUCKET' | translate }}</span>
+          <span class="status-value">{{ config()?.bucket }}</span>
+        </div>
+        <div>
+          <span class="status-key">{{ 'ADMIN.STORAGE.ACCESS_KEY' | translate }}</span>
+          <span class="status-value">{{ config()?.access_key_id || '—' }}</span>
+        </div>
+        <div>
+          <span class="status-key">{{ 'ADMIN.STORAGE.SECRET' | translate }}</span>
+          <span class="status-value">
+            {{
+              (config()?.has_secret ? 'ADMIN.STORAGE.SECRET_SAVED' : 'ADMIN.STORAGE.SECRET_MISSING')
+                | translate
+            }}
+          </span>
+        </div>
+        @if (config()?.updated_at; as updated) {
+          <div>
+            <span class="status-key">{{ 'ADMIN.STORAGE.UPDATED_AT' | translate }}</span>
+            <span class="status-value">{{ updated | date: 'short' }}</span>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Formulario -->
+  <form [formGroup]="form" (ngSubmit)="save()" class="storage-form" novalidate>
+    <section class="form-section" [attr.aria-label]="'ADMIN.STORAGE.SECTION_CONNECTION' | translate">
+      <h4 class="section-title">{{ 'ADMIN.STORAGE.SECTION_CONNECTION' | translate }}</h4>
+      <div class="form-grid">
+    <div class="field field-wide">
+      <label for="storage-endpoint">
+        {{ 'ADMIN.STORAGE.ENDPOINT' | translate }} <span class="required">*</span>
+      </label>
+      <input
+        pInputText
+        id="storage-endpoint"
+        type="url"
+        formControlName="endpoint"
+        autocomplete="off"
+        spellcheck="false"
+        placeholder="https://minio.example.com"
+        class="w-full"
+      />
+      <small class="hint">{{ 'ADMIN.STORAGE.ENDPOINT_HINT' | translate }}</small>
+    </div>
+
+    <div class="field">
+      <label for="storage-bucket">
+        {{ 'ADMIN.STORAGE.BUCKET' | translate }} <span class="required">*</span>
+      </label>
+      <input
+        pInputText
+        id="storage-bucket"
+        type="text"
+        formControlName="bucket"
+        autocomplete="off"
+        spellcheck="false"
+        placeholder="acme-media"
+        class="w-full"
+      />
+      <small class="hint">{{ 'ADMIN.STORAGE.BUCKET_HINT' | translate }}</small>
+    </div>
+
+    <div class="field">
+      <label for="storage-region">{{ 'ADMIN.STORAGE.REGION' | translate }}</label>
+      <input
+        pInputText
+        id="storage-region"
+        type="text"
+        formControlName="region"
+        autocomplete="off"
+        spellcheck="false"
+        placeholder="us-east-1"
+        class="w-full"
+      />
+      <small class="hint">{{ 'ADMIN.STORAGE.REGION_HINT' | translate }}</small>
+    </div>
+      </div>
+    </section>
+
+    <section class="form-section" [attr.aria-label]="'ADMIN.STORAGE.SECTION_CREDENTIALS' | translate">
+      <h4 class="section-title">{{ 'ADMIN.STORAGE.SECTION_CREDENTIALS' | translate }}</h4>
+      <div class="form-grid">
+    <div class="field">
+      <label for="storage-access-key">
+        {{ 'ADMIN.STORAGE.ACCESS_KEY' | translate }}
+        @if (needsCredentials()) {
+          <span class="required">*</span>
+        }
+      </label>
+      <input
+        pInputText
+        id="storage-access-key"
+        type="text"
+        formControlName="accessKeyId"
+        autocomplete="off"
+        spellcheck="false"
+        class="w-full"
+      />
+      @if (configured()) {
+        <small class="hint">{{ 'ADMIN.STORAGE.ACCESS_KEY_KEEP' | translate }}</small>
+      }
+    </div>
+
+    <div class="field">
+      <label for="storage-secret-key">
+        {{ 'ADMIN.STORAGE.SECRET' | translate }}
+        @if (needsCredentials()) {
+          <span class="required">*</span>
+        }
+      </label>
+      <input
+        pInputText
+        id="storage-secret-key"
+        type="password"
+        formControlName="secretAccessKey"
+        autocomplete="new-password"
+        class="w-full"
+      />
+      @if (configured()) {
+        <small class="hint">{{ 'ADMIN.STORAGE.SECRET_KEEP' | translate }}</small>
+      }
+    </div>
+      </div>
+    </section>
+
+    <div class="field field-wide">
+      <label for="storage-public-base">{{ 'ADMIN.STORAGE.PUBLIC_BASE' | translate }}</label>
+      <input
+        pInputText
+        id="storage-public-base"
+        type="url"
+        formControlName="publicBase"
+        autocomplete="off"
+        spellcheck="false"
+        placeholder="https://cdn.example.com/acme"
+        class="w-full"
+      />
+      <small class="hint">{{ 'ADMIN.STORAGE.PUBLIC_BASE_HINT' | translate }}</small>
+    </div>
+
+    <div class="field field-wide toggle-row">
+      <p-toggleswitch inputId="storage-enabled" formControlName="enabled" />
+      <div>
+        <label for="storage-enabled" class="toggle-label">
+          {{ 'ADMIN.STORAGE.ENABLED' | translate }}
+        </label>
+        <small class="hint">{{ 'ADMIN.STORAGE.ENABLED_HINT' | translate }}</small>
+      </div>
+    </div>
+
+    <p class="probe-hint">{{ 'ADMIN.STORAGE.PROBE_HINT' | translate }}</p>
+
+    @if (confirmRemove()) {
+      <div class="danger-box">
+        <p>{{ 'ADMIN.STORAGE.REMOVE_CONFIRM' | translate }}</p>
+        <div class="danger-actions">
+          <p-button
+            type="button"
+            [label]="'ADMIN.STORAGE.CANCEL' | translate"
+            size="small"
+            text
+            (onClick)="cancelRemove()"
+          />
+          <p-button
+            type="button"
+            [label]="'ADMIN.STORAGE.REMOVE_CONFIRM_YES' | translate"
+            severity="danger"
+            size="small"
+            [loading]="removing()"
+            (onClick)="remove()"
+          />
+        </div>
+      </div>
+    }
+
+    <div class="dialog-actions">
+      @if (configured()) {
+        <p-button
+          type="button"
+          [label]="'ADMIN.STORAGE.REMOVE' | translate"
+          icon="md md-delete"
+          severity="danger"
+          size="small"
+          text
+          [disabled]="saving() || removing()"
+          (onClick)="askRemove()"
+        />
+      }
+      <span class="spacer"></span>
+      @if (!inline()) {
+        <p-button
+          type="button"
+          [label]="'ADMIN.STORAGE.CANCEL' | translate"
+          size="small"
+          text
+          (onClick)="close()"
+        />
+      }
+      <p-button
+        type="submit"
+        [label]="(saving() ? 'ADMIN.STORAGE.SAVING' : 'ADMIN.STORAGE.SAVE') | translate"
+        icon="md md-cloud_upload"
+        size="small"
+        [loading]="saving()"
+        [disabled]="loading() || saving()"
+      />
+    </div>
+  </form>
+</ng-template>
+
+@if (inline()) {
+  <ng-container [ngTemplateOutlet]="panel" />
+} @else {
+  <p-dialog
+    [visible]="visible()"
+    [header]="'ADMIN.STORAGE.HEADER' | translate: { name: tenant()?.name ?? '' }"
+    [modal]="true"
+    [style]="{ width: 'min(96vw, 44rem)' }"
+    [draggable]="false"
+    [resizable]="false"
+    (onShow)="onShow()"
+    (onHide)="close()"
+  >
+    <ng-container [ngTemplateOutlet]="panel" />
+  </p-dialog>
+}

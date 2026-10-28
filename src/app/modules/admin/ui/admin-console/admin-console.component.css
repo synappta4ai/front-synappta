@@ -1,0 +1,53 @@
+:host {
+  display: block;
+}
+
+/* La consola ocupa todo el viewport menos la navbar; nunca se agrega scroll
+   de página. Cualquier desbordamiento (tablas, formularios) lo maneja el
+   propio componente hijo con su propio scroll interno. */
+.admin-shell {
+  height: calc(100dvh - 3.5rem);
+  min-height: 0;
+}
+
+.admin-tabs {
+  border-bottom: 1px solid var(--surface-border);
+  background: var(--surface-ground);
+  padding: 0.25rem 0.5rem;
+}
+
+.admin-tabs .p-tabview-nav {
+  gap: 0.25rem;
+}
+
+.admin-tabs .p-tabview-nav-link {
+  border: 1px solid var(--surface-border);
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.85rem;
+  color: var(--ink-muted-on-dark);
+  background: var(--surface-ground);
+}
+
+.admin-tabs .p-tabview-nav-link:hover {
+  color: var(--ink);
+  background: var(--surface-hover);
+}
+
+.admin-tabs .p-tabview-nav-link.p-highlight {
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+  background: var(--surface-1);
+}
+
+.admin-tabs .p-tabview-nav-link .p-tabview-icon {
+  margin-right: 0.35rem;
+}
+
+/* Contenido de la consola: no genera scroll de página; el overflow se
+   delega al componente hijo (ej. admin-models) usando scroll interno. */
+.admin-shell > :last-child {
+  min-height: 0;
+  overflow: hidden;
+}

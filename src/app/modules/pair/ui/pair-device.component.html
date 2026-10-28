@@ -1,0 +1,68 @@
+<div class="mx-auto flex min-h-[70vh] w-full max-w-md flex-col items-center justify-center gap-4 px-4 text-center">
+  <i class="md md-notifications text-5xl text-[var(--color-accent)]" aria-hidden="true"></i>
+  <h1 class="text-xl font-bold text-ink">{{ 'PAIR.TITLE' | translate }}</h1>
+
+  @if (!code()) {
+    <p class="text-sm text-ink-muted-on-dark">{{ 'PAIR.NO_CODE' | translate }}</p>
+    <p-button
+      [label]="'PAIR.OPEN_APP' | translate"
+      icon="md md-home"
+      routerLink="/studio"
+    />
+  } @else if (done()) {
+    <p class="rounded-lg bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300" role="status">
+      {{ 'PAIR.SUCCESS' | translate }}
+    </p>
+    <p class="text-xs text-ink-muted-on-dark">{{ 'PAIR.SUCCESS_HINT' | translate }}</p>
+    <p-button
+      [label]="'PAIR.OPEN_APP' | translate"
+      icon="md md-home"
+      routerLink="/studio"
+    />
+  } @else {
+    <p class="text-sm text-ink-muted-on-dark">{{ 'PAIR.EXPLAIN' | translate }}</p>
+    @if (errorMessage()) {
+      <p class="rounded-lg bg-red-500/10 px-4 py-3 text-sm text-red-400" role="alert">
+        {{ errorMessage() }}
+        @if (errorDetail()) {
+          <span class="mt-1 block font-mono text-xs opacity-80">{{ errorDetail() }}</span>
+        }
+      </p>
+    }
+    <p-button
+      [label]="'PAIR.ACTIVATE' | translate"
+      icon="md md-notifications"
+      [loading]="devicePush.busy()"
+      [disabled]="!devicePush.supported()"
+      (onClick)="activate()"
+    />
+    @if (!devicePush.supported()) {
+      <p class="text-xs text-ink-muted-on-dark">{{ 'PAIR.UNSUPPORTED' | translate }}</p>
+    }
+    @if (isPermissionDenied()) {
+      <div class="w-full rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-left" role="note">
+        <p class="text-sm font-bold text-amber-200">{{ 'PAIR.PERMISSION_HELP_TITLE' | translate }}</p>
+        <p class="mt-1 text-xs text-ink-muted-on-dark">{{ 'PAIR.PERMISSION_HELP_WHY' | translate }}</p>
+        <ol class="mt-2 list-decimal space-y-1 pl-5 text-xs text-ink-muted-on-dark">
+          <li>{{ 'PAIR.PERMISSION_STEP1' | translate }}</li>
+          <li>{{ 'PAIR.PERMISSION_STEP2' | translate }}</li>
+          <li>{{ 'PAIR.PERMISSION_STEP3' | translate }}</li>
+        </ol>
+        @if (isIOS()) {
+          <p class="mt-2 text-xs text-ink-muted-on-dark">{{ 'PAIR.PERMISSION_IOS_NOTE' | translate }}</p>
+        }
+        <p-button
+          class="mt-3"
+          [label]="'PAIR.PERMISSION_RETRY' | translate"
+          icon="md md-refresh"
+          size="small"
+          severity="secondary"
+          [outlined]="true"
+          [loading]="devicePush.busy()"
+          (onClick)="retry()"
+        />
+      </div>
+    }
+    <p class="font-mono text-xs text-ink-muted-on-dark">{{ code() }}</p>
+  }
+</div>

@@ -3,7 +3,7 @@ import { Observable, of } from 'rxjs';
 import { map, mergeMap } from 'rxjs/operators';
 
 import { AiModel } from '@modules/agency/interfaces';
-import { AgencyService } from '@modules/agency/services';
+import { ModelCatalogService } from '@modules/agency/services';
 import { EventsService } from '@modules/events/services';
 import { Event as Project, Piece } from '@modules/events/interfaces';
 
@@ -11,29 +11,25 @@ import { StudioModel } from '../interfaces';
 
 @Injectable({ providedIn: 'root' })
 export class StudioService {
-  private readonly agencyService = inject(AgencyService);
+  private readonly catalog = inject(ModelCatalogService);
   private readonly eventsService = inject(EventsService);
 
   /** Maps the raw catalog (merged API + downloaded) into picker entries. */
   listModels(): Observable<StudioModel[]> {
-    return this.agencyService.listModels().pipe(
+    return this.catalog.all().pipe(
       map((models: AiModel[]) =>
         models
           .filter((m) => m.modality !== 'text')
           .map((m): StudioModel => {
-            const raw = m as AiModel & {
-              type?: string;
-              downloaded?: { vram_gb?: number; available?: boolean } | null;
-            };
-            const isDownloaded = raw.type === 'downloaded';
+            const isDownloaded = m.type === 'downloaded';
             return {
               name: m.name,
               displayName: m.display_name ?? m.name,
               type: isDownloaded ? 'downloaded' : 'api',
               modality: m.modality,
               badge: isDownloaded ? 'worker' : String(m.credential_provider ?? 'api'),
-              vramGb: raw.downloaded?.vram_gb,
-              available: raw.downloaded?.available ?? true,
+              vramGb: m.downloaded?.vram_gb,
+              available: m.downloaded?.available ?? true,
               source: m,
             };
           }),

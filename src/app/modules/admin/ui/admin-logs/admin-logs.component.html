@@ -5,29 +5,59 @@
     </div>
   }
 
+  @if (recovered(); as result) {
+    <div class="mb-6">
+      <p-message
+        severity="success"
+        [text]="'ADMIN.LOGS.RECOVERED' | translate: { scanned: result.scanned, updated: result.updated }"
+        styleClass="w-full"
+      />
+    </div>
+  }
+
   <!-- Filter bar -->
   <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
     <div class="flex items-center gap-2">
-      <span class="text-sm font-bold text-ink">Comunicaciones con APIs externas</span>
-      <p-tag [value]="rows().length + ' tareas'" severity="info" />
+      <span class="text-sm font-bold text-ink">{{ 'ADMIN.LOGS.TITLE' | translate }}</span>
+      <p-tag
+        [value]="
+          (rows().length === 1 ? 'ADMIN.LOGS.COUNT_ONE' : 'ADMIN.LOGS.COUNT_MANY')
+            | translate: { count: rows().length }
+        "
+        severity="info"
+      />
     </div>
     <div class="flex items-center gap-2">
       <input
         pInputText
-        type="text"
-        aria-label="Filtrar por task_id"
+        type="search"
+        name="task-filter"
+        [attr.aria-label]="'ADMIN.LOGS.FILTER_ARIA' | translate"
         [ngModel]="taskIdFilter()"
         (ngModelChange)="taskIdFilter.set($event)"
         (keyup.enter)="search()"
-        placeholder="Filtrar por task_id..."
+        [placeholder]="'ADMIN.LOGS.FILTER_PLACEHOLDER' | translate"
         class="w-56 rounded-xl"
       />
       <p-button
-        label="Buscar"
+        [label]="'ADMIN.LOGS.SEARCH' | translate"
         icon="md md-search"
         severity="secondary"
         size="small"
         (onClick)="search()"
+      />
+      <p-button
+        [label]="'ADMIN.LOGS.RECOVER_COSTS' | translate"
+        icon="md md-refresh"
+        severity="secondary"
+        size="small"
+        outlined
+        [loading]="recovering()"
+        [disabled]="recovering()"
+        [pTooltip]="'ADMIN.LOGS.RECOVER_COSTS_HINT' | translate"
+        showDelay="400"
+        tooltipPosition="bottom"
+        (onClick)="recoverCosts()"
       />
     </div>
   </div>
@@ -37,7 +67,7 @@
       class="flex flex-col gap-2 rounded-3xl border border-surface-border bg-surface p-6"
       aria-busy="true"
     >
-      <span class="sr-only">Cargando logs…</span>
+      <span class="sr-only">{{ 'ADMIN.LOGS.LOADING' | translate }}</span>
       <div class="skel skel-title" aria-hidden="true"></div>
       <div class="skel skel-text" aria-hidden="true"></div>
       <div class="skel skel-text" aria-hidden="true"></div>
@@ -49,21 +79,25 @@
         [tableStyle]="{ 'min-width': '56rem' }"
         [rowHover]="true"
         [scrollable]="true"
-        scrollHeight="calc(75vh - 18rem)"
+        scrollHeight="calc(100vh - 24rem)"
         styleClass="p-datatable-sm"
       >
         <ng-template #header>
           <tr>
-            <th style="width: 15%">Task ID</th>
-            <th style="width: 10%" class="text-center">Estado</th>
-            <th style="width: 12%">Modelo</th>
-            <th style="width: 8%" class="text-center">Status</th>
-            <th style="width: 9%" class="text-center">Duración total</th>
-            <th style="width: 10%">Usuario</th>
-            <th style="width: 14%">Credencial usada</th>
-            <th style="width: 9%" class="text-center">Gasto</th>
-            <th style="width: 6%" class="text-center">Fecha</th>
-            <th style="width: 7%" class="text-center">Detalle</th>
+            <th style="width: 15%">{{ 'ADMIN.LOGS.COL_TASK_ID' | translate }}</th>
+            <th style="width: 10%" class="text-center">
+              {{ 'ADMIN.LOGS.COL_STATUS' | translate }}
+            </th>
+            <th style="width: 12%">{{ 'ADMIN.LOGS.COL_MODEL' | translate }}</th>
+            <th style="width: 8%" class="text-center">{{ 'ADMIN.LOGS.COL_HTTP' | translate }}</th>
+            <th style="width: 9%" class="text-center">
+              {{ 'ADMIN.LOGS.COL_DURATION' | translate }}
+            </th>
+            <th style="width: 10%">{{ 'ADMIN.LOGS.COL_USER' | translate }}</th>
+            <th style="width: 14%">{{ 'ADMIN.LOGS.COL_CREDENTIAL' | translate }}</th>
+            <th style="width: 9%" class="text-center">{{ 'ADMIN.LOGS.COL_COST' | translate }}</th>
+            <th style="width: 6%" class="text-center">{{ 'ADMIN.LOGS.COL_DATE' | translate }}</th>
+            <th style="width: 7%" class="text-center">{{ 'ADMIN.LOGS.COL_DETAIL' | translate }}</th>
           </tr>
         </ng-template>
         <ng-template #body let-r let-i="rowIndex">
@@ -77,7 +111,7 @@
             </td>
             <td class="text-center">
               @if (rowEvent(r); as ev) {
-                <p-tag [value]="ev.label" [severity]="ev.severity" />
+                <p-tag [value]="ev.labelKey | translate" [severity]="ev.severity" />
               }
             </td>
             <td>
@@ -87,7 +121,7 @@
             </td>
             <td class="text-center">
               @if (rowStatusCode(r) === 0) {
-                <p-tag value="ERROR" severity="danger" />
+                <p-tag [value]="'ADMIN.LOGS.EVENT_ERROR' | translate" severity="danger" />
               } @else {
                 <p-tag
                   [value]="statusLabel(rowStatusCode(r))"
@@ -98,7 +132,7 @@
             <td class="text-center">
               <span
                 class="text-sm text-ink-muted-on-dark"
-                [pTooltip]="rowDurationTitle(r)"
+                [pTooltip]="rowDurationTitle(r) | translate"
                 showDelay="400"
                 tooltipPosition="top"
               >
@@ -188,7 +222,8 @@
                 icon="md md-visibility"
                 size="small"
                 text
-                pTooltip="Ver generación y polling"
+                [ariaLabel]="'ADMIN.LOGS.VIEW_DETAIL' | translate"
+                [pTooltip]="'ADMIN.LOGS.VIEW_DETAIL' | translate"
                 showDelay="400"
                 tooltipPosition="left"
                 (onClick)="openDetail(r)"
@@ -204,9 +239,11 @@
                   <i class="md md-inbox text-3xl text-ink-muted-on-dark"></i>
                 </div>
                 <div class="text-center">
-                  <p class="font-bold text-ink-on-dark">No hay comunicaciones registradas</p>
+                  <p class="font-bold text-ink-on-dark">
+                    {{ 'ADMIN.LOGS.EMPTY_TITLE' | translate }}
+                  </p>
                   <p class="mt-1 text-sm text-ink-muted-on-dark">
-                    Las peticiones a los modelos aparecerán aquí con su auditoría completa
+                    {{ 'ADMIN.LOGS.EMPTY_HINT' | translate }}
                   </p>
                 </div>
               </div>
@@ -218,14 +255,19 @@
       <!-- Pagination -->
       <div class="flex items-center justify-between border-t border-surface-border px-5 py-3">
         <span class="text-sm text-ink-muted-on-dark">
-          Página {{ $any(page()) }} — {{ total() }} registros
+          {{ 'ADMIN.LOGS.PAGE' | translate: { page: $any(page()) } }} —
+          {{
+            (total() === 1 ? 'ADMIN.LOGS.RECORDS_ONE' : 'ADMIN.LOGS.RECORDS_MANY')
+              | translate: { count: total() }
+          }}
         </span>
         <div class="flex gap-2">
           <p-button
             icon="md md-chevron_left"
             size="small"
             severity="secondary"
-            pTooltip="Página anterior"
+            [ariaLabel]="'ADMIN.LOGS.PREV_PAGE' | translate"
+            [pTooltip]="'ADMIN.LOGS.PREV_PAGE' | translate"
             showDelay="400"
             [disabled]="!hasPrev()"
             (onClick)="prevPage()"
@@ -234,7 +276,8 @@
             icon="md md-chevron_right"
             size="small"
             severity="secondary"
-            pTooltip="Página siguiente"
+            [ariaLabel]="'ADMIN.LOGS.NEXT_PAGE' | translate"
+            [pTooltip]="'ADMIN.LOGS.NEXT_PAGE' | translate"
             showDelay="400"
             [disabled]="!hasNext()"
             (onClick)="nextPage()"
@@ -279,7 +322,9 @@
         class="mb-4 grid gap-3 rounded-2xl border border-surface-border bg-surface-2 p-4 sm:grid-cols-3"
       >
         <div>
-          <p class="text-xs font-bold text-ink-muted-on-dark">Usuario</p>
+          <p class="text-xs font-bold text-ink-muted-on-dark">
+            {{ 'ADMIN.LOGS.FIELD_USER' | translate }}
+          </p>
           <p class="text-sm font-bold text-ink-on-dark">
             {{
               r.generate?.username ||
@@ -290,13 +335,17 @@
           </p>
         </div>
         <div>
-          <p class="text-xs font-bold text-ink-muted-on-dark">Tenant</p>
+          <p class="text-xs font-bold text-ink-muted-on-dark">
+            {{ 'ADMIN.LOGS.FIELD_TENANT' | translate }}
+          </p>
           <p class="text-sm font-bold text-ink-on-dark">
             {{ r.generate?.tenant_slug || r.poll?.tenant_slug || '—' }}
           </p>
         </div>
         <div>
-          <p class="text-xs font-bold text-ink-muted-on-dark">Credencial</p>
+          <p class="text-xs font-bold text-ink-muted-on-dark">
+            {{ 'ADMIN.LOGS.FIELD_CREDENTIAL' | translate }}
+          </p>
           <p class="text-sm font-bold text-ink-on-dark">
             {{ r.generate?.credential_provider || r.poll?.credential_provider || '—' }}
             @if (r.generate?.auth_type || r.poll?.auth_type) {
@@ -340,12 +389,12 @@
         >
           <i class="md md-schedule text-ink-muted-on-dark"></i>
           <span>
-            Duración total (envío → resultado):
+            {{ 'ADMIN.LOGS.DURATION_TOTAL' | translate }}
             <strong class="text-ink-on-dark">{{ rowDuration(r) }}</strong>
           </span>
           @if (r.poll && r.poll.total_duration_ms > 0) {
             <span class="text-xs text-ink-muted-on-dark">
-              · {{ r.poll.poll_count }} poll(s) hasta el resultado
+              {{ 'ADMIN.LOGS.POLLS_UNTIL_RESULT' | translate: { count: r.poll.poll_count } }}
             </span>
           }
         </div>
@@ -357,9 +406,13 @@
             <p-tab [value]="p.value">
               <span class="flex items-center gap-2">
                 <i class="{{ p.icon }} text-xs"></i>
-                <span>{{ p.label }}</span>
+                <span>{{ p.labelKey | translate }}</span>
                 <p-tag
-                  [value]="p.badge"
+                  [value]="
+                    p.badgeParam
+                      ? (p.badgeKey | translate: { count: p.badgeParam })
+                      : (p.badgeKey | translate)
+                  "
                   [severity]="p.comm ? 'info' : 'secondary'"
                   styleClass="text-xs"
                 />
@@ -386,7 +439,8 @@
                     ><i class="md md-arrow_upward mr-1"></i>{{ c.method }} {{ c.endpoint }}</span
                   >
                   <span>
-                    <i class="md md-calendar_month mr-1"></i>Enviado:
+                    <i class="md md-calendar_month mr-1"></i
+                    >{{ 'ADMIN.LOGS.FIELD_SENT' | translate }}
                     {{ c.started_at || c.created_at | date: 'medium' }}
                   </span>
                   @if (c.duration_ms > 0) {
@@ -394,13 +448,16 @@
                   }
                   @if (c.total_duration_ms > 0) {
                     <span>
-                      <i class="md md-schedule mr-1"></i>Total: {{ formatMs(c.total_duration_ms) }}
+                      <i class="md md-schedule mr-1"></i>{{ 'ADMIN.LOGS.FIELD_TOTAL' | translate }}
+                      {{ formatMs(c.total_duration_ms) }}
                     </span>
                   }
                 </div>
                 <div class="flex flex-col gap-4">
                   <div>
-                    <h5 class="mb-2 text-sm font-bold text-ink-on-dark">Payload</h5>
+                    <h5 class="mb-2 text-sm font-bold text-ink-on-dark">
+                      {{ 'ADMIN.LOGS.PAYLOAD' | translate }}
+                    </h5>
                     <div
                       class="overflow-hidden rounded-xl border border-surface-border bg-surface-2"
                     >
@@ -408,14 +465,19 @@
                         class="flex items-center justify-between border-b border-surface-border px-3 py-1.5"
                       >
                         <span class="text-xs font-bold text-ink-muted-on-dark">
-                          {{ isJson(c.request_body) ? 'JSON formateado' : 'Texto plano' }}
+                          {{
+                            (isJson(c.request_body)
+                              ? 'ADMIN.LOGS.JSON_FORMATTED'
+                              : 'ADMIN.LOGS.PLAIN_TEXT'
+                            ) | translate
+                          }}
                         </span>
                         <p-button
                           icon="md md-content_copy"
                           size="small"
                           text
                           rounded
-                          pTooltip="Copiar"
+                          [pTooltip]="'ADMIN.LOGS.COPY' | translate"
                           showDelay="400"
                           tooltipPosition="left"
                           (onClick)="copyBody(c.request_body, $event)"
@@ -427,7 +489,9 @@
                     </div>
                   </div>
                   <div>
-                    <h5 class="mb-2 text-sm font-bold text-ink-on-dark">Respuesta</h5>
+                    <h5 class="mb-2 text-sm font-bold text-ink-on-dark">
+                      {{ 'ADMIN.LOGS.RESPONSE' | translate }}
+                    </h5>
                     <div
                       class="overflow-hidden rounded-xl border border-surface-border bg-surface-2"
                     >
@@ -435,14 +499,19 @@
                         class="flex items-center justify-between border-b border-surface-border px-3 py-1.5"
                       >
                         <span class="text-xs font-bold text-ink-muted-on-dark">
-                          {{ isJson(c.response_body) ? 'JSON formateado' : 'Texto plano' }}
+                          {{
+                            (isJson(c.response_body)
+                              ? 'ADMIN.LOGS.JSON_FORMATTED'
+                              : 'ADMIN.LOGS.PLAIN_TEXT'
+                            ) | translate
+                          }}
                         </span>
                         <p-button
                           icon="md md-content_copy"
                           size="small"
                           text
                           rounded
-                          pTooltip="Copiar"
+                          [pTooltip]="'ADMIN.LOGS.COPY' | translate"
                           showDelay="400"
                           tooltipPosition="left"
                           (onClick)="copyBody(c.response_body, $event)"
@@ -458,11 +527,11 @@
                 <div class="flex flex-col items-center gap-3 py-10 text-center">
                   <i class="md md-hourglass_empty text-3xl text-ink-muted-on-dark"></i>
                   <p class="text-sm text-ink-muted-on-dark">
-                    Aún no hay registros de polling para esta tarea.
+                    {{ 'ADMIN.LOGS.NO_POLLING' | translate }}
                   </p>
                   @if (r.generate?.started_at || r.generate?.created_at) {
                     <p class="text-xs text-ink-muted-on-dark">
-                      Enviado hace {{ elapsedSinceStart(r) }} — esperando el resultado del modelo.
+                      {{ 'ADMIN.LOGS.SENT_AGO' | translate: { elapsed: elapsedSinceStart(r) } }}
                     </p>
                   }
                 </div>
