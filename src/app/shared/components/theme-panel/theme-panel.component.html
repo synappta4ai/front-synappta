@@ -91,44 +91,31 @@
       </div>
     </div>
 
-    <!-- Notifications Section: 1) este dispositivo, 2) avisos (requiere el 1) -->
+    <!-- Notifications Section: un solo toggle (suscribe el dispositivo + activa avisos) -->
     <div class="section">
       <h5 class="section-title">{{ 'SHARED.THEME_PANEL.SECTION_NOTIFICATIONS' | translate }}</h5>
-      @if (devicePush.supported()) {
-        <div class="notif-row">
-          <span class="notif-label" (click)="toggleDevicePush()">
-            <i class="md md-smartphone notif-icon" aria-hidden="true"></i>
-            <span>{{ 'SHARED.THEME_PANEL.NOTIFICATIONS_DEVICE' | translate }}</span>
-          </span>
-          <p-toggleswitch
-            [ngModel]="devicePush.subscribed()"
-            (ngModelChange)="toggleDevicePush()"
-            [attr.aria-label]="'SHARED.THEME_PANEL.NOTIFICATIONS_DEVICE' | translate"
-          />
-        </div>
-        @if (devicePushError()) {
-          <p class="notif-error" role="alert">
-            {{ devicePushError() }}
-            @if (devicePushDetail()) {
-              <span class="notif-error__detail">{{ devicePushDetail() }}</span>
-            }
-          </p>
-        }
-      }
-      <div class="notif-row" [class.notif-disabled]="!canToggleVideo()">
-        <span class="notif-label" (click)="toggleNotifications()">
+      <div class="notif-row" [class.notif-disabled]="!devicePush.supported()">
+        <span class="notif-label" (click)="toggleAllNotifications()">
           <i class="md md-notifications notif-icon" aria-hidden="true"></i>
           <span>{{ 'SHARED.THEME_PANEL.NOTIFICATIONS_VIDEO' | translate }}</span>
         </span>
         <p-toggleswitch
-          [ngModel]="notificationsEnabled()"
-          (ngModelChange)="toggleNotifications()"
-          [disabled]="!canToggleVideo()"
+          [ngModel]="allNotificationsOn()"
+          (ngModelChange)="toggleAllNotifications()"
+          [disabled]="!devicePush.supported() || devicePush.busy()"
           [attr.aria-label]="'SHARED.THEME_PANEL.NOTIFICATIONS_VIDEO' | translate"
         />
       </div>
+      @if (devicePushError()) {
+        <p class="notif-error" role="alert">
+          {{ devicePushError() }}
+          @if (devicePushDetail()) {
+            <span class="notif-error__detail">{{ devicePushDetail() }}</span>
+          }
+        </p>
+      }
       <p class="notif-hint">
-        @if (canToggleVideo()) {
+        @if (devicePush.supported()) {
           {{ 'SHARED.THEME_PANEL.NOTIFICATIONS_HINT' | translate }}
         } @else {
           {{ 'SHARED.THEME_PANEL.NOTIFICATIONS_NEEDS_DEVICE' | translate }}

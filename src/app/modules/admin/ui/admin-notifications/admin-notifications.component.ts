@@ -79,11 +79,12 @@ export class AdminNotificationsComponent {
   protected readonly error = signal<string | null>(null);
   protected readonly notice = signal<string | null>(null);
 
-  /** Dispositivos con push suscripto en el tenant gestionado. */
+  /** Dispositivos con push suscripto en el tenant gestionado (modal). */
   protected readonly devices = signal<PushDevice[]>([]);
   protected readonly devicesLoading = signal(false);
-  /** Dispositivo pendiente de confirmar baja (modal). */
-  protected readonly confirmDevice = signal<PushDevice | null>(null);
+  protected readonly devicesVisible = signal(false);
+  /** Id del dispositivo con baja pendiente de confirmar (dos pasos). */
+  protected readonly confirmDeviceId = signal<string | null>(null);
   protected readonly removingDevice = signal(false);
 
   protected readonly dialogVisible = signal(false);
@@ -157,29 +158,43 @@ export class AdminNotificationsComponent {
     });
   }
 
-  /** Abre el modal de confirmación de baja del dispositivo. */
+  /** Abre el modal de dispositivos (recarga la lista al abrir). */
+  protected openDevices(): void {
+    this.confirmDeviceId.set(null);
+    this.devicesVisible.set(true);
+    this.loadDevices();
+  }
+
+  protected closeDevices(): void {
+    if (this.removingDevice()) {
+      return;
+    }
+    this.confirmDeviceId.set(null);
+    this.devicesVisible.set(false);
+  }
+
+  /** Marca un dispositivo para confirmar su baja (dos pasos). */
   protected askRemoveDevice(device: PushDevice): void {
-    this.confirmDevice.set(device);
+    this.confirmDeviceId.set(device.id);
   }
 
   protected cancelRemoveDevice(): void {
     if (this.removingDevice()) {
       return;
     }
-    this.confirmDevice.set(null);
+    this.confirmDeviceId.set(null);
   }
 
   /** Da de baja el push del dispositivo (el navegador queda desuscripto). */
-  protected confirmRemoveDevice(): void {
-    const device = this.confirmDevice();
-    if (!device || this.removingDevice()) {
+  protected confirmRemoveDevice(device: PushDevice): void {
+    if (this.removingDevice()) {
       return;
     }
     this.removingDevice.set(true);
     this.repository.deletePushDevice(device.id, this.tenantSlug()).subscribe({
       next: () => {
         this.removingDevice.set(false);
-        this.confirmDevice.set(null);
+        this.confirmDeviceId.set(null);
         this.notice.set(this.translate.instant('ADMIN.NOTIFICATIONS.DEVICE_REMOVED'));
         setTimeout(() => this.notice.set(null), 3000);
         this.loadDevices();

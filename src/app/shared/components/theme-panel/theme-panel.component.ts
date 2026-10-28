@@ -103,30 +103,29 @@ export class ThemePanelComponent {
     this.languageService.setLang(lang);
   }
 
-  /** Los avisos requieren el dispositivo activo (orden: dispositivo → avisos). */
-  protected canToggleVideo(): boolean {
-    if (!this.devicePush.supported()) {
-      return true;
-    }
-    return this.devicePush.subscribed();
+  /** Toggle único: encendido = dispositivo suscripto + avisos activos. */
+  protected allNotificationsOn(): boolean {
+    return this.notificationsPrefs.enabled() && this.devicePush.subscribed();
   }
 
-  toggleNotifications(): void {
-    if (!this.canToggleVideo()) {
-      return;
-    }
-    this.notificationsPrefs.setEnabled(!this.notificationsPrefs.enabled());
-  }
-
-  toggleDevicePush(): void {
+  async toggleAllNotifications(): Promise<void> {
     if (this.devicePush.busy()) {
       return;
     }
-    if (this.devicePush.subscribed()) {
-      void this.devicePush.unsubscribe();
-    } else {
-      void this.devicePush.subscribe();
+    if (this.allNotificationsOn()) {
+      this.notificationsPrefs.setEnabled(false);
+      return;
     }
+    if (!this.devicePush.supported()) {
+      return;
+    }
+    if (!this.devicePush.subscribed()) {
+      const ok = await this.devicePush.subscribe();
+      if (!ok) {
+        return;
+      }
+    }
+    this.notificationsPrefs.setEnabled(true);
   }
 
   devicePushError(): string | null {
