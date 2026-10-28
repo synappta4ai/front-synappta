@@ -19,6 +19,17 @@ function urlBase64ToUint8Array(base64: string): Uint8Array<ArrayBuffer> {
   return out;
 }
 
+/** La VAPID pública es un punto P-256 sin comprimir: 65 bytes que empiezan con 0x04. */
+function validVapidPublicKey(base64: string): boolean {
+  try {
+    const padding = '='.repeat((4 - (base64.length % 4)) % 4);
+    const raw = window.atob((base64 + padding).replace(/-/g, '+').replace(/_/g, '/'));
+    return raw.length === 65 && raw.charCodeAt(0) === 4;
+  } catch {
+    return false;
+  }
+}
+
 /** Compara la applicationServerKey de una suscripción con una VAPID pública. */
 function sameApplicationKey(sub: PushSubscription, publicKey: string): boolean {
   try {
@@ -116,6 +127,13 @@ export class DevicePushService {
       }
       if (!public_key) {
         this.fail('NOTIFICATIONS.DEVICE_NOT_CONFIGURED', 'empty public key from GET push/public-key');
+        return false;
+      }
+      if (!validVapidPublicKey(public_key)) {
+        this.fail(
+          'NOTIFICATIONS.DEVICE_NOT_CONFIGURED',
+          `invalid VAPID public key from server (${public_key.length} chars, want a 65-byte P-256 point)`
+        );
         return false;
       }
       const perm = await Notification.requestPermission();
@@ -285,6 +303,13 @@ export class DevicePushService {
         public_key = keyRes.data?.public_key ?? '';
         if (!keyRes.data?.enabled || !public_key) {
           this.fail('NOTIFICATIONS.DEVICE_NOT_CONFIGURED', 'empty public key from pairing public-key');
+          return false;
+        }
+        if (!validVapidPublicKey(public_key)) {
+          this.fail(
+            'NOTIFICATIONS.DEVICE_NOT_CONFIGURED',
+            `invalid VAPID public key from pairing (${public_key.length} chars, want a 65-byte P-256 point)`
+          );
           return false;
         }
       } catch (e) {
