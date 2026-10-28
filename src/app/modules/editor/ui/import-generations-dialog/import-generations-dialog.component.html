@@ -1,0 +1,156 @@
+<p-dialog
+  [visible]="visible()"
+  (visibleChange)="visible.set($event)"
+  [modal]="true"
+  [dismissableMask]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [header]="'EDITOR.IMPORT_DIALOG.TITLE' | translate"
+  [style]="{ width: 'min(780px, 94vw)' }"
+  appendTo="body"
+>
+  <div class="gd">
+    <div class="gd-top">
+      <div class="gd-chips" role="group" [attr.aria-label]="'EDITOR.FILTER' | translate">
+        @for (f of filters; track f) {
+          <button
+            type="button"
+            class="gd-chip"
+            [class.active]="filter() === f"
+            [attr.aria-pressed]="filter() === f"
+            (click)="filter.set(f)"
+          >
+            @switch (f) {
+              @case ('all') {
+                {{ 'EDITOR.FILTER_ALL' | translate }}
+              }
+              @case ('video') {
+                {{ 'EDITOR.FILTER_VIDEO' | translate }}
+              }
+              @case ('image') {
+                {{ 'EDITOR.FILTER_IMAGE' | translate }}
+              }
+            }
+          </button>
+        }
+      </div>
+      <p class="gd-hint">{{ 'EDITOR.IMPORT_DIALOG.HINT' | translate }}</p>
+    </div>
+
+    <div class="gd-body">
+      @if (loading()) {
+        <p class="gd-empty">{{ 'EDITOR.LOADING' | translate }}</p>
+      } @else if (error()) {
+        <div class="gd-empty">
+          <p>{{ 'EDITOR.IMPORT_DIALOG.ERROR' | translate }}</p>
+          <button type="button" class="gd-btn" (click)="close()">
+            {{ 'EDITOR.IMPORT_DIALOG.CANCEL' | translate }}
+          </button>
+        </div>
+      } @else {
+        @for (g of groups(); track g.key) {
+          <section class="gd-day">
+            <div class="gd-day__head">
+              <button
+                type="button"
+                class="gd-day__toggle"
+                [attr.aria-expanded]="isOpen(g.key)"
+                [attr.aria-controls]="'gd-' + g.key"
+                (click)="toggleDay(g.key)"
+              >
+                <i
+                  class="md md-chevron_right gd-chev"
+                  [class.open]="isOpen(g.key)"
+                  aria-hidden="true"
+                ></i>
+                <span class="gd-day__label">{{ g.label }}</span>
+                <span class="gd-day__count">{{ g.items.length }}</span>
+              </button>
+              @if (isOpen(g.key) && g.selectable > 0) {
+                <button type="button" class="gd-link" (click)="toggleDaySelection(g.items)">
+                  {{
+                    (allSelected(g.items)
+                      ? 'EDITOR.IMPORT_DIALOG.DESELECT_ALL'
+                      : 'EDITOR.IMPORT_DIALOG.SELECT_ALL'
+                    ) | translate
+                  }}
+                </button>
+              }
+            </div>
+
+            @if (isOpen(g.key)) {
+              <div class="gd-grid" [id]="'gd-' + g.key">
+                @for (item of g.items; track item.key) {
+                  <button
+                    type="button"
+                    class="gd-card"
+                    [class.sel]="isSelected(item.key)"
+                    [disabled]="!item.usable"
+                    [attr.aria-pressed]="isSelected(item.key)"
+                    [title]="item.usable ? item.name : ('EDITOR.NOT_USABLE' | translate)"
+                    (click)="toggleItem(item)"
+                  >
+                    <span class="gd-thumb">
+                      @if (item.thumb) {
+                        <img [src]="item.thumb | serverUrl" alt="" loading="lazy" />
+                      } @else if (item.kind === 'image') {
+                        <img [src]="item.url | serverUrl" alt="" loading="lazy" />
+                      } @else {
+                        <i class="md md-movie" aria-hidden="true"></i>
+                      }
+                      @if (item.kind === 'video' && item.duration > 0) {
+                        <span class="gd-dur">{{ formatDuration(item.duration) }}</span>
+                      }
+                      <span class="gd-check" aria-hidden="true"><i class="md md-check"></i></span>
+                    </span>
+                    <span class="gd-name">{{ item.name }}</span>
+                    <span class="gd-meta">
+                      {{ item.time }} ·
+                      {{
+                        (item.kind === 'video' ? 'EDITOR.FILTER_VIDEO' : 'EDITOR.FILTER_IMAGE')
+                          | translate
+                      }}
+                      @if (!item.usable) {
+                        · {{ 'EDITOR.NOT_USABLE' | translate }}
+                      }
+                    </span>
+                  </button>
+                }
+              </div>
+            }
+          </section>
+        } @empty {
+          <p class="gd-empty">{{ 'EDITOR.IMPORT_DIALOG.EMPTY' | translate }}</p>
+        }
+        @if (!exhausted()) {
+          <button
+            type="button"
+            class="gd-btn gd-more"
+            [disabled]="loadingMore()"
+            (click)="loadMore()"
+          >
+            {{ (loadingMore() ? 'EDITOR.LOADING' : 'EDITOR.IMPORT_DIALOG.LOAD_OLDER') | translate }}
+          </button>
+        }
+      }
+    </div>
+
+    <div class="gd-foot">
+      <span class="gd-count" aria-live="polite">
+        {{ 'EDITOR.IMPORT_DIALOG.SELECTED' | translate: { count: selectedCount() } }}
+      </span>
+      <span class="gd-spacer"></span>
+      <button type="button" class="gd-btn" (click)="close()">
+        {{ 'EDITOR.IMPORT_DIALOG.CANCEL' | translate }}
+      </button>
+      <button
+        type="button"
+        class="gd-btn gd-btn--primary"
+        [disabled]="selectedCount() === 0"
+        (click)="confirm()"
+      >
+        {{ 'EDITOR.IMPORT_DIALOG.CONFIRM' | translate: { count: selectedCount() } }}
+      </button>
+    </div>
+  </div>
+</p-dialog>

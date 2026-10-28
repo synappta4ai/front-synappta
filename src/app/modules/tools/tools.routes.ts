@@ -22,6 +22,10 @@ export const toolsRoutes: Routes = [
     component: StoryboardComponent,
   },
   {
+    path: 'editor',
+    loadChildren: () => import('@modules/editor/editor.routes').then((m) => m.editorRoutes),
+  },
+  {
     path: '',
     pathMatch: 'full',
     redirectTo: 'pose-sheet',

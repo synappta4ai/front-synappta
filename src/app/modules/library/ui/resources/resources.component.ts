@@ -28,6 +28,7 @@ import {
   FileListFilters,
 } from '@modules/library/interfaces';
 import { LibraryService } from '@modules/library/services';
+import { SendToEditorButtonComponent } from '@modules/editor/ui/send-to-editor-button/send-to-editor-button.component';
 import { AssetEditDialogComponent } from '@shared/components/asset-edit-dialog/asset-edit-dialog';
 import { ImgFadeDirective } from '@shared/components/img-fade/img-fade.directive';
 import { PageContainerComponent } from '@shared/components/page-container/page-container.component';
@@ -72,6 +73,7 @@ const GROUP_THUMBS_VISIBLE = 5;
     DatePipe,
     ServerUrlPipe,
     ImgFadeDirective,
+    SendToEditorButtonComponent,
     TranslatePipe,
   ],
   providers: [ServerUrlPipe],

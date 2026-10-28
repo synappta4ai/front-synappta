@@ -124,6 +124,9 @@
 .md-content_copy::before {
   content: 'content_copy';
 }
+.md-content_cut::before {
+  content: 'content_cut';
+}
 .md-dark_mode::before {
   content: 'dark_mode';
 }
@@ -159,6 +162,9 @@
 }
 .md-folder::before {
   content: 'folder';
+}
+.md-fullscreen::before {
+  content: 'fullscreen';
 }
 .md-folder_open::before {
   content: 'folder_open';
@@ -227,11 +233,17 @@
 .md-movie::before {
   content: 'movie';
 }
+.md-music_note::before {
+  content: 'music_note';
+}
 .md-notifications::before {
   content: 'notifications';
 }
 .md-open_in_new::before {
   content: 'open_in_new';
+}
+.md-pause::before {
+  content: 'pause';
 }
 .md-people::before {
   content: 'people';
@@ -256,6 +268,9 @@
 }
 .md-play_circle::before {
   content: 'play_circle';
+}
+.md-redo::before {
+  content: 'redo';
 }
 .md-refresh::before {
   content: 'refresh';
@@ -290,8 +305,17 @@
 .md-storage::before {
   content: 'storage';
 }
+.md-text_fields::before {
+  content: 'text_fields';
+}
 .md-timer::before {
   content: 'timer';
+}
+.md-tune::before {
+  content: 'tune';
+}
+.md-undo::before {
+  content: 'undo';
 }
 .md-upload::before {
   content: 'upload';
@@ -307,6 +331,12 @@
 }
 .md-warning::before {
   content: 'warning';
+}
+.md-zoom_in::before {
+  content: 'zoom_in';
+}
+.md-zoom_out::before {
+  content: 'zoom_out';
 }
 .md-work::before {
   content: 'work';
