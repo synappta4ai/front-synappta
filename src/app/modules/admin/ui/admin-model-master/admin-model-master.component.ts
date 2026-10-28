@@ -10,7 +10,6 @@ import { InputNumber } from 'primeng/inputnumber';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
 import { Select } from 'primeng/select';
-import { SelectButton } from 'primeng/selectbutton';
 import { TableModule } from 'primeng/table';
 import { Tag } from 'primeng/tag';
 import { ToggleSwitch } from 'primeng/toggleswitch';
@@ -60,7 +59,6 @@ type StatusFilter = 'all' | 'active' | 'inactive';
     InputText,
     Message,
     Select,
-    SelectButton,
     TableModule,
     Tag,
     ToggleSwitch,
@@ -69,6 +67,62 @@ type StatusFilter = 'all' | 'active' | 'inactive';
   templateUrl: './admin-model-master.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block h-full min-h-0' },
+  styles: [
+    `
+      .status-chips {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.25rem;
+        border-radius: 9999px;
+        border: 1px solid var(--color-surface-border);
+        background: var(--color-surface);
+      }
+      .status-chip {
+        padding: 0.4rem 1rem;
+        border-radius: 9999px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--color-ink-muted-on-dark);
+        transition:
+          background-color 0.15s,
+          color 0.15s;
+      }
+      .status-chip:hover {
+        color: var(--color-ink-on-dark);
+      }
+      .status-chip.active {
+        background: var(--color-surface-2);
+        color: var(--color-ink-on-dark);
+        box-shadow: inset 0 0 0 1px var(--color-surface-border);
+      }
+      .tags-cell {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        width: 100%;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.75rem;
+        border: 1px dashed transparent;
+        text-align: left;
+        transition:
+          border-color 0.15s,
+          background-color 0.15s;
+      }
+      .tags-cell:hover {
+        border-color: var(--color-surface-border);
+        background: var(--color-surface-2);
+      }
+      .tags-add {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--color-ink-muted-on-dark);
+      }
+      .tags-cell:hover .tags-add {
+        color: var(--color-accent);
+      }
+    `,
+  ],
 })
 export class AdminModelMasterComponent {
   private readonly adminService = inject(AdminService);
@@ -246,6 +300,53 @@ export class AdminModelMasterComponent {
 
   protected setEnabled(name: string, enabled: boolean): void {
     this.patch(name, { enabled });
+  }
+
+  /** Estado del proveedor: todo activo, todo apagado o mixto. */
+  protected providerState(provider: string): 'on' | 'off' | 'mixed' {
+    const list = Object.values(this.rows()).filter((row) => this.rowProvider(row) === provider);
+    if (list.length === 0 || list.every((row) => row.enabled)) {
+      return 'on';
+    }
+    if (list.every((row) => !row.enabled)) {
+      return 'off';
+    }
+    return 'mixed';
+  }
+
+  /** Apaga (o reenciende) de una vez todos los modelos de un proveedor. */
+  protected toggleProvider(provider: string): void {
+    if (provider === 'all') {
+      return;
+    }
+    const enable = this.providerState(provider) !== 'on';
+    this.rows.update((rows) => {
+      const next = { ...rows };
+      for (const row of Object.values(next)) {
+        if (this.rowProvider(row) === provider && row.enabled !== enable) {
+          next[row.name] = { ...row, enabled: enable };
+        }
+      }
+      return next;
+    });
+    this.dirty.set(true);
+  }
+
+  /** Orden automático: numera 1..N los visibles activos en el orden mostrado. */
+  protected autoOrder(): void {
+    const order = this.filteredRows();
+    let rank = 0;
+    this.rows.update((rows) => {
+      const next = { ...rows };
+      for (const row of order) {
+        const favoriteRank = row.enabled ? ++rank : 0;
+        if (next[row.name]?.favoriteRank !== favoriteRank) {
+          next[row.name] = { ...next[row.name], favoriteRank };
+        }
+      }
+      return next;
+    });
+    this.dirty.set(true);
   }
 
   /** Marca/desmarca una etiqueta predefinida (el diálogo no pierde el foco
