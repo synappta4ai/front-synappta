@@ -61,4 +61,10 @@ Thumbs.db
 *.log
 
 # Local AI tooling and scratch design notes
-.agents/.claude/.junie/.windsurf/.playwright-cli/DESIGN.md
+.agents/
+.claude/
+.junie/
+.windsurf/
+.playwright-cli/
+DESIGN.md
+agent/
