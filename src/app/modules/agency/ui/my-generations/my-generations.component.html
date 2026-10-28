@@ -242,6 +242,12 @@
                     <dd>{{ cost(log) | currency: 'USD' : 'symbol' : '1.2-4' }}</dd>
                   </div>
                   <div>
+                    <dt [title]="'AGENCY.HISTORY.ELAPSED' | translate">
+                      <i class="md md-timer"></i>{{ 'AGENCY.HISTORY.ELAPSED' | translate }}
+                    </dt>
+                    <dd>{{ elapsedLabel(log) }}</dd>
+                  </div>
+                  <div>
                     <dt [title]="'AGENCY.HISTORY.RESOLUTION' | translate">
                       <i class="md md-desktop_windows"></i
                       >{{ 'AGENCY.HISTORY.RESOLUTION' | translate }}
@@ -480,6 +486,10 @@
         <div class="meta-item">
           <span class="meta-item__label">{{ 'AGENCY.HISTORY.DURATION' | translate }}</span>
           <span class="meta-item__value">{{ duration(log.video_duration) || '—' }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-item__label">{{ 'AGENCY.HISTORY.ELAPSED' | translate }}</span>
+          <span class="meta-item__value">{{ elapsedLabel(log) }}</span>
         </div>
         <div class="meta-item">
           <span class="meta-item__label">FPS</span>

@@ -182,6 +182,24 @@
                       ) | translate: { count: projectFiles().length }
                     }}
                   </p>
+                  @if (generations().length > 0) {
+                    <p class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-muted-on-dark">
+                      <span
+                        class="inline-flex items-center gap-1"
+                        [title]="'PROJECTS.SUMMARY_COST_TITLE' | translate"
+                      >
+                        <i class="md md-bolt text-sm text-accent" aria-hidden="true"></i>
+                        {{ projectCost() | currency: 'USD' : 'symbol' : '1.2-4' }}
+                      </span>
+                      <span
+                        class="inline-flex items-center gap-1"
+                        [title]="'PROJECTS.SUMMARY_TIME_TITLE' | translate"
+                      >
+                        <i class="md md-timer text-sm text-accent" aria-hidden="true"></i>
+                        {{ projectTimeLabel() }}
+                      </span>
+                    </p>
+                  }
                 </div>
               </div>
             </div>
@@ -246,6 +264,34 @@
                             </span>
                             <span class="shrink-0 text-xs text-ink-muted-on-dark">
                               {{ log.created_at | date: 'dd MMM' }}
+                            </span>
+                          </div>
+                          <div
+                            class="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-surface-border px-3 py-2 text-xs text-ink-muted-on-dark"
+                          >
+                            <span
+                              class="inline-flex items-center gap-1"
+                              [title]="'AGENCY.HISTORY.COST' | translate"
+                            >
+                              <i class="md md-bolt text-sm text-accent" aria-hidden="true"></i>
+                              {{ (log.estimated_cost ?? 0) | currency: 'USD' : 'symbol' : '1.2-4' }}
+                            </span>
+                            <span
+                              class="inline-flex items-center gap-1"
+                              [title]="'AGENCY.HISTORY.ELAPSED' | translate"
+                            >
+                              <i class="md md-timer text-sm" aria-hidden="true"></i>
+                              {{ elapsedLabel(log) }}
+                            </span>
+                            <span
+                              class="inline-flex items-center gap-1"
+                              [title]="'AGENCY.HISTORY.RESOLUTION' | translate"
+                            >
+                              <i class="md md-desktop_windows text-sm" aria-hidden="true"></i>
+                              {{ log.video_resolution || '—' }}
+                              @if (log.video_duration && log.video_duration > 0) {
+                                · {{ log.video_duration }}s
+                              }
                             </span>
                           </div>
                           @if (log.status === 'succeeded' || log.status === 'failed') {

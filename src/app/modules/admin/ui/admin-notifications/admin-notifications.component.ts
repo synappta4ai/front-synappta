@@ -291,8 +291,12 @@ export class AdminNotificationsComponent {
       this.pairExpires.set(pairing.expires_at);
       const url = `${window.location.origin}/pair?code=${encodeURIComponent(pairing.code)}`;
       this.pairQr.set(await QRCode.toDataURL(url, { width: 240, margin: 2 }));
-    } catch {
-      this.pairError.set(this.translate.instant('ADMIN.NOTIFICATIONS.ERRORS.PAIR'));
+    } catch (err: unknown) {
+      const detail =
+        err instanceof Error && err.message ? ` (${err.message.slice(0, 160)})` : '';
+      this.pairError.set(
+        this.translate.instant('ADMIN.NOTIFICATIONS.ERRORS.PAIR') + detail,
+      );
     } finally {
       this.pairBusy.set(false);
     }

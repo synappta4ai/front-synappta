@@ -24,6 +24,9 @@
     @if (errorMessage()) {
       <p class="rounded-lg bg-red-500/10 px-4 py-3 text-sm text-red-400" role="alert">
         {{ errorMessage() }}
+        @if (errorDetail()) {
+          <span class="mt-1 block font-mono text-xs opacity-80">{{ errorDetail() }}</span>
+        }
       </p>
     }
     <p-button

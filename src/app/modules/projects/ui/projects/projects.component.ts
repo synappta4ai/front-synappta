@@ -1,4 +1,5 @@
-import { DatePipe } from '@angular/common';
+import { CurrencyPipe, DatePipe } from '@angular/common';
+import { formatDurationValue } from '@pipes/format-duration.pipe';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -42,6 +43,7 @@ const SECTION_LABEL_KEYS: Record<AssetSectionKey, string> = {
   selector: 'app-projects',
   imports: [
     FormsModule,
+    CurrencyPipe,
     DatePipe,
     TranslatePipe,
     PageContainerComponent,
@@ -238,6 +240,37 @@ export class ProjectsComponent {
         this.generations.set(logs ?? []);
         this.projectFiles.set(files ?? []);
       });
+  }
+
+  /** Costo total (USD) de las generaciones del proyecto abierto. */
+  protected readonly projectCost = computed(() =>
+    this.generations().reduce((sum, log) => sum + (log.estimated_cost ?? 0), 0),
+  );
+
+  /** Tiempo total de generación (s) del proyecto abierto. */
+  protected readonly projectTime = computed(() =>
+    this.generations().reduce((sum, log) => sum + this.elapsedOf(log), 0),
+  );
+
+  /** Segundos que tardó la generación: updated_at - created_at (0 si falta). */
+  protected elapsedOf(log: GenerationLog): number {
+    const start = new Date(log.created_at).getTime();
+    const end = log.updated_at ? new Date(log.updated_at).getTime() : NaN;
+    if (Number.isNaN(start)) {
+      return 0;
+    }
+    const done = Number.isNaN(end) ? start : end;
+    return Math.max(0, (done - start) / 1000);
+  }
+
+  protected elapsedLabel(log: GenerationLog): string {
+    const secs = this.elapsedOf(log);
+    return secs > 0 ? formatDurationValue(secs, 's') : '—';
+  }
+
+  protected projectTimeLabel(): string {
+    const secs = this.projectTime();
+    return secs > 0 ? formatDurationValue(secs, 's') : '—';
   }
 
   /** Salida principal del log (video o imagen). */

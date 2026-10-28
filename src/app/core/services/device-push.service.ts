@@ -1,6 +1,6 @@
 import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 
 import { ApiResponse } from '../interfaces/api.interface';
@@ -17,6 +17,29 @@ function urlBase64ToUint8Array(base64: string): Uint8Array<ArrayBuffer> {
     out[i] = raw.charCodeAt(i);
   }
   return out;
+}
+
+/** Compara la applicationServerKey de una suscripción con una VAPID pública. */
+function sameApplicationKey(sub: PushSubscription, publicKey: string): boolean {
+  try {
+    const current = sub.options?.applicationServerKey;
+    if (!current) {
+      return false;
+    }
+    const expected = urlBase64ToUint8Array(publicKey);
+    const view = current instanceof ArrayBuffer ? new Uint8Array(current) : new Uint8Array(current);
+    if (view.byteLength !== expected.byteLength) {
+      return false;
+    }
+    for (let i = 0; i < view.byteLength; i++) {
+      if (view[i] !== expected[i]) {
+        return false;
+      }
+    }
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /** Push web nativo en este dispositivo + vinculación por QR. */
@@ -41,6 +64,8 @@ export class DevicePushService {
   readonly subscribed = signal(false);
   readonly busy = signal(false);
   readonly error = signal<string | null>(null);
+  /** Detalle técnico del último fallo (mensaje del back o del navegador). */
+  readonly errorDetail = signal<string | null>(null);
 
   constructor() {
     if (!isPlatformBrowser(this.platformId)) {
@@ -75,36 +100,65 @@ export class DevicePushService {
   /** Suscribe este dispositivo al push del usuario actual (requiere login). */
   async subscribe(): Promise<boolean> {
     if (!this.supported()) {
-      this.error.set('NOTIFICATIONS.DEVICE_UNSUPPORTED');
+      this.fail('NOTIFICATIONS.DEVICE_UNSUPPORTED', null);
       return false;
     }
     this.busy.set(true);
     this.error.set(null);
+    this.errorDetail.set(null);
     try {
-      const { public_key, enabled } = await this.getPublicKey();
-      if (!enabled || !public_key) {
-        this.error.set('NOTIFICATIONS.DEVICE_NOT_CONFIGURED');
+      let public_key = '';
+      try {
+        ({ public_key } = await this.getPublicKey());
+      } catch (e) {
+        this.failHttp('NOTIFICATIONS.DEVICE_SUBSCRIBE_FAILED', e, 'GET push/public-key');
+        return false;
+      }
+      if (!public_key) {
+        this.fail('NOTIFICATIONS.DEVICE_NOT_CONFIGURED', 'empty public key from GET push/public-key');
         return false;
       }
       const perm = await Notification.requestPermission();
       this.permission.set(perm);
       if (perm !== 'granted') {
-        this.error.set('NOTIFICATIONS.DEVICE_PERMISSION_DENIED');
+        this.fail('NOTIFICATIONS.DEVICE_PERMISSION_DENIED', `permission=${perm}`);
         return false;
       }
-      const reg = await this.ensureWorker();
-      let sub = await reg.pushManager.getSubscription();
-      if (!sub) {
-        sub = await reg.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(public_key),
-        });
+      let reg: ServiceWorkerRegistration;
+      try {
+        reg = await this.ensureWorker();
+      } catch (e) {
+        this.fail('NOTIFICATIONS.DEVICE_WORKER_FAILED', this.describe(e));
+        return false;
       }
-      await this.postSubscription(sub.toJSON(), `${this.apiUrl}/push/subscriptions`);
+      let sub = await reg.pushManager.getSubscription();
+      // La suscripción vieja queda atada a la VAPID anterior (rotación de
+      // claves o QR de otra cuenta): si la clave cambió, re-suscribir.
+      if (sub && !sameApplicationKey(sub, public_key)) {
+        await sub.unsubscribe().catch(() => undefined);
+        sub = null;
+      }
+      if (!sub) {
+        try {
+          sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(public_key),
+          });
+        } catch (e) {
+          this.fail('NOTIFICATIONS.DEVICE_PUSH_FAILED', this.describe(e));
+          return false;
+        }
+      }
+      try {
+        await this.postSubscription(sub.toJSON(), `${this.apiUrl}/push/subscriptions`);
+      } catch (e) {
+        this.failHttp('NOTIFICATIONS.DEVICE_SUBSCRIBE_FAILED', e, 'POST push/subscriptions');
+        return false;
+      }
       this.rememberEndpoint(sub.endpoint);
       return true;
     } catch (e) {
-      this.error.set('NOTIFICATIONS.DEVICE_SUBSCRIBE_FAILED');
+      this.fail('NOTIFICATIONS.DEVICE_SUBSCRIBE_FAILED', this.describe(e));
       return false;
     } finally {
       this.busy.set(false);
@@ -126,6 +180,8 @@ export class DevicePushService {
       const reg = await navigator.serviceWorker.getRegistration();
       const sub = await reg?.pushManager.getSubscription();
       await sub?.unsubscribe();
+    } catch (e) {
+      console.error('[push] unsubscribe failed', e);
     } finally {
       this.forgetEndpoint();
       this.busy.set(false);
@@ -146,8 +202,8 @@ export class DevicePushService {
         ),
       );
       return res.data?.public_key ?? null;
-    } catch {
-      this.error.set('NOTIFICATIONS.DEVICE_SUBSCRIBE_FAILED');
+    } catch (e) {
+      this.failHttp('NOTIFICATIONS.DEVICE_SUBSCRIBE_FAILED', e, 'POST push/vapid/rotate');
       return null;
     }
   }
@@ -196,46 +252,82 @@ export class DevicePushService {
    */
   async redeemPairing(code: string): Promise<boolean> {
     if (!this.supported()) {
-      this.error.set('NOTIFICATIONS.DEVICE_UNSUPPORTED');
+      this.fail('NOTIFICATIONS.DEVICE_UNSUPPORTED', null);
       return false;
     }
     this.busy.set(true);
     this.error.set(null);
+    this.errorDetail.set(null);
     try {
       const perm = await Notification.requestPermission();
       this.permission.set(perm);
       if (perm !== 'granted') {
-        this.error.set('NOTIFICATIONS.DEVICE_PERMISSION_DENIED');
+        this.fail('NOTIFICATIONS.DEVICE_PERMISSION_DENIED', `permission=${perm}`);
         return false;
       }
-      const reg = await this.ensureWorker();
-      let sub = await reg.pushManager.getSubscription();
-      if (!sub) {
-        // El QR es público (sin login): la clave es la del dueño del código,
-        // no la del endpoint autenticado.
+      let reg: ServiceWorkerRegistration;
+      try {
+        reg = await this.ensureWorker();
+      } catch (e) {
+        this.fail('NOTIFICATIONS.DEVICE_WORKER_FAILED', this.describe(e));
+        return false;
+      }
+      // El QR es público (sin login): la clave es la del dueño del código,
+      // no la del endpoint autenticado. Se pide primero para poder detectar
+      // una suscripción vieja atada a otra clave.
+      let public_key = '';
+      try {
         const keyRes = await firstValueFrom(
           this.http.get<ApiResponse<{ public_key: string; enabled: boolean }>>(
             `${this.apiUrl}/push/pairing/${encodeURIComponent(code)}/public-key`,
           ),
         );
-        const public_key = keyRes.data?.public_key ?? '';
+        public_key = keyRes.data?.public_key ?? '';
         if (!keyRes.data?.enabled || !public_key) {
-          this.error.set('NOTIFICATIONS.DEVICE_NOT_CONFIGURED');
+          this.fail('NOTIFICATIONS.DEVICE_NOT_CONFIGURED', 'empty public key from pairing public-key');
           return false;
         }
-        sub = await reg.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(public_key),
-        });
+      } catch (e) {
+        if (this.isInvalidCode(e)) {
+          this.fail('NOTIFICATIONS.DEVICE_PAIR_INVALID', this.describe(e));
+        } else {
+          this.failHttp('NOTIFICATIONS.DEVICE_SUBSCRIBE_FAILED', e, 'GET pairing public-key');
+        }
+        return false;
       }
-      await this.postSubscription(
-        sub.toJSON(),
-        `${this.apiUrl}/push/pairing/${encodeURIComponent(code)}/redeem`,
-      );
+      let sub = await reg.pushManager.getSubscription();
+      if (sub && !sameApplicationKey(sub, public_key)) {
+        await sub.unsubscribe().catch(() => undefined);
+        sub = null;
+      }
+      if (!sub) {
+        try {
+          sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(public_key),
+          });
+        } catch (e) {
+          this.fail('NOTIFICATIONS.DEVICE_PUSH_FAILED', this.describe(e));
+          return false;
+        }
+      }
+      try {
+        await this.postSubscription(
+          sub.toJSON(),
+          `${this.apiUrl}/push/pairing/${encodeURIComponent(code)}/redeem`,
+        );
+      } catch (e) {
+        if (this.isInvalidCode(e)) {
+          this.fail('NOTIFICATIONS.DEVICE_PAIR_INVALID', this.describe(e));
+        } else {
+          this.failHttp('NOTIFICATIONS.DEVICE_SUBSCRIBE_FAILED', e, 'POST pairing redeem');
+        }
+        return false;
+      }
       this.rememberEndpoint(sub.endpoint);
       return true;
-    } catch {
-      this.error.set('NOTIFICATIONS.DEVICE_SUBSCRIBE_FAILED');
+    } catch (e) {
+      this.fail('NOTIFICATIONS.DEVICE_SUBSCRIBE_FAILED', this.describe(e));
       return false;
     } finally {
       this.busy.set(false);
@@ -249,6 +341,52 @@ export class DevicePushService {
         keys: { p256dh: json.keys?.['p256dh'], auth: json.keys?.['auth'] },
       }),
     );
+  }
+
+  private fail(key: string, detail: string | null): void {
+    this.error.set(key);
+    this.errorDetail.set(detail);
+    console.error('[push] subscribe failed:', key, detail ?? '');
+  }
+
+  private failHttp(key: string, e: unknown, where: string): void {
+    const detail = this.httpDetail(e);
+    this.error.set(detail.status ? 'NOTIFICATIONS.DEVICE_HTTP_ERROR' : key);
+    this.errorDetail.set(detail.status ? `${where} → HTTP ${detail.status}: ${detail.body}` : `${where}: ${this.describe(e)}`);
+    console.error('[push] subscribe failed:', where, e);
+  }
+
+  private httpDetail(e: unknown): { status: number | null; body: string } {
+    if (e instanceof HttpErrorResponse) {
+      const raw = e.error;
+      const body =
+        typeof raw === 'string'
+          ? raw
+          : (raw?.error ?? raw?.message ?? e.message ?? '').toString().slice(0, 300);
+      return { status: e.status || null, body: body || e.message };
+    }
+    return { status: null, body: this.describe(e) };
+  }
+
+  private isInvalidCode(e: unknown): boolean {
+    if (e instanceof HttpErrorResponse && e.status === 400) {
+      const raw = e.error;
+      const msg = (typeof raw === 'string' ? raw : (raw?.error ?? '')).toString().toLowerCase();
+      return msg.includes('invalid or expired');
+    }
+    return false;
+  }
+
+  private describe(e: unknown): string {
+    if (e instanceof HttpErrorResponse) {
+      const raw = e.error;
+      const body = typeof raw === 'string' ? raw : (raw?.error ?? raw?.message ?? e.message ?? '');
+      return `HTTP ${e.status}: ${String(body).slice(0, 300)}`;
+    }
+    if (e instanceof Error) {
+      return e.message.slice(0, 300);
+    }
+    return String(e).slice(0, 300);
   }
 
   private storedEndpoint(): string | null {

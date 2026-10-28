@@ -286,6 +286,11 @@ export class MyGenerationsComponent {
     this.filtered().reduce((sum, log) => sum + (log.cost_credits ?? 0), 0),
   );
 
+  /** Tiempo total de generación (s) de lo filtrado: updated_at - created_at. */
+  protected readonly totalTime = computed(() =>
+    this.filtered().reduce((sum, log) => sum + this.elapsedOf(log), 0),
+  );
+
   // ── Acciones ─────────────────────────────────────────────────────────────
 
   protected open(log: GenerationLog): void {
@@ -445,6 +450,26 @@ export class MyGenerationsComponent {
       return '';
     }
     return formatDurationValue(seconds, 's');
+  }
+
+  /** Segundos que tardó la generación: updated_at - created_at (0 si falta). */
+  protected elapsedOf(log: GenerationLog): number {
+    const start = new Date(log.created_at).getTime();
+    const end = log.updated_at ? new Date(log.updated_at).getTime() : NaN;
+    if (Number.isNaN(start)) {
+      return 0;
+    }
+    const done = Number.isNaN(end) ? start : end;
+    return Math.max(0, (done - start) / 1000);
+  }
+
+  /** Tiempo de generación formateado (— si aún no terminó). */
+  protected elapsedLabel(log: GenerationLog): string {
+    const secs = this.elapsedOf(log);
+    if (secs <= 0) {
+      return '—';
+    }
+    return formatDurationValue(secs, 's');
   }
 
   protected promptOf(log: GenerationLog): string {

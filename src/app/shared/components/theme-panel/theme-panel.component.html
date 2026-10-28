@@ -107,7 +107,12 @@
           />
         </div>
         @if (devicePushError()) {
-          <p class="notif-error" role="alert">{{ devicePushError() }}</p>
+          <p class="notif-error" role="alert">
+            {{ devicePushError() }}
+            @if (devicePushDetail()) {
+              <span class="notif-error__detail">{{ devicePushDetail() }}</span>
+            }
+          </p>
         }
       }
       <div class="notif-row" [class.notif-disabled]="!canToggleVideo()">

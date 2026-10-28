@@ -38,6 +38,28 @@ export class PairDeviceComponent {
 
   protected errorMessage(): string | null {
     const key = this.devicePush.error();
-    return key ? this.translate.instant(key) : null;
+    if (!key) {
+      return null;
+    }
+    const detail = this.devicePush.errorDetail();
+    if (key === 'NOTIFICATIONS.DEVICE_HTTP_ERROR' && detail) {
+      const m = detail.match(/HTTP (\d+):\s*(.*)/);
+      return this.translate.instant(key, {
+        status: m?.[1] ?? '',
+        detail: (m?.[2] ?? detail).slice(0, 200),
+      });
+    }
+    return this.translate.instant(key, { status: '', detail: detail ?? '' });
+  }
+
+  protected errorDetail(): string | null {
+    if (!this.devicePush.error()) {
+      return null;
+    }
+    const detail = this.devicePush.errorDetail();
+    if (!detail || this.devicePush.error() === 'NOTIFICATIONS.DEVICE_HTTP_ERROR') {
+      return null;
+    }
+    return detail;
   }
 }
