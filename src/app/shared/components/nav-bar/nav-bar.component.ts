@@ -70,6 +70,12 @@ export class NavBarComponent {
         icon: 'md md-movie',
         routerLink: '/tools/storyboard',
       },
+      {
+        label: t('TOOLS.EDITOR'),
+        description: t('TOOLS.EDITOR_DESC'),
+        icon: 'md md-content_cut',
+        routerLink: '/tools/editor',
+      },
     ];
   });
 

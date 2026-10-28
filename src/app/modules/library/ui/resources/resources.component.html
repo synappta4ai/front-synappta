@@ -142,6 +142,27 @@
             >
               <i class="md md-download"></i>
             </button>
+            @if (
+              file.url &&
+              (file.mime_type?.startsWith('video/') ||
+                file.mime_type?.startsWith('image/') ||
+                file.mime_type?.startsWith('audio/'))
+            ) {
+              <app-send-to-editor-button
+                [quick]="true"
+                [showLabel]="false"
+                [clip]="{
+                  kind: file.mime_type.startsWith('video/')
+                    ? 'video'
+                    : file.mime_type.startsWith('image/')
+                      ? 'image'
+                      : 'audio',
+                  url: file.url,
+                  name: file.filename,
+                  fileId: file.id,
+                }"
+              />
+            }
             @if ((file.project_ids?.length ?? 0) > 0) {
               <span class="overlay-badge overlay-badge--bottom">
                 <i class="md md-work"></i>{{ file.project_ids!.length }}

@@ -59,3 +59,12 @@ Thumbs.db
 
 # Dev server and tool logs
 *.log
+
+# Local AI tooling and scratch design notes
+.agents/
+.claude/
+.junie/
+.windsurf/
+.playwright-cli/
+DESIGN.md
+agent/

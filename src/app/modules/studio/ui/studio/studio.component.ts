@@ -31,6 +31,7 @@ import type { GenerateRequest, Modality } from '@modules/agency/interfaces';
 import { AgencyService } from '@modules/agency/services';
 import { ModelSelectComponent } from '@modules/agency/ui/model-select/model-select.component';
 import { LibraryService } from '@modules/library/services';
+import { SendToEditorButtonComponent } from '@modules/editor/ui/send-to-editor-button/send-to-editor-button.component';
 import {
   FileAsset,
   Ingredient,
@@ -100,6 +101,7 @@ interface MentionRow {
     TranslatePipe,
     ServerUrlPipe,
     AssetPickerDialogComponent,
+    SendToEditorButtonComponent,
     ModelSelectComponent,
     AssetEditDialogComponent,
     SlidePillDirective,
@@ -1374,7 +1376,11 @@ export class StudioComponent {
       )
       .subscribe((pageData) => {
         const files = [...(pageData.items ?? [])] as FileAsset[];
-        this.assets.set(files);
+        // Las refs de un reuso traídas por id (fuera de esta página) no se pierden.
+        const keep = new Set([...this.reusedRefIds(), ...this.selectedAssetIds()]);
+        const inFiles = new Set(files.map((a) => a.id));
+        const extras = this.assets().filter((a) => keep.has(a.id) && !inFiles.has(a.id));
+        this.assets.set([...files, ...extras]);
         // Un reuso trae sus propias referencias por id: mandan sobre las que
         // el proyecto tenga asignadas (no se pisan con autoAssignRefs).
         if (this.pendingReuseRefs?.length) {
@@ -2122,7 +2128,9 @@ export class StudioComponent {
       // Después del cambio (que descarta pendientes): esta carga los aplica.
       this.pendingReuseRefs = refs;
     } else if (refs.length) {
-      // Sin proyecto: los recursos ya cargados alcanzan (o se piden por id).
+      // Sin proyecto (p.ej. llegada desde Infoproductos): los recursos ya
+      // cargados alcanzan, o se piden por id.
+      this.pendingReuseRefs = refs;
       this.restorePendingReuseRefs(this.assets());
     }
     // Los @ del prompt restauran los recursos citados: menciones, selección
