@@ -299,7 +299,7 @@
 
 .gen-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 16px;
 }
 
@@ -444,11 +444,26 @@
   white-space: nowrap;
 }
 
+/* 6 columnas: usuario y fecha ocupan media fila (3+3); costo, tiempo y
+   resolución se reparten la siguiente en tercios (2+2+2), así quedan
+   alineados horizontalmente sin una celda huérfana. */
 .gen-card__meta {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 6px 10px;
   margin: 0;
+}
+
+.gen-card__meta > div {
+  min-width: 0;
+}
+
+.gen-card__meta > div:nth-child(-n + 2) {
+  grid-column: span 3;
+}
+
+.gen-card__meta > div:nth-child(n + 3) {
+  grid-column: span 2;
 }
 
 .gen-card__meta dt {
