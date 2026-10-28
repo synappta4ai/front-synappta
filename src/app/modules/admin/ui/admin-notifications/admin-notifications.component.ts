@@ -1,3 +1,4 @@
+import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -14,7 +15,11 @@ import { Tooltip } from 'primeng/tooltip';
 
 import { AdminTenantService } from '../../services/admin-tenant.service';
 import { AdminApiRepository } from '../../repositories/admin-api.repository';
-import { NotificationChannel, NotificationChannelRequest } from '../../interfaces';
+import {
+  NotificationChannel,
+  NotificationChannelRequest,
+  PushDevice,
+} from '../../interfaces';
 import { DevicePushService } from '@core/services/device-push.service';
 
 /** Proveedor soportado por shoutrrr + ejemplo de URL. */
@@ -47,6 +52,7 @@ const SERVICE_OPTIONS: ServiceOption[] = [
   selector: 'app-admin-notifications',
   imports: [
     FormsModule,
+    DatePipe,
     TranslatePipe,
     Button,
     Dialog,
@@ -72,6 +78,13 @@ export class AdminNotificationsComponent {
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly notice = signal<string | null>(null);
+
+  /** Dispositivos con push suscripto en el tenant gestionado. */
+  protected readonly devices = signal<PushDevice[]>([]);
+  protected readonly devicesLoading = signal(false);
+  /** Dispositivo pendiente de confirmar baja (modal). */
+  protected readonly confirmDevice = signal<PushDevice | null>(null);
+  protected readonly removingDevice = signal(false);
 
   protected readonly dialogVisible = signal(false);
   protected readonly editingId = signal<string | null>(null);
@@ -127,6 +140,53 @@ export class AdminNotificationsComponent {
       error: () => {
         this.error.set(this.translate.instant('ADMIN.NOTIFICATIONS.ERRORS.LOAD'));
         this.loading.set(false);
+      },
+    });
+    this.loadDevices();
+  }
+
+  /** Lista los dispositivos con push (no bloquea los canales). */
+  protected loadDevices(): void {
+    this.devicesLoading.set(true);
+    this.repository.listPushDevices(this.tenantSlug()).subscribe({
+      next: (res) => {
+        this.devices.set(res.data ?? []);
+        this.devicesLoading.set(false);
+      },
+      error: () => this.devicesLoading.set(false),
+    });
+  }
+
+  /** Abre el modal de confirmación de baja del dispositivo. */
+  protected askRemoveDevice(device: PushDevice): void {
+    this.confirmDevice.set(device);
+  }
+
+  protected cancelRemoveDevice(): void {
+    if (this.removingDevice()) {
+      return;
+    }
+    this.confirmDevice.set(null);
+  }
+
+  /** Da de baja el push del dispositivo (el navegador queda desuscripto). */
+  protected confirmRemoveDevice(): void {
+    const device = this.confirmDevice();
+    if (!device || this.removingDevice()) {
+      return;
+    }
+    this.removingDevice.set(true);
+    this.repository.deletePushDevice(device.id, this.tenantSlug()).subscribe({
+      next: () => {
+        this.removingDevice.set(false);
+        this.confirmDevice.set(null);
+        this.notice.set(this.translate.instant('ADMIN.NOTIFICATIONS.DEVICE_REMOVED'));
+        setTimeout(() => this.notice.set(null), 3000);
+        this.loadDevices();
+      },
+      error: (err: { error?: { error?: string } }) => {
+        this.removingDevice.set(false);
+        this.error.set(err?.error?.error ?? this.translate.instant('ADMIN.NOTIFICATIONS.ERRORS.TEST'));
       },
     });
   }

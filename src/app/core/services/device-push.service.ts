@@ -93,6 +93,16 @@ export class DevicePushService {
     return environment.API_URL;
   }
 
+  /** Relee el permiso del navegador (por si el usuario lo cambió en ajustes). */
+  refreshPermission(): NotificationPermission | 'unsupported' {
+    if (!isPlatformBrowser(this.platformId) || typeof Notification === 'undefined') {
+      this.permission.set('unsupported');
+      return 'unsupported';
+    }
+    this.permission.set(Notification.permission);
+    return Notification.permission;
+  }
+
   /** Clave VAPID pública + si el back tiene push configurado. */
   async getPublicKey(): Promise<{ public_key: string; enabled: boolean }> {
     const res = await firstValueFrom(

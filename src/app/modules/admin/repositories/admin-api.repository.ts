@@ -15,6 +15,7 @@ import {
   NotificationChannel,
   NotificationChannelRequest,
   PermissionDef,
+  PushDevice,
   PlatformUser,
   ServerCommunicationLog,
   ServerCommsPage,
@@ -362,6 +363,21 @@ export class AdminApiRepository {
   deleteNotificationChannel(id: string, tenantSlug?: string): Observable<ApiResponse<null>> {
     return this.http.delete<ApiResponse<null>>(
       `${this.apiUrl}/notify/channels/${encodeURIComponent(id)}`,
+      { ...this.tenantHeaders(tenantSlug) },
+    );
+  }
+
+  /** Dispositivos con push suscripto en el tenant (vista admin). */
+  listPushDevices(tenantSlug?: string): Observable<ApiResponse<PushDevice[]>> {
+    return this.http.get<ApiResponse<PushDevice[]>>(`${this.apiUrl}/push/subscriptions`, {
+      ...this.tenantHeaders(tenantSlug),
+    });
+  }
+
+  /** Da de baja el push de un dispositivo (cualquiera del tenant). */
+  deletePushDevice(id: string, tenantSlug?: string): Observable<ApiResponse<null>> {
+    return this.http.delete<ApiResponse<null>>(
+      `${this.apiUrl}/push/subscriptions/${encodeURIComponent(id)}`,
       { ...this.tenantHeaders(tenantSlug) },
     );
   }

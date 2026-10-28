@@ -65,6 +65,16 @@ export interface NotificationChannel {
   updated_at: string;
 }
 
+/** Dispositivo con push suscripto (vista admin: sin secretos push). */
+export interface PushDevice {
+  id: string;
+  user_id: number;
+  user_display_name: string;
+  user_agent: string;
+  endpoint_host: string;
+  created_at: string;
+}
+
 /** Alta/edición de canal: url vacía conserva el secreto guardado. */
 export interface NotificationChannelRequest {
   name?: string;

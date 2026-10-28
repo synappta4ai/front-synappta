@@ -533,6 +533,16 @@
       "FORM_URL_HINT": "La URL incluye el secreto y queda guardada cifrada.",
       "FORM_URL_KEEP": "Guardada: {{mask}} — dejá vacío para conservarla.",
       "FORM_ENABLED": "Activo",
+      "DEVICES_TITLE": "Dispositivos suscriptos",
+      "DEVICES_SUBTITLE": "Cada teléfono o navegador que recibe push. Dar de baja corta los avisos en ese dispositivo.",
+      "DEVICES_LOADING": "Cargando dispositivos…",
+      "DEVICES_EMPTY": "Ningún dispositivo suscripto todavía: activá \"Este dispositivo\" o vinculá uno con el QR.",
+      "DEVICE_UNKNOWN_USER": "Usuario desconocido",
+      "DEVICE_REMOVE": "Dar de baja este dispositivo",
+      "DEVICE_REMOVED": "Dispositivo dado de baja.",
+      "DEVICE_MODAL_TITLE": "Dar de baja el dispositivo",
+      "DEVICE_MODAL_BODY": "¿Dar de baja los avisos de {{user}} en {{host}}? Dejará de recibir push en ese dispositivo.",
+      "DEVICE_MODAL_CONFIRM": "Dar de baja",
       "ERRORS": {
         "LOAD": "No se pudieron cargar los canales.",
         "SAVE": "No se pudo guardar el canal.",
@@ -1985,7 +1995,14 @@
     "SUCCESS_HINT": "Si apagaste los avisos de video en tu cuenta, volvé a activarlos para recibirlos.",
     "NO_CODE": "Este enlace no trae un código válido. Pedí un QR nuevo.",
     "OPEN_APP": "Abrir la app",
-    "UNSUPPORTED": "Este navegador no soporta notificaciones push."
+    "UNSUPPORTED": "Este navegador no soporta notificaciones push.",
+    "PERMISSION_HELP_TITLE": "El permiso está bloqueado: activalo en ajustes",
+    "PERMISSION_HELP_WHY": "El navegador no deja que esta página te pregunte de nuevo; tenés que habilitarlo vos en los ajustes del sitio.",
+    "PERMISSION_STEP1": "Tocá el candado junto a la dirección de la página.",
+    "PERMISSION_STEP2": "Entrá a Permisos (o Configuración del sitio).",
+    "PERMISSION_STEP3": "Cambiá Notificaciones a Permitir, volvé acá y tocá reintentar.",
+    "PERMISSION_IOS_NOTE": "En iPhone las notificaciones web requieren iOS 16.4 o más y la app agregada a Inicio (Compartir → Agregar a Inicio).",
+    "PERMISSION_RETRY": "Ya lo activé, reintentar"
   },
   "COOKIEBANNER": {
     "TITLE": "Preferencias de cookies",

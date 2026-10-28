@@ -533,6 +533,16 @@
       "FORM_URL_HINT": "The URL holds the secret and is stored encrypted.",
       "FORM_URL_KEEP": "Stored: {{mask}} — leave empty to keep it.",
       "FORM_ENABLED": "Active",
+      "DEVICES_TITLE": "Subscribed devices",
+      "DEVICES_SUBTITLE": "Each phone or browser receiving push. Removing one stops alerts on that device.",
+      "DEVICES_LOADING": "Loading devices…",
+      "DEVICES_EMPTY": "No devices subscribed yet: enable \"This device\" or link one with the QR.",
+      "DEVICE_UNKNOWN_USER": "Unknown user",
+      "DEVICE_REMOVE": "Remove this device",
+      "DEVICE_REMOVED": "Device removed.",
+      "DEVICE_MODAL_TITLE": "Remove device",
+      "DEVICE_MODAL_BODY": "Stop alerts for {{user}} on {{host}}? It will no longer receive push on that device.",
+      "DEVICE_MODAL_CONFIRM": "Remove",
       "ERRORS": {
         "LOAD": "Could not load channels.",
         "SAVE": "Could not save the channel.",
@@ -1985,7 +1995,14 @@
     "SUCCESS_HINT": "If you turned video alerts off in your account, turn them back on to receive them.",
     "NO_CODE": "This link carries no valid code. Ask for a new QR.",
     "OPEN_APP": "Open the app",
-    "UNSUPPORTED": "This browser does not support push notifications."
+    "UNSUPPORTED": "This browser does not support push notifications.",
+    "PERMISSION_HELP_TITLE": "Permission is blocked: enable it in settings",
+    "PERMISSION_HELP_WHY": "The browser won't let this page ask you again; you need to enable it yourself in the site settings.",
+    "PERMISSION_STEP1": "Tap the padlock next to the page address.",
+    "PERMISSION_STEP2": "Open Permissions (or Site settings).",
+    "PERMISSION_STEP3": "Set Notifications to Allow, come back here and tap retry.",
+    "PERMISSION_IOS_NOTE": "On iPhone, web notifications need iOS 16.4+ and the app added to Home Screen (Share → Add to Home Screen).",
+    "PERMISSION_RETRY": "I've enabled it, retry"
   },
   "COOKIEBANNER": {
     "TITLE": "Cookie preferences",
