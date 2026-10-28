@@ -223,6 +223,8 @@ export interface GenerationLog {
   piece_name: string | null;
   user_display_name: string | null;
   created_at: string;
+  /** Fin de la generación (el back lo pone en NOW() al completar). Sirve para el tiempo transcurrido. */
+  updated_at?: string | null;
 }
 
 export interface GenerationLogsPage {

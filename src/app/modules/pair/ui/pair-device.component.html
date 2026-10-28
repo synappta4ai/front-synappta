@@ -24,6 +24,9 @@
     @if (errorMessage()) {
       <p class="rounded-lg bg-red-500/10 px-4 py-3 text-sm text-red-400" role="alert">
         {{ errorMessage() }}
+        @if (errorDetail()) {
+          <span class="mt-1 block font-mono text-xs opacity-80">{{ errorDetail() }}</span>
+        }
       </p>
     }
     <p-button
@@ -35,6 +38,30 @@
     />
     @if (!devicePush.supported()) {
       <p class="text-xs text-ink-muted-on-dark">{{ 'PAIR.UNSUPPORTED' | translate }}</p>
+    }
+    @if (isPermissionDenied()) {
+      <div class="w-full rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-left" role="note">
+        <p class="text-sm font-bold text-amber-200">{{ 'PAIR.PERMISSION_HELP_TITLE' | translate }}</p>
+        <p class="mt-1 text-xs text-ink-muted-on-dark">{{ 'PAIR.PERMISSION_HELP_WHY' | translate }}</p>
+        <ol class="mt-2 list-decimal space-y-1 pl-5 text-xs text-ink-muted-on-dark">
+          <li>{{ 'PAIR.PERMISSION_STEP1' | translate }}</li>
+          <li>{{ 'PAIR.PERMISSION_STEP2' | translate }}</li>
+          <li>{{ 'PAIR.PERMISSION_STEP3' | translate }}</li>
+        </ol>
+        @if (isIOS()) {
+          <p class="mt-2 text-xs text-ink-muted-on-dark">{{ 'PAIR.PERMISSION_IOS_NOTE' | translate }}</p>
+        }
+        <p-button
+          class="mt-3"
+          [label]="'PAIR.PERMISSION_RETRY' | translate"
+          icon="md md-refresh"
+          size="small"
+          severity="secondary"
+          [outlined]="true"
+          [loading]="devicePush.busy()"
+          (onClick)="retry()"
+        />
+      </div>
     }
     <p class="font-mono text-xs text-ink-muted-on-dark">{{ code() }}</p>
   }

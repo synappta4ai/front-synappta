@@ -4,14 +4,27 @@
       <h3 class="font-bold text-ink-on-dark">{{ 'ADMIN.MODEL_MASTER.TITLE' | translate }}</h3>
       <p class="text-sm text-ink-muted-on-dark">{{ 'ADMIN.MODEL_MASTER.DESC' | translate }}</p>
     </div>
-    <p-button
-      [label]="'ADMIN.MODEL_MASTER.SAVE' | translate"
-      icon="md md-save"
-      size="small"
-      [loading]="saving()"
-      [disabled]="!dirty() || saving()"
-      (onClick)="save()"
-    />
+    <div class="flex items-center gap-2">
+      <p-button
+        [label]="'ADMIN.MODEL_MASTER.AUTO_ORDER' | translate"
+        icon="md md-sort"
+        size="small"
+        severity="secondary"
+        [outlined]="true"
+        [pTooltip]="'ADMIN.MODEL_MASTER.AUTO_ORDER_HINT' | translate"
+        showDelay="400"
+        tooltipPosition="bottom"
+        (onClick)="autoOrder()"
+      />
+      <p-button
+        [label]="'ADMIN.MODEL_MASTER.SAVE' | translate"
+        icon="md md-save"
+        size="small"
+        [loading]="saving()"
+        [disabled]="!dirty() || saving()"
+        (onClick)="save()"
+      />
+    </div>
   </div>
 
   @if (error(); as message) {
@@ -59,17 +72,53 @@
         styleClass="w-36"
         size="small"
         [attr.aria-label]="'ADMIN.MODEL_MASTER.COL_PROVIDER' | translate"
-      />
-      <p-selectButton
-        [options]="statusOptions()"
-        optionLabel="label"
-        optionValue="value"
-        [ngModel]="statusFilter()"
-        (ngModelChange)="statusFilter.set($event)"
-        size="small"
-        [allowEmpty]="false"
+      >
+        <ng-template #item let-opt>
+          <div class="flex w-full items-center gap-2">
+            <span class="min-w-0 flex-1 truncate">{{ opt.label }}</span>
+            @if (opt.value !== 'all') {
+              <button
+                type="button"
+                class="flex shrink-0 items-center rounded-full p-1 transition-colors hover:bg-surface-2"
+                [class.text-emerald-400]="providerState(opt.value) === 'on'"
+                [class.opacity-40]="providerState(opt.value) !== 'on'"
+                [title]="
+                  (providerState(opt.value) === 'on'
+                    ? 'ADMIN.MODEL_MASTER.PROVIDER_DISABLE'
+                    : 'ADMIN.MODEL_MASTER.PROVIDER_ENABLE'
+                  ) | translate: { provider: opt.label }
+                "
+                [attr.aria-label]="
+                  (providerState(opt.value) === 'on'
+                    ? 'ADMIN.MODEL_MASTER.PROVIDER_DISABLE'
+                    : 'ADMIN.MODEL_MASTER.PROVIDER_ENABLE'
+                  ) | translate: { provider: opt.label }
+                "
+                (click)="toggleProvider(opt.value); $event.stopPropagation(); $event.preventDefault()"
+              >
+                <i class="md md-power_settings_new text-base" aria-hidden="true"></i>
+              </button>
+            }
+          </div>
+        </ng-template>
+      </p-select>
+      <div
+        class="status-chips"
+        role="group"
         [attr.aria-label]="'ADMIN.MODEL_MASTER.COL_ACTIVE' | translate"
-      />
+      >
+        @for (opt of statusOptions(); track opt.value) {
+          <button
+            type="button"
+            class="status-chip"
+            [class.active]="statusFilter() === opt.value"
+            [attr.aria-pressed]="statusFilter() === opt.value"
+            (click)="statusFilter.set($any(opt.value))"
+          >
+            {{ opt.label }}
+          </button>
+        }
+      </div>
       <span class="ml-auto text-xs text-ink-muted-on-dark">
         {{ 'ADMIN.MODEL_MASTER.SUMMARY' | translate: { favorites: favoritesCount(), disabled: disabledCount() } }}
       </span>
@@ -131,32 +180,29 @@
               />
             </td>
             <td>
-              <div class="flex items-center gap-1">
+              <button
+                type="button"
+                class="tags-cell"
+                [title]="'ADMIN.MODEL_MASTER.TAGS_EDIT' | translate"
+                [attr.aria-label]="'ADMIN.MODEL_MASTER.TAGS_EDIT' | translate"
+                (click)="openTags(row.name)"
+              >
                 <div class="flex min-w-0 flex-1 flex-wrap items-center gap-1">
                   @for (tag of row.recommendTags; track tag) {
                     <p-tag [value]="tag" severity="success" styleClass="text-xs" />
                   } @empty {
-                    <span class="text-xs opacity-60">—</span>
+                    <span class="tags-add">+ {{ 'ADMIN.MODEL_MASTER.TAGS_ADD' | translate }}</span>
                   }
                 </div>
-                <p-button
-                  icon="md md-edit"
-                  size="small"
-                  [text]="true"
-                  [ariaLabel]="'ADMIN.MODEL_MASTER.TAGS_EDIT' | translate"
-                  [pTooltip]="'ADMIN.MODEL_MASTER.TAGS_EDIT' | translate"
-                  showDelay="400"
-                  tooltipPosition="top"
-                  (onClick)="openTags(row.name)"
-                />
-              </div>
+                <i class="md md-edit shrink-0 text-sm opacity-40" aria-hidden="true"></i>
+              </button>
             </td>
             <td>
               <p-button
                 [label]="
                   metaEntries(row).length > 0
                     ? ('ADMIN.MODEL_MASTER.META_COUNT' | translate: { count: metaEntries(row).length })
-                    : '—'
+                    : '+ ' + ('ADMIN.MODEL_MASTER.META_ADD_SHORT' | translate)
                 "
                 icon="md md-data_object"
                 size="small"

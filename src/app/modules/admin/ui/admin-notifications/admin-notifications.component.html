@@ -24,6 +24,15 @@
         tooltipPosition="bottom"
       />
       <p-button
+        [label]="('ADMIN.NOTIFICATIONS.DEVICES_TITLE' | translate) + ' (' + devices().length + ')'"
+        icon="md md-smartphone"
+        size="small"
+        outlined
+        (onClick)="openDevices()"
+        [pTooltip]="'ADMIN.NOTIFICATIONS.DEVICES_SUBTITLE' | translate"
+        tooltipPosition="bottom"
+      />
+      <p-button
         [label]="'ADMIN.NOTIFICATIONS.NEW' | translate"
         icon="md md-add"
         size="small"
@@ -192,6 +201,96 @@
       </p>
     }
   </div>
+</p-dialog>
+
+<p-dialog
+  [visible]="devicesVisible()"
+  (visibleChange)="$event ? devicesVisible.set(true) : closeDevices()"
+  [modal]="true"
+  [style]="{ width: 'min(92vw, 32rem)' }"
+  [draggable]="false"
+  [resizable]="false"
+  header="{{ 'ADMIN.NOTIFICATIONS.DEVICES_TITLE' | translate }} ({{ devices().length }})"
+>
+  <p class="mb-3 text-xs text-ink-muted-on-dark">
+    {{ 'ADMIN.NOTIFICATIONS.DEVICES_SUBTITLE' | translate }}
+  </p>
+  @if (devicesLoading() && devices().length === 0) {
+    <p class="py-4 text-center text-sm text-ink-muted-on-dark">
+      {{ 'ADMIN.NOTIFICATIONS.DEVICES_LOADING' | translate }}
+    </p>
+  } @else if (devices().length === 0) {
+    <p class="py-4 text-center text-sm text-ink-muted-on-dark">
+      {{ 'ADMIN.NOTIFICATIONS.DEVICES_EMPTY' | translate }}
+    </p>
+  } @else {
+    <ul class="flex flex-col gap-2">
+      @for (device of devices(); track device.id) {
+        <li class="flex items-center gap-3 rounded-xl border border-surface-border px-3 py-2">
+          <i class="md md-smartphone text-lg text-accent" aria-hidden="true"></i>
+          <div class="min-w-0 flex-1">
+            <p class="truncate text-sm font-bold text-ink">
+              {{ device.user_display_name || ('ADMIN.NOTIFICATIONS.DEVICE_UNKNOWN_USER' | translate) }}
+            </p>
+            <p class="truncate text-xs text-ink-muted-on-dark" [title]="device.user_agent">
+              {{ device.user_agent || device.endpoint_host }}
+            </p>
+            <p class="text-xs text-ink-muted-on-dark">
+              {{ device.endpoint_host }} · {{ device.created_at | date: 'short' }}
+            </p>
+          </div>
+          @if (confirmDeviceId() === device.id) {
+            <p-button
+              icon="md md-check"
+              size="small"
+              severity="danger"
+              [loading]="removingDevice()"
+              (onClick)="confirmRemoveDevice(device)"
+              [pTooltip]="'ADMIN.NOTIFICATIONS.DEVICE_MODAL_CONFIRM' | translate"
+              tooltipPosition="bottom"
+            />
+            <p-button
+              icon="md md-close"
+              size="small"
+              text
+              [disabled]="removingDevice()"
+              (onClick)="cancelRemoveDevice()"
+            />
+          } @else {
+            <p-button
+              icon="md md-notifications_off"
+              size="small"
+              text
+              severity="danger"
+              (onClick)="askRemoveDevice(device)"
+              [pTooltip]="'ADMIN.NOTIFICATIONS.DEVICE_REMOVE' | translate"
+              tooltipPosition="bottom"
+            />
+          }
+        </li>
+      }
+    </ul>
+  }
+  <ng-template #footer>
+    <div class="flex justify-end gap-2">
+      <p-button
+        icon="md md-refresh"
+        size="small"
+        text
+        [loading]="devicesLoading()"
+        (onClick)="loadDevices()"
+        [pTooltip]="'ADMIN.NOTIFICATIONS.RELOAD' | translate"
+        tooltipPosition="bottom"
+      />
+      <p-button
+        [label]="'ADMIN.NOTIFICATIONS.CANCEL' | translate"
+        size="small"
+        text
+        [disabled]="removingDevice()"
+        (onClick)="closeDevices()"
+      />
+    </div>
+  </ng-template>
 </p-dialog>
 
 <p-dialog

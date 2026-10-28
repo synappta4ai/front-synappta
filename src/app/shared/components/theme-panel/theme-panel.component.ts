@@ -103,35 +103,57 @@ export class ThemePanelComponent {
     this.languageService.setLang(lang);
   }
 
-  /** Los avisos requieren el dispositivo activo (orden: dispositivo → avisos). */
-  protected canToggleVideo(): boolean {
-    if (!this.devicePush.supported()) {
-      return true;
-    }
-    return this.devicePush.subscribed();
+  /** Toggle único: encendido = dispositivo suscripto + avisos activos. */
+  protected allNotificationsOn(): boolean {
+    return this.notificationsPrefs.enabled() && this.devicePush.subscribed();
   }
 
-  toggleNotifications(): void {
-    if (!this.canToggleVideo()) {
-      return;
-    }
-    this.notificationsPrefs.setEnabled(!this.notificationsPrefs.enabled());
-  }
-
-  toggleDevicePush(): void {
+  async toggleAllNotifications(): Promise<void> {
     if (this.devicePush.busy()) {
       return;
     }
-    if (this.devicePush.subscribed()) {
-      void this.devicePush.unsubscribe();
-    } else {
-      void this.devicePush.subscribe();
+    if (this.allNotificationsOn()) {
+      this.notificationsPrefs.setEnabled(false);
+      return;
     }
+    if (!this.devicePush.supported()) {
+      return;
+    }
+    if (!this.devicePush.subscribed()) {
+      const ok = await this.devicePush.subscribe();
+      if (!ok) {
+        return;
+      }
+    }
+    this.notificationsPrefs.setEnabled(true);
   }
 
   devicePushError(): string | null {
     const key = this.devicePush.error();
-    return key ? this.translate.instant(key) : null;
+    if (!key) {
+      return null;
+    }
+    const params: Record<string, string> = {};
+    const detail = this.devicePush.errorDetail();
+    // DEVICE_HTTP_ERROR necesita status/detail; el resto muestra el detalle aparte.
+    if (key === 'NOTIFICATIONS.DEVICE_HTTP_ERROR' && detail) {
+      const m = detail.match(/HTTP (\d+):\s*(.*)/);
+      params['status'] = m?.[1] ?? '';
+      params['detail'] = (m?.[2] ?? detail).slice(0, 200);
+      return this.translate.instant(key, params);
+    }
+    return this.translate.instant(key, { status: '', detail: detail ?? '' });
+  }
+
+  devicePushDetail(): string | null {
+    if (!this.devicePush.error()) {
+      return null;
+    }
+    const detail = this.devicePush.errorDetail();
+    if (!detail || this.devicePush.error() === 'NOTIFICATIONS.DEVICE_HTTP_ERROR') {
+      return null;
+    }
+    return detail;
   }
 
   onAccentChange(accent: AccentId): void {
