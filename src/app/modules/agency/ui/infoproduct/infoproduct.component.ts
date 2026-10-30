@@ -4,6 +4,7 @@ import {
   Component,
   computed,
   inject,
+  OnDestroy,
   signal,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -17,6 +18,7 @@ import { Button } from 'primeng/button';
 import { Card } from 'primeng/card';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
+import { ProgressBar } from 'primeng/progressbar';
 import { Select } from 'primeng/select';
 import { Steps } from 'primeng/steps';
 import { Tag } from 'primeng/tag';
@@ -27,6 +29,7 @@ import { Tooltip } from 'primeng/tooltip';
 import {
   AiModel,
   ComposeTarget,
+  DcsAnalyze,
   GenerateRequest,
   IngredientRole,
   VideoAnalysis,
@@ -43,8 +46,11 @@ import {
   attachmentKind,
   buildImageRoles,
   buildTarget,
+  dcsShotRowsByIndex,
+  dcsTechGroups,
   promptForGeneration,
   snapDuration,
+  TechRow,
 } from './infoproduct-helpers';
 
 type Step = 1 | 2 | 3;
@@ -69,6 +75,7 @@ const FALLBACK_RESOLUTIONS = ['480p', '720p', '1080p'];
     Card,
     InputText,
     Message,
+    ProgressBar,
     Select,
     Steps,
     Tag,
@@ -80,7 +87,7 @@ const FALLBACK_RESOLUTIONS = ['480p', '720p', '1080p'];
   templateUrl: './infoproduct.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class InfoproductComponent {
+export class InfoproductComponent implements OnDestroy {
   private readonly infoproduct = inject(InfoproductService);
   private readonly library = inject(LibraryService);
   private readonly catalog = inject(ModelCatalogService);
@@ -111,7 +118,9 @@ export class InfoproductComponent {
   protected readonly videoUrl = signal('');
   protected readonly brainModel = signal('');
   protected readonly analyzing = signal(false);
+  protected readonly analyzeSeconds = signal(0);
   protected readonly analysis = signal<VideoAnalysis | null>(null);
+  private analyzeTimer: ReturnType<typeof setInterval> | null = null;
 
   /** Cerebro: LLMs de texto que leen video (si no hay, todos los de texto). */
   private readonly textModels = toSignal(this.catalog.byModality('text').pipe(catchError(() => of([] as AiModel[]))), {
@@ -135,10 +144,44 @@ export class InfoproductComponent {
   protected readonly uploading = signal(false);
   protected readonly videoModel = signal<AiModel | null>(null);
   protected readonly composing = signal(false);
+  protected readonly composeSeconds = signal(0);
+  private composeTimer: ReturnType<typeof setInterval> | null = null;
 
   protected readonly images = computed(() => this.attachments().filter((a) => a.kind === 'image'));
   protected readonly audios = computed(() => this.attachments().filter((a) => a.kind === 'audio'));
+  protected readonly videos = computed(() => this.attachments().filter((a) => a.kind === 'video'));
   protected readonly breakdown = computed<VideoBreakdown | null>(() => this.analysis()?.breakdown ?? null);
+
+  // ── Ficha técnica (skill DCS-ANALYZE; vacía en análisis viejos) ──
+  protected readonly dcs = computed<DcsAnalyze | null>(() => this.breakdown()?.dcs_analyze ?? null);
+  protected readonly techGroups = computed(() =>
+    dcsTechGroups(this.dcs(), (key) => this.translate.instant(key)),
+  );
+  protected readonly techWarning = computed(() =>
+    this.dcs()?.quality?.checks_passed === false
+      ? this.translate.instant('VIDEOMACHINE.TECH_CHECKS_PENDING')
+      : null,
+  );
+  private readonly shotDetails = computed(() =>
+    dcsShotRowsByIndex(this.dcs(), (key) => this.translate.instant(key)),
+  );
+  protected readonly expandedShots = signal<ReadonlySet<number>>(new Set<number>());
+
+  protected isShotExpanded(index: number): boolean {
+    return this.expandedShots().has(index);
+  }
+
+  protected toggleShot(index: number): void {
+    this.expandedShots.update((current) => {
+      const next = new Set(current);
+      if (!next.delete(index)) next.add(index);
+      return next;
+    });
+  }
+
+  protected shotRows(index: number): readonly TechRow[] {
+    return this.shotDetails().get(index) ?? [];
+  }
   protected readonly canCompose = computed(
     () =>
       !this.composing() &&
@@ -197,6 +240,44 @@ export class InfoproductComponent {
       });
   }
 
+  ngOnDestroy(): void {
+    this.stopProgress('analyze');
+    this.stopProgress('compose');
+  }
+
+  /** Contador de segundos para las barras de progreso de cada paso. */
+  private startProgress(kind: 'analyze' | 'compose'): void {
+    this.stopProgress(kind);
+    const target = kind === 'analyze' ? this.analyzeSeconds : this.composeSeconds;
+    target.set(0);
+    const timer = setInterval(() => target.update((seconds) => seconds + 1), 1000);
+    if (kind === 'analyze') {
+      this.analyzeTimer = timer;
+    } else {
+      this.composeTimer = timer;
+    }
+  }
+
+  private stopProgress(kind: 'analyze' | 'compose'): void {
+    if (kind === 'analyze') {
+      if (this.analyzeTimer !== null) clearInterval(this.analyzeTimer);
+      this.analyzeTimer = null;
+      return;
+    }
+    if (this.composeTimer !== null) clearInterval(this.composeTimer);
+    this.composeTimer = null;
+  }
+
+  private finishAnalyze(): void {
+    this.analyzing.set(false);
+    this.stopProgress('analyze');
+  }
+
+  private finishCompose(): void {
+    this.composing.set(false);
+    this.stopProgress('compose');
+  }
+
   // ── Paso 1 ──────────────────────────────────────────────────────
   protected onVideoPicked(event: Event): void {
     const input = event.target as HTMLInputElement;
@@ -233,6 +314,7 @@ export class InfoproductComponent {
     if (!this.canAnalyze()) return;
     this.error.set(null);
     this.analyzing.set(true);
+    this.startProgress('analyze');
     const file = this.videoFile();
     const model = this.brainModel() || undefined;
 
@@ -244,7 +326,7 @@ export class InfoproductComponent {
       .pipe(
         catchError((err: unknown) => {
           this.fail(err, 'VIDEOMACHINE.ERR_UPLOAD');
-          this.analyzing.set(false);
+          this.finishAnalyze();
           return EMPTY;
         }),
       )
@@ -256,7 +338,7 @@ export class InfoproductComponent {
               this.fail(err, 'VIDEOMACHINE.ERR_ANALYZE');
               return EMPTY;
             }),
-            finalize(() => this.analyzing.set(false)),
+            finalize(() => this.finishAnalyze()),
           )
           .subscribe((analysis) => {
             this.analysis.set(analysis);
@@ -280,7 +362,9 @@ export class InfoproductComponent {
         this.error.set(this.translate.instant('VIDEOMACHINE.ERR_INPUT_TYPE', { name: file.name }));
         return of(null);
       }
-      return this.library.uploadFile(file, kind === 'audio' ? 'audio' : 'images').pipe(
+      return this.library
+        .uploadFile(file, kind === 'audio' ? 'audio' : kind === 'video' ? 'videos' : 'images')
+        .pipe(
         map(
           (asset): Attachment => ({
             id: asset.id,
@@ -333,6 +417,7 @@ export class InfoproductComponent {
     if (!model || !this.canCompose()) return;
     this.error.set(null);
     this.composing.set(true);
+    this.startProgress('compose');
     const target: ComposeTarget = buildTarget(model);
     this.infoproduct
       .compose({
@@ -342,6 +427,7 @@ export class InfoproductComponent {
         target_model: target.model,
         image_file_ids: this.images().map((a) => a.id),
         audio_file_ids: this.audios().map((a) => a.id),
+        video_file_ids: this.videos().map((a) => a.id),
         image_roles: buildImageRoles(this.attachments()),
         fps: this.analysis()?.meta.fps,
         aspect_ratio: this.analysis()?.meta.aspect_ratio,
@@ -353,7 +439,7 @@ export class InfoproductComponent {
           this.fail(err, 'VIDEOMACHINE.ERR_COMPOSE');
           return EMPTY;
         }),
-        finalize(() => this.composing.set(false)),
+        finalize(() => this.finishCompose()),
       )
       .subscribe((response) => {
         const vp = response.video_prompt;
@@ -423,6 +509,11 @@ export class InfoproductComponent {
               name: this.attachments().find((a) => a.id === ref.file_id)?.name,
             }))
           : []),
+        ...(vp.video_refs ?? []).map((ref) => ({
+          type: 'video' as const,
+          id: ref.file_id,
+          name: this.attachments().find((a) => a.id === ref.file_id)?.name ?? ref.name,
+        })),
         { type: 'text' as const, text },
       ];
       const payload: GenerateRequest = {
