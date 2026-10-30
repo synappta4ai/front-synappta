@@ -69,6 +69,176 @@ export interface VideoBreakdown {
   sound_effects?: string[];
   call_to_action?: string;
   replication_notes?: string[];
+  /** Análisis forense completo (skill DCS-ANALYZE); ausente en análisis viejos. */
+  dcs_analyze?: DcsAnalyze | null;
+  schema_version?: string;
+}
+
+/** Tomas del skill DCS-ANALYZE (ficha forense por plano; todo opcional). */
+export interface DcsShot {
+  index?: number;
+  start_s?: number;
+  end_s?: number;
+  duration_s?: number;
+  micro_shot?: boolean;
+  timing_precision?: string;
+  shot_role?: string;
+  shot_size?: string;
+  angle_vertical?: string;
+  angle_horizontal?: string;
+  camera_movement?: {
+    type?: string;
+    direction?: string;
+    speed?: string;
+    intensity?: string;
+    start_framing?: string;
+    end_framing?: string;
+    evidence?: string;
+    confidence?: string;
+  } | null;
+  stabilization?: string;
+  lens?: {
+    class?: string;
+    focal_length_estimate_mm?: string;
+    distortion?: string;
+    perspective_compression?: string;
+    character?: string;
+    confidence?: string;
+  } | null;
+  depth_of_field?: {
+    dof?: string;
+    focus_target?: string;
+    focus_behavior?: string;
+    bokeh_shape?: string;
+    bokeh_quality?: string;
+  } | null;
+  motion_blur?: string;
+  lighting?: {
+    setup?: string;
+    key_direction?: string;
+    quality?: string;
+    contrast_ratio?: string;
+    pattern?: string;
+    atmosphere?: string;
+  } | null;
+  exposure_and_color?: {
+    exposure?: string;
+    key?: string;
+    contrast?: string;
+    black_level?: string;
+    white_balance_k?: number | null;
+    tint?: string;
+    palette_hex?: string[];
+    look?: string[];
+  } | null;
+  optical_artifacts?: readonly { id?: string; where?: string; severity?: string }[];
+  effects?: readonly { name?: string; intensity?: string; purpose?: string }[];
+  transition_out?: {
+    type?: string;
+    duration_s?: number;
+    direction?: string;
+    hidden_cut_cause?: string;
+    evidence?: string;
+    purpose?: string;
+  } | null;
+  subject_action?: string;
+  product_visible?: { visible?: boolean; piece?: string; how_shown?: string } | null;
+  shot_purpose?: string;
+  replicability?: { rating?: string; notes?: string } | null;
+  confidence?: string;
+}
+
+/** Documento completo del skill DCS-ANALYZE (sección técnica del desglose). */
+export interface DcsAnalyze {
+  schema_version?: string;
+  visual_style?: {
+    medium?: string;
+    format?: string;
+    aesthetics?: string[];
+    production_tier?: string;
+    capture_device_guess?: string;
+    ai_generation_confidence?: string;
+  } | null;
+  editing_style?: {
+    primary?: string;
+    secondary?: string[];
+    justification?: string;
+    metrics?: {
+      shot_count?: number;
+      cut_count?: number;
+      average_shot_length_s?: number;
+      median_shot_length_s?: number;
+      shortest_shot_s?: number;
+      longest_shot_s?: number;
+      cuts_per_second?: number;
+      micro_shot_count?: number;
+      pace_class?: string;
+      beat_sync_ratio?: number | null;
+    } | null;
+    continuity_devices?: string[];
+  } | null;
+  camera_summary?: {
+    dominant_movement?: string;
+    static_share_pct?: number;
+    movement_distribution?: readonly {
+      type?: string;
+      count?: number;
+      runtime_share_pct?: number;
+    }[];
+    shot_size_distribution?: readonly {
+      shot_size?: string;
+      count?: number;
+      runtime_share_pct?: number;
+    }[];
+    angle_distribution?: readonly {
+      angle_vertical?: string;
+      count?: number;
+      runtime_share_pct?: number;
+    }[];
+    stabilization_overall?: string;
+    camera_personality?: string;
+  } | null;
+  technical_signature?: {
+    lens_family?: string;
+    dof_overall?: string;
+    bokeh_overall?: string;
+    key_overall?: string;
+    exposure_overall?: string;
+    white_balance_overall_k?: number | null;
+    color_grade_overall?: {
+      palette_hex?: string[];
+      temperature_bias?: string;
+      saturation?: string;
+      look?: string[];
+    } | null;
+    lighting_overall?: { setup?: string[]; key_direction?: string; quality?: string } | null;
+    optical_artifacts_overall?: readonly { id?: string; where?: string; severity?: string }[];
+    motion_blur_overall?: string;
+    frame_rate_feel_overall?: string;
+    grain_overall?: string;
+    sharpness_overall?: string;
+  } | null;
+  effects_summary?: readonly {
+    name?: string;
+    count?: number;
+    time_ranges_s?: string[];
+    purpose?: string;
+    made_with?: string;
+  }[];
+  transitions_summary?: {
+    distribution?: readonly { type?: string; count?: number }[];
+    signature_transition?: string;
+    notes?: string;
+  } | null;
+  quality?: {
+    checks_passed?: boolean;
+    timeline_source?: string;
+    reconciled?: boolean;
+    model_shots?: number;
+    uncertainties?: string[];
+    assumptions?: string[];
+  } | null;
+  shots?: readonly DcsShot[];
 }
 
 export interface AnalysisUsage {
@@ -118,6 +288,8 @@ export interface ComposeRequest {
   target_model?: string;
   image_file_ids: string[];
   audio_file_ids: string[];
+  /** Videos de referencia (modelos con reference video). */
+  video_file_ids?: string[];
   image_roles?: Record<string, IngredientRole>;
   fps?: number;
   aspect_ratio?: string;
@@ -145,6 +317,13 @@ export interface VideoPromptSegment {
   prompt: string;
 }
 
+/** Clip de referencia enviado al generador como video. */
+export interface VideoPromptVideoRef {
+  file_id: string;
+  tag: string;
+  name: string;
+}
+
 export interface VideoPrompt {
   prompt: string;
   model: string;
@@ -154,6 +333,7 @@ export interface VideoPrompt {
   generate_audio: boolean;
   ingredients: VideoPromptIngredient[];
   audio_refs: VideoPromptAudioRef[];
+  video_refs?: VideoPromptVideoRef[];
   segments: VideoPromptSegment[];
   warnings: string[];
 }

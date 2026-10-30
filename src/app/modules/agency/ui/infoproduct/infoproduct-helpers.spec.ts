@@ -3,6 +3,9 @@ import {
   attachmentKind,
   buildImageRoles,
   buildTarget,
+  dcsShotRowsByIndex,
+  dcsTechGroups,
+  formatDistribution,
   promptForGeneration,
   snapDuration,
 } from './infoproduct-helpers';
@@ -28,7 +31,10 @@ describe('infoproduct helpers', () => {
     expect(attachmentKind({ type: '', name: 'song.FLAC' })).toBe('audio');
     expect(attachmentKind({ type: 'audio/mpeg', name: 'x.mp3' })).toBe('audio');
     expect(attachmentKind({ type: '', name: 'voice.wav' })).toBe('audio');
-    expect(attachmentKind({ type: 'video/mp4', name: 'v.mp4' })).toBeNull();
+    expect(attachmentKind({ type: 'video/mp4', name: 'ref.mp4' })).toBe('video');
+    expect(attachmentKind({ type: '', name: 'RECORTE.MOV' })).toBe('video');
+    expect(attachmentKind({ type: '', name: 'notas.txt' })).toBe(null);
+    expect(attachmentKind({ type: 'application/pdf', name: 'doc.pdf' })).toBe(null);
   });
 
   it('builds the target from the model defaults', () => {
@@ -73,5 +79,69 @@ describe('infoproduct helpers', () => {
       { id: 'c', name: 'c.mp3', kind: 'audio', url: '' },
     ]);
     expect(roles).toEqual({ a: 'person', b: 'product' });
+  });
+
+  it('formats a distribution with counts and share', () => {
+    expect(
+      formatDistribution(
+        [{ type: 'static', count: 12, runtime_share_pct: 60.4 }],
+        'count',
+        'runtime_share_pct',
+      ),
+    ).toBe('static ×12 (60%)');
+    expect(formatDistribution([], 'count', 'runtime_share_pct')).toBe('');
+  });
+
+  it('builds the technical groups of the DCS analysis', () => {
+    const t = (key: string) => key;
+    const groups = dcsTechGroups(
+      {
+        technical_signature: {
+          lens_family: '35mm prime',
+          dof_overall: 'shallow',
+          key_overall: 'low_key',
+        },
+        camera_summary: { dominant_movement: 'static', static_share_pct: 80 },
+        editing_style: { primary: 'fast_cut', metrics: { shot_count: 21, cut_count: 20 } },
+        transitions_summary: { signature_transition: 'whip_pan_transition' },
+        quality: { checks_passed: true },
+      },
+      t,
+    );
+    const keys = groups.map((g) => g.key);
+    expect(keys).toContain('TECH_CAMERA');
+    expect(keys).toContain('TECH_LENS');
+    expect(keys).toContain('TECH_TRANSITIONS');
+    const lens = groups.find((g) => g.key === 'TECH_LENS');
+    expect(lens?.rows.map((r) => r.value)).toContain('35mm prime');
+    expect(dcsTechGroups(null, t)).toEqual([]);
+  });
+
+  it('builds the per-shot technical rows keyed by shot index', () => {
+    const t = (key: string) => key;
+    const map = dcsShotRowsByIndex(
+      {
+        shots: [
+          {
+            index: 1,
+            shot_size: 'close_up',
+            angle_vertical: 'eye_level',
+            camera_movement: { type: 'static', evidence: 'el fondo no se mueve' },
+            lens: { class: '35mm' },
+            depth_of_field: { dof: 'shallow' },
+            exposure_and_color: { exposure: 'correct', white_balance_k: 5600 },
+            transition_out: { type: 'hard_cut' },
+          },
+        ],
+      },
+      t,
+    );
+    const rows = map.get(1) ?? [];
+    const values = rows.map((r) => r.value);
+    expect(values).toContain('close_up');
+    expect(values).toContain('static');
+    expect(values).toContain('5600 K');
+    expect(values).toContain('hard_cut');
+    expect(rows.every((r) => r.label.startsWith('VIDEOMACHINE.TECH_'))).toBe(true);
   });
 });

@@ -192,6 +192,18 @@
             </small>
           }
         </div>
+        @if (analyzing()) {
+          <div class="mt-3">
+            <p-progressbar
+              mode="indeterminate"
+              [style]="{ height: '6px' }"
+              [attr.aria-label]="'VIDEOMACHINE.ANALYZING' | translate"
+            />
+            <p class="mt-1 text-xs text-ink-muted-on-dark" aria-live="polite">
+              {{ 'VIDEOMACHINE.ANALYZING_PROGRESS' | translate: { seconds: analyzeSeconds() } }}
+            </p>
+          </div>
+        }
       }
       </div>
     </p-card>
@@ -306,39 +318,99 @@
                 </div>
               }
             </dl>
-
-            @if (b.shots?.length) {
-              <div class="overflow-x-auto">
-                <table class="w-full min-w-[32rem] text-left text-sm">
-                  <caption class="pb-2 text-left font-bold text-ink-on-dark">
-                    {{ 'VIDEOMACHINE.SHOTS' | translate }}
-                  </caption>
-                  <thead class="text-xs text-ink-muted-on-dark">
-                    <tr>
-                      <th scope="col" class="py-1 pr-3">#</th>
-                      <th scope="col" class="py-1 pr-3">{{ 'VIDEOMACHINE.COL_TIME' | translate }}</th>
-                      <th scope="col" class="py-1 pr-3">{{ 'VIDEOMACHINE.COL_SHOT' | translate }}</th>
-                      <th scope="col" class="py-1">{{ 'VIDEOMACHINE.COL_DESCRIPTION' | translate }}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (shot of b.shots; track shot.index) {
-                      <tr class="border-t border-surface-border align-top">
-                        <td class="py-2 pr-3 text-ink-muted-on-dark">{{ shot.index }}</td>
-                        <td class="whitespace-nowrap py-2 pr-3">{{ shot.start }}–{{ shot.end }} s</td>
-                        <td class="py-2 pr-3">
-                          {{ shot.shot_type }}
-                          @if (shot.camera_movement) {
-                            <span class="text-ink-muted-on-dark"> · {{ shot.camera_movement }}</span>
-                          }
-                        </td>
-                        <td class="py-2 text-ink-muted-on-dark">{{ shot.description }}</td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
+            @if (techGroups().length || techWarning()) {
+              <details class="rounded-xl border border-surface-border bg-surface-2 px-4 py-3" [open]="!!techWarning()">
+                <summary class="cursor-pointer text-left text-sm font-bold text-ink-on-dark">
+                  {{ 'VIDEOMACHINE.TECH_TITLE' | translate }}
+                </summary>
+                @if (techWarning(); as warning) {
+                  <p class="mt-2 text-xs text-accent">{{ warning }}</p>
+                }
+                <div class="mt-3 grid gap-4 sm:grid-cols-2">
+                  @for (group of techGroups(); track group.key) {
+                    <div class="min-w-0">
+                      <h4 class="text-xs font-bold tracking-wide text-ink-muted-on-dark uppercase">
+                        {{ group.label }}
+                      </h4>
+                      <dl class="mt-1 space-y-1 text-sm">
+                        @for (row of group.rows; track row.label) {
+                          <div class="flex flex-wrap gap-x-2">
+                            <dt class="text-ink-muted-on-dark">{{ row.label }}:</dt>
+                            <dd class="min-w-0 text-ink-on-dark">{{ row.value }}</dd>
+                          </div>
+                        }
+                      </dl>
+                    </div>
+                  }
+                </div>
+              </details>
             }
+
+            @if (b.shots; as shots) {
+              @if (shots.length) {
+                <details class="rounded-xl border border-surface-border bg-surface-2 px-4 py-3">
+                  <summary class="cursor-pointer text-left text-sm font-bold text-ink-on-dark">
+                    {{ 'VIDEOMACHINE.SHOTS' | translate }} ({{ shots.length }})
+                  </summary>
+                  <div class="mt-3 overflow-x-auto">
+                    <table class="w-full min-w-[32rem] text-left text-sm">
+                      <thead class="text-xs text-ink-muted-on-dark">
+                        <tr>
+                          <th scope="col" class="py-1 pr-3">#</th>
+                          <th scope="col" class="py-1 pr-3">{{ 'VIDEOMACHINE.COL_TIME' | translate }}</th>
+                          <th scope="col" class="py-1 pr-3">{{ 'VIDEOMACHINE.COL_SHOT' | translate }}</th>
+                          <th scope="col" class="py-1">{{ 'VIDEOMACHINE.COL_DESCRIPTION' | translate }}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (shot of shots; track shot.index) {
+                          <tr class="border-t border-surface-border align-top">
+                            <td class="py-2 pr-3">
+                              <button
+                                type="button"
+                                class="flex items-center gap-1 text-ink-muted-on-dark hover:text-ink-on-dark"
+                                [attr.aria-expanded]="isShotExpanded(shot.index)"
+                                [attr.aria-label]="('VIDEOMACHINE.SHOT_TOGGLE' | translate) + ' ' + shot.index"
+                                (click)="toggleShot(shot.index)"
+                              >
+                                {{ shot.index }}
+                                <i
+                                  class="md md-expand_more text-base transition-transform"
+                                  [class.rotate-180]="isShotExpanded(shot.index)"
+                                ></i>
+                              </button>
+                            </td>
+                            <td class="whitespace-nowrap py-2 pr-3">{{ shot.start }}–{{ shot.end }} s</td>
+                            <td class="py-2 pr-3">
+                              {{ shot.shot_type }}
+                              @if (shot.camera_movement) {
+                                <span class="text-ink-muted-on-dark"> · {{ shot.camera_movement }}</span>
+                              }
+                            </td>
+                            <td class="py-2 text-ink-muted-on-dark">{{ shot.description }}</td>
+                          </tr>
+                          @if (isShotExpanded(shot.index)) {
+                            <tr class="border-t border-surface-border">
+                              <td colspan="4" class="py-2">
+                                <dl class="grid gap-x-6 gap-y-1 text-xs sm:grid-cols-2">
+                                  @for (row of shotRows(shot.index); track row.label) {
+                                    <div class="flex flex-wrap gap-x-2">
+                                      <dt class="text-ink-muted-on-dark">{{ row.label }}:</dt>
+                                      <dd class="min-w-0 text-ink-on-dark">{{ row.value }}</dd>
+                                    </div>
+                                  }
+                                </dl>
+                              </td>
+                            </tr>
+                          }
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                </details>
+              }
+            }
+
 
             @if (b.on_screen_text?.length) {
               <div class="text-sm">
@@ -417,7 +489,7 @@
             type="file"
             class="sr-only"
             multiple
-            accept="image/png,image/jpeg,image/webp,audio/*,.mp3,.wav,.flac,.m4a,.aac,.ogg"
+            accept="image/png,image/jpeg,image/webp,audio/*,.mp3,.wav,.flac,.m4a,.aac,.ogg,video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm"
             [disabled]="uploading()"
             (change)="onInputsPicked($event)"
           />
@@ -430,6 +502,11 @@
               <li class="relative flex flex-col gap-1 rounded-xl border border-surface-border bg-surface-2 p-2">
                 @if (item.kind === 'image') {
                   <img [src]="item.url" [alt]="item.name" class="aspect-square w-full rounded-lg object-cover" />
+                } @else if (item.kind === 'video') {
+                  <div class="flex aspect-square w-full flex-col items-center justify-center gap-1 rounded-lg bg-surface text-xs font-bold text-ink-on-dark">
+                    <i class="md md-movie text-lg text-accent"></i>
+                    {{ 'VIDEOMACHINE.VIDEO' | translate }}
+                  </div>
                 } @else {
                   <div class="flex aspect-square w-full items-center justify-center rounded-lg bg-surface text-xs font-bold text-ink-on-dark">
                     {{ 'VIDEOMACHINE.AUDIO' | translate }}
@@ -517,6 +594,18 @@
             (onClick)="goTo(1)"
           />
         </div>
+        @if (composing()) {
+          <div class="mt-3">
+            <p-progressbar
+              mode="indeterminate"
+              [style]="{ height: '6px' }"
+              [attr.aria-label]="'VIDEOMACHINE.COMPOSING' | translate"
+            />
+            <p class="mt-1 text-xs text-ink-muted-on-dark" aria-live="polite">
+              {{ 'VIDEOMACHINE.COMPOSING_PROGRESS' | translate: { seconds: composeSeconds() } }}
+            </p>
+          </div>
+        }
         @if (images().length === 0) {
           <small class="text-ink-muted-on-dark">{{ 'VIDEOMACHINE.NEED_IMAGE' | translate }}</small>
         }
