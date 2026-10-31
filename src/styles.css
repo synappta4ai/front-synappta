@@ -428,6 +428,8 @@
   --color-kind-location: #5f2200;
   --color-kind-props: #12306e;
   --color-kind-product: #42157f;
+  --color-kind-audio: #6b1f4a;
+  --color-kind-video: #0b3a52;
   --color-kind-unknown: #333333;
   --color-prompt-unknown: #6b1a1a;
 
@@ -503,6 +505,8 @@
   --color-kind-location: #f0b27a;
   --color-kind-props: #8ab4f8;
   --color-kind-product: #c4a7f5;
+  --color-kind-audio: #f0a6c8;
+  --color-kind-video: #7dd3fc;
   --color-kind-unknown: #b0b0b0;
   --color-prompt-unknown: #e07a7a;
 }
@@ -5590,6 +5594,96 @@ main:has(> app-location) {
 .prompt-tone-product {
   color: var(--color-kind-product);
   font-weight: 600;
+}
+
+.prompt-tone-audio {
+  color: var(--color-kind-audio);
+  font-weight: 600;
+}
+
+.prompt-tone-video {
+  color: var(--color-kind-video);
+  font-weight: 600;
+}
+
+/* Barra de progreso del Writing Copilot: relleno en el verde acento. */
+.p-progressbar.wc-progress {
+  height: 6px;
+  background: color-mix(in srgb, var(--color-accent) 18%, transparent);
+}
+
+.p-progressbar.wc-progress .p-progressbar-value {
+  background: var(--color-accent);
+  background-image: none;
+}
+
+/* CTA que dispara gasto (tokens o generacion): siempre en verde acento. */
+.p-button.cta-spend {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.p-button.cta-spend:enabled:hover {
+  background: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+  color: var(--color-on-accent);
+}
+
+/* Cola de pendientes del Estudio: tarjeta colapsable por clip. */
+.pending-item {
+  padding: 0;
+}
+
+.pending-head-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.pending-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.pending-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0 0.75rem 0.75rem;
+}
+
+.pending-prompt {
+  max-height: 9rem;
+  overflow: auto;
+  margin: 0;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  background: var(--color-surface-2);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.7rem;
+  white-space: pre-wrap;
+}
+
+.pending-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Estado deshabilitado: opaco, para que se vea que falta configurar algo. */
+.p-button.cta-spend:disabled,
+.p-button.cta-spend.p-disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.p-button.cta-spend .p-button-label,
+.p-button.cta-spend .p-button-icon {
+  color: var(--color-on-accent);
 }
 
 .prompt-tone-unknown {

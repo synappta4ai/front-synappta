@@ -40,8 +40,10 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { AgencyService } from '../../services/agency.service';
 import { ModelCatalogService } from '../../services/model-catalog.service';
+import { WritingCopilotService } from '../../services/writing-copilot.service';
 import { ModelSelectComponent } from '../model-select/model-select.component';
 import { InfoproductComponent } from '../infoproduct/infoproduct.component';
+import { WritingCopilotComponent } from '../writing-copilot/writing-copilot.component';
 import {
   AiModel,
   ContentItem,
@@ -53,6 +55,7 @@ import {
   StatusResponse,
 } from '../../interfaces';
 import { EventsService } from '@modules/events/services';
+import { GenerationQueueService } from '@services/generation-queue.service';
 import { Event as Project, Piece } from '@modules/events/interfaces';
 import { PageContainerComponent, ValidatorErrors } from '@shared/components/index';
 import { UiIcon } from '@shared/components/ui-icon/ui-icon.component';
@@ -113,7 +116,9 @@ type AgencyAgent = 'commercial' | 'real_estate' | 'cinema';
 
 /** Agente de VideoMachine: no pertenece al flujo de proyecto, tiene su propia vista. */
 const INFOPRODUCT_AGENT = 'infoproduct' as const;
-type AgentChoice = AgencyAgent | typeof INFOPRODUCT_AGENT;
+/** Agente de VideoMachine con vista propia: convierte ideas en prompts. */
+const WRITING_COPILOT_AGENT = 'writing_copilot' as const;
+type AgentChoice = AgencyAgent | typeof INFOPRODUCT_AGENT | typeof WRITING_COPILOT_AGENT;
 
 const AGENT_OPTIONS: { value: AgencyAgent; labelKey: string; hintKey: string }[] = [
   {
@@ -421,6 +426,7 @@ function parseAgentEvent(rawEvent: string): { name: string; data: Record<string,
     AutogrowDirective,
     ModelSelectComponent,
     InfoproductComponent,
+    WritingCopilotComponent,
     ServerUrlPipe,
     LowerCasePipe,
     TranslatePipe,
@@ -432,7 +438,9 @@ function parseAgentEvent(rawEvent: string): { name: string; data: Record<string,
 export class AgencyComponent {
   private readonly agencyService = inject(AgencyService);
   private readonly catalog = inject(ModelCatalogService);
+  private readonly writingCopilot = inject(WritingCopilotService);
   private readonly eventsService = inject(EventsService);
+  private readonly generationQueue = inject(GenerationQueueService);
   private readonly formBuilder = inject(NonNullableFormBuilder);
   private readonly session = inject(UserSessionStore);
   /** Copia la hoja de storyboard al store para usarla como referencia de video. */
@@ -449,10 +457,16 @@ export class AgencyComponent {
 
   /** Experto elegido para analizar el proyecto (default: comercial). */
   protected readonly agent = signal<AgencyAgent>('commercial');
+  /** Prompts ya enviados a la cola (feedback del boton). */
+  protected readonly queuedPrompts = signal<ReadonlySet<string>>(new Set<string>());
   /** VideoMachine: el agente "Infoproducto" reemplaza el flujo de proyecto. */
   protected readonly infoproductMode = signal(false);
+  /** VideoMachine: el agente Writing Copilot tiene su propia vista. */
+  protected readonly writingCopilotMode = signal(false);
+  /** Disponibilidad del agente Writing Copilot (flag + skill ok en el back). */
+  protected readonly writingCopilotAvailable = signal(false);
   protected readonly agentChoice = computed<AgentChoice>(() =>
-    this.infoproductMode() ? INFOPRODUCT_AGENT : this.agent(),
+    this.infoproductMode() ? INFOPRODUCT_AGENT : this.writingCopilotMode() ? WRITING_COPILOT_AGENT : this.agent(),
   );
   protected readonly agentOptions = computed(() => {
     this.translate.currentLang();
@@ -467,6 +481,15 @@ export class AgencyComponent {
         label: this.translate.instant('VIDEOMACHINE.AGENT_LABEL'),
         hint: this.translate.instant('VIDEOMACHINE.AGENT_HINT'),
       },
+      ...(this.writingCopilotAvailable()
+        ? [
+            {
+              value: WRITING_COPILOT_AGENT as AgentChoice,
+              label: this.translate.instant('VIDEOMACHINE.WRITE_AGENT_LABEL'),
+              hint: this.translate.instant('VIDEOMACHINE.WRITE_AGENT_HINT'),
+            },
+          ]
+        : []),
     ];
   });
   protected readonly agentLabel = computed(
@@ -756,6 +779,12 @@ export class AgencyComponent {
       .listCredentials()
       .pipe(catchError(() => EMPTY))
       .subscribe((creds) => this.credentials.set(creds ?? []));
+
+    // Writing Copilot: solo aparece en el selector si el back lo tiene activo.
+    this.writingCopilot
+      .available()
+      .pipe(catchError(() => of(false)))
+      .subscribe((enabled) => this.writingCopilotAvailable.set(enabled));
 
     // Al elegir un proyecto existente: se cargan sus datos en el formulario
     // (nombre, ciudad/venue, descripción) y los campos con dato quedan
@@ -3854,8 +3883,8 @@ export class AgencyComponent {
     shotId: string | null,
     index: number,
     model: AiModel,
-    project: Project,
-    piece: Piece,
+    project: Project | null,
+    piece: Piece | null,
   ): GenerateRequest | null {
     const shotIndex = shotId ? scene.shots.findIndex((sh) => sh.id === shotId) : -1;
     const target = shotId ? (shotIndex >= 0 ? scene.shots[shotIndex] : null) : scene;
@@ -3909,9 +3938,9 @@ export class AgencyComponent {
       duration: prompt.duration ?? this.segmentDuration(index),
       ...(resolution ? { resolution } : {}),
       generate_audio: prompt.audio ?? this.videoAudio(),
-      event_id: project.id,
-      piece_id: piece.id,
-      piece_code: piece.piece_code ?? `SCENE-${scene.id.toUpperCase()}`,
+      event_id: project?.id ?? '',
+      piece_id: piece?.id ?? '',
+      piece_code: piece?.piece_code ?? `SCENE-${scene.id.toUpperCase()}`,
       generation_number: generationNumber,
     };
   }
@@ -3934,6 +3963,41 @@ export class AgencyComponent {
     return takes.find((t) => t.videoUrl === prompt.videoUrl) ?? null;
   }
 
+  /** Encola un prompt (escena o toma) para generarlo a demanda desde el Estudio. */
+  protected enqueuePrompt(sceneId: string, shotId: string | null, index: number): void {
+    const scene = this.storyboard().find((s) => s.id === sceneId);
+    const model = this.activeVideoModel();
+    if (!scene || !model) {
+      this.error.set(this.translate.instant('AGENCY.STUDIO.ERRORS.NO_VIDEO_MODELS'));
+      return;
+    }
+    const shotIndex = shotId ? scene.shots.findIndex((sh) => sh.id === shotId) : -1;
+    const target = shotId ? (shotIndex >= 0 ? scene.shots[shotIndex] : null) : scene;
+    const prompt = target?.prompts?.[index];
+    if (!prompt || !prompt.text.trim()) return;
+    const payload = this.videoPayloadFor(scene, shotId, index, model, null, null);
+    if (!payload) return;
+    const takeModel = this.models().find((m) => m.name === payload.model) ?? model;
+    const assets = payload.content
+      .filter((item) => item.type === 'image' || item.type === 'video' || item.type === 'audio')
+      .map((item) => ({ id: item.id ?? '', name: item.name ?? '', kind: item.type as 'image' | 'video' | 'audio' }))
+      .filter((asset) => asset.id.length > 0);
+    this.generationQueue.add([
+      {
+        label: scene.title + (shotId ? ' · toma ' + (index + 1) : ' · ' + (index + 1)),
+        source: this.agent(),
+        prompt: prompt.text,
+        assets,
+        model: payload.model,
+        modelDisplayName: takeModel.display_name || takeModel.name,
+        ratio: payload.ratio ?? '',
+        duration: payload.duration ?? 0,
+        resolution: payload.resolution ?? takeModel.defaults?.resolutions?.[0] ?? '',
+        generateAudio: payload.generate_audio ?? false,
+      },
+    ]);
+    this.queuedPrompts.update((keys) => new Set([...keys, this.promptResourcesKey(sceneId, shotId, index)]));
+  }
   /** Lleva el prompt al Studio con su proyecto cargado: si la generación está
    *  en el reel reutiliza su payload original; si no, lo arma con la config
    *  actual (modelo, overrides, storyboard y ancla del proyecto). */
@@ -4036,10 +4100,17 @@ export class AgencyComponent {
    *  su propia personalidad y su propio conversation_id. */
   protected onAgentChange(choice: AgentChoice): void {
     if (choice === INFOPRODUCT_AGENT) {
+      this.writingCopilotMode.set(false);
       this.infoproductMode.set(true);
       return;
     }
+    if (choice === WRITING_COPILOT_AGENT) {
+      this.infoproductMode.set(false);
+      this.writingCopilotMode.set(true);
+      return;
+    }
     this.infoproductMode.set(false);
+    this.writingCopilotMode.set(false);
     const agent = choice;
     if (agent === this.agent()) return;
     this.agent.set(agent);

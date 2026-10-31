@@ -77,3 +77,13 @@ describe('highlightPrompt', () => {
     ]);
   });
 });
+
+describe('highlightPrompt · audio y video', () => {
+  it('pinta @VideoN y @AudioN con su propio tono', () => {
+    const segments = highlightPrompt('Usa @Video1 y @Audio1 con @Image1.', [], new Map());
+    const toneOf = (tag: string) => segments.find((segment) => segment.text.includes(tag))?.tone;
+    expect(toneOf('@Video1')).toBe('video');
+    expect(toneOf('@Audio1')).toBe('audio');
+    expect(toneOf('@Image1')).toBe('plain');
+  });
+});
