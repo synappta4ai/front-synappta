@@ -37,26 +37,40 @@ describe('writing copilot assets', () => {
     { id: 'e', name: 'bar.jpg', kind: 'image' as const, role: 'environment' as const, url: '' },
   ];
 
-  it('asigna una etiqueta por tipo en el orden de carga', () => {
+  it('etiqueta con el nombre del archivo', () => {
     const tagged = tagAssets(assets);
-    expect(tagged.map((a) => a.tag)).toEqual(['@Image1', '@Image2', '@Video1', '@Audio1', '@Image3']);
+    expect(tagged.map((a) => a.tag)).toEqual([
+      '@modelo.jpg',
+      '@cadena.jpg',
+      '@calle.mp4',
+      '@track.mp3',
+      '@bar.jpg',
+    ]);
+  });
+
+  it('agrega sufijo cuando dos archivos se llaman igual', () => {
+    const tagged = tagAssets([
+      { id: '1', name: 'foto.png', kind: 'image', role: 'product', url: '' },
+      { id: '2', name: 'foto.png', kind: 'image', role: 'person', url: '' },
+    ]);
+    expect(tagged.map((a) => a.tag)).toEqual(['@foto.png', '@foto-2.png']);
   });
 
   it('arma el manifiesto con el rol y el nombre del archivo', () => {
     const refs = buildReferences(tagAssets(assets));
-    expect(refs).toContain('@Image1 = identity reference: the on-screen person "modelo.jpg"');
-    expect(refs).toContain("@Image2 = product: the user's product \"cadena.jpg\"");
-    expect(refs).toContain('@Image3 = environment reference: location and lighting "bar.jpg"');
-    expect(refs).toContain('@Video1 = reference video clip "calle.mp4"');
-    expect(refs).toContain('@Audio1 = audio reference "track.mp3"');
+    expect(refs).toContain('@modelo.jpg = identity reference: the on-screen person "modelo.jpg"');
+    expect(refs).toContain('@cadena.jpg = product: the user\'s product "cadena.jpg"');
+    expect(refs).toContain('@bar.jpg = environment reference: location and lighting "bar.jpg"');
+    expect(refs).toContain('@calle.mp4 = reference video clip "calle.mp4"');
+    expect(refs).toContain('@track.mp3 = audio reference "track.mp3"');
   });
 
   it('mapea solo las imagenes para el resaltado', () => {
     const kinds = promptKinds(tagAssets(assets));
-    expect(kinds.get('@image1')).toBe('character');
-    expect(kinds.get('@image2')).toBe('product');
-    expect(kinds.get('@image3')).toBe('location');
-    expect(kinds.has('@video1')).toBe(false);
-    expect(kinds.has('@audio1')).toBe(false);
+    expect(kinds.get('@modelo.jpg')).toBe('character');
+    expect(kinds.get('@cadena.jpg')).toBe('product');
+    expect(kinds.get('@bar.jpg')).toBe('location');
+    expect(kinds.has('@calle.mp4')).toBe(false);
+    expect(kinds.has('@track.mp3')).toBe(false);
   });
 });

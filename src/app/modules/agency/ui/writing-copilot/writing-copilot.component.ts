@@ -45,9 +45,9 @@ const DEFAULT_VIDEO_MODEL = 'higgsfield-seedance-2-5-reference';
 const PREFERRED_BRAIN = 'google/gemini-3.8-flash';
 
 /**
- * VideoMachine · agente "Writing Copilot": convierte una idea, un guion o una
- * historia corta en prompts cinematográficos (planos, cámara, lentes, luz,
- * actuación, diálogo) y entrega el prompt final en inglés con los insumos
+ * VideoMachine Â· agente "Writing Copilot": convierte una idea, un guion o una
+ * historia corta en prompts cinematogrÃ¡ficos (planos, cÃ¡mara, lentes, luz,
+ * actuaciÃ³n, diÃ¡logo) y entrega el prompt final en inglÃ©s con los insumos
  * tagueados con el sistema de colores de la app.
  */
 @Component({
@@ -86,7 +86,7 @@ export class WritingCopilotComponent implements OnDestroy {
   protected readonly copied = signal<string | null>(null);
   private timer: ReturnType<typeof setInterval> | null = null;
 
-  // ── Paso 1: idea + parámetros ───────────────────────────────────
+  // â”€â”€ Paso 1: idea + parÃ¡metros â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   protected readonly idea = signal('');
   protected readonly brainModel = signal('');
   protected readonly outputLanguage = signal<'es' | 'en' | 'bilingual'>('es');
@@ -100,14 +100,14 @@ export class WritingCopilotComponent implements OnDestroy {
   protected readonly audioMode = signal<AudioMode>('auto');
   protected readonly videoModel = signal<AiModel | null>(null);
 
-  // ── Paso 2: conversación + insumos ──────────────────────────────
+  // â”€â”€ Paso 2: conversaciÃ³n + insumos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   protected readonly followUp = signal('');
   protected readonly assets = signal<readonly CopilotAsset[]>([]);
   protected readonly uploading = signal(false);
   /** Extrayendo el texto de un documento (PDF/DOCX/TXT/MD). */
   protected readonly extractingDoc = signal(false);
 
-  // ── Paso 3: prompt final ────────────────────────────────────────
+  // â”€â”€ Paso 3: prompt final â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   protected readonly finalPrompt = signal<string | null>(null);
   /** El clip ya viajo a la cola de generacion. */
   protected readonly queued = signal(false);
@@ -204,8 +204,8 @@ export class WritingCopilotComponent implements OnDestroy {
   });
 
   constructor() {
-    // Modelo por defecto: el mejor cerebro de texto del catálogo para este
-    // trabajo; si no está, se deja el default del back.
+    // Modelo por defecto: el mejor cerebro de texto del catÃ¡logo para este
+    // trabajo; si no estÃ¡, se deja el default del back.
     this.catalog
       .byModality('text')
       .pipe(catchError(() => of([] as AiModel[])))
@@ -309,7 +309,7 @@ export class WritingCopilotComponent implements OnDestroy {
       });
   }
 
-  /** Paso 3: prompt final en inglés con los insumos tagueados. */
+  /** Paso 3: prompt final en inglÃ©s con los insumos tagueados. */
   protected toFinalPrompt(): void {
     if (!this.canTranslate()) return;
     this.error.set(null);
@@ -376,44 +376,44 @@ export class WritingCopilotComponent implements OnDestroy {
     });
   }
 
-  // ── Insumos ─────────────────────────────────────────────────────
+  // â”€â”€ Insumos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-  protected onAssetsPicked(event: Event): void {
+  protected async onAssetsPicked(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     const files = Array.from(input.files ?? []);
     input.value = '';
     if (files.length === 0) return;
     this.error.set(null);
     this.uploading.set(true);
-    const uploads = files.map((file) => {
-      const kind = attachmentKind(file);
-      if (!kind) {
-        this.error.set(this.translate.instant('VIDEOMACHINE.WRITE_ERR_ASSET'));
-        return of(null);
-      }
-      const category = kind === 'video' ? 'videos' : kind === 'audio' ? 'audio' : 'images';
-      return this.library.uploadFile(file, category).pipe(
-        map(
-          (asset): CopilotAsset => ({
-            id: asset.id,
+    const added: CopilotAsset[] = [];
+    try {
+      for (const file of files) {
+        const kind = attachmentKind(file);
+        if (!kind) {
+          this.error.set(this.translate.instant('VIDEOMACHINE.WRITE_ERR_ASSET'));
+          continue;
+        }
+        const category = kind === 'video' ? 'videos' : kind === 'audio' ? 'audio' : 'images';
+        try {
+          const uploaded = await firstValueFrom(this.library.uploadFile(file, category));
+          added.push({
+            id: uploaded.id,
             name: file.name,
             kind,
-            role: kind === 'image' ? 'product' : 'product',
-            url: asset.thumbnail_url || asset.url || '',
-          }),
-        ),
-        catchError((err: unknown) => {
+            role: 'product',
+            url: uploaded.thumbnail_url || uploaded.url || '',
+          });
+        } catch (err) {
           this.fail(err);
-          return of(null);
-        }),
-      );
-    });
-    forkJoin(uploads)
-      .pipe(finalize(() => this.uploading.set(false)))
-      .subscribe((items) => {
-        const added = items.filter((item): item is CopilotAsset => !!item);
-        if (added.length) this.assets.update((list) => [...list, ...added]);
-      });
+        }
+      }
+    } finally {
+      if (added.length) {
+        this.assets.update((list) => [...list, ...added]);
+        for (const asset of added) void this.archiveInLibrary(asset);
+      }
+      this.uploading.set(false);
+    }
   }
 
   protected removeAsset(id: string): void {
@@ -422,6 +422,33 @@ export class WritingCopilotComponent implements OnDestroy {
 
   protected setAssetRole(id: string, role: CopilotAssetRole): void {
     this.assets.update((list) => list.map((asset) => (asset.id === id ? { ...asset, role } : asset)));
+    const asset = this.assets().find((item) => item.id === id);
+    if (asset) void this.archiveInLibrary(asset);
+  }
+
+  /**
+   * Archiva la imagen en la biblioteca bajo la categoría elegida (personaje,
+   * locación o prop) para que aparezca en Recursos y el Estudio la mencione
+   * por su nombre de archivo.
+   */
+  private async archiveInLibrary(asset: CopilotAsset): Promise<void> {
+    if (asset.kind !== 'image') return;
+    const type = asset.role === 'person' ? 'character' : asset.role === 'environment' ? 'location' : 'prop';
+    const stem = asset.name.replace(/\.[^.]+$/, '') || asset.name;
+    try {
+      if (asset.ingredientId) {
+        await firstValueFrom(this.library.updateIngredient(asset.ingredientId, { type }));
+        return;
+      }
+      const ingredient = await firstValueFrom(this.library.createIngredient({ type, name: stem }));
+      if (!ingredient?.id) return;
+      await firstValueFrom(this.library.addIngredientFile(ingredient.id, { file_id: asset.id }));
+      this.assets.update((list) =>
+        list.map((item) => (item.id === asset.id ? { ...item, ingredientId: ingredient.id } : item)),
+      );
+    } catch {
+      // La imagen ya quedo en la biblioteca; el ingrediente es una mejora.
+    }
   }
 
   protected assetTag(id: string): string {
@@ -509,13 +536,13 @@ export class WritingCopilotComponent implements OnDestroy {
     };
   }
 
-  // ── Internos ────────────────────────────────────────────────────
+  // â”€â”€ Internos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   private history(): WritingCopilotHistoryMessage[] {
     return this.turns().map((turn) => ({ role: turn.role, content: turn.content }));
   }
 
-  /** Solo envía los parámetros que el usuario informó (nombres del skill). */
+  /** Solo envÃ­a los parÃ¡metros que el usuario informÃ³ (nombres del skill). */
   private buildParams(): WritingCopilotParams {
     const params: WritingCopilotParams = {};
     if (this.outputLanguage()) params.output_language = this.outputLanguage();

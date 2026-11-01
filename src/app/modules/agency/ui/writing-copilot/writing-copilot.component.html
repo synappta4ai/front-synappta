@@ -243,7 +243,7 @@
           <small class="text-ink-muted-on-dark">{{ 'VIDEOMACHINE.WRITE_ASSETS_HINT' | translate }}</small>
 
           @if (taggedAssets().length) {
-            <ul class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <ul class="grid grid-cols-4 gap-2 sm:grid-cols-6">
               @for (asset of taggedAssets(); track asset.id) {
                 <li class="relative flex flex-col gap-1 rounded-xl border border-surface-border bg-surface-2 p-2">
                   @if (asset.kind === 'image') {

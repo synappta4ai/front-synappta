@@ -36,7 +36,7 @@ export type CopilotAssetKind = 'image' | 'video' | 'audio';
 /** Rol de una imagen (persona, producto o locación). */
 export type CopilotAssetRole = 'person' | 'product' | 'environment';
 
-/** Insumo subido en el paso de prompts (aún sin etiqueta). */
+/** Insumo subido en el paso 1 (aún sin etiqueta). */
 export interface CopilotAsset {
   id: string;
   name: string;
@@ -44,21 +44,35 @@ export interface CopilotAsset {
   role: CopilotAssetRole;
   /** Miniatura o URL del archivo (vacía para audio). */
   url: string;
+  /** Ingrediente de la biblioteca donde quedó archivado (personaje/locación/prop). */
+  ingredientId?: string;
 }
 
-/** Insumo con su etiqueta @ImageN / @VideoN / @AudioN. */
+/** Insumo con su etiqueta de prompt (@nombre-del-archivo). */
 export interface TaggedAsset extends CopilotAsset {
   tag: string;
 }
 
-const PREFIX: Record<CopilotAssetKind, string> = { image: 'Image', video: 'Video', audio: 'Audio' };
+const FALLBACK_PREFIX: Record<CopilotAssetKind, string> = { image: 'image', video: 'video', audio: 'audio' };
 
-/** Asigna etiquetas por tipo, en el orden en que se subieron. */
+/**
+ * Etiqueta de cada insumo: el NOMBRE DEL ARCHIVO con su extensión, porque así
+ * el Estudio resuelve la mención y el generador sabe qué archivo usar. Si dos
+ * archivos se llaman igual, el segundo lleva un sufijo numérico.
+ */
 export function tagAssets(assets: readonly CopilotAsset[]): readonly TaggedAsset[] {
-  const counters: Record<CopilotAssetKind, number> = { image: 0, video: 0, audio: 0 };
+  const used = new Map<string, number>();
   return assets.map((asset) => {
-    counters[asset.kind] += 1;
-    return { ...asset, tag: `@${PREFIX[asset.kind]}${counters[asset.kind]}` };
+    const base = asset.name.trim() || FALLBACK_PREFIX[asset.kind];
+    const count = (used.get(base) ?? 0) + 1;
+    used.set(base, count);
+    if (count === 1) {
+      return { ...asset, tag: '@' + base };
+    }
+    const dot = base.lastIndexOf('.');
+    const stem = dot > 0 ? base.slice(0, dot) : base;
+    const ext = dot > 0 ? base.slice(dot) : '';
+    return { ...asset, tag: '@' + stem + '-' + count + ext };
   });
 }
 
@@ -101,4 +115,4 @@ export function promptKinds(assets: readonly TaggedAsset[]): ReadonlyMap<string,
 
 /** Mensaje que pide el prompt final en inglés con las referencias tagueadas. */
 export const FINAL_PROMPT_INSTRUCTION =
-  'Traducí al inglés los prompts anteriores, incluidos los rótulos (LOCACIÓN → LOCATION, REFERENCIAS → REFERENCES, Movimiento → Movement, Velocidad → Speed, Encuadre → Framing, Lente y foco → Lens and focus, Luz y color → Light and colour, Actuación → Acting, Diálogo → Dialogue, Transición → Transition, EVITAR → AVOID), e integrá las referencias con sus etiquetas (@Image1, @Video1, @Audio1...). Devolvé solo el prompt final listo para generar el video, sin comentarios ni supuestos.';
+  'Traducí al inglés los prompts anteriores, incluidos los rótulos (LOCACIÓN → LOCATION, REFERENCIAS → REFERENCES, Movimiento → Movement, Velocidad → Speed, Encuadre → Framing, Lente y foco → Lens and focus, Luz y color → Light and colour, Actuación → Acting, Diálogo → Dialogue, Transición → Transition, EVITAR → AVOID), e integrá las referencias con sus etiquetas (@nombre-de-archivo). Devolvé solo el prompt final listo para generar el video, sin comentarios ni supuestos.';
