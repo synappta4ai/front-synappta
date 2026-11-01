@@ -7,4 +7,6 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 })
 export class PageContainerComponent {
   readonly title = input<string>();
+  /** Ancho completo: VideoMachine necesita todo el ancho para no scrollear. */
+  readonly wide = input(false);
 }

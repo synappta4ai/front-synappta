@@ -140,6 +140,27 @@ describe('AgencyComponent — flujo comercial publicitario', () => {
     http.verify();
   });
 
+  it('ofrece los cinco agentes de VideoMachine y conserva los otros cuatro', () => {
+    const internals = fixture.componentInstance as unknown as {
+      agentOptions: () => { value: string }[];
+      writingCopilotAvailable: { set(value: boolean): void };
+    };
+    expect(internals.agentOptions().map((o) => o.value)).toEqual([
+      'commercial',
+      'real_estate',
+      'cinema',
+      'infoproduct',
+    ]);
+    internals.writingCopilotAvailable.set(true);
+    expect(internals.agentOptions().map((o) => o.value)).toEqual([
+      'commercial',
+      'real_estate',
+      'cinema',
+      'infoproduct',
+      'writing_copilot',
+    ]);
+  });
+
   /**
    * Avanza el flujo como lo haría un click: `nextPhase` programa un
    * `afterNextRender` (foco del título) y eso exige un contexto de inyección.

@@ -184,6 +184,7 @@
             icon="md md-play_arrow"
             [loading]="analyzing()"
             [disabled]="!canAnalyze()"
+            styleClass="cta-spend"
             (onClick)="analyze()"
           />
           @if (analyzing()) {
@@ -584,6 +585,7 @@
             icon="md md-check"
             [loading]="composing()"
             [disabled]="!canCompose()"
+            styleClass="cta-spend"
             (onClick)="compose()"
           />
           <p-button
@@ -768,7 +770,15 @@
                 <p-button
                   [label]="'VIDEOMACHINE.GEN_ONE' | translate"
                   icon="md md-play_arrow"
+                  styleClass="cta-spend"
                   (onClick)="generateSegment(i)"
+                />
+                <p-button
+                  [label]="(queued().has(i) ? 'VIDEOMACHINE.QUEUED' : 'VIDEOMACHINE.QUEUE_SEND') | translate"
+                  icon="md md-list"
+                  severity="secondary"
+                  [text]="true"
+                  (onClick)="enqueueSegment(i)"
                 />
                 @if (launched().has(i)) {
                   <small class="text-success" aria-live="polite">{{ 'VIDEOMACHINE.LAUNCHED' | translate }}</small>
@@ -783,6 +793,7 @@
             <p-button
               [label]="'VIDEOMACHINE.GEN_ALL' | translate: { count: vp.segments.length }"
               icon="md md-play_arrow"
+              styleClass="cta-spend"
               (onClick)="generateAll()"
             />
           }

@@ -1117,6 +1117,48 @@
       }
     </div>
 
+    @if (queueItems().length) {
+      <div class="queue-head">
+        <span><i class="md md-list"></i> {{ 'STUDIO.PENDING_TITLE' | translate }}</span>
+        <span class="pending-head-actions">
+          <p-tag [value]="queueItems().length + ''" severity="warn" />
+          <p-button size="small" [label]="'STUDIO.PENDING_GENERATE_ALL' | translate" icon="md md-play_arrow" (onClick)="generateAllFromQueue()" />
+        </span>
+      </div>
+      <div class="queue-list">
+        @for (item of queueItems(); track item.id) {
+          <details class="queue-item pending-item" animate.enter="anim-item">
+            <summary class="pending-head" (click)="loadFromQueue(item)">
+              <span class="truncate">{{ item.label }}</span>
+              <span class="pending-head-actions">
+                <span class="small muted">{{ item.modelDisplayName }}</span>
+                <span (click)="$event.preventDefault(); $event.stopPropagation()">
+                  <p-button size="small" [label]="'STUDIO.PENDING_GENERATE' | translate" icon="md md-play_arrow" (onClick)="generateFromQueue(item)" />
+                </span>
+              </span>
+            </summary>
+            <div class="pending-body">
+              <p class="small muted">{{ item.ratio }} · {{ item.duration || '' }} s · {{ item.resolution || 'auto' }}</p>
+              @if (item.assets.length) {
+                <div class="ref-strip">
+                  @for (asset of item.assets.slice(0, 5); track asset.id) {
+                    @if (asset.kind === 'image') {
+                      <img class="ref-thumb" [src]="refThumbUrl(asset.id)" [alt]="asset.name" [title]="asset.name" (error)="onThumbError($event)" />
+                    }
+                  }
+                </div>
+              }
+              <pre class="pending-prompt">{{ item.prompt }}</pre>
+              <div class="pending-actions">
+                <p-button size="small" [label]="'STUDIO.PENDING_GENERATE' | translate" icon="md md-play_arrow" (onClick)="generateFromQueue(item)" />
+                <p-button size="small" severity="secondary" [text]="true" [label]="'STUDIO.PENDING_REMOVE' | translate" icon="md md-delete" (onClick)="removeFromQueue(item.id)" />
+              </div>
+            </div>
+          </details>
+        }
+      </div>
+    }
+
     <div class="queue-head">
       <span><i class="md md-list"></i> {{ 'STUDIO.QUEUE_TITLE' | translate }}</span>
       <p-tag

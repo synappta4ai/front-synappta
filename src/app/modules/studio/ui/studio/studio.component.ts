@@ -46,6 +46,7 @@ import { UserSessionStore } from '@core/store/user.session';
 import { environment } from '@env/environment';
 
 import { StudioService } from '../../services/studio.service';
+import { GenerationQueueService, QueueItem } from '@services/generation-queue.service';
 import { StudioModel, StudioModelType, StudioTake } from '../../interfaces';
 import { AssetPickerDialogComponent } from '@shared/components/index';
 import { AssetEditDialogComponent } from '@shared/components/asset-edit-dialog/asset-edit-dialog';
@@ -120,6 +121,7 @@ interface MentionRow {
 })
 export class StudioComponent {
   private readonly studioService = inject(StudioService);
+  private readonly queue = inject(GenerationQueueService);
   private readonly agencyService = inject(AgencyService);
   private readonly libraryService = inject(LibraryService);
   private readonly eventsService = inject(EventsService);
@@ -136,6 +138,8 @@ export class StudioComponent {
 
   // ─── Catalog ───────────────────────────────────────────────────
   protected readonly models = signal<StudioModel[]>([]);
+  /** Clips pendientes que los flujos dejaron listos para generar. */
+  protected readonly queueItems = this.queue.items;
   protected readonly loadingModels = signal(false);
   protected readonly selectedModel = signal<StudioModel | null>(null);
 
@@ -1814,6 +1818,72 @@ export class StudioComponent {
    * reel, resuelve proyecto/pieza y envía el request. `display` alimenta la
    * tarjeta mientras viaja; el request queda guardado para poder re-generar.
    */
+  /** Lanza un clip pendiente de la cola con su prompt, insumos y configuracion. */
+  protected generateFromQueue(item: QueueItem): void {
+    const model = this.models().find((entry) => entry.name === item.model);
+    if (!model) {
+      this.error.set(this.translate.instant('STUDIO.PENDING_MODEL_MISSING'));
+      return;
+    }
+    const payload = this.queuePayload(item);
+    this.launchGeneration(payload, {
+      prompt: item.prompt,
+      modelName: model.name,
+      modelDisplayName: item.modelDisplayName || model.displayName,
+      modelType: model.type,
+      ratio: item.ratio,
+      resolution: item.resolution,
+      duration: item.duration,
+      eventName: null,
+      refImages: item.assets
+        .filter((asset) => asset.kind === 'image')
+        .map((asset) => ({ id: asset.id, name: asset.name })),
+    });
+    this.queue.remove(item.id);
+  }
+
+  /** Lanza todos los clips pendientes (cada uno con su configuracion). */
+  protected generateAllFromQueue(): void {
+    const items = [...this.queueItems()];
+    for (const item of items) {
+      this.generateFromQueue(item);
+    }
+  }
+
+  /** Payload de generacion de un clip de la cola (prompt, insumos y configuracion). */
+  private queuePayload(item: QueueItem): GenerateRequest {
+    return {
+      model: item.model,
+      content: [
+        ...item.assets.filter((asset) => asset.kind === 'image').map((asset) => ({ type: 'image' as const, id: asset.id, name: asset.name })),
+        ...item.assets.filter((asset) => asset.kind === 'audio').map((asset) => ({ type: 'audio' as const, id: asset.id, name: asset.name })),
+        ...item.assets.filter((asset) => asset.kind === 'video').map((asset) => ({ type: 'video' as const, id: asset.id, name: asset.name })),
+        { type: 'text' as const, text: item.prompt },
+      ],
+      ratio: item.ratio,
+      duration: item.duration || undefined,
+      resolution: item.resolution,
+      event_id: this.selectedProjectId() ?? '',
+      piece_id: '',
+      piece_code: item.label,
+      generation_number: 0,
+    };
+  }
+
+  /** Carga un clip de la cola en el compositor para ajustarlo antes de generar. */
+  protected loadFromQueue(item: QueueItem): void {
+    const model = this.models().find((entry) => entry.name === item.model);
+    if (!model) {
+      this.error.set(this.translate.instant('STUDIO.PENDING_MODEL_MISSING'));
+      return;
+    }
+    this.applyReuseRequest(this.queuePayload(item), item.prompt);
+  }
+
+  protected removeFromQueue(id: string): void {
+    this.queue.remove(id);
+  }
+
   private launchGeneration(
     payload: GenerateRequest,
     display: {

@@ -38,6 +38,7 @@ import {
   VideoPrompt,
 } from '@modules/agency/interfaces';
 import { InfoproductService, ModelCatalogService } from '@modules/agency/services';
+import { GenerationQueueService } from '@services/generation-queue.service';
 import { FileAsset } from '@modules/library/interfaces';
 import { LibraryService } from '@modules/library/services';
 import { ModelSelectComponent } from '../model-select/model-select.component';
@@ -93,6 +94,7 @@ export class InfoproductComponent implements OnDestroy {
   private readonly catalog = inject(ModelCatalogService);
   private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
+  private readonly generationQueue = inject(GenerationQueueService);
 
   protected readonly step = signal<Step>(1);
   protected readonly error = signal<string | null>(null);
@@ -203,6 +205,8 @@ export class InfoproductComponent implements OnDestroy {
   protected readonly resolution = signal('');
   protected readonly audio = signal(false);
   protected readonly launched = signal<ReadonlySet<number>>(new Set());
+  /** Generaciones ya enviadas a la cola. */
+  protected readonly queued = signal<ReadonlySet<number>>(new Set<number>());
 
   protected readonly ratioOptions = computed(() =>
     (this.videoModel()?.defaults?.ratios?.length ? this.videoModel()!.defaults.ratios! : FALLBACK_RATIOS).map(
@@ -538,6 +542,40 @@ export class InfoproductComponent implements OnDestroy {
     void this.router.navigate(['/studio']);
   }
 
+  /** Encola una de las generaciones del resultado para lanzarla desde el Estudio. */
+  protected enqueueSegment(index: number): void {
+    const vp = this.result();
+    const model = this.videoModel();
+    const prompt = this.segmentPrompts()[index] ?? '';
+    if (!vp || !model || !prompt.trim()) return;
+    const assets = [
+      ...vp.ingredients.map((ingredient) => ({
+        id: ingredient.file_id,
+        name: this.attachments().find((a) => a.id === ingredient.file_id)?.name ?? ingredient.tag,
+        kind: 'image' as const,
+      })),
+      ...vp.audio_refs.map((ref) => ({
+        id: ref.file_id,
+        name: this.attachments().find((a) => a.id === ref.file_id)?.name ?? ref.tag,
+        kind: 'audio' as const,
+      })),
+    ];
+    this.generationQueue.add([
+      {
+        label: this.translate.instant('VIDEOMACHINE.QUEUE_SEGMENT_LABEL', { n: index + 1 }),
+        source: 'infoproduct',
+        prompt,
+        assets,
+        model: model.name,
+        modelDisplayName: model.display_name || model.name,
+        ratio: this.ratio(),
+        duration: this.segmentDurations()[index] ?? vp.duration,
+        resolution: this.resolution(),
+        generateAudio: this.supportsAudio() ? this.audio() : false,
+      },
+    ]);
+    this.queued.update((set) => new Set([...set, index]));
+  }
   protected goTo(step: Step): void {
     if (step === 2 && !this.analysis() && !this.useFormat()) return;
     if (step === 3 && !this.result()) return;

@@ -16,6 +16,8 @@ export type PromptTone =
   | 'location'
   | 'props'
   | 'product'
+  | 'audio'
+  | 'video'
   | 'unknown';
 
 /** Fragmento del prompt con su tono. */
@@ -43,6 +45,12 @@ function toneForTag(tag: string, kinds: ReadonlyMap<string, PhotoKind | null>): 
   const key = tag.toLowerCase();
   if (kinds.has(key)) {
     return kinds.get(key) ?? 'unknown';
+  }
+  if (/^@audio\d+$/.test(key)) {
+    return 'audio';
+  }
+  if (/^@video\d+$/.test(key)) {
+    return 'video';
   }
   // Los tags posicionales del flujo anterior no tienen tipo de foto: no son
   // un error, se dejan con el color normal del texto.
