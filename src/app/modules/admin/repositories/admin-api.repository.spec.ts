@@ -125,7 +125,7 @@ describe('AdminApiRepository · tenant override', () => {
   });
 
   it('scopes the server communication logs to the selected tenant', () => {
-    repository.listServerComms(1, 20, 'task-1', 'acme').subscribe();
+    repository.listServerComms(1, 20, { task_id: 'task-1' }, 'acme').subscribe();
 
     const req = httpMock.expectOne((r) => r.url === `${base}/agency/logs/server-communications`);
     expect(req.request.headers.get('X-Tenant-Slug')).toBe('acme');

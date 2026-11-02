@@ -233,6 +233,55 @@ export interface ServerCommsPage {
   total_pages: number;
 }
 
+/** Filtros de la lista de comunicaciones (los vacíos no viajan al back). */
+export interface ServerCommsFilters {
+  task_id?: string;
+  provider?: string;
+  /** "ok" = 2xx, "error" = sin respuesta (0) o >= 400. */
+  status?: string;
+  username?: string;
+  /** Día ISO (YYYY-MM-DD), inclusivo. */
+  date_from?: string;
+  date_to?: string;
+}
+
+/** Gasto guardado de una generación (antes y después del recupero). */
+export interface CostRecoveryRow {
+  estimated_cost: number;
+  cost_credits: number;
+  cost_source: string;
+}
+
+/** Un paso de la recuperación con el endpoint, payload y respuesta usados. */
+export interface CostRecoveryStep {
+  key: string;
+  method?: string;
+  endpoint?: string;
+  request_body?: string;
+  status_code?: number;
+  response_body?: string;
+  credits?: number;
+  usd?: number;
+  found: boolean;
+  note?: string;
+  duration_ms?: number;
+}
+
+/** Traza completa del recupero de costo de una petición. */
+export interface CostRecoveryTrace {
+  task_id: string;
+  model_name: string;
+  provider: string;
+  generator: string;
+  before: CostRecoveryRow;
+  after: CostRecoveryRow;
+  applied: boolean;
+  /** provider_estimate | calculator | api_response | none. */
+  decision: string;
+  reason: string;
+  steps: CostRecoveryStep[];
+}
+
 // ─── Worker model management (inference worker) ────────────────────────
 
 /** Estado de descarga de un modelo en el worker. */

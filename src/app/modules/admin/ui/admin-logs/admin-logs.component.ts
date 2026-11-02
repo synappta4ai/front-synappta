@@ -14,6 +14,7 @@ import { catchError, EMPTY, finalize } from 'rxjs';
 
 import { Button } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
+import { Select } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { Tag } from 'primeng/tag';
 import { Message } from 'primeng/message';
@@ -26,7 +27,7 @@ import { formatDurationValue } from '@pipes/format-duration.pipe';
 import { AgencyService } from '@modules/agency/services';
 import { AdminService } from '../../services/admin.service';
 import { AdminTenantService } from '../../services/admin-tenant.service';
-import { ServerCommunicationLog } from '../../interfaces';
+import { CostRecoveryTrace, ServerCommunicationLog, ServerCommsFilters } from '../../interfaces';
 
 /**
  * One logical record: the generation submit, the provider spend estimate
@@ -57,6 +58,7 @@ interface PhaseTab {
     DatePipe,
     Button,
     InputText,
+    Select,
     TableModule,
     Tag,
     Message,
@@ -92,7 +94,36 @@ export class AdminLogsComponent {
   protected readonly page = signal(1);
   protected readonly total = signal(0);
   protected readonly limit = 20;
+
+  // Filtros de la barra: task id, proveedor, estado, usuario y rango de fecha.
   protected readonly taskIdFilter = signal('');
+  protected readonly providerFilter = signal<string | null>(null);
+  protected readonly statusFilter = signal<string | null>(null);
+  protected readonly userFilter = signal('');
+  protected readonly dateFrom = signal('');
+  protected readonly dateTo = signal('');
+
+  /** Proveedores del catálogo para filtrar las comunicaciones. */
+  protected readonly providerOptions: { label: string; value: string }[] = [
+    { label: 'Higgsfield', value: 'higgsfield' },
+    { label: 'BytePlus', value: 'byteplus' },
+    { label: 'Gemini', value: 'gemini' },
+    { label: 'OpenRouter', value: 'openrouter' },
+    { label: 'Anthropic', value: 'anthropic' },
+    { label: 'RunPod', value: 'runpod' },
+    { label: 'Together', value: 'together' },
+    { label: 'DeepInfra', value: 'deepinfra' },
+    { label: 'GMI', value: 'gmi' },
+    { label: 'Baseten', value: 'baseten' },
+    { label: 'Vultr', value: 'vultr' },
+    { label: 'DigitalOcean', value: 'digitalocean' },
+    { label: 'CoreWeave', value: 'coreweave' },
+    { label: 'Ollama', value: 'ollama' },
+    { label: 'LM Studio', value: 'lmstudio' },
+  ];
+
+  /** Etiquetas de estado traducidas (se rearman al cambiar de idioma). */
+  protected readonly statusOptions = signal<{ label: string; value: string | null }[]>([]);
 
   protected readonly detail = signal<CommRow | null>(null);
   protected readonly detailVisible = signal(false);
@@ -110,6 +141,18 @@ export class AdminLogsComponent {
         this.load();
       });
     });
+    // Las opciones del select de estado son texto traducido: se rearman con el
+    // idioma en vez de mostrar la clave.
+    this.refreshStatusOptions();
+    this.translate.onLangChange.subscribe(() => this.refreshStatusOptions());
+  }
+
+  private refreshStatusOptions(): void {
+    this.statusOptions.set([
+      { label: this.translate.instant('ADMIN.LOGS.FILTER_STATUS_ALL'), value: null },
+      { label: this.translate.instant('ADMIN.LOGS.FILTER_STATUS_OK'), value: 'ok' },
+      { label: this.translate.instant('ADMIN.LOGS.FILTER_STATUS_ERROR'), value: 'error' },
+    ]);
   }
 
   protected load(): void {
@@ -119,7 +162,7 @@ export class AdminLogsComponent {
       .listServerComms(
         this.page(),
         this.limit,
-        this.taskIdFilter().trim() || undefined,
+        this.activeFilters(),
         this.tenantSlug() ?? undefined,
       )
       .pipe(
@@ -138,6 +181,39 @@ export class AdminLogsComponent {
   protected search(): void {
     this.page.set(1);
     this.load();
+  }
+
+  /** Limpia todos los filtros y recarga desde la primera página. */
+  protected clearFilters(): void {
+    this.taskIdFilter.set('');
+    this.providerFilter.set(null);
+    this.statusFilter.set(null);
+    this.userFilter.set('');
+    this.dateFrom.set('');
+    this.dateTo.set('');
+    this.search();
+  }
+
+  /** Filtros activos de la barra: los vacíos se omiten del query string. */
+  private activeFilters(): ServerCommsFilters {
+    const filters: ServerCommsFilters = {};
+    const taskId = this.taskIdFilter().trim();
+    if (taskId) filters.task_id = taskId;
+    const provider = this.providerFilter();
+    if (provider) filters.provider = provider;
+    const status = this.statusFilter();
+    if (status) filters.status = status;
+    const user = this.userFilter().trim();
+    if (user) filters.username = user;
+    let from = this.dateFrom();
+    let to = this.dateTo();
+    // Rango invertido: se ordena para que el filtro no quede vacío.
+    if (from && to && from > to) {
+      [from, to] = [to, from];
+    }
+    if (from) filters.date_from = from;
+    if (to) filters.date_to = to;
+    return filters;
   }
 
   /**
@@ -164,6 +240,71 @@ export class AdminLogsComponent {
         // Las filas reparadas cambian el gasto: recarga la vista.
         this.load();
       });
+  }
+
+  // ─── Recupero por petición (traza de diagnóstico) ─────────────
+
+  protected readonly recoveryVisible = signal(false);
+  protected readonly recoveryLoading = signal(false);
+  protected readonly recovery = signal<CostRecoveryTrace | null>(null);
+  protected readonly recoveryError = signal<string | null>(null);
+  protected readonly recoveryTaskId = signal<string>('');
+
+  /**
+   * Recalcula el costo de una sola petición y abre la traza: endpoint,
+   * payload y respuesta de cada fuente (estimate del proveedor, calculadora
+   * local y usage de la respuesta), más el valor aplicado.
+   */
+  protected recoverRowCost(row: CommRow): void {
+    const source = row.generate ?? row.poll ?? row.estimate;
+    if (!source || this.recoveryLoading()) return;
+    this.recovery.set(null);
+    this.recoveryError.set(null);
+    this.recoveryTaskId.set(this.rowKey(row));
+    this.recoveryVisible.set(true);
+    this.recoveryLoading.set(true);
+    this.adminService
+      .recoverServerCommCost(source.id, this.tenantSlug() ?? undefined)
+      .pipe(
+        catchError(() => {
+          this.recoveryError.set(this.translate.instant('ADMIN.LOGS.ERRORS.RECOVER_ROW'));
+          return EMPTY;
+        }),
+        finalize(() => this.recoveryLoading.set(false)),
+      )
+      .subscribe((trace) => {
+        this.recovery.set(trace);
+        // El gasto reparado cambia la tabla: recarga la página actual.
+        this.load();
+      });
+  }
+
+  /** Identidad de la fila para el spinner por petición. */
+  private rowKey(row: CommRow): string {
+    const source = row.generate ?? row.poll ?? row.estimate;
+    return row.task_id || source?.task_id || source?.id || '';
+  }
+
+  protected isRecoveringRow(row: CommRow): boolean {
+    return this.recoveryLoading() && this.recoveryTaskId() === this.rowKey(row);
+  }
+
+  /** Clave i18n del título de un paso de la traza (payload, estimate...). */
+  protected stepKey(key: string): string {
+    return 'ADMIN.LOGS.RECOVERY.STEP_' + key.toUpperCase().replace(/-/g, '_');
+  }
+
+  /** Clave i18n de la fuente aplicada (provider_estimate, calculator...). */
+  protected decisionKey(decision: string): string {
+    return 'ADMIN.LOGS.RECOVERY.DECISION_' + decision.toUpperCase().replace(/-/g, '_');
+  }
+
+  protected formatUsd(value: number): string {
+    return `$${(Math.round(value * 10000) / 10000).toFixed(4)}`;
+  }
+
+  protected formatCredits(value: number): string {
+    return `${Math.round(value * 1000) / 1000} cr`;
   }
 
   protected prevPage(): void {
