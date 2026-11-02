@@ -1360,10 +1360,16 @@
         "STEP_CALCULATOR": "Local calculator",
         "STEP_USAGE": "Response usage",
         "STEP_PROVIDER_USAGE": "Provider usage (/models/usage)",
+        "PREFERENCE": "Cost source",
+        "PREFERENCE_PROVIDER": "Provider",
+        "PREFERENCE_CALCULATOR": "Local calculator",
+        "STEP_PROVIDER_PRICE": "Provider unit price (/models/usage)",
+        "STEP_PROVIDER_REQUEST": "Provider request id (/requests/{id}/status)",
         "DECISION_PROVIDER_ESTIMATE": "Provider estimate",
         "DECISION_CALCULATOR": "Local calculator",
         "DECISION_API_RESPONSE": "Response usage.cost",
         "DECISION_PROVIDER_USAGE": "Provider usage",
+        "DECISION_PROVIDER_PRICE": "Provider unit price",
         "DECISION_NONE": "No source"
       },
       "ERRORS": {

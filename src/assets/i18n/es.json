@@ -1360,10 +1360,16 @@
         "STEP_CALCULATOR": "Calculadora local",
         "STEP_USAGE": "usage de la respuesta",
         "STEP_PROVIDER_USAGE": "Consumo del proveedor (/models/usage)",
+        "PREFERENCE": "Fuente del costo",
+        "PREFERENCE_PROVIDER": "Proveedor",
+        "PREFERENCE_CALCULATOR": "Calculadora local",
+        "STEP_PROVIDER_PRICE": "Precio unitario del proveedor (/models/usage)",
+        "STEP_PROVIDER_REQUEST": "Request id del proveedor (/requests/{id}/status)",
         "DECISION_PROVIDER_ESTIMATE": "Estimación del proveedor",
         "DECISION_CALCULATOR": "Calculadora local",
         "DECISION_API_RESPONSE": "usage.cost de la respuesta",
         "DECISION_PROVIDER_USAGE": "Consumo del proveedor",
+        "DECISION_PROVIDER_PRICE": "Precio unitario del proveedor",
         "DECISION_NONE": "Sin fuente"
       },
       "ERRORS": {

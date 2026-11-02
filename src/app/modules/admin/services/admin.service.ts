@@ -171,8 +171,12 @@ export class AdminService {
   }
 
   /** Recupera el costo de una petición y devuelve la traza de diagnóstico. */
-  recoverServerCommCost(id: string, tenantSlug?: string): Observable<CostRecoveryTrace> {
-    return unwrap(this.adminApiRepository.recoverServerCommCost(id, tenantSlug));
+  recoverServerCommCost(
+    id: string,
+    preference: 'provider' | 'calculator' = 'provider',
+    tenantSlug?: string,
+  ): Observable<CostRecoveryTrace> {
+    return unwrap(this.adminApiRepository.recoverServerCommCost(id, preference, tenantSlug));
   }
 
   listGeneratedVideos(

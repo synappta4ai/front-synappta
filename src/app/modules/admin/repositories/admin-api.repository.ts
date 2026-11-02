@@ -290,14 +290,19 @@ export class AdminApiRepository {
     );
   }
 
-  /** Recupera el costo de una traza y devuelve la traza de diagnóstico. */
+  /**
+   * Recupera el costo de una traza y devuelve la traza de diagnóstico.
+   * `preference` elige qué fuente gana cuando hay varias: el proveedor o la
+   * calculadora local (el guard del back nunca degrada un cargo del proveedor).
+   */
   recoverServerCommCost(
     id: string,
+    preference: 'provider' | 'calculator' = 'provider',
     tenantSlug?: string,
   ): Observable<ApiResponse<CostRecoveryTrace>> {
     return this.http.post<ApiResponse<CostRecoveryTrace>>(
       `${this.apiUrl}/agency/logs/server-communications/${encodeURIComponent(id)}/cost-recovery`,
-      {},
+      { preference },
       { ...this.tenantHeaders(tenantSlug) },
     );
   }

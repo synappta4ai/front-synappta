@@ -261,6 +261,8 @@ export class AdminLogsComponent {
   protected readonly recovery = signal<CostRecoveryTrace | null>(null);
   protected readonly recoveryError = signal<string | null>(null);
   protected readonly recoveryTaskId = signal<string>('');
+  protected readonly recoveryPreference = signal<'provider' | 'calculator'>('provider');
+  private readonly recoverySourceId = signal('');
 
   /**
    * Recalcula el costo de una sola petición y abre la traza: endpoint,
@@ -270,13 +272,24 @@ export class AdminLogsComponent {
   protected recoverRowCost(row: CommRow): void {
     const source = row.generate ?? row.poll ?? row.estimate;
     if (!source || this.recoveryLoading()) return;
-    this.recovery.set(null);
-    this.recoveryError.set(null);
+    this.recoverySourceId.set(source.id);
     this.recoveryTaskId.set(this.rowKey(row));
     this.recoveryVisible.set(true);
+    this.runRecovery(source.id);
+  }
+
+  /**
+   * Ejecuta el recupero con la fuente preferida y pinta la traza. Cambiar la
+   * preferencia lo vuelve a correr, así se comparan proveedor y calculadora
+   * sobre la misma petición sin cerrar el diálogo.
+   */
+  private runRecovery(commId: string): void {
+    if (this.recoveryLoading()) return;
+    this.recovery.set(null);
+    this.recoveryError.set(null);
     this.recoveryLoading.set(true);
     this.adminService
-      .recoverServerCommCost(source.id, this.tenantSlug() ?? undefined)
+      .recoverServerCommCost(commId, this.recoveryPreference(), this.tenantSlug() ?? undefined)
       .pipe(
         catchError(() => {
           this.recoveryError.set(this.translate.instant('ADMIN.LOGS.ERRORS.RECOVER_ROW'));
@@ -289,6 +302,26 @@ export class AdminLogsComponent {
         // El gasto reparado cambia la tabla: recarga la página actual.
         this.load();
       });
+  }
+
+  /** Opciones del selector de fuente del costo. */
+  protected readonly preferenceOptions = computed(() => [
+    {
+      label: this.translate.instant('ADMIN.LOGS.RECOVERY.PREFERENCE_PROVIDER'),
+      value: 'provider',
+    },
+    {
+      label: this.translate.instant('ADMIN.LOGS.RECOVERY.PREFERENCE_CALCULATOR'),
+      value: 'calculator',
+    },
+  ]);
+
+  /** Cambia la fuente preferida y recalcula la misma petición. */
+  protected setRecoveryPreference(value: 'provider' | 'calculator'): void {
+    if (!value || value === this.recoveryPreference()) return;
+    this.recoveryPreference.set(value);
+    const commId = this.recoverySourceId();
+    if (commId) this.runRecovery(commId);
   }
 
   /** Identidad de la fila para el spinner por petición. */
