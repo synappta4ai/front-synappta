@@ -1327,6 +1327,7 @@
       "RECOVER_COSTS": "Recuperar costos",
       "RECOVER_COSTS_HINT": "Recalcula el gasto faltante ($0.00) desde los payloads guardados: cubre gasto del proveedor y estimado por calculadora.",
       "RECOVERED": "Costos revisados: {{scanned}}, reparados: {{updated}}.",
+      "RECOVERED_TITLE": "Costos recuperados",
       "FILTER_TASK_ID": "Task ID",
       "FILTER_PROVIDER": "Proveedor",
       "FILTER_PROVIDER_ALL": "Todos los proveedores",
@@ -1358,14 +1359,17 @@
         "STEP_STORED_ESTIMATE": "Estimación guardada en el submit",
         "STEP_CALCULATOR": "Calculadora local",
         "STEP_USAGE": "usage de la respuesta",
+        "STEP_PROVIDER_USAGE": "Consumo del proveedor (/models/usage)",
         "DECISION_PROVIDER_ESTIMATE": "Estimación del proveedor",
         "DECISION_CALCULATOR": "Calculadora local",
         "DECISION_API_RESPONSE": "usage.cost de la respuesta",
+        "DECISION_PROVIDER_USAGE": "Consumo del proveedor",
         "DECISION_NONE": "Sin fuente"
       },
       "ERRORS": {
         "LOAD": "No se pudieron cargar los logs.",
         "RECOVER": "No se pudo recuperar los costos.",
+        "RECOVER_TITLE": "No se pudieron recuperar los costos",
         "RECOVER_ROW": "No se pudo recuperar el costo de esta petición."
       }
     }

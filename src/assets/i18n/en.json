@@ -1327,6 +1327,7 @@
       "RECOVER_COSTS": "Recover costs",
       "RECOVER_COSTS_HINT": "Recomputes missing spend ($0.00) from the stored payloads: covers provider-reported and calculator-estimated costs.",
       "RECOVERED": "Costs scanned: {{scanned}}, fixed: {{updated}}.",
+      "RECOVERED_TITLE": "Costs recovered",
       "FILTER_TASK_ID": "Task ID",
       "FILTER_PROVIDER": "Provider",
       "FILTER_PROVIDER_ALL": "All providers",
@@ -1358,14 +1359,17 @@
         "STEP_STORED_ESTIMATE": "Estimate stored at submit",
         "STEP_CALCULATOR": "Local calculator",
         "STEP_USAGE": "Response usage",
+        "STEP_PROVIDER_USAGE": "Provider usage (/models/usage)",
         "DECISION_PROVIDER_ESTIMATE": "Provider estimate",
         "DECISION_CALCULATOR": "Local calculator",
         "DECISION_API_RESPONSE": "Response usage.cost",
+        "DECISION_PROVIDER_USAGE": "Provider usage",
         "DECISION_NONE": "No source"
       },
       "ERRORS": {
         "LOAD": "Could not load the logs.",
         "RECOVER": "Could not recover costs.",
+        "RECOVER_TITLE": "Costs could not be recovered",
         "RECOVER_ROW": "Could not recover the cost of this request."
       }
     }

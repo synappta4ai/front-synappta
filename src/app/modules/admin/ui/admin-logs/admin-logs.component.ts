@@ -21,6 +21,7 @@ import { Message } from 'primeng/message';
 import { Dialog } from 'primeng/dialog';
 import { Tabs, Tab, TabList, TabPanel, TabPanels } from 'primeng/tabs';
 import { Tooltip } from 'primeng/tooltip';
+import { MessageService } from 'primeng/api';
 
 import { UserSessionStore } from '@core/store/user.session';
 import { formatDurationValue } from '@pipes/format-duration.pipe';
@@ -80,6 +81,7 @@ export class AdminLogsComponent {
   private readonly adminTenants = inject(AdminTenantService);
   private readonly sessionStore = inject(UserSessionStore);
   private readonly translate = inject(TranslateService);
+  private readonly messages = inject(MessageService);
 
   protected readonly isSuperadmin = computed(
     () => this.sessionStore.currentUser()?.role_level === 0,
@@ -130,7 +132,6 @@ export class AdminLogsComponent {
 
   /** Recupero manual de costos (backfill): repara $0.00 históricos. */
   protected readonly recovering = signal(false);
-  protected readonly recovered = signal<{ scanned: number; updated: number } | null>(null);
 
   constructor() {
     // Carga inicial y recarga al cambiar el tenant en el header de la consola.
@@ -224,19 +225,30 @@ export class AdminLogsComponent {
   protected recoverCosts(): void {
     if (this.recovering()) return;
     this.recovering.set(true);
-    this.recovered.set(null);
-    this.error.set(null);
     this.agencyService
       .backfillGenerationCosts()
       .pipe(
         catchError(() => {
-          this.error.set(this.translate.instant('ADMIN.LOGS.ERRORS.RECOVER'));
+          this.messages.add({
+            severity: 'error',
+            summary: this.translate.instant('ADMIN.LOGS.ERRORS.RECOVER_TITLE'),
+            detail: this.translate.instant('ADMIN.LOGS.ERRORS.RECOVER'),
+            life: 6000,
+          });
           return EMPTY;
         }),
         finalize(() => this.recovering.set(false)),
       )
       .subscribe((result) => {
-        this.recovered.set(result);
+        this.messages.add({
+          severity: result.updated > 0 ? 'success' : 'info',
+          summary: this.translate.instant('ADMIN.LOGS.RECOVERED_TITLE'),
+          detail: this.translate.instant('ADMIN.LOGS.RECOVERED', {
+            scanned: result.scanned,
+            updated: result.updated,
+          }),
+          life: 6000,
+        });
         // Las filas reparadas cambian el gasto: recarga la vista.
         this.load();
       });
