@@ -1341,6 +1341,7 @@
       "CLEAR_FILTERS": "Limpiar filtros",
       "COL_ACTIONS": "Acciones",
       "RECOVER_ROW": "Recuperar el costo de esta petición",
+      "RECOVER_ROW_LABEL": "Recuperar costo",
       "RECOVERY": {
         "TITLE": "Recuperación de costos",
         "LOADING": "Ejecutando la recuperación…",

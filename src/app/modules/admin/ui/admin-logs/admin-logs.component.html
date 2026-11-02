@@ -167,7 +167,7 @@
     <div class="overflow-hidden rounded-3xl border border-surface-border bg-surface">
       <p-table
         [value]="$any(rows())"
-        [tableStyle]="{ 'min-width': '56rem' }"
+        [tableStyle]="{ 'min-width': '64rem' }"
         [rowHover]="true"
         [scrollable]="true"
         scrollHeight="calc(100vh - 24rem)"
@@ -175,20 +175,20 @@
       >
         <ng-template #header>
           <tr>
-            <th style="width: 15%">{{ 'ADMIN.LOGS.COL_TASK_ID' | translate }}</th>
-            <th style="width: 10%" class="text-center">
+            <th style="width: 14%">{{ 'ADMIN.LOGS.COL_TASK_ID' | translate }}</th>
+            <th style="width: 9%" class="text-center">
               {{ 'ADMIN.LOGS.COL_STATUS' | translate }}
             </th>
-            <th style="width: 12%">{{ 'ADMIN.LOGS.COL_MODEL' | translate }}</th>
-            <th style="width: 8%" class="text-center">{{ 'ADMIN.LOGS.COL_HTTP' | translate }}</th>
+            <th style="width: 11%">{{ 'ADMIN.LOGS.COL_MODEL' | translate }}</th>
+            <th style="width: 7%" class="text-center">{{ 'ADMIN.LOGS.COL_HTTP' | translate }}</th>
             <th style="width: 9%" class="text-center">
               {{ 'ADMIN.LOGS.COL_DURATION' | translate }}
             </th>
-            <th style="width: 10%">{{ 'ADMIN.LOGS.COL_USER' | translate }}</th>
-            <th style="width: 14%">{{ 'ADMIN.LOGS.COL_CREDENTIAL' | translate }}</th>
-            <th style="width: 9%" class="text-center">{{ 'ADMIN.LOGS.COL_COST' | translate }}</th>
+            <th style="width: 9%">{{ 'ADMIN.LOGS.COL_USER' | translate }}</th>
+            <th style="width: 13%">{{ 'ADMIN.LOGS.COL_CREDENTIAL' | translate }}</th>
+            <th style="width: 8%" class="text-center">{{ 'ADMIN.LOGS.COL_COST' | translate }}</th>
             <th style="width: 5%" class="text-center">{{ 'ADMIN.LOGS.COL_DATE' | translate }}</th>
-            <th style="width: 9%" class="text-center">{{ 'ADMIN.LOGS.COL_ACTIONS' | translate }}</th>
+            <th style="width: 15%" class="text-center">{{ 'ADMIN.LOGS.COL_ACTIONS' | translate }}</th>
           </tr>
         </ng-template>
         <ng-template #body let-r let-i="rowIndex">
@@ -311,9 +311,11 @@
             <td class="text-center">
               <div class="flex items-center justify-center gap-1">
                 <p-button
-                  icon="md md-payments"
+                  icon="md md-autorenew"
+                  [label]="'ADMIN.LOGS.RECOVER_ROW_LABEL' | translate"
                   size="small"
                   text
+                  severity="warn"
                   [loading]="isRecoveringRow(r)"
                   [ariaLabel]="'ADMIN.LOGS.RECOVER_ROW' | translate"
                   [pTooltip]="'ADMIN.LOGS.RECOVER_ROW' | translate"
