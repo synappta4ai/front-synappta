@@ -6,6 +6,7 @@ import { unwrap } from '@utils/unwrap-api-response';
 
 import { MasterModelPref, MasterPrefsView } from '@modules/agency/interfaces';
 import {
+  CostRecoveryTrace,
   CreateTenantMemberRequest,
   CreateTenantRequest,
   GeneratedImagesPage,
@@ -13,6 +14,7 @@ import {
   PermissionDef,
   PlatformUser,
   ServerCommunicationLog,
+  ServerCommsFilters,
   ServerCommsPage,
   Tenant,
   TenantCredential,
@@ -158,14 +160,23 @@ export class AdminService {
   listServerComms(
     page = 1,
     limit = 20,
-    taskId?: string,
+    filters: ServerCommsFilters = {},
     tenantSlug?: string,
   ): Observable<ServerCommsPage> {
-    return unwrap(this.adminApiRepository.listServerComms(page, limit, taskId, tenantSlug));
+    return unwrap(this.adminApiRepository.listServerComms(page, limit, filters, tenantSlug));
   }
 
   getServerComm(id: string, tenantSlug?: string): Observable<ServerCommunicationLog> {
     return unwrap(this.adminApiRepository.getServerComm(id, tenantSlug));
+  }
+
+  /** Recupera el costo de una petición y devuelve la traza de diagnóstico. */
+  recoverServerCommCost(
+    id: string,
+    preference: 'provider' | 'calculator' = 'provider',
+    tenantSlug?: string,
+  ): Observable<CostRecoveryTrace> {
+    return unwrap(this.adminApiRepository.recoverServerCommCost(id, preference, tenantSlug));
   }
 
   listGeneratedVideos(

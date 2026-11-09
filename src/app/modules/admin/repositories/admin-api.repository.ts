@@ -8,6 +8,7 @@ import { environment } from '@env/environment';
 import { MasterModelPref, MasterPrefsView } from '@modules/agency/interfaces';
 import { FileAsset } from '@modules/library/interfaces';
 import {
+  CostRecoveryTrace,
   CreateTenantMemberRequest,
   CreateTenantRequest,
   GeneratedImagesPage,
@@ -18,6 +19,7 @@ import {
   PushDevice,
   PlatformUser,
   ServerCommunicationLog,
+  ServerCommsFilters,
   ServerCommsPage,
   Tenant,
   TenantCredential,
@@ -275,14 +277,33 @@ export class AdminApiRepository {
   listServerComms(
     page = 1,
     limit = 20,
-    taskId?: string,
+    filters: ServerCommsFilters = {},
     tenantSlug?: string,
   ): Observable<ApiResponse<ServerCommsPage>> {
     const params: Record<string, string | number> = { page, limit };
-    if (taskId) params['task_id'] = taskId;
+    for (const [key, value] of Object.entries(filters)) {
+      if (value !== undefined && value !== null && value !== '') params[key] = value;
+    }
     return this.http.get<ApiResponse<ServerCommsPage>>(
       `${this.apiUrl}/agency/logs/server-communications`,
       { params, ...this.tenantHeaders(tenantSlug) },
+    );
+  }
+
+  /**
+   * Recupera el costo de una traza y devuelve la traza de diagnóstico.
+   * `preference` elige qué fuente gana cuando hay varias: el proveedor o la
+   * calculadora local (el guard del back nunca degrada un cargo del proveedor).
+   */
+  recoverServerCommCost(
+    id: string,
+    preference: 'provider' | 'calculator' = 'provider',
+    tenantSlug?: string,
+  ): Observable<ApiResponse<CostRecoveryTrace>> {
+    return this.http.post<ApiResponse<CostRecoveryTrace>>(
+      `${this.apiUrl}/agency/logs/server-communications/${encodeURIComponent(id)}/cost-recovery`,
+      { preference },
+      { ...this.tenantHeaders(tenantSlug) },
     );
   }
 

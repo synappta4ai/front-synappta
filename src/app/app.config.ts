@@ -18,6 +18,7 @@ import { authInterceptor } from '@interceptors/auth.interceptor';
 
 import Aura from '@primeuix/themes/aura';
 import { providePrimeNG } from 'primeng/config';
+import { MessageService } from 'primeng/api';
 import { AppStore, UserSessionStore } from './core/store';
 import { GenerationEventsStore } from './core/store/generation.events';
 import { AgencyService } from '@modules/agency/services';
@@ -33,6 +34,7 @@ export const appConfig: ApplicationConfig = {
     provideClientHydration(withEventReplay()),
     provideHttpClient(withFetch(), withInterceptors([authInterceptor])),
     provideAnimationsAsync(),
+    MessageService,
     providePrimeNG({
       theme: {
         preset: Aura,
