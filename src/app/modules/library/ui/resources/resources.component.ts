@@ -58,6 +58,8 @@ interface ResourceGroup {
 
 /** Cuántos mini iconos entran en la card antes de resumir con "+N". */
 const GROUP_THUMBS_VISIBLE = 5;
+/** Cuántos chips de ingrediente se muestran antes de resumir con "+N". */
+const INGREDIENTS_VISIBLE = 3;
 
 @Component({
   selector: 'app-resources',
@@ -211,6 +213,7 @@ export class ResourcesComponent {
   }
 
   protected readonly groupThumbsVisible = GROUP_THUMBS_VISIBLE;
+  protected readonly ingredientsVisible = INGREDIENTS_VISIBLE;
 
   /**
    * Agrupa por ingrediente: dos recursos del mismo personaje/locación/prop
@@ -395,5 +398,13 @@ export class ResourcesComponent {
     return key
       ? this.translate.instant(key)
       : (type ?? this.translate.instant('LIBRARY.ING_RESOURCE'));
+  }
+
+  /** Tooltip con los ingredientes que no entran como chip (resumen "+N"). */
+  protected hiddenIngredientsTitle(group: ResourceGroup): string {
+    return group.ingredients
+      .slice(INGREDIENTS_VISIBLE)
+      .map((ing) => `${this.ingTypeLabel(ing.type)}: ${ing.name}`)
+      .join('\n');
   }
 }
