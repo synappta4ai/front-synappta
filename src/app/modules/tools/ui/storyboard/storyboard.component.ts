@@ -42,7 +42,7 @@ import {
   TOOLS_LOADING_POSTER,
   TOOLS_LOADING_VIDEO,
 } from '../../interfaces';
-import { ToolsService } from '../../services';
+import { ToolsService, type PoseSheetAnchor } from '../../services';
 
 const REF_MAX_BYTES = 10 * 1024 * 1024;
 const REF_MIME_TYPES: readonly string[] = ['image/png', 'image/jpeg'];
@@ -136,8 +136,11 @@ export class StoryboardComponent implements OnInit {
   protected readonly error = signal<string | null>(null);
   protected readonly result = signal<readonly StatusOutput[]>([]);
   protected readonly generatedPanelCount = signal<number | null>(null);
+  protected readonly saving = signal(false);
+  protected readonly savedName = signal<string | null>(null);
 
   private progressTimer: ReturnType<typeof setInterval> | null = null;
+  private anchor: PoseSheetAnchor | null = null;
 
   protected readonly canGenerate = computed(
     () => !!this.selectedModel() && this.storyPrompt().trim().length > 0 && !this.generating(),
@@ -236,10 +239,12 @@ export class StoryboardComponent implements OnInit {
     this.error.set(null);
     this.result.set([]);
     this.generatedPanelCount.set(null);
+    this.savedName.set(null);
     this.toolsService
       .ensureStoryboardAnchor(this.translate.instant('TOOLS.STORYBOARD_ANCHOR'))
       .pipe(
         mergeMap((anchor) => {
+          this.anchor = anchor;
           return this.toolsService.generateStoryboard({
             model,
             prompt,
@@ -345,6 +350,31 @@ export class StoryboardComponent implements OnInit {
     this.result.set(outputs);
     this.generatedPanelCount.set(this.panelCount());
     this.progress.set(100);
+    if (outputs[0]?.url && !this.savedName() && !this.saving()) {
+      this.saveToResources();
+    }
+  }
+
+  /** Guarda el storyboard en Recursos como prop (automático, idempotente). */
+  protected saveToResources(): void {
+    const output = this.result()[0];
+    const anchor = this.anchor;
+    if (!output?.url || !anchor || this.saving()) {
+      return;
+    }
+    this.saving.set(true);
+    const panels = this.generatedPanelCount() ?? this.panelCount();
+    const name = `Storyboard ${panels} paneles`;
+    this.toolsService
+      .saveStoryboardAsProp({ outputUrl: output.url, name, eventId: anchor.project.id })
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.saving.set(false)),
+      )
+      .subscribe({
+        next: (ingredient) => this.savedName.set(ingredient.name),
+        error: () => undefined,
+      });
   }
 
   private startProgressRamp(): void {

@@ -304,6 +304,30 @@ export class ToolsService {
     );
   }
 
+  /**
+   * Guarda el storyboard generado en Recursos como prop: descarga el output,
+   * lo sube a la biblioteca (images) y lo vincula a un ingrediente prop para
+   * que quede disponible en toda la app.
+   */
+  saveStoryboardAsProp(request: {
+    outputUrl: string;
+    name: string;
+    eventId: string;
+  }): Observable<Ingredient> {
+    return from(this.downloadOutput(request.outputUrl, request.name)).pipe(
+      mergeMap((file) => this.libraryService.uploadFile(file, 'images', request.eventId)),
+      mergeMap((asset) =>
+        this.libraryService.createIngredient({ type: 'prop', name: request.name }).pipe(
+          mergeMap((ingredient) =>
+            this.libraryService
+              .addIngredientFile(ingredient.id, { file_id: asset.id })
+              .pipe(map(() => ingredient)),
+          ),
+        ),
+      ),
+    );
+  }
+
   private downloadOutput(url: string, name: string): Promise<File> {
     return this.fetchAsFile(url, slugifyFileName(name));
   }

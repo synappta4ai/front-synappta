@@ -392,6 +392,7 @@
     "STORYBOARD_RESULT_TITLE": "Hoja de storyboard",
     "STORYBOARD_RESULT_ALT": "Hoja de storyboard generada",
     "STORYBOARD_DOWNLOAD": "Descargar",
+    "STORYBOARD_SAVED": "Guardado en Recursos como prop",
     "STORYBOARD_ANCHOR": "Storyboard",
     "STORYBOARD_NO_OUTPUT": "El modelo terminó sin devolver una imagen de storyboard. Probá de nuevo.",
     "STORYBOARD_QUOTA_ERROR": "Gemini no tiene cuota disponible para este modelo con la API key actual. Activá la facturación en Google AI Studio o elegí Gemini 3.1 Flash Image.",
