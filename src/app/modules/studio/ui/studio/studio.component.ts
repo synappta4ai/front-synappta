@@ -55,6 +55,8 @@ import { TiltDirective } from '@shared/components/tilt/tilt.directive';
 import { ImgFadeDirective } from '@shared/components/img-fade/img-fade.directive';
 import { ScrollMirrorDirective } from '@shared/components/scroll-mirror/scroll-mirror.directive';
 import { UiIcon } from '@shared/components/ui-icon/ui-icon.component';
+import { LightingSelectComponent } from '@shared/components/lighting/lighting-select.component';
+import { lightingPrompt } from '@shared/components/lighting/lighting-templates';
 
 interface RatioOption {
   label: string;
@@ -110,6 +112,7 @@ interface MentionRow {
     ImgFadeDirective,
     ScrollMirrorDirective,
     UiIcon,
+    LightingSelectComponent,
   ],
   templateUrl: './studio.component.html',
   styleUrl: './studio.component.css',
@@ -167,6 +170,8 @@ export class StudioComponent {
   /** Animación del visor mientras una toma se encola o se genera. */
   protected readonly loadingVideo = './assets/tools/animation.mp4';
   protected readonly resolution = signal('720p');
+  /** Esquema de iluminación / dirección de arte para la generación. */
+  protected readonly lighting = signal<string | null>(null);
   protected readonly duration = signal(5);
   protected readonly seed = signal('');
 
@@ -1778,6 +1783,7 @@ export class StudioComponent {
           .replace(/\s{2,}/g, ' ')
           .trim()
       : rawText;
+    const finalText = [text, lightingPrompt(this.lighting())].filter(Boolean).join('\n\n');
 
     const ratio = this.ratio();
     const duration = this.mode() === 'video' ? this.duration() : 0;
@@ -1786,7 +1792,7 @@ export class StudioComponent {
       content: [
         ...mentions.map((a) => ({ type: 'image' as const, id: a.id, name: a.filename })),
         ...this.reusedAudio().map((a) => ({ type: 'audio' as const, id: a.id, name: a.name })),
-        { type: 'text' as const, text },
+        { type: 'text' as const, text: finalText },
       ],
       ratio,
       duration: duration || undefined,
@@ -1801,7 +1807,7 @@ export class StudioComponent {
       generation_number: 0,
     };
     this.launchGeneration(payload, {
-      prompt: rawText,
+      prompt: finalText,
       modelName: model.name,
       modelDisplayName: model.displayName,
       modelType: model.type,
@@ -1858,7 +1864,10 @@ export class StudioComponent {
         ...item.assets.filter((asset) => asset.kind === 'image').map((asset) => ({ type: 'image' as const, id: asset.id, name: asset.name })),
         ...item.assets.filter((asset) => asset.kind === 'audio').map((asset) => ({ type: 'audio' as const, id: asset.id, name: asset.name })),
         ...item.assets.filter((asset) => asset.kind === 'video').map((asset) => ({ type: 'video' as const, id: asset.id, name: asset.name })),
-        { type: 'text' as const, text: item.prompt },
+        {
+          type: 'text' as const,
+          text: [item.prompt, lightingPrompt(this.lighting())].filter(Boolean).join('\n\n'),
+        },
       ],
       ratio: item.ratio,
       duration: item.duration || undefined,

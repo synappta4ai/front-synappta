@@ -12,17 +12,37 @@
   @if (step() === 1) {
     <p-card styleClass="phase-card">
       <ng-template #header>
-        <div class="flex flex-wrap items-center gap-3 border-b border-surface-border px-6 py-4">
-          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
-            <i class="md md-edit_note text-lg text-accent"></i>
+        <div class="flex flex-wrap items-start justify-between gap-4 border-b border-surface-border px-6 py-4">
+          <div class="flex items-center gap-3">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-2">
+              <i class="md md-edit_note text-lg text-accent"></i>
+            </div>
+            <div>
+              <h2 class="text-lg font-bold text-ink-on-dark">
+                {{ 'VIDEOMACHINE.WRITE_TITLE' | translate }}
+              </h2>
+              <p class="text-sm text-ink-muted-on-dark">
+                {{ 'VIDEOMACHINE.WRITE_SUBTITLE' | translate }}
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 class="text-lg font-bold text-ink-on-dark">
-              {{ 'VIDEOMACHINE.WRITE_TITLE' | translate }}
-            </h2>
-            <p class="text-sm text-ink-muted-on-dark">
-              {{ 'VIDEOMACHINE.WRITE_SUBTITLE' | translate }}
-            </p>
+          <div class="flex w-full flex-col gap-1 sm:w-72">
+            <label for="wcVideoType" class="text-xs font-bold text-ink-on-dark">
+              {{ 'VIDEOMACHINE.WRITE_VIDEO_TYPE' | translate }}
+            </label>
+            <p-select
+              inputId="wcVideoType"
+              [options]="videoTypeOptions()"
+              optionLabel="label"
+              optionValue="value"
+              [ngModel]="videoType()"
+              (ngModelChange)="videoType.set($event)"
+              [ngModelOptions]="{ standalone: true }"
+              [placeholder]="'VIDEOMACHINE.WRITE_VIDEO_TYPE_PLACEHOLDER' | translate"
+              styleClass="w-full"
+              appendTo="body"
+            />
+            <small class="text-ink-muted-on-dark">{{ 'VIDEOMACHINE.WRITE_VIDEO_TYPE_HINT' | translate }}</small>
           </div>
         </div>
       </ng-template>
@@ -148,6 +168,7 @@
                 {{ 'VIDEOMACHINE.WRITE_MAX_CLIP' | translate }}
               </label>
               <input pInputText id="wcClip" type="number" min="1" class="w-full" [ngModel]="maxClipS()" (ngModelChange)="maxClipS.set($event ? +$event : null)" [ngModelOptions]="{ standalone: true }" />
+              <small class="text-ink-muted-on-dark">{{ 'VIDEOMACHINE.WRITE_MAX_CLIP_HINT' | translate }}</small>
             </div>
 
             <div class="flex flex-col gap-1">
@@ -165,6 +186,18 @@
               <input pInputText id="wcFps" type="number" min="1" max="120" class="w-full" [ngModel]="fps()" (ngModelChange)="fps.set($event ? +$event : null)" [ngModelOptions]="{ standalone: true }" />
             </div>
 
+            <div class="flex flex-col gap-1">
+              <label for="wcCuts" class="text-xs font-bold text-ink-on-dark">
+                {{ 'VIDEOMACHINE.WRITE_CUTS_PER_SHOT' | translate }}
+              </label>
+              <input pInputText id="wcCuts" type="number" min="1" max="10" class="w-full" [ngModel]="cutsPerShot()" (ngModelChange)="cutsPerShot.set($event ? +$event : null)" [ngModelOptions]="{ standalone: true }" />
+              <small class="text-ink-muted-on-dark">{{ 'VIDEOMACHINE.WRITE_CUTS_PER_SHOT_HINT' | translate }}</small>
+            </div>
+
+            @if (timingSummary(); as summary) {
+              <p class="text-xs text-ink-muted-on-dark sm:col-span-2">{{ summary }}</p>
+            }
+
             <div class="flex flex-col gap-1 sm:col-span-2">
               <label for="wcLook" class="text-xs font-bold text-ink-on-dark">
                 {{ 'VIDEOMACHINE.WRITE_LOOK' | translate }}
@@ -179,6 +212,13 @@
                 [placeholder]="'VIDEOMACHINE.WRITE_LOOK_PLACEHOLDER' | translate"
               />
             </div>
+
+            <app-lighting-select
+              class="sm:col-span-2"
+              inputId="wcLighting"
+              [value]="lighting()"
+              (valueChange)="lighting.set($event)"
+            />
 
             <div class="flex flex-col gap-1 sm:col-span-2">
               <label for="wcVideoModel" class="text-xs font-bold text-ink-on-dark">
@@ -296,6 +336,10 @@
             [loading]="sending()"
             [disabled]="!canSend()"
             (onClick)="start()"
+            [pTooltip]="'VIDEOMACHINE.WRITE_HINT_GENERATE' | translate"
+            tooltipPosition="top"
+            tooltipEvent="both"
+            tooltipStyleClass="app-tooltip"
           />
         </div>
         @if (sending()) {
@@ -374,6 +418,10 @@
               [label]="action.label"
               [disabled]="sending()"
               (onClick)="sendFollowUp(action.message)"
+              [pTooltip]="'VIDEOMACHINE.WRITE_HINT_SEND' | translate"
+              tooltipPosition="top"
+              tooltipEvent="both"
+              tooltipStyleClass="app-tooltip"
             />
           }
         </div>
@@ -400,6 +448,10 @@
               [loading]="sending()"
               [disabled]="!canFollowUp()"
               (onClick)="sendFollowUp()"
+              [pTooltip]="'VIDEOMACHINE.WRITE_HINT_SEND' | translate"
+              tooltipPosition="top"
+              tooltipEvent="both"
+              tooltipStyleClass="app-tooltip"
             />
             <p-button
               [label]="'VIDEOMACHINE.WRITE_TO_FINAL' | translate"
@@ -408,6 +460,10 @@
               [loading]="sending()"
               [disabled]="!canTranslate()"
               (onClick)="toFinalPrompt()"
+              [pTooltip]="'VIDEOMACHINE.WRITE_HINT_FINAL' | translate"
+              tooltipPosition="top"
+              tooltipEvent="both"
+              tooltipStyleClass="app-tooltip"
             />
             <p-button
               [label]="'VIDEOMACHINE.WRITE_BACK' | translate"
@@ -487,6 +543,10 @@
               [text]="true"
               icon="md md-list"
               (onClick)="sendToQueue()"
+              [pTooltip]="'VIDEOMACHINE.WRITE_HINT_QUEUE' | translate"
+              tooltipPosition="top"
+              tooltipEvent="both"
+              tooltipStyleClass="app-tooltip"
             />
             <p-button
               [label]="'VIDEOMACHINE.WRITE_STUDIO' | translate"
@@ -494,6 +554,10 @@
               [disabled]="!videoModel()"
               styleClass="cta-spend"
               (onClick)="openInStudio()"
+              [pTooltip]="'VIDEOMACHINE.WRITE_HINT_STUDIO' | translate"
+              tooltipPosition="top"
+              tooltipEvent="both"
+              tooltipStyleClass="app-tooltip"
             />
             <p-button
               [label]="'VIDEOMACHINE.WRITE_BACK_TO_PROMPTS' | translate"

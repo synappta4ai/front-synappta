@@ -10,6 +10,7 @@ export * from './generation-bell/generation-bell.component';
 export * from './consent-checkboxes/consent-checkboxes.component';
 export * from './consent-gate/consent-gate.component';
 export * from './cookie-banner/cookie-banner.component';
+export * from './assistant-chat/assistant-chat.component';
 export * from './ui-icon/ui-icon.component';
 export * from './autogrow/autogrow.directive';
 export * from './count-up/count-up.directive';

@@ -582,6 +582,14 @@
       }
     </div>
 
+    <div class="panel">
+      <app-lighting-select
+        inputId="studioLighting"
+        [value]="lighting()"
+        (valueChange)="lighting.set($event)"
+      />
+    </div>
+
     <!-- Seed (solo modelos del inference worker) -->
     @if (workerModel()) {
       <div class="panel">

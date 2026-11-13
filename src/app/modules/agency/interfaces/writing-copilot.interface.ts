@@ -1,3 +1,6 @@
+/** Tipo de video: elige la guía de estructura que usa el cerebro en el paso 1. */
+export type WritingCopilotVideoType = 'commercial_short' | 'commercial_long' | 'story_short' | 'story_long';
+
 /** Parámetros opcionales del agente Writing Copilot (solo se envían los informados). */
 /** Nombres de parámetro idénticos a la sección 3 del skill Synappta-WRITE. */
 export interface WritingCopilotParams {
@@ -9,10 +12,16 @@ export interface WritingCopilotParams {
   max_clip_s?: number;
   /** Cortes/planos dentro del clip. */
   shot_count?: number;
+  /** Cambios de encuadre dentro de cada toma. */
+  cuts_per_shot?: number;
   fps?: number;
   look?: string;
   audio_mode?: 'diegetic_only' | 'with_dialogue' | 'with_music_notes' | 'silent';
   target_model?: string;
+  /** Guía de estructura del paso 1 (comercial o historia, corta o larga). */
+  video_type?: WritingCopilotVideoType;
+  /** Bloque de iluminación / dirección de arte elegido. */
+  lighting?: string;
 }
 
 export interface WritingCopilotHistoryMessage {

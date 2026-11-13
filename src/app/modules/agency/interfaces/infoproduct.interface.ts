@@ -295,6 +295,8 @@ export interface ComposeRequest {
   aspect_ratio?: string;
   notes?: string;
   format_id?: string;
+  /** Bloque de iluminación / dirección de arte elegido. */
+  lighting?: string;
 }
 
 export interface VideoPromptIngredient {

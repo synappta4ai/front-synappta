@@ -27,6 +27,8 @@ import { FileAsset } from '@modules/library/interfaces';
 import { LibraryService } from '@modules/library/services';
 import { ServerUrlPipe } from '@pipes/server-url.pipe';
 import { UiIcon } from '@shared/components/ui-icon/ui-icon.component';
+import { LightingSelectComponent } from '@shared/components/lighting/lighting-select.component';
+import { lightingPrompt } from '@shared/components/lighting/lighting-templates';
 import { downloadRemoteFile } from '@utils/download-url';
 import { environment } from '@env/environment';
 
@@ -71,6 +73,7 @@ type RefPreviewStage = 'original' | 'failed';
     ServerUrlPipe,
     Tag,
     UiIcon,
+    LightingSelectComponent,
   ],
   templateUrl: './storyboard.component.html',
   styleUrl: './storyboard.component.css',
@@ -106,6 +109,8 @@ export class StoryboardComponent implements OnInit {
 
   /** Nombre del modelo elegido en el select (lo que recibe el back). */
   protected readonly selectedModel = signal('');
+  /** Esquema de iluminación / dirección de arte de la hoja. */
+  protected readonly lighting = signal<string | null>(null);
   /** Modelo completo, para leer sus defaults (resoluciones). */
   protected readonly activeModel = signal<AiModel | null>(null);
 
@@ -446,6 +451,8 @@ export class StoryboardComponent implements OnInit {
       )
       .join('\n');
 
+    const light = lightingPrompt(this.lighting());
+
     return [
       this.systemPrompt().trim(),
       'USER STORY IDEA:',
@@ -458,6 +465,7 @@ export class StoryboardComponent implements OnInit {
       panelDirections,
       'REFERENCE MANIFEST:',
       manifest,
+      light,
       'FINAL RENDER DIRECTIVE:',
       'Render the finished image now. Output only the image; do not return JSON, Markdown, code, or explanatory text. Keep every header and footer line legible and preserve the exact reference identity across all panels.',
     ]

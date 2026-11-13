@@ -206,6 +206,12 @@
           </div>
         </div>
 
+        <app-lighting-select
+          inputId="agencyLighting"
+          [value]="lighting()"
+          (valueChange)="lighting.set($event)"
+        />
+
         <div class="flex min-w-0 flex-col gap-2">
           <label for="description" class="text-xs font-bold text-ink-on-dark">
             {{ 'AGENCY.STUDIO.P1_CONTEXT_LABEL' | translate }} <span class="text-danger">*</span>
@@ -314,6 +320,10 @@
                   [loading]="loading()"
                   [disabled]="!canProceedToAngles || loading()"
                   (onClick)="generateAngles()"
+                  [pTooltip]="generateHint()"
+                  tooltipPosition="top"
+                  tooltipEvent="both"
+                  tooltipStyleClass="app-tooltip"
                   styleClass="active:scale-[0.98]"
                 />
                 @if (pendingStepPhotos().length > 0 && !stepPhotosSkipped()) {
@@ -352,6 +362,10 @@
                   [loading]="loading()"
                   [disabled]="!canProceedToAngles || loading()"
                   (onClick)="generateAngles()"
+                  [pTooltip]="generateHint()"
+                  tooltipPosition="top"
+                  tooltipEvent="both"
+                  tooltipStyleClass="app-tooltip"
                   styleClass="active:scale-[0.98]"
                 />
               </div>
@@ -803,6 +817,10 @@
               [loading]="loading()"
               [disabled]="!canProceedToStoryboard"
               (onClick)="generateStoryboard()"
+              [pTooltip]="'AGENCY.STUDIO.HINT_STORYBOARD_NEXT' | translate"
+              tooltipPosition="top"
+              tooltipEvent="both"
+              tooltipStyleClass="app-tooltip"
               styleClass="px-6 active:scale-[0.98]"
             />
             @if (!canProceedToStoryboard) {
@@ -849,6 +867,10 @@
             size="small"
             [loading]="boardQueue().length > 0"
             (onClick)="toggleBoardReel($event)"
+            [pTooltip]="'AGENCY.STUDIO.HINT_REEL' | translate"
+            tooltipPosition="bottom"
+            tooltipEvent="both"
+            tooltipStyleClass="app-tooltip"
           />
         </div>
       </ng-template>
@@ -943,6 +965,10 @@
                       [loading]="!!scene.boardGenerating"
                       [disabled]="!canGenerateBoard(scene)"
                       (onClick)="openBoardDialog(scene.id)"
+                      [pTooltip]="'AGENCY.STUDIO.HINT_BOARD_OPEN' | translate"
+                      tooltipPosition="top"
+                      tooltipEvent="both"
+                      tooltipStyleClass="app-tooltip"
                     />
                     <p-button
                       [label]="
@@ -1401,6 +1427,13 @@
                   }
                 </small>
               </div>
+              <div class="w-full">
+                <app-lighting-select
+                  inputId="agencyVideoLighting"
+                  [value]="lighting()"
+                  (valueChange)="lighting.set($event)"
+                />
+              </div>
             </div>
             }
             <p-button
@@ -1408,6 +1441,10 @@
               class="self-end"
               icon="md md-auto_fix_high"
               (onClick)="generatePrompts()"
+              [pTooltip]="'AGENCY.STUDIO.HINT_ARMA_PROMPTS' | translate"
+              tooltipPosition="top"
+              tooltipEvent="both"
+              tooltipStyleClass="app-tooltip"
             />
             <p-button
               id="videoReelTrigger"
@@ -1421,6 +1458,10 @@
               class="self-end"
               [loading]="videoQueue().length > 0"
               (onClick)="toggleVideoReel($event)"
+              [pTooltip]="'AGENCY.STUDIO.HINT_REEL' | translate"
+              tooltipPosition="bottom"
+              tooltipEvent="both"
+              tooltipStyleClass="app-tooltip"
             />
             @if (!isCommercial() && videoSegmentCount() > 1) {
               <p-tag
@@ -1509,12 +1550,15 @@
                       <p-button
                         [label]="'AGENCY.STUDIO.P4_SUGGEST_AGENT' | translate"
                         icon="md md-auto_fix_high"
-                        severity="secondary"
                         [outlined]="true"
                         size="small"
                         [loading]="clipAgentSceneId() === scene.id"
                         [disabled]="!!clipAgentSceneId()"
                         (onClick)="suggestPromptsFromAgent(scene)"
+                        [pTooltip]="'AGENCY.STUDIO.HINT_SUGGEST_PROMPTS' | translate"
+                        tooltipPosition="top"
+                        tooltipEvent="both"
+                        tooltipStyleClass="app-tooltip"
                       />
                       <span class="text-xs text-ink-muted-on-dark">
                         {{
@@ -1610,6 +1654,10 @@
                                 [outlined]="true"
                                 size="small"
                                 (onClick)="goToStudioFromPrompt(scene, null, p)"
+                                [pTooltip]="'AGENCY.STUDIO.HINT_GO_STUDIO' | translate"
+                                tooltipPosition="top"
+                                tooltipEvent="both"
+                                tooltipStyleClass="app-tooltip"
                               />
                             }
                           </div>
@@ -1873,6 +1921,15 @@
                             [loading]="!!prompt.generating"
                             [disabled]="!!prompt.generating"
                             (onClick)="generatePromptVideo(scene.id, null, p)"
+                            [pTooltip]="
+                              (prompt.videoUrl
+                                ? 'AGENCY.STUDIO.HINT_REGENERATE_VIDEO'
+                                : 'AGENCY.STUDIO.HINT_GENERATE_VIDEO'
+                              ) | translate
+                            "
+                            tooltipPosition="top"
+                            tooltipEvent="both"
+                            tooltipStyleClass="app-tooltip"
                           />
                           <p-button
                             [label]="(queuedPrompts().has(promptResourcesKey(scene.id, null, p)) ? 'AGENCY.STUDIO.P4_QUEUED' : 'AGENCY.STUDIO.P4_QUEUE') | translate"
@@ -1881,6 +1938,10 @@
                             severity="secondary"
                             [text]="true"
                             (onClick)="enqueuePrompt(scene.id, null, p)"
+                            [pTooltip]="'AGENCY.STUDIO.HINT_QUEUE_VIDEO' | translate"
+                            tooltipPosition="top"
+                            tooltipEvent="both"
+                            tooltipStyleClass="app-tooltip"
                           />
                         </div>
                       </div>
@@ -1986,6 +2047,10 @@
                                     [outlined]="true"
                                     size="small"
                                     (onClick)="goToStudioFromPrompt(scene, shot.id, p)"
+                                    [pTooltip]="'AGENCY.STUDIO.HINT_GO_STUDIO' | translate"
+                                    tooltipPosition="top"
+                                    tooltipEvent="both"
+                                    tooltipStyleClass="app-tooltip"
                                   />
                                 }
                               </div>
@@ -2177,6 +2242,15 @@
                                 [loading]="!!prompt.generating"
                                 [disabled]="!!prompt.generating"
                                 (onClick)="generatePromptVideo(scene.id, shot.id, p)"
+                                [pTooltip]="
+                                  (prompt.videoUrl
+                                    ? 'AGENCY.STUDIO.HINT_REGENERATE_VIDEO'
+                                    : 'AGENCY.STUDIO.HINT_GENERATE_VIDEO'
+                                  ) | translate
+                                "
+                                tooltipPosition="top"
+                                tooltipEvent="both"
+                                tooltipStyleClass="app-tooltip"
                               />
                               <p-button
                                 [label]="(queuedPrompts().has(promptResourcesKey(scene.id, shot.id, p)) ? 'AGENCY.STUDIO.P4_QUEUED' : 'AGENCY.STUDIO.P4_QUEUE') | translate"
@@ -2185,6 +2259,10 @@
                                 severity="secondary"
                                 [text]="true"
                                 (onClick)="enqueuePrompt(scene.id, shot.id, p)"
+                                [pTooltip]="'AGENCY.STUDIO.HINT_QUEUE_VIDEO' | translate"
+                                tooltipPosition="top"
+                                tooltipEvent="both"
+                                tooltipStyleClass="app-tooltip"
                               />
                             </div>
                           </div>
@@ -2308,12 +2386,15 @@
           <p-button
             [label]="'AGENCY.STUDIO.BOARD_SUGGEST_AGENT' | translate"
             icon="md md-auto_fix_high"
-            severity="secondary"
             [outlined]="true"
             size="small"
             [loading]="boardAgentLoading()"
             [disabled]="boardAgentLoading()"
             (onClick)="suggestBoardFromAgent()"
+            [pTooltip]="'AGENCY.STUDIO.HINT_BOARD_SUGGEST' | translate"
+            tooltipPosition="top"
+            tooltipEvent="both"
+            tooltipStyleClass="app-tooltip"
           />
           @if (boardAgentLoading()) {
             <small class="text-ink-muted-on-dark">{{
@@ -2428,6 +2509,10 @@
           [loading]="!!boardScene()?.boardGenerating"
           [disabled]="!!boardScene()?.boardGenerating || boardAgentLoading()"
           (onClick)="submitBoardImage()"
+          [pTooltip]="'AGENCY.STUDIO.HINT_BOARD_GENERATE' | translate"
+          tooltipPosition="top"
+          tooltipEvent="both"
+          tooltipStyleClass="app-tooltip"
         />
       </div>
     </ng-template>
@@ -2670,20 +2755,8 @@
     (assetSaved)="onAssetEditorSaved($event)"
   />
 
-  <!-- Chat con el agente experto: asistente para armar el video -->
-  <button
-    type="button"
-    class="agency-chat-fab"
-    [attr.aria-expanded]="chatVisible()"
-    aria-controls="agency-chat-panel"
-    (click)="toggleChat()"
-  >
-    <i class="md md-forum"></i>
-    <span class="sr-only">{{
-      'AGENCY.STUDIO.CHAT_FAB_ARIA' | translate: { agent: agentLabel() }
-    }}</span>
-  </button>
-
+  <!-- Panel de preguntas del agente experto: se abre cuando el flujo pide
+       datos. El asistente global de la app vive en el layout privado. -->
   <aside
     id="agency-chat-panel"
     class="agency-chat-panel"

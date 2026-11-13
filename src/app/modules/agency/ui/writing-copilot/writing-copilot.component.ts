@@ -14,16 +14,20 @@ import { ProgressBar } from 'primeng/progressbar';
 import { Select } from 'primeng/select';
 import { Steps } from 'primeng/steps';
 import { Textarea } from 'primeng/textarea';
+import { Tooltip } from 'primeng/tooltip';
 
 import {
   AiModel,
   WritingCopilotHistoryMessage,
   WritingCopilotParams,
   WritingCopilotTurn,
+  WritingCopilotVideoType,
 } from '@modules/agency/interfaces';
 import { AgencyService, ModelCatalogService, WritingCopilotService } from '@modules/agency/services';
 import { GenerationQueueService } from '@services/generation-queue.service';
 import { LibraryService } from '@modules/library/services';
+import { LightingSelectComponent } from '@shared/components/lighting/lighting-select.component';
+import { lightingPrompt } from '@shared/components/lighting/lighting-templates';
 import { highlightPrompt, PromptSegment } from '../agency/agency-prompt-highlight';
 import { attachmentKind, Attachment } from '../infoproduct/infoproduct-helpers';
 import {
@@ -63,6 +67,8 @@ const PREFERRED_BRAIN = 'google/gemini-3.8-flash';
     Select,
     Steps,
     Textarea,
+    Tooltip,
+    LightingSelectComponent,
   ],
   templateUrl: './writing-copilot.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -88,6 +94,8 @@ export class WritingCopilotComponent implements OnDestroy {
 
   // â”€â”€ Paso 1: idea + parÃ¡metros â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   protected readonly idea = signal('');
+  /** Tipo de video: define la guía de estructura que sigue el cerebro. */
+  protected readonly videoType = signal<WritingCopilotVideoType | null>(null);
   protected readonly brainModel = signal('');
   protected readonly outputLanguage = signal<'es' | 'en' | 'bilingual'>('es');
   protected readonly delivery = signal<Delivery>('sequence');
@@ -95,10 +103,13 @@ export class WritingCopilotComponent implements OnDestroy {
   protected readonly totalDuration = signal<number | null>(null);
   protected readonly maxClipS = signal<number | null>(null);
   protected readonly shotCount = signal<number | null>(null);
+  protected readonly cutsPerShot = signal<number | null>(null);
   protected readonly fps = signal<number | null>(null);
   protected readonly look = signal('');
   protected readonly audioMode = signal<AudioMode>('auto');
   protected readonly videoModel = signal<AiModel | null>(null);
+  /** Esquema de iluminación / dirección de arte para todos los prompts. */
+  protected readonly lighting = signal<string | null>(null);
 
   // â”€â”€ Paso 2: conversaciÃ³n + insumos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   protected readonly followUp = signal('');
@@ -134,16 +145,54 @@ export class WritingCopilotComponent implements OnDestroy {
 
   protected readonly stepItems = computed<MenuItem[]>(() => {
     this.translate.currentLang();
-    return [
-      { label: this.translate.instant('VIDEOMACHINE.WRITE_STEP_IDEA') },
-      { label: this.translate.instant('VIDEOMACHINE.WRITE_STEP_PROMPTS') },
-      { label: this.translate.instant('VIDEOMACHINE.WRITE_STEP_FINAL') },
+    const steps: readonly [string, string][] = [
+      ['VIDEOMACHINE.WRITE_STEP_IDEA', 'VIDEOMACHINE.WRITE_STEP_IDEA_HINT'],
+      ['VIDEOMACHINE.WRITE_STEP_PROMPTS', 'VIDEOMACHINE.WRITE_STEP_PROMPTS_HINT'],
+      ['VIDEOMACHINE.WRITE_STEP_FINAL', 'VIDEOMACHINE.WRITE_STEP_FINAL_HINT'],
     ];
+    return steps.map(([labelKey, hintKey]) => {
+      const hint = this.translate.instant(hintKey);
+      return {
+        label: `${this.translate.instant(labelKey)}<span class="sr-only"> — ${hint}</span><span class="vm-step-tip" aria-hidden="true">${hint}</span>`,
+        escape: false,
+      };
+    });
   });
 
-  protected readonly canSend = computed(() => !this.sending() && this.idea().trim().length > 0);
-  protected readonly canFollowUp = computed(() => !this.sending() && this.followUp().trim().length > 0);
+  protected readonly canSend = computed(() => !this.sending() && this.videoType() !== null && this.idea().trim().length > 0);  protected readonly canFollowUp = computed(() => !this.sending() && this.followUp().trim().length > 0);
   protected readonly canTranslate = computed(() => !this.sending() && this.turns().length > 0);
+
+  /** Resumen de tiempos: tomas × duración por toma × total. */
+  protected readonly timingSummary = computed(() => {
+    this.translate.currentLang();
+    const total = this.totalDuration();
+    const shots = this.shotCount();
+    if (!total || !shots || shots <= 0) return '';
+    const perShot = Math.round((total / shots) * 10) / 10;
+    return this.translate.instant('VIDEOMACHINE.WRITE_TIMING_SUMMARY', { shots, perShot, total });
+  });
+
+  protected readonly videoTypeOptions = computed(() => {
+    this.translate.currentLang();
+    return [
+      {
+        label: this.translate.instant('VIDEOMACHINE.WRITE_VIDEO_TYPE_COMMERCIAL_SHORT'),
+        value: 'commercial_short' as WritingCopilotVideoType,
+      },
+      {
+        label: this.translate.instant('VIDEOMACHINE.WRITE_VIDEO_TYPE_COMMERCIAL_LONG'),
+        value: 'commercial_long' as WritingCopilotVideoType,
+      },
+      {
+        label: this.translate.instant('VIDEOMACHINE.WRITE_VIDEO_TYPE_STORY_SHORT'),
+        value: 'story_short' as WritingCopilotVideoType,
+      },
+      {
+        label: this.translate.instant('VIDEOMACHINE.WRITE_VIDEO_TYPE_STORY_LONG'),
+        value: 'story_long' as WritingCopilotVideoType,
+      },
+    ];
+  });
 
   protected readonly languageOptions = computed(() => {
     this.translate.currentLang();
@@ -293,7 +342,12 @@ export class WritingCopilotComponent implements OnDestroy {
     this.sending.set(true);
     this.startTimer();
     this.copilot
-      .chat({ model: this.brainModel() || undefined, message: text, history: this.history() })
+      .chat({
+        model: this.brainModel() || undefined,
+        message: text,
+        history: this.history(),
+        params: this.videoTypeParams(),
+      })
       .pipe(
         catchError((err: unknown) => {
           this.fail(err);
@@ -584,9 +638,19 @@ export class WritingCopilotComponent implements OnDestroy {
     return this.turns().map((turn) => ({ role: turn.role, content: turn.content }));
   }
 
+  /** La guía de estructura viaja en cada turno para que el cerebro no la pierda. */
+  private videoTypeParams(): WritingCopilotParams | undefined {
+    const videoType = this.videoType();
+    return videoType ? { video_type: videoType } : undefined;
+  }
+
   /** Solo envÃ­a los parÃ¡metros que el usuario informÃ³ (nombres del skill). */
   private buildParams(): WritingCopilotParams {
     const params: WritingCopilotParams = {};
+    const videoType = this.videoType();
+    if (videoType) params.video_type = videoType;
+    const light = this.lighting();
+    if (light) params.lighting = lightingPrompt(light);
     if (this.outputLanguage()) params.output_language = this.outputLanguage();
     if (this.delivery()) params.delivery = this.delivery();
     if (this.aspectRatio()) params.aspect_ratio = this.aspectRatio();
@@ -596,6 +660,8 @@ export class WritingCopilotComponent implements OnDestroy {
     if (typeof clip === 'number' && clip > 0) params.max_clip_s = clip;
     const shots = this.shotCount();
     if (typeof shots === 'number' && shots > 0) params.shot_count = shots;
+    const cuts = this.cutsPerShot();
+    if (typeof cuts === 'number' && cuts > 0) params.cuts_per_shot = cuts;
     const fps = this.fps();
     if (typeof fps === 'number' && fps > 0) params.fps = fps;
     if (this.look().trim()) params.look = this.look().trim();

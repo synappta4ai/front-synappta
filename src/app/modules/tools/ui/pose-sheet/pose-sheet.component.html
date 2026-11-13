@@ -23,6 +23,14 @@
     </div>
 
     <div class="panel">
+      <app-lighting-select
+        inputId="poseLighting"
+        [value]="lighting()"
+        (valueChange)="lighting.set($event)"
+      />
+    </div>
+
+    <div class="panel">
       <div class="panel-head">
         <span><i class="md md-grid_view"></i> {{ 'TOOLS.VARIANT_LABEL' | translate }}</span>
       </div>

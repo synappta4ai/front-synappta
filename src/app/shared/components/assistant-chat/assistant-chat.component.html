@@ -1,0 +1,103 @@
+﻿<button
+  type="button"
+  class="assistant-fab"
+  aria-controls="app-assistant-panel"
+  [attr.aria-expanded]="open()"
+  [attr.aria-label]="'ASSISTANT.FAB_ARIA' | translate"
+  (click)="toggle()"
+>
+  <i class="md md-forum" aria-hidden="true"></i>
+</button>
+
+<aside
+  #panel
+  id="app-assistant-panel"
+  class="assistant-panel"
+  role="dialog"
+  aria-modal="false"
+  [class.open]="open()"
+  [class.positioned]="position() !== null"
+  [style.left.px]="position()?.x"
+  [style.top.px]="position()?.y"
+  [attr.aria-hidden]="!open()"
+  [attr.aria-label]="'ASSISTANT.TITLE' | translate"
+  (keydown.escape)="close()"
+>
+  <header
+    class="assistant-head"
+    (pointerdown)="startDrag($event)"
+    (pointermove)="onDrag($event)"
+    (pointerup)="endDrag($event)"
+    (pointercancel)="endDrag($event)"
+  >
+    <div class="assistant-head-text">
+      <p class="assistant-title">
+        {{ 'ASSISTANT.TITLE' | translate }}
+        <span class="assistant-badge">{{ 'ASSISTANT.BADGE' | translate }}</span>
+      </p>
+      <p class="assistant-sub">{{ 'ASSISTANT.SUBTITLE' | translate }}</p>
+    </div>
+    <div class="assistant-head-actions">
+      <button
+        type="button"
+        class="assistant-icon-btn"
+        [title]="'ASSISTANT.NEW' | translate"
+        [attr.aria-label]="'ASSISTANT.NEW' | translate"
+        (pointerdown)="$event.stopPropagation()"
+        (click)="reset()"
+      >
+        <i class="md md-refresh" aria-hidden="true"></i>
+      </button>
+      <button
+        type="button"
+        class="assistant-icon-btn"
+        [title]="'ASSISTANT.CLOSE' | translate"
+        [attr.aria-label]="'ASSISTANT.CLOSE' | translate"
+        (pointerdown)="$event.stopPropagation()"
+        (click)="close()"
+      >
+        <i class="md md-close" aria-hidden="true"></i>
+      </button>
+    </div>
+  </header>
+
+  <div class="assistant-log" aria-live="polite">
+    @if (messages().length === 0) {
+      <p class="assistant-empty">{{ 'ASSISTANT.EMPTY' | translate }}</p>
+    }
+    @for (message of messages(); track $index) {
+      <div class="assistant-msg" [class.user]="message.role === 'user'">{{ message.content }}</div>
+    }
+    @if (busy()) {
+      <div class="assistant-msg assistant typing" aria-hidden="true">
+        <span></span><span></span><span></span>
+      </div>
+    }
+    @if (error(); as message) {
+      <p class="assistant-error" role="alert">{{ message }}</p>
+    }
+  </div>
+
+  <form class="assistant-input" (ngSubmit)="send()">
+    <textarea
+      #input
+      rows="2"
+      class="w-full"
+      [ngModel]="draft()"
+      (ngModelChange)="draft.set($event)"
+      [ngModelOptions]="{ standalone: true }"
+      [placeholder]="'ASSISTANT.PLACEHOLDER' | translate"
+      [attr.aria-label]="'ASSISTANT.PLACEHOLDER' | translate"
+      [disabled]="busy()"
+      (keydown.enter)="onEnter($event)"
+    ></textarea>
+    <button
+      type="submit"
+      class="assistant-send"
+      [disabled]="!canSend()"
+      [attr.aria-label]="'ASSISTANT.SEND' | translate"
+    >
+      <i class="md md-send" aria-hidden="true"></i>
+    </button>
+  </form>
+</aside>

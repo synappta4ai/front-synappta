@@ -41,7 +41,7 @@ describe('NavBarComponent tools popover', () => {
   });
 
   function toolsItem(): MenuItem {
-    const item = internals.menuItems().find((i) => i.icon === 'md md-auto_fix_high');
+    const item = internals.menuItems().find((i) => i.label === 'TOOLS.TITLE' && !!i.command);
     if (!item?.command) {
       throw new Error('No se encontró el ítem Herramientas con command');
     }

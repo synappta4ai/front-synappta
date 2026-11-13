@@ -1187,6 +1187,67 @@ input {
   color: inherit;
 }
 
+/* Descripción del paso: burbuja anclada al label del paso (no al <li> ancho
+   del stepper), para que aparezca centrada justo arriba del paso apuntado.
+   Se muestra al hover y al foco de teclado; el texto también viaja en
+   `.sr-only` para lectores de pantalla. */
+.p-steps .p-steps-item {
+  position: relative;
+}
+
+.p-steps .p-steps-item .p-steps-item-label {
+  position: relative;
+  /* El tema de PrimeNG recorta el label y el link para el ellipsis; la
+     burbuja vive dentro del label, así que liberamos el recorte. */
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.p-steps .p-steps-item .p-steps-item-link {
+  overflow: visible;
+}
+
+.p-steps .vm-step-tip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 3rem);
+  z-index: 20;
+  width: max-content;
+  max-width: 18rem;
+  padding: 0.5rem 0.625rem;
+  border: 1px solid var(--color-surface-border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-2);
+  color: var(--color-ink-on-dark);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1.45;
+  text-align: left;
+  white-space: normal;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateX(-50%) translateY(4px);
+  transition:
+    opacity 0.15s var(--ease-app),
+    transform 0.15s var(--ease-app),
+    visibility 0.15s var(--ease-app);
+}
+
+.p-steps .p-steps-item:hover .vm-step-tip,
+.p-steps .p-steps-item:focus-within .vm-step-tip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .p-steps .vm-step-tip {
+    transition: none;
+  }
+}
+
 /* ============================================
    PrimeNG: checkbox, spinner, progress
    ============================================ */
@@ -4984,6 +5045,19 @@ main:has(> app-location) {
   padding-right: 4px;
 }
 
+/* Tooltips explicativos de VideoMachine: textos cortos pero completos, con
+   ancho acotado para que no se conviertan en una linea infinita. */
+.p-tooltip.app-tooltip {
+  max-width: 18rem;
+}
+
+.p-tooltip.app-tooltip .p-tooltip-text {
+  padding: 0.5rem 0.625rem;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  white-space: normal;
+}
+
 .p-iconfield p-inputicon {
   margin-top: -7px !important;
   margin-right: 16px !important;
@@ -5218,36 +5292,6 @@ main:has(> app-location) {
 /* ── Chat asistente del agente experto (/agency) ───────────
    Panel lateral fijo: burbujas del usuario/experto, typing y
    formulario. Mismos tokens que el resto de la página. */
-.agency-chat-fab {
-  position: fixed;
-  right: 24px;
-  bottom: 24px;
-  z-index: 40;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 52px;
-  height: 52px;
-  border: 0;
-  border-radius: var(--radius-full);
-  background: var(--color-accent);
-  color: var(--color-on-accent);
-  cursor: pointer;
-  box-shadow: 0 6px 20px rgb(0 0 0 / 25%);
-  transition:
-    background-color 120ms ease,
-    transform 120ms ease;
-}
-
-.agency-chat-fab:hover {
-  background: var(--color-accent-hover);
-  transform: translateY(-1px);
-}
-
-.agency-chat-fab i {
-  font-size: 24px;
-}
-
 .agency-chat-panel {
   position: fixed;
   right: 24px;

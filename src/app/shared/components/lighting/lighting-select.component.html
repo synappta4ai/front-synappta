@@ -1,0 +1,18 @@
+<div class="flex flex-col gap-1">
+  <label [for]="inputId()" class="text-xs font-bold text-ink-on-dark">
+    {{ 'LIGHTING.LABEL' | translate }}
+  </label>
+  <p-select
+    [inputId]="inputId()"
+    [options]="options()"
+    optionLabel="label"
+    optionValue="value"
+    [ngModel]="value() ?? ''"
+    (ngModelChange)="onChange($event)"
+    [ngModelOptions]="{ standalone: true }"
+    [placeholder]="'LIGHTING.SELECT' | translate"
+    styleClass="w-full"
+    appendTo="body"
+  />
+  <small class="text-ink-muted-on-dark">{{ 'LIGHTING.HINT' | translate }}</small>
+</div>

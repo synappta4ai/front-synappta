@@ -100,6 +100,14 @@
     </div>
 
     <div class="panel">
+      <app-lighting-select
+        inputId="locationLighting"
+        [value]="lighting()"
+        (valueChange)="lighting.set($event)"
+      />
+    </div>
+
+    <div class="panel">
       <div class="panel-head">
         <label for="location-prompt">{{ 'TOOLS.PROMPT_LABEL' | translate }}</label>
         <p-button

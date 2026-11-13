@@ -186,6 +186,10 @@
             [disabled]="!canAnalyze()"
             styleClass="cta-spend"
             (onClick)="analyze()"
+            [pTooltip]="'VIDEOMACHINE.HINT_ANALYZE' | translate"
+            tooltipPosition="top"
+            tooltipEvent="both"
+            tooltipStyleClass="app-tooltip"
           />
           @if (analyzing()) {
             <small class="text-ink-muted-on-dark" aria-live="polite">
@@ -577,6 +581,13 @@
               class="block w-full"
             />
           </div>
+
+          <app-lighting-select
+            class="sm:col-span-2"
+            inputId="vmLighting"
+            [value]="lighting()"
+            (valueChange)="lighting.set($event)"
+          />
         </div>
 
         <div class="flex flex-wrap items-center gap-3 border-t border-surface-border pt-5">
@@ -587,6 +598,10 @@
             [disabled]="!canCompose()"
             styleClass="cta-spend"
             (onClick)="compose()"
+            [pTooltip]="'VIDEOMACHINE.HINT_COMPOSE' | translate"
+            tooltipPosition="top"
+            tooltipEvent="both"
+            tooltipStyleClass="app-tooltip"
           />
           <p-button
             [label]="'VIDEOMACHINE.BACK' | translate"
@@ -772,6 +787,10 @@
                   icon="md md-play_arrow"
                   styleClass="cta-spend"
                   (onClick)="generateSegment(i)"
+                  [pTooltip]="'VIDEOMACHINE.HINT_GEN_ONE' | translate"
+                  tooltipPosition="top"
+                  tooltipEvent="both"
+                  tooltipStyleClass="app-tooltip"
                 />
                 <p-button
                   [label]="(queued().has(i) ? 'VIDEOMACHINE.QUEUED' : 'VIDEOMACHINE.QUEUE_SEND') | translate"
@@ -779,6 +798,10 @@
                   severity="secondary"
                   [text]="true"
                   (onClick)="enqueueSegment(i)"
+                  [pTooltip]="'VIDEOMACHINE.HINT_QUEUE_SEGMENT' | translate"
+                  tooltipPosition="top"
+                  tooltipEvent="both"
+                  tooltipStyleClass="app-tooltip"
                 />
                 @if (launched().has(i)) {
                   <small class="text-success" aria-live="polite">{{ 'VIDEOMACHINE.LAUNCHED' | translate }}</small>
@@ -795,6 +818,10 @@
               icon="md md-play_arrow"
               styleClass="cta-spend"
               (onClick)="generateAll()"
+              [pTooltip]="'VIDEOMACHINE.HINT_GEN_ALL' | translate: { count: vp.segments.length }"
+              tooltipPosition="top"
+              tooltipEvent="both"
+              tooltipStyleClass="app-tooltip"
             />
           }
           <p-button

@@ -39,6 +39,8 @@ import {
 } from '@modules/agency/interfaces';
 import { InfoproductService, ModelCatalogService } from '@modules/agency/services';
 import { GenerationQueueService } from '@services/generation-queue.service';
+import { LightingSelectComponent } from '@shared/components/lighting/lighting-select.component';
+import { lightingPrompt } from '@shared/components/lighting/lighting-templates';
 import { FileAsset } from '@modules/library/interfaces';
 import { LibraryService } from '@modules/library/services';
 import { ModelSelectComponent } from '../model-select/model-select.component';
@@ -84,6 +86,7 @@ const FALLBACK_RESOLUTIONS = ['480p', '720p', '1080p'];
     ToggleSwitch,
     Tooltip,
     ModelSelectComponent,
+    LightingSelectComponent,
   ],
   templateUrl: './infoproduct.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -100,12 +103,21 @@ export class InfoproductComponent implements OnDestroy {
   protected readonly error = signal<string | null>(null);
 
   protected readonly stepItems = computed<MenuItem[]>(() => {
-    const keys = ['VIDEOMACHINE.STEP_SOURCE', 'VIDEOMACHINE.STEP_BREAKDOWN', 'VIDEOMACHINE.STEP_PROMPT'];
-    return keys.map((key, i) => ({
-      label: this.translate.instant(key),
-      command: () => this.goTo((i + 1) as Step),
-      disabled: i === 1 ? !this.analysis() && !this.useFormat() : i === 2 ? !this.result() : false,
-    }));
+    this.translate.currentLang();
+    const steps: readonly [string, string][] = [
+      ['VIDEOMACHINE.STEP_SOURCE', 'VIDEOMACHINE.STEP_SOURCE_HINT'],
+      ['VIDEOMACHINE.STEP_BREAKDOWN', 'VIDEOMACHINE.STEP_BREAKDOWN_HINT'],
+      ['VIDEOMACHINE.STEP_PROMPT', 'VIDEOMACHINE.STEP_PROMPT_HINT'],
+    ];
+    return steps.map(([labelKey, hintKey], i) => {
+      const hint = this.translate.instant(hintKey);
+      return {
+        label: `${this.translate.instant(labelKey)}<span class="sr-only"> — ${hint}</span><span class="vm-step-tip" aria-hidden="true">${hint}</span>`,
+        escape: false,
+        command: () => this.goTo((i + 1) as Step),
+        disabled: i === 1 ? !this.analysis() && !this.useFormat() : i === 2 ? !this.result() : false,
+      };
+    });
   });
 
   // ── Paso 1: fuente ──────────────────────────────────────────────
@@ -145,6 +157,8 @@ export class InfoproductComponent implements OnDestroy {
   protected readonly attachments = signal<readonly Attachment[]>([]);
   protected readonly uploading = signal(false);
   protected readonly videoModel = signal<AiModel | null>(null);
+  /** Esquema de iluminación / dirección de arte para los prompts y videos. */
+  protected readonly lighting = signal<string | null>(null);
   protected readonly composing = signal(false);
   protected readonly composeSeconds = signal(0);
   private composeTimer: ReturnType<typeof setInterval> | null = null;
@@ -437,6 +451,7 @@ export class InfoproductComponent implements OnDestroy {
         aspect_ratio: this.analysis()?.meta.aspect_ratio,
         notes: this.notes().trim() || undefined,
         format_id: this.useFormat() ? (this.formatId() ?? undefined) : undefined,
+        lighting: lightingPrompt(this.lighting()) || undefined,
       })
       .pipe(
         catchError((err: unknown) => {
@@ -499,7 +514,9 @@ export class InfoproductComponent implements OnDestroy {
     const code = this.takeCode();
     const useAudio = buildTarget(model).audio_reference;
     const payloads = indexes.map((index) => {
-      const text = promptForGeneration(this.segmentPrompts()[index] ?? '');
+      const text = [promptForGeneration(this.segmentPrompts()[index] ?? ''), lightingPrompt(this.lighting())]
+        .filter(Boolean)
+        .join('\n\n');
       const content: GenerateRequest['content'] = [
         ...vp.ingredients.map((ing) => ({
           type: 'image' as const,

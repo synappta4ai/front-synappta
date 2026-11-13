@@ -197,6 +197,14 @@
       />
     </div>
 
+    <div class="panel">
+      <app-lighting-select
+        inputId="storyboardLighting"
+        [value]="lighting()"
+        (valueChange)="lighting.set($event)"
+      />
+    </div>
+
     <div class="pose-generate-bar">
       <p-button
         [label]="

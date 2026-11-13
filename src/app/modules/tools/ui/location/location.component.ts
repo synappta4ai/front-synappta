@@ -27,6 +27,8 @@ import { FileAsset } from '@modules/library/interfaces';
 import { LibraryService } from '@modules/library/services';
 import { ServerUrlPipe } from '@pipes/server-url.pipe';
 import { UiIcon } from '@shared/components/ui-icon/ui-icon.component';
+import { LightingSelectComponent } from '@shared/components/lighting/lighting-select.component';
+import { lightingPrompt } from '@shared/components/lighting/lighting-templates';
 
 import {
   LOCATION_DEFAULT_RATIO,
@@ -73,6 +75,7 @@ interface LocationViewResult {
     Tag,
     ServerUrlPipe,
     UiIcon,
+    LightingSelectComponent,
   ],
   templateUrl: './location.component.html',
   styleUrl: './location.component.css',
@@ -107,6 +110,8 @@ export class LocationComponent implements OnInit {
    *  modelos de imagen disponibles, igual que el Studio. Los desplegables de
    *  formato ya se adaptan a lo que declare cada modelo. */
   protected readonly selectedModel = signal('');
+  /** Esquema de iluminación / dirección de arte de la locación. */
+  protected readonly lighting = signal<string | null>(null);
   /** Modelo completo, para leer ratios y resoluciones soportadas. */
   protected readonly activeModel = signal<AiModel | null>(null);
 
@@ -418,6 +423,8 @@ export class LocationComponent implements OnInit {
     if (who) {
       parts.push(`Location: ${who}`);
     }
+    const light = lightingPrompt(this.lighting());
+    if (light) parts.push(light);
     return parts.filter(Boolean).join('\n\n');
   }
 }

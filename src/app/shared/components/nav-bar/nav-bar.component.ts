@@ -115,14 +115,13 @@ export class NavBarComponent {
     // Nota: solo toolItems alimenta el popover; no duplicar la lista acá.
 
     return [
-      { label: t('APP.ROUTES.AGENCY'), icon: 'md md-work', routerLink: '/agency' },
-      { label: t('APP.ROUTES.STUDIO'), icon: 'md md-bolt', routerLink: '/studio' },
-      { label: t('APP.ROUTES.PROJECTS'), icon: 'md md-folder', routerLink: '/projects' },
-      { label: t('APP.ROUTES.RESOURCES'), icon: 'md md-photo_library', routerLink: '/resources' },
-      { label: t('APP.ROUTES.MY_GENERATIONS'), icon: 'md md-movie', routerLink: '/my-generations' },
+      { label: t('APP.ROUTES.AGENCY'), routerLink: '/agency' },
+      { label: t('APP.ROUTES.STUDIO'), routerLink: '/studio' },
+      { label: t('APP.ROUTES.PROJECTS'), routerLink: '/projects' },
+      { label: t('APP.ROUTES.RESOURCES'), routerLink: '/resources' },
+      { label: t('APP.ROUTES.MY_GENERATIONS'), routerLink: '/my-generations' },
       {
         label: t('TOOLS.TITLE'),
-        icon: 'md md-auto_fix_high',
         // Sin routerLink PrimeNG nunca la marca activa: el resaltado en
         // /tools/* lo pone esta clase (ver CSS .tools-active + pill).
         styleClass: this.toolsRouteActive() ? 'tools-active' : undefined,
@@ -136,7 +135,6 @@ export class NavBarComponent {
       },
       {
         label: t('ADMIN.CONSOLE.MENU_TITLE'),
-        icon: 'md md-settings',
         routerLink: '/admin',
         routerLinkActiveOptions: { exact: false },
         items: adminItems,
