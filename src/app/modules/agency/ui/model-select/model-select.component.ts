@@ -38,6 +38,9 @@ const LOADING: CatalogState = { status: 'loading', models: [] };
 /** Con más modelos que este umbral el buscador se activa solo. */
 const FILTER_AUTO_THRESHOLD = 5;
 
+/** Modelo por defecto cuando el consumidor no elige uno (solo modalidad imagen). */
+const DEFAULT_IMAGE_MODEL = 'openrouter/openai/gpt-image-2';
+
 /**
  * Selector de modelos del catálogo, reusable y por modalidad.
  *
@@ -249,7 +252,11 @@ export class ModelSelectComponent implements ControlValueAccessor {
       if (!current && !this.autoSelect()) {
         return;
       }
-      this.control.setValue(options[0]!.name);
+      const preferred =
+        this.modalities().includes('image') && !this.modalities().includes('video')
+          ? options.find((model) => model.name === DEFAULT_IMAGE_MODEL)?.name
+          : undefined;
+      this.control.setValue(preferred ?? options[0]!.name);
     });
   }
 

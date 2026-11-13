@@ -427,6 +427,48 @@ export class WritingCopilotComponent implements OnDestroy {
   }
 
   /**
+   * Scroll de la página al abrir el selector de categoría. PrimeNG enfoca el
+   * input del p-select sin `preventScroll` al cerrar el overlay, y el navegador
+   * arrastra la página al principio: con varios insumos obligaba a bajar otra
+   * vez después de elegir cada categoría. Guardamos el scroll al abrir y lo
+   * devolvemos al cerrar, sólo si el cierre vino de elegir una opción.
+   */
+  private scrollYBeforeRoleSelect: number | null = null;
+  private roleSelected = false;
+
+  protected onRoleSelectOpen(): void {
+    this.scrollYBeforeRoleSelect = typeof window === 'undefined' ? null : window.scrollY;
+    this.roleSelected = false;
+  }
+
+  protected onRoleSelectShow(): void {
+    const y = this.scrollYBeforeRoleSelect;
+    if (y === null || typeof window === 'undefined') return;
+    if (Math.abs(window.scrollY - y) > 1) window.scrollTo(0, y);
+  }
+
+  protected onRoleChange(id: string, role: CopilotAssetRole): void {
+    if (this.scrollYBeforeRoleSelect === null && typeof window !== 'undefined') {
+      this.scrollYBeforeRoleSelect = window.scrollY;
+    }
+    this.roleSelected = true;
+    this.setAssetRole(id, role);
+  }
+
+  protected onRoleSelectClose(): void {
+    const y = this.scrollYBeforeRoleSelect;
+    const selected = this.roleSelected;
+    this.scrollYBeforeRoleSelect = null;
+    this.roleSelected = false;
+    if (!selected || y === null || typeof window === 'undefined') return;
+    const restore = (): void => {
+      if (Math.abs(window.scrollY - y) > 1) window.scrollTo(0, y);
+    };
+    restore();
+    setTimeout(restore, 0);
+  }
+
+  /**
    * Archiva la imagen en la biblioteca bajo la categoría elegida (personaje,
    * locación o prop) para que aparezca en Recursos y el Estudio la mencione
    * por su nombre de archivo.

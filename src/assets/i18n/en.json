@@ -392,6 +392,7 @@
     "STORYBOARD_RESULT_TITLE": "Storyboard sheet",
     "STORYBOARD_RESULT_ALT": "Generated storyboard sheet",
     "STORYBOARD_DOWNLOAD": "Download",
+    "STORYBOARD_SAVED": "Saved to Resources as a prop",
     "STORYBOARD_ANCHOR": "Storyboard",
     "STORYBOARD_NO_OUTPUT": "The model finished without returning a storyboard image. Try again.",
     "STORYBOARD_QUOTA_ERROR": "Gemini has no quota left for this model with the current API key. Enable billing in Google AI Studio or choose Gemini 3.1 Flash Image.",

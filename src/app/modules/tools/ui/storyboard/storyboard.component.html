@@ -230,6 +230,9 @@
             styleClass="text-xs"
           />
         }
+        @if (savedName()) {
+          <p-tag [value]="'TOOLS.STORYBOARD_SAVED' | translate" severity="success" styleClass="text-xs" />
+        }
       </div>
 
       @if (generating()) {
