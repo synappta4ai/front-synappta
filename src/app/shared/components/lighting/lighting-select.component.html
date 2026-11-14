@@ -1,68 +1,125 @@
-@if (compact()) {
-  <p-select
-    [inputId]="inputId()"
-    [options]="options()"
-    optionLabel="label"
-    optionValue="value"
-    [ngModel]="value() ?? ''"
-    (ngModelChange)="onChange($event)"
-    [ngModelOptions]="{ standalone: true }"
-    [placeholder]="'LIGHTING.SELECT' | translate"
-    styleClass="w-full"
-    [panelStyle]="{ minWidth: '340px' }"
-    appendTo="body"
-  >
-    <ng-template pTemplate="selectedItem" let-option>
-      <span class="lighting-option">
-        @if (option.thumb) {
-          <img
-            class="lighting-thumb"
-            [src]="option.thumb"
-            alt=""
-            width="64"
-            height="36"
-            loading="lazy"
-            decoding="async"
-          />
-        }
-        <span class="truncate">{{ option.label }}</span>
+@if (!compact() && !pill()) {
+  <label [for]="inputId()" class="text-xs font-bold text-ink-on-dark">
+    {{ 'LIGHTING.LABEL' | translate }}
+  </label>
+}
+<button
+  type="button"
+  [id]="inputId()"
+  class="lighting-trigger"
+  [class.compact]="compact()"
+  [class.pill]="pill()"
+  aria-haspopup="dialog"
+  [attr.aria-expanded]="dialogOpen()"
+  (click)="openPicker()"
+>
+  @if (pill()) {
+    <span class="lighting-pill-icon" aria-hidden="true"><i class="md md-light_mode"></i></span>
+    <span class="lighting-trigger-text">
+      <span class="lighting-pill-label">{{ 'LIGHTING.PILL' | translate }}</span>
+      <span class="lighting-pill-value">
+        {{ selected()?.name ?? ('LIGHTING.AUTO_SHORT' | translate) }}
       </span>
-    </ng-template>
-    <ng-template #item let-option>
-      <span class="lighting-option">
-        @if (option.thumb) {
-          <img
-            class="lighting-thumb"
-            [src]="option.thumb"
-            alt=""
-            width="64"
-            height="36"
-            loading="lazy"
-            decoding="async"
-          />
-        } @else {
-          <span class="lighting-thumb lighting-thumb--empty" aria-hidden="true"></span>
-        }
-        <span class="lighting-option-text">
-          <span class="lighting-option-name">{{ option.label }}</span>
-          <span class="lighting-option-desc">{{ option.description }}</span>
-        </span>
-      </span>
-    </ng-template>
-  </p-select>
-} @else {
-  <div class="flex flex-col gap-2">
-    <label [for]="inputId()" class="text-xs font-bold text-ink-on-dark">
-      {{ 'LIGHTING.LABEL' | translate }}
-    </label>
+    </span>
+  } @else if (selected(); as current) {
+    <img
+      class="lighting-trigger-thumb"
+      [src]="current.thumb"
+      [alt]="current.name"
+      width="64"
+      height="36"
+      loading="lazy"
+      decoding="async"
+    />
+    <span class="lighting-trigger-text">
+      <span class="lighting-trigger-name">{{ current.name }}</span>
+      @if (!compact()) {
+        <span class="lighting-trigger-desc">{{ current.description }}</span>
+      }
+    </span>
+  } @else {
+    <span class="lighting-trigger-auto" aria-hidden="true"><i class="md md-auto_fix_high"></i></span>
+    <span class="lighting-trigger-text">
+      <span class="lighting-trigger-name">{{ 'LIGHTING.AUTO' | translate }}</span>
+      @if (!compact()) {
+        <span class="lighting-trigger-desc">{{ 'LIGHTING.AUTO_HINT' | translate }}</span>
+      }
+    </span>
+  }
+  <i class="md md-expand_more lighting-trigger-chevron" aria-hidden="true"></i>
+</button>
+@if (!compact() && !pill()) {
+  <small class="text-ink-muted-on-dark">{{ 'LIGHTING.HINT' | translate }}</small>
+}
 
-    <div class="lighting-cards" role="group" [attr.aria-label]="'LIGHTING.LABEL' | translate">
+<p-dialog
+  [visible]="dialogOpen()"
+  (visibleChange)="dialogOpen.set($event)"
+  [modal]="true"
+  [showHeader]="false"
+  [style]="{ width: 'min(1000px, 94vw)' }"
+  [contentStyle]="{ padding: '0' }"
+  styleClass="preset-dialog"
+  appendTo="body"
+>
+  <div class="preset-modal">
+    <header class="preset-head">
+      <h2>{{ 'LIGHTING.LABEL' | translate }}</h2>
+      <div class="preset-head-actions">
+        <button type="button" class="preset-reset" (click)="reset()">
+          {{ 'LIGHTING.RESET' | translate }}
+        </button>
+        <button
+          type="button"
+          class="preset-close"
+          [attr.aria-label]="'LIGHTING.CLOSE' | translate"
+          (click)="dialogOpen.set(false)"
+        >
+          <i class="md md-close" aria-hidden="true"></i>
+        </button>
+      </div>
+    </header>
+
+    <div class="preset-subhead">
+      <div>
+        <h3>{{ 'LIGHTING.CONFIGURE' | translate }}</h3>
+        <p>{{ 'LIGHTING.CONFIGURE_HINT' | translate }}</p>
+      </div>
+    </div>
+
+    <div class="preset-toolbar">
+      <label class="preset-search">
+        <i class="md md-search" aria-hidden="true"></i>
+        <input
+          pInputText
+          [ngModel]="query()"
+          (ngModelChange)="query.set($event)"
+          [placeholder]="'LIGHTING.SEARCH' | translate"
+          [attr.aria-label]="'LIGHTING.SEARCH' | translate"
+        />
+      </label>
+      <label class="preset-sort">
+        <span>{{ 'LIGHTING.SORT' | translate }}</span>
+        <p-select
+          [options]="sortOptions()"
+          optionLabel="label"
+          optionValue="value"
+          [ngModel]="sort()"
+          (ngModelChange)="sort.set($event)"
+          [ngModelOptions]="{ standalone: true }"
+          styleClass="w-44"
+          appendTo="body"
+        />
+      </label>
+    </div>
+
+    <div class="preset-grid">
       <button
         type="button"
         class="lighting-card lighting-card--auto"
         [class.selected]="!value()"
         [attr.aria-pressed]="!value()"
-        (click)="onChange(null)"
+        (click)="choose(null)"
       >
         <span class="lighting-card-auto-icon" aria-hidden="true">
           <i class="md md-auto_fix_high"></i>
@@ -73,7 +130,7 @@
         </span>
       </button>
 
-      @for (card of cards(); track card.id) {
+      @for (card of filteredCards(); track card.id) {
         <button
           type="button"
           class="lighting-card"
@@ -81,7 +138,7 @@
           [attr.aria-pressed]="value() === card.id"
           [attr.aria-label]="card.name + ': ' + card.description"
           [title]="card.description"
-          (click)="onChange(card.id)"
+          (click)="choose(card.id)"
         >
           <img
             class="lighting-card-img"
@@ -103,6 +160,8 @@
       }
     </div>
 
-    <small class="text-ink-muted-on-dark">{{ 'LIGHTING.HINT' | translate }}</small>
+    @if (filteredCards().length === 0) {
+      <p class="preset-empty">{{ 'LIGHTING.EMPTY' | translate }}</p>
+    }
   </div>
-}
+</p-dialog>

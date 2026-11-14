@@ -582,12 +582,20 @@
             />
           </div>
 
-          <app-lighting-select
-            class="sm:col-span-2"
-            inputId="vmLighting"
-            [value]="lighting()"
-            (valueChange)="lighting.set($event)"
-          />
+          <div class="flex flex-wrap items-center gap-2 sm:col-span-2">
+            <app-lighting-select
+              [pill]="true"
+              inputId="vmLighting"
+              [value]="lighting()"
+              (valueChange)="lighting.set($event)"
+            />
+            <app-camera-movement-select
+              [pill]="true"
+              inputId="vmCamera"
+              [value]="camera()"
+              (valueChange)="camera.set($event)"
+            />
+          </div>
         </div>
 
         <div class="flex flex-wrap items-center gap-3 border-t border-surface-border pt-5">
@@ -779,6 +787,16 @@
                     [inputId]="'vmSegLight-' + i"
                     [value]="segmentLighting()[i] ?? lighting()"
                     (valueChange)="setSegmentLighting(i, $event)"
+                  />
+                </span>
+                <span class="flex items-center gap-1.5 text-xs text-ink-muted-on-dark">
+                  {{ 'CAMERA.SHORT' | translate }}
+                  <app-camera-movement-select
+                    class="block w-52"
+                    [compact]="true"
+                    [inputId]="'vmSegCamera-' + i"
+                    [value]="segmentCamera()[i] ?? camera()"
+                    (valueChange)="setSegmentCamera(i, $event)"
                   />
                 </span>
               </div>

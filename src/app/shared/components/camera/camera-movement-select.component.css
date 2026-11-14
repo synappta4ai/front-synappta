@@ -1,0 +1,463 @@
+.camera-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  width: 100%;
+  min-height: 3rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-surface-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-2);
+  color: var(--color-ink-on-dark);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.15s var(--ease-app),
+    background-color 0.15s var(--ease-app);
+}
+
+.camera-trigger:hover,
+.camera-trigger:focus-visible {
+  border-color: var(--color-accent);
+  background: var(--color-surface-hover);
+  outline: none;
+}
+
+.camera-trigger.compact {
+  min-height: 2.25rem;
+  gap: 0.4rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.camera-trigger-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 28px;
+  border-radius: 0.375rem;
+  border: 1px solid var(--color-surface-border);
+  color: var(--color-accent);
+  background: var(--color-surface);
+}
+
+.camera-trigger-text {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.camera-trigger-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.camera-trigger-desc {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.7rem;
+  color: var(--color-ink-muted-on-dark);
+}
+
+.camera-trigger-chevron {
+  flex: 0 0 auto;
+  color: var(--color-ink-muted-on-dark);
+}
+
+/* Modal compartido (copiado del preset de iluminaciÃ³n). */
+.camera-modal {
+  display: flex;
+  flex-direction: column;
+  max-height: 82vh;
+  background: var(--color-background);
+  color: var(--color-ink-on-dark);
+}
+
+.preset-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--color-surface-border);
+}
+
+.preset-head h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.preset-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.preset-reset {
+  padding: 0.35rem 0.85rem;
+  border: 1px solid var(--color-ink-on-dark);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-ink-on-dark);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.preset-reset:hover,
+.preset-reset:focus-visible {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  outline: none;
+}
+
+.preset-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-ink-muted-on-dark);
+  cursor: pointer;
+}
+
+.preset-close:hover,
+.preset-close:focus-visible {
+  background: var(--color-surface-2);
+  color: var(--color-ink-on-dark);
+  outline: none;
+}
+
+.camera-layout {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+}
+
+.camera-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  width: 190px;
+  flex: 0 0 auto;
+  padding: 1rem 0.75rem;
+  border-right: 1px solid var(--color-surface-border);
+}
+
+.camera-rail-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-lg);
+  background: transparent;
+  color: var(--color-ink-muted-on-dark);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.camera-rail-item.active {
+  border-color: var(--color-surface-border-strong);
+  background: var(--color-surface-2);
+  color: var(--color-ink-on-dark);
+}
+
+.camera-rail-item:hover,
+.camera-rail-item:focus-visible {
+  color: var(--color-ink-on-dark);
+  outline: none;
+}
+
+.camera-panel {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  padding: 1rem 0 0;
+}
+
+.camera-subhead {
+  padding: 0 1.25rem 0.25rem;
+}
+
+.camera-subhead h3 {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.camera-subhead p {
+  margin-top: 0.15rem;
+  font-size: 0.75rem;
+  color: var(--color-ink-muted-on-dark);
+}
+
+.camera-config-note {
+  padding: 0.75rem 1.25rem;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--color-ink-muted-on-dark);
+}
+
+.preset-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 1.25rem 0.75rem;
+}
+
+.preset-search {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 1;
+  max-width: 320px;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--color-surface-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-2);
+}
+
+.preset-search input {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--color-ink-on-dark);
+  outline: none;
+  font-size: 0.8rem;
+}
+
+.preset-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  color: var(--color-ink-muted-on-dark);
+}
+
+.camera-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 0.75rem;
+  overflow-y: auto;
+  padding: 0 1.25rem 0.75rem;
+  overscroll-behavior: contain;
+}
+
+.camera-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-lg);
+  background: transparent;
+  color: var(--color-ink-on-dark);
+  text-align: center;
+  cursor: pointer;
+}
+
+.camera-card:hover,
+.camera-card:focus-visible {
+  outline: none;
+}
+
+.camera-card:hover .camera-visual,
+.camera-card:focus-visible .camera-visual {
+  border-color: var(--color-accent);
+}
+
+.camera-card.selected .camera-visual {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 1px var(--color-accent);
+}
+
+.camera-visual {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border: 1px solid var(--color-surface-border);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(circle at 50% 40%, rgb(255 255 255 / 0.06), transparent 60%),
+    var(--color-surface-2);
+  transition: border-color 0.15s var(--ease-app);
+}
+
+.camera-diagram {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.camera-stage {
+  fill: none;
+  stroke: var(--color-surface-border);
+  stroke-width: 1;
+}
+
+.camera-glyph-body {
+  fill: var(--color-ink-muted-on-dark);
+}
+
+.camera-arrow {
+  fill: none;
+  stroke: var(--color-accent);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.camera-marker-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  color: var(--color-accent);
+}
+
+.camera-order {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.camera-card-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.camera-card-family {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.62rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted-on-dark);
+}
+
+.camera-order-hint {
+  padding: 0.5rem 1.25rem 1rem;
+  font-size: 0.72rem;
+  color: var(--color-ink-muted-on-dark);
+}
+
+.preset-empty {
+  padding: 0 1.25rem 1rem;
+  font-size: 0.8rem;
+  color: var(--color-ink-muted-on-dark);
+}
+
+@media (max-width: 760px) {
+  .camera-layout {
+    flex-direction: column;
+  }
+
+  .camera-rail {
+    width: 100%;
+    flex-direction: row;
+    border-right: 0;
+    border-bottom: 1px solid var(--color-surface-border);
+    padding: 0.6rem 0.75rem;
+  }
+
+  .camera-rail-item {
+    width: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .camera-trigger,
+  .camera-visual {
+    transition: none;
+  }
+}
+
+/* Píldora compacta para barras de configuración. */
+.camera-trigger.pill {
+  width: auto;
+  min-height: 3.4rem;
+  padding: 0.4rem 0.7rem;
+}
+
+.camera-trigger.pill .camera-trigger-icon {
+  width: 36px;
+  height: 36px;
+  background: color-mix(in srgb, var(--color-accent) 14%, transparent);
+  border-color: transparent;
+}
+
+.camera-pill-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted-on-dark);
+}
+
+.camera-pill-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 15rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.camera-preview {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #000;
+}
+
+.camera-placeholder {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  color: var(--color-ink-muted-on-dark);
+  font-size: 0.68rem;
+  text-align: center;
+}
+
+.camera-placeholder i {
+  font-size: 1.6rem;
+  color: var(--color-accent);
+}

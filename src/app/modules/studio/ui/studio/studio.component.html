@@ -584,11 +584,22 @@
 
     <div class="panel">
       <app-lighting-select
+        [pill]="true"
         inputId="studioLighting"
         [value]="lighting()"
         (valueChange)="lighting.set($event)"
       />
     </div>
+
+    @if (mode() === 'video') {
+      <div class="panel">
+        <app-camera-movement-select
+          inputId="studioCamera"
+          [value]="camera()"
+          (valueChange)="camera.set($event)"
+        />
+      </div>
+    }
 
     <!-- Seed (solo modelos del inference worker) -->
     @if (workerModel()) {

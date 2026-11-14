@@ -55,6 +55,8 @@ import { TiltDirective } from '@shared/components/tilt/tilt.directive';
 import { ImgFadeDirective } from '@shared/components/img-fade/img-fade.directive';
 import { ScrollMirrorDirective } from '@shared/components/scroll-mirror/scroll-mirror.directive';
 import { UiIcon } from '@shared/components/ui-icon/ui-icon.component';
+import { CameraMovementSelectComponent } from '@shared/components/camera/camera-movement-select.component';
+import { cameraMovementPrompt } from '@shared/components/camera/camera-movements';
 import { LightingSelectComponent } from '@shared/components/lighting/lighting-select.component';
 import { lightingPrompt } from '@shared/components/lighting/lighting-templates';
 
@@ -113,6 +115,7 @@ interface MentionRow {
     ScrollMirrorDirective,
     UiIcon,
     LightingSelectComponent,
+    CameraMovementSelectComponent,
   ],
   templateUrl: './studio.component.html',
   styleUrl: './studio.component.css',
@@ -172,6 +175,8 @@ export class StudioComponent {
   protected readonly resolution = signal('720p');
   /** Esquema de iluminación / dirección de arte para la generación. */
   protected readonly lighting = signal<string | null>(null);
+  /** Movimientos de cámara para el clip. */
+  protected readonly camera = signal<string[]>([]);
   protected readonly duration = signal(5);
   protected readonly seed = signal('');
 
@@ -1783,7 +1788,9 @@ export class StudioComponent {
           .replace(/\s{2,}/g, ' ')
           .trim()
       : rawText;
-    const finalText = [text, lightingPrompt(this.lighting())].filter(Boolean).join('\n\n');
+    const finalText = [text, lightingPrompt(this.lighting()), cameraMovementPrompt(this.camera())]
+      .filter(Boolean)
+      .join('\n\n');
 
     const ratio = this.ratio();
     const duration = this.mode() === 'video' ? this.duration() : 0;
@@ -1866,7 +1873,9 @@ export class StudioComponent {
         ...item.assets.filter((asset) => asset.kind === 'video').map((asset) => ({ type: 'video' as const, id: asset.id, name: asset.name })),
         {
           type: 'text' as const,
-          text: [item.prompt, lightingPrompt(this.lighting())].filter(Boolean).join('\n\n'),
+          text: [item.prompt, lightingPrompt(this.lighting()), cameraMovementPrompt(this.camera())]
+            .filter(Boolean)
+            .join('\n\n'),
         },
       ],
       ratio: item.ratio,

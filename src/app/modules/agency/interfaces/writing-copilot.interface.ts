@@ -22,6 +22,8 @@ export interface WritingCopilotParams {
   video_type?: WritingCopilotVideoType;
   /** Bloque de iluminación / dirección de arte elegido. */
   lighting?: string;
+  /** Bloque de movimientos de cámara en orden. */
+  camera_movements?: string;
 }
 
 export interface WritingCopilotHistoryMessage {

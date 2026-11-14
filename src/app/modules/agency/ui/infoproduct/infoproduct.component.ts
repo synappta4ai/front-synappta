@@ -39,6 +39,8 @@ import {
 } from '@modules/agency/interfaces';
 import { InfoproductService, ModelCatalogService } from '@modules/agency/services';
 import { GenerationQueueService } from '@services/generation-queue.service';
+import { CameraMovementSelectComponent } from '@shared/components/camera/camera-movement-select.component';
+import { cameraMovementPrompt } from '@shared/components/camera/camera-movements';
 import { LightingSelectComponent } from '@shared/components/lighting/lighting-select.component';
 import { lightingPrompt } from '@shared/components/lighting/lighting-templates';
 import { FileAsset } from '@modules/library/interfaces';
@@ -87,6 +89,7 @@ const FALLBACK_RESOLUTIONS = ['480p', '720p', '1080p'];
     Tooltip,
     ModelSelectComponent,
     LightingSelectComponent,
+    CameraMovementSelectComponent,
   ],
   templateUrl: './infoproduct.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -161,6 +164,10 @@ export class InfoproductComponent implements OnDestroy {
   protected readonly lighting = signal<string | null>(null);
   /** Luz propia de cada segmento (null = la global). */
   protected readonly segmentLighting = signal<Record<number, string | null>>({});
+  /** Movimientos de cámara base del video. */
+  protected readonly camera = signal<string[]>([]);
+  /** Movimientos propios de cada segmento. */
+  protected readonly segmentCamera = signal<Record<number, string[]>>({});
   protected readonly composing = signal(false);
   protected readonly composeSeconds = signal(0);
   private composeTimer: ReturnType<typeof setInterval> | null = null;
@@ -454,6 +461,7 @@ export class InfoproductComponent implements OnDestroy {
         notes: this.notes().trim() || undefined,
         format_id: this.useFormat() ? (this.formatId() ?? undefined) : undefined,
         lighting: lightingPrompt(this.lighting()) || undefined,
+        camera_movements: cameraMovementPrompt(this.camera()) || undefined,
       })
       .pipe(
         catchError((err: unknown) => {
@@ -466,6 +474,7 @@ export class InfoproductComponent implements OnDestroy {
         const vp = response.video_prompt;
         this.result.set(vp);
         this.segmentLighting.set({});
+        this.segmentCamera.set({});
         this.segmentPrompts.set(vp.segments.map((s) => s.prompt));
         this.segmentDurations.set(
           vp.segments.map((s) =>
@@ -498,6 +507,14 @@ export class InfoproductComponent implements OnDestroy {
     return this.segmentLighting()[index] ?? this.lighting();
   }
 
+  protected setSegmentCamera(index: number, value: string[]): void {
+    this.segmentCamera.update((map) => ({ ...map, [index]: value }));
+  }
+
+  private segmentCameraIds(index: number): readonly string[] {
+    return this.segmentCamera()[index] ?? this.camera();
+  }
+
   protected ingredientThumb(fileId: string): string {
     return this.attachments().find((a) => a.id === fileId)?.url ?? '';
   }
@@ -528,6 +545,7 @@ export class InfoproductComponent implements OnDestroy {
       const text = [
         promptForGeneration(this.segmentPrompts()[index] ?? ''),
         lightingPrompt(this.segmentLightingId(index)),
+        cameraMovementPrompt(this.segmentCameraIds(index)),
       ]
         .filter(Boolean)
         .join('\n\n');
@@ -595,7 +613,11 @@ export class InfoproductComponent implements OnDestroy {
       {
         label: this.translate.instant('VIDEOMACHINE.QUEUE_SEGMENT_LABEL', { n: index + 1 }),
         source: 'infoproduct',
-        prompt: [prompt, lightingPrompt(this.segmentLightingId(index))]
+        prompt: [
+          prompt,
+          lightingPrompt(this.segmentLightingId(index)),
+          cameraMovementPrompt(this.segmentCameraIds(index)),
+        ]
           .filter(Boolean)
           .join('\n\n'),
         assets,

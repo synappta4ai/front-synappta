@@ -297,6 +297,8 @@ export interface ComposeRequest {
   format_id?: string;
   /** Bloque de iluminación / dirección de arte elegido. */
   lighting?: string;
+  /** Bloque de movimientos de cámara en orden. */
+  camera_movements?: string;
 }
 
 export interface VideoPromptIngredient {

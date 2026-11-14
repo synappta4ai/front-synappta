@@ -101,6 +101,7 @@
 
     <div class="panel">
       <app-lighting-select
+        [pill]="true"
         inputId="locationLighting"
         [value]="lighting()"
         (valueChange)="lighting.set($event)"

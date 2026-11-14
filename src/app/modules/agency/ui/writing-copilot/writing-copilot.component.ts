@@ -26,6 +26,10 @@ import {
 import { AgencyService, ModelCatalogService, WritingCopilotService } from '@modules/agency/services';
 import { GenerationQueueService } from '@services/generation-queue.service';
 import { LibraryService } from '@modules/library/services';
+import { CameraMovementSelectComponent } from '@shared/components/camera/camera-movement-select.component';
+import { CompactNumberComponent } from '@shared/components/compact-param/compact-number.component';
+import { CompactSelectComponent } from '@shared/components/compact-param/compact-select.component';
+import { cameraMovementPrompt } from '@shared/components/camera/camera-movements';
 import { LightingSelectComponent } from '@shared/components/lighting/lighting-select.component';
 import { LIGHTING_TEMPLATES, lightingPrompt } from '@shared/components/lighting/lighting-templates';
 import { highlightPrompt, PromptSegment } from '../agency/agency-prompt-highlight';
@@ -99,6 +103,9 @@ function excerptOf(text: string): string {
     Textarea,
     Tooltip,
     LightingSelectComponent,
+    CameraMovementSelectComponent,
+    CompactSelectComponent,
+    CompactNumberComponent,
   ],
   templateUrl: './writing-copilot.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -122,6 +129,10 @@ export class WritingCopilotComponent implements OnDestroy {
   protected readonly copied = signal<string | null>(null);
   /** Luz elegida por toma (clave = key de CopilotShot). */
   protected readonly shotLighting = signal<Record<string, string | null>>({});
+  /** Movimientos de cámara base del video. */
+  protected readonly camera = signal<string[]>([]);
+  /** Movimientos de cámara por toma (clave = key de CopilotShot). */
+  protected readonly shotCamera = signal<Record<string, string[]>>({});
   private timer: ReturnType<typeof setInterval> | null = null;
 
   // â”€â”€ Paso 1: idea + parÃ¡metros â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -289,7 +300,9 @@ export class WritingCopilotComponent implements OnDestroy {
     ];
   });
 
-  protected readonly aspectOptions = ['9:16', '16:9', '1:1', '4:5'].map((ratio) => ({ label: ratio, value: ratio }));
+  protected readonly aspectOptions = ['1:1', '3:4', '9:16', '4:3', '16:9', '21:9', '4:5'].map(
+    (ratio) => ({ label: ratio, value: ratio }),
+  );
 
   protected readonly quickActions = computed(() => {
     this.translate.currentLang();
@@ -361,6 +374,22 @@ export class WritingCopilotComponent implements OnDestroy {
     this.idea.set(value);
   }
 
+  protected setLanguage(value: string | number): void {
+    this.outputLanguage.set(value as 'es' | 'en' | 'bilingual');
+  }
+
+  protected setDelivery(value: string | number): void {
+    this.delivery.set(value as Delivery);
+  }
+
+  protected setAspect(value: string | number): void {
+    this.aspectRatio.set(String(value));
+  }
+
+  protected setAudio(value: string | number): void {
+    this.audioMode.set(value as AudioMode);
+  }
+
   protected start(): void {
     const message = this.idea().trim();
     if (!message) return;
@@ -389,6 +418,7 @@ export class WritingCopilotComponent implements OnDestroy {
         this.idea.set('');
         this.finalPrompt.set(null);
         this.shotLighting.set({});
+        this.shotCamera.set({});
         this.step.set(2);
       });
   }
@@ -418,6 +448,7 @@ export class WritingCopilotComponent implements OnDestroy {
         this.followUp.set('');
         this.finalPrompt.set(null);
         this.shotLighting.set({});
+        this.shotCamera.set({});
         this.copied.set(null);
       });
   }
@@ -425,16 +456,23 @@ export class WritingCopilotComponent implements OnDestroy {
   /** Paso 3: dirección de arte por toma. */
   protected goToArtDirection(): void {
     if (this.turns().length === 0) return;
-    const current = { ...this.shotLighting() };
+    const currentLighting = { ...this.shotLighting() };
+    const currentCamera = { ...this.shotCamera() };
     for (const shot of this.shots()) {
-      if (!(shot.key in current)) current[shot.key] = this.lighting();
+      if (!(shot.key in currentLighting)) currentLighting[shot.key] = this.lighting();
+      if (!(shot.key in currentCamera)) currentCamera[shot.key] = [...this.camera()];
     }
-    this.shotLighting.set(current);
+    this.shotLighting.set(currentLighting);
+    this.shotCamera.set(currentCamera);
     this.step.set(3);
   }
 
   protected setShotLighting(key: string, value: string | null): void {
     this.shotLighting.update((map) => ({ ...map, [key]: value }));
+  }
+
+  protected setShotCamera(key: string, value: string[]): void {
+    this.shotCamera.update((map) => ({ ...map, [key]: value }));
   }
 
   /** Bloque de luz por toma que recibe el cerebro al escribir el prompt final. */
@@ -444,6 +482,17 @@ export class WritingCopilotComponent implements OnDestroy {
         const id = this.shotLighting()[shot.key] ?? this.lighting();
         const template = id ? LIGHTING_TEMPLATES.find((item) => item.id === id) : undefined;
         return template ? `Toma ${shot.index} — ${template.name}\n${template.prompt}` : '';
+      })
+      .filter(Boolean)
+      .join('\n\n');
+  }
+
+  /** Bloque de movimientos de cámara por toma, en el orden elegido. */
+  private cameraPerShot(): string {
+    return this.shots()
+      .map((shot) => {
+        const block = cameraMovementPrompt(this.shotCamera()[shot.key] ?? this.camera());
+        return block ? `Toma ${shot.index}:\n${block}` : '';
       })
       .filter(Boolean)
       .join('\n\n');
@@ -460,9 +509,11 @@ export class WritingCopilotComponent implements OnDestroy {
       output_language: 'en',
       response_mode: 'prompt_only',
     };
-    const perShot = this.lightingPerShot();
+    const perShot = [this.lightingPerShot(), this.cameraPerShot()]
+      .filter(Boolean)
+      .join('\n\n');
     const message = perShot
-      ? `${FINAL_PROMPT_INSTRUCTION}\n\nDIRECCIÓN DE ARTE POR TOMA (aplicá cada esquema al plano que corresponde; no uses una sola luz para todo el video):\n${perShot}`
+      ? `${FINAL_PROMPT_INSTRUCTION}\n\nDIRECCIÓN POR TOMA (aplicá la luz y los movimientos a cada plano; no uses una sola luz para todo el video):\n${perShot}`
       : FINAL_PROMPT_INSTRUCTION;
     const references = buildReferences(this.taggedAssets());
     this.copilot
@@ -497,6 +548,8 @@ export class WritingCopilotComponent implements OnDestroy {
     this.assets.set([]);
     this.finalPrompt.set(null);
     this.shotLighting.set({});
+    this.shotCamera.set({});
+    this.camera.set([]);
     this.error.set(null);
     this.step.set(1);
   }
@@ -742,6 +795,8 @@ export class WritingCopilotComponent implements OnDestroy {
     if (videoType) params.video_type = videoType;
     const light = this.lighting();
     if (light) params.lighting = lightingPrompt(light);
+    const camera = cameraMovementPrompt(this.camera());
+    if (camera) params.camera_movements = camera;
     if (this.outputLanguage()) params.output_language = this.outputLanguage();
     if (this.delivery()) params.delivery = this.delivery();
     if (this.aspectRatio()) params.aspect_ratio = this.aspectRatio();

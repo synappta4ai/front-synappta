@@ -206,11 +206,20 @@
           </div>
         </div>
 
-        <app-lighting-select
-          inputId="agencyLighting"
-          [value]="lighting()"
-          (valueChange)="lighting.set($event)"
-        />
+        <div class="flex flex-wrap items-center gap-2">
+          <app-lighting-select
+            [pill]="true"
+            inputId="agencyLighting"
+            [value]="lighting()"
+            (valueChange)="lighting.set($event)"
+          />
+          <app-camera-movement-select
+            [pill]="true"
+            inputId="agencyCamera"
+            [value]="camera()"
+            (valueChange)="camera.set($event)"
+          />
+        </div>
 
         <div class="flex min-w-0 flex-col gap-2">
           <label for="description" class="text-xs font-bold text-ink-on-dark">
@@ -1427,11 +1436,18 @@
                   }
                 </small>
               </div>
-              <div class="w-full">
+              <div class="flex w-full flex-wrap items-center gap-2">
                 <app-lighting-select
+                  [pill]="true"
                   inputId="agencyVideoLighting"
                   [value]="lighting()"
                   (valueChange)="lighting.set($event)"
+                />
+                <app-camera-movement-select
+                  [pill]="true"
+                  inputId="agencyVideoCamera"
+                  [value]="camera()"
+                  (valueChange)="camera.set($event)"
                 />
               </div>
             </div>
@@ -1788,6 +1804,16 @@
                                   (valueChange)="setPromptLighting(scene.id, null, p, $event)"
                                 />
                               </span>
+                              <span class="flex items-center gap-1.5">
+                                {{ 'CAMERA.SHORT' | translate }}
+                                <app-camera-movement-select
+                                  class="block w-56"
+                                  [compact]="true"
+                                  [inputId]="'cameraScene-' + scene.id + '-' + p"
+                                  [value]="prompt.camera ?? camera()"
+                                  (valueChange)="setPromptCamera(scene.id, null, p, $event)"
+                                />
+                              </span>
                               <label class="flex items-center gap-1.5">
                                 {{ 'AGENCY.STUDIO.P4_VIDEO_MODEL' | translate }}
                                 <app-model-select
@@ -2138,6 +2164,16 @@
                                       [inputId]="'lightingShot-' + scene.id + '-' + shot.id + '-' + p"
                                       [value]="prompt.lighting ?? lighting()"
                                       (valueChange)="setPromptLighting(scene.id, shot.id, p, $event)"
+                                    />
+                                  </span>
+                                  <span class="flex items-center gap-1.5">
+                                    {{ 'CAMERA.SHORT' | translate }}
+                                    <app-camera-movement-select
+                                      class="block w-56"
+                                      [compact]="true"
+                                      [inputId]="'cameraShot-' + scene.id + '-' + shot.id + '-' + p"
+                                      [value]="prompt.camera ?? camera()"
+                                      (valueChange)="setPromptCamera(scene.id, shot.id, p, $event)"
                                     />
                                   </span>
                                   <label class="flex items-center gap-1.5">

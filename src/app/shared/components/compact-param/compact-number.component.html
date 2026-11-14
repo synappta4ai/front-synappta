@@ -1,0 +1,31 @@
+<button type="button" class="compact-chip" aria-haspopup="dialog" (click)="pop.toggle($event)">
+  <span class="compact-chip-label">{{ label() }}</span>
+  <span class="compact-chip-value">{{ display() }}</span>
+  <i class="md md-expand_more compact-chip-chevron" aria-hidden="true"></i>
+</button>
+
+<p-popover #pop styleClass="compact-popover" (onShow)="focusInput()">
+  <div class="compact-number">
+    <label class="compact-number-label" for="compactNumberInput">{{ label() }}</label>
+    <div class="compact-number-row">
+      <button type="button" class="compact-step" (click)="bump(-1)" aria-label="-">−</button>
+      <input
+        #numberInput
+        id="compactNumberInput"
+        class="compact-number-input"
+        type="number"
+        [value]="value() ?? ''"
+        [attr.min]="min()"
+        [attr.max]="max()"
+        [attr.step]="step()"
+        [attr.placeholder]="placeholder()"
+        (input)="onInput($event)"
+        (keydown.enter)="pop.hide()"
+      />
+      <button type="button" class="compact-step" (click)="bump(1)" aria-label="+">+</button>
+    </div>
+    @if (suffix()) {
+      <span class="compact-number-suffix">{{ suffix() }}</span>
+    }
+  </div>
+</p-popover>
