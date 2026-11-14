@@ -771,6 +771,16 @@
                     [ngModelOptions]="{ standalone: true }"
                   />
                 </label>
+                <span class="flex items-center gap-1.5 text-xs text-ink-muted-on-dark">
+                  {{ 'LIGHTING.SHORT' | translate }}
+                  <app-lighting-select
+                    class="block w-52"
+                    [compact]="true"
+                    [inputId]="'vmSegLight-' + i"
+                    [value]="segmentLighting()[i] ?? lighting()"
+                    (valueChange)="setSegmentLighting(i, $event)"
+                  />
+                </span>
               </div>
               <textarea
                 pTextarea

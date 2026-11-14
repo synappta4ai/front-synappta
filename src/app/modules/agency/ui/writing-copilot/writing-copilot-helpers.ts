@@ -1,4 +1,4 @@
-import type { PhotoKind } from '../agency/agency-photos';
+import type { PromptTone } from '../agency/agency-prompt-highlight';
 
 /** Trozo de la respuesta del agente: prosa o bloque de prompt. */
 export interface WritingSegment {
@@ -100,15 +100,24 @@ export function buildReferences(assets: readonly TaggedAsset[]): string {
 }
 
 /**
- * Mapa etiqueta → tipo de recurso para pintar el prompt final. Solo las
- * imágenes llevan rol; audio y video los resuelve el resaltador por el tag.
+ * Mapa etiqueta → tono de recurso para pintar el prompt final: personaje,
+ * producto y locación por el rol de la imagen; audio y video por su tipo.
  */
-export function promptKinds(assets: readonly TaggedAsset[]): ReadonlyMap<string, PhotoKind | null> {
-  const kinds = new Map<string, PhotoKind | null>();
+export function promptKinds(assets: readonly TaggedAsset[]): ReadonlyMap<string, PromptTone> {
+  const kinds = new Map<string, PromptTone>();
   for (const asset of assets) {
-    if (asset.kind !== 'image') continue;
-    const tone: PhotoKind = asset.role === 'person' ? 'character' : asset.role === 'environment' ? 'location' : 'product';
-    kinds.set(asset.tag.toLowerCase(), tone);
+    const key = asset.tag.toLowerCase();
+    if (asset.kind === 'video') {
+      kinds.set(key, 'video');
+      continue;
+    }
+    if (asset.kind === 'audio') {
+      kinds.set(key, 'audio');
+      continue;
+    }
+    const tone: PromptTone =
+      asset.role === 'person' ? 'character' : asset.role === 'environment' ? 'location' : 'product';
+    kinds.set(key, tone);
   }
   return kinds;
 }

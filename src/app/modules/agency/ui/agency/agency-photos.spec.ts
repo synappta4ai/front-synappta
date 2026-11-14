@@ -230,6 +230,13 @@ describe('parseTagsFromText', () => {
     expect(parseTagsFromText('Una escena sin referencias.')).toEqual([]);
     expect(parseTagsFromText('mail@dominio.com no es un tag válido')).toEqual([]);
   });
+
+  it('conserva la extensión del archivo y descarta el punto de la frase', () => {
+    expect(parseTagsFromText('Usa @Andres.png y @camila.png.')).toEqual([
+      '@andres.png',
+      '@camila.png',
+    ]);
+  });
 });
 
 describe('referenceTagLines', () => {

@@ -27,7 +27,7 @@ import { AgencyService, ModelCatalogService, WritingCopilotService } from '@modu
 import { GenerationQueueService } from '@services/generation-queue.service';
 import { LibraryService } from '@modules/library/services';
 import { LightingSelectComponent } from '@shared/components/lighting/lighting-select.component';
-import { lightingPrompt } from '@shared/components/lighting/lighting-templates';
+import { LIGHTING_TEMPLATES, lightingPrompt } from '@shared/components/lighting/lighting-templates';
 import { highlightPrompt, PromptSegment } from '../agency/agency-prompt-highlight';
 import { attachmentKind, Attachment } from '../infoproduct/infoproduct-helpers';
 import {
@@ -41,12 +41,42 @@ import {
   WritingSegment,
 } from './writing-copilot-helpers';
 
-type Step = 1 | 2 | 3;
+type Step = 1 | 2 | 3 | 4;
 type Delivery = 'sequence' | 'shot_pack' | 'auto';
 type AudioMode = 'auto' | 'diegetic_only' | 'with_dialogue' | 'with_music_notes' | 'silent';
 
 const DEFAULT_VIDEO_MODEL = 'higgsfield-seedance-2-5-reference';
 const PREFERRED_BRAIN = 'google/gemini-3.8-flash';
+
+interface CopilotShot {
+  key: string;
+  index: number;
+  excerpt: string;
+  text: string;
+}
+
+const SHOT_MARKER = /^\s*(?:shot|plano|toma|escena)\s*\d+\b/i;
+
+/** Separa un prompt en tomas numeradas; si no hay marcas, es una sola toma. */
+function splitShotBlocks(block: string): string[] {
+  const groups: string[] = [];
+  let current: string[] = [];
+  for (const line of block.split('\n')) {
+    if (SHOT_MARKER.test(line) && current.length > 0) {
+      groups.push(current.join('\n').trim());
+      current = [];
+    }
+    current.push(line);
+  }
+  if (current.length > 0) groups.push(current.join('\n').trim());
+  const kept = groups.filter(Boolean);
+  return kept.length > 0 ? kept : [block.trim()];
+}
+
+function excerptOf(text: string): string {
+  const clean = text.replace(/\s+/g, ' ').trim();
+  return clean.length > 130 ? `${clean.slice(0, 130)}…` : clean;
+}
 
 /**
  * VideoMachine Â· agente "Writing Copilot": convierte una idea, un guion o una
@@ -90,6 +120,8 @@ export class WritingCopilotComponent implements OnDestroy {
   protected readonly error = signal<string | null>(null);
   protected readonly turns = signal<readonly WritingCopilotTurn[]>([]);
   protected readonly copied = signal<string | null>(null);
+  /** Luz elegida por toma (clave = key de CopilotShot). */
+  protected readonly shotLighting = signal<Record<string, string | null>>({});
   private timer: ReturnType<typeof setInterval> | null = null;
 
   // â”€â”€ Paso 1: idea + parÃ¡metros â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -148,6 +180,7 @@ export class WritingCopilotComponent implements OnDestroy {
     const steps: readonly [string, string][] = [
       ['VIDEOMACHINE.WRITE_STEP_IDEA', 'VIDEOMACHINE.WRITE_STEP_IDEA_HINT'],
       ['VIDEOMACHINE.WRITE_STEP_PROMPTS', 'VIDEOMACHINE.WRITE_STEP_PROMPTS_HINT'],
+      ['VIDEOMACHINE.WRITE_STEP_ART', 'VIDEOMACHINE.WRITE_STEP_ART_HINT'],
       ['VIDEOMACHINE.WRITE_STEP_FINAL', 'VIDEOMACHINE.WRITE_STEP_FINAL_HINT'],
     ];
     return steps.map(([labelKey, hintKey]) => {
@@ -159,7 +192,31 @@ export class WritingCopilotComponent implements OnDestroy {
     });
   });
 
-  protected readonly canSend = computed(() => !this.sending() && this.videoType() !== null && this.idea().trim().length > 0);  protected readonly canFollowUp = computed(() => !this.sending() && this.followUp().trim().length > 0);
+  /** Tomas detectadas en las respuestas del agente (una luz por toma). */
+  protected readonly shots = computed<readonly CopilotShot[]>(() => {
+    const blocks: string[] = [];
+    for (const turn of this.turns()) {
+      if (turn.role !== 'assistant') continue;
+      for (const segment of splitFences(turn.content)) {
+        if (segment.code) blocks.push(segment.content.trim());
+      }
+    }
+    const shots: CopilotShot[] = [];
+    blocks.forEach((block, blockIndex) => {
+      for (const [shotIndex, part] of splitShotBlocks(block).entries()) {
+        shots.push({
+          key: `${blockIndex}-${shotIndex}`,
+          index: shots.length + 1,
+          excerpt: excerptOf(part),
+          text: part,
+        });
+      }
+    });
+    return shots;
+  });
+
+  protected readonly canSend = computed(() => !this.sending() && this.videoType() !== null && this.idea().trim().length > 0);
+  protected readonly canFollowUp = computed(() => !this.sending() && this.followUp().trim().length > 0);
   protected readonly canTranslate = computed(() => !this.sending() && this.turns().length > 0);
 
   /** Resumen de tiempos: tomas × duración por toma × total. */
@@ -331,6 +388,7 @@ export class WritingCopilotComponent implements OnDestroy {
         ]);
         this.idea.set('');
         this.finalPrompt.set(null);
+        this.shotLighting.set({});
         this.step.set(2);
       });
   }
@@ -359,11 +417,39 @@ export class WritingCopilotComponent implements OnDestroy {
         this.turns.update((list) => [...list, { role: 'user', content: text }, { role: 'assistant', content: response.text }]);
         this.followUp.set('');
         this.finalPrompt.set(null);
+        this.shotLighting.set({});
         this.copied.set(null);
       });
   }
 
-  /** Paso 3: prompt final en inglÃ©s con los insumos tagueados. */
+  /** Paso 3: dirección de arte por toma. */
+  protected goToArtDirection(): void {
+    if (this.turns().length === 0) return;
+    const current = { ...this.shotLighting() };
+    for (const shot of this.shots()) {
+      if (!(shot.key in current)) current[shot.key] = this.lighting();
+    }
+    this.shotLighting.set(current);
+    this.step.set(3);
+  }
+
+  protected setShotLighting(key: string, value: string | null): void {
+    this.shotLighting.update((map) => ({ ...map, [key]: value }));
+  }
+
+  /** Bloque de luz por toma que recibe el cerebro al escribir el prompt final. */
+  private lightingPerShot(): string {
+    return this.shots()
+      .map((shot) => {
+        const id = this.shotLighting()[shot.key] ?? this.lighting();
+        const template = id ? LIGHTING_TEMPLATES.find((item) => item.id === id) : undefined;
+        return template ? `Toma ${shot.index} — ${template.name}\n${template.prompt}` : '';
+      })
+      .filter(Boolean)
+      .join('\n\n');
+  }
+
+  /** Paso 4: prompt final en inglés con los insumos y la luz de cada toma. */
   protected toFinalPrompt(): void {
     if (!this.canTranslate()) return;
     this.error.set(null);
@@ -374,11 +460,15 @@ export class WritingCopilotComponent implements OnDestroy {
       output_language: 'en',
       response_mode: 'prompt_only',
     };
+    const perShot = this.lightingPerShot();
+    const message = perShot
+      ? `${FINAL_PROMPT_INSTRUCTION}\n\nDIRECCIÓN DE ARTE POR TOMA (aplicá cada esquema al plano que corresponde; no uses una sola luz para todo el video):\n${perShot}`
+      : FINAL_PROMPT_INSTRUCTION;
     const references = buildReferences(this.taggedAssets());
     this.copilot
       .chat({
         model: this.brainModel() || undefined,
-        message: FINAL_PROMPT_INSTRUCTION,
+        message,
         history: this.history(),
         params,
         references: references || undefined,
@@ -395,7 +485,7 @@ export class WritingCopilotComponent implements OnDestroy {
         this.finalPrompt.set(response.text.trim());
         this.queued.set(false);
         this.copied.set(null);
-        this.step.set(3);
+        this.step.set(4);
       });
   }
 
@@ -406,13 +496,14 @@ export class WritingCopilotComponent implements OnDestroy {
     this.followUp.set('');
     this.assets.set([]);
     this.finalPrompt.set(null);
+    this.shotLighting.set({});
     this.error.set(null);
     this.step.set(1);
   }
 
   protected goToStep(step: Step): void {
-    if (step === 2 && this.turns().length === 0) return;
-    if (step === 3 && !this.finalPrompt()) return;
+    if ((step === 2 || step === 3) && this.turns().length === 0) return;
+    if (step === 4 && !this.finalPrompt()) return;
     this.step.set(step);
   }
 

@@ -226,6 +226,8 @@ interface VideoPrompt {
   ratio?: string | null;
   /** Task id de la generación: habilita calificar e "Ir a estudio" desde la card. */
   taskId?: string | null;
+  /** Esquema de luz propio de esta toma (null = el global del flujo). */
+  lighting?: string | null;
 }
 
 interface StoryboardScene {
@@ -3222,29 +3224,31 @@ export class AgencyComponent {
     resolution: string,
   ): VideoPrompt[] {
     const previous = (shot ? shot.prompts : scene.prompts) ?? [];
-    return Array.from({ length: segments }, (_, i) => ({
-      text: this.withLighting(this.buildPromptText(scene, shot, i, segments, tags, ratio, resolution)),
-      videoUrl: previous[i]?.videoUrl ?? null,
-      // Conserva el estado si el prompt ya se está generando en este momento.
-      generating: previous[i]?.generating ?? false,
-      // Overrides por prompt: sobreviven al rearmado de la config global.
-      duration: previous[i]?.duration ?? null,
-      resolution: previous[i]?.resolution ?? null,
-      audio: previous[i]?.audio ?? null,
-      videoModel: previous[i]?.videoModel ?? null,
-      ratio: previous[i]?.ratio ?? null,
-    }));
-  }
-
-  /** Suma el esquema de iluminación elegido a cualquier prompt de generación. */
-  private withLighting(text: string): string {
-    const light = lightingPrompt(this.lighting());
-    return light ? `${text}\n\n${light}` : text;
+    return Array.from({ length: segments }, (_, i) => {
+      const light = previous[i]?.lighting ?? this.lighting();
+      const text = [this.buildPromptText(scene, shot, i, segments, tags, ratio, resolution), lightingPrompt(light)]
+        .filter(Boolean)
+        .join('\n\n');
+      return {
+        text,
+        videoUrl: previous[i]?.videoUrl ?? null,
+        // Conserva el estado si el prompt ya se está generando en este momento.
+        generating: previous[i]?.generating ?? false,
+        // Overrides por prompt: sobreviven al rearmado de la config global.
+        duration: previous[i]?.duration ?? null,
+        resolution: previous[i]?.resolution ?? null,
+        audio: previous[i]?.audio ?? null,
+        videoModel: previous[i]?.videoModel ?? null,
+        ratio: previous[i]?.ratio ?? null,
+        lighting: previous[i]?.lighting ?? null,
+      };
+    });
   }
 
   /** Texto de un prompt: escena/toma + referencia al storyboard + tags de
    *  referencia + segmento, duración, ratio y resolución. */
-  private buildPromptText(    scene: StoryboardScene,
+  private buildPromptText(
+    scene: StoryboardScene,
     shot: StoryboardShot | null,
     index: number,
     segments: number,
@@ -3510,6 +3514,30 @@ export class AgencyComponent {
     value: boolean,
   ): void {
     this.patchPromptSpec(sceneId, shotId, index, { audio: value });
+  }
+
+  /** Luz propia de una toma: null vuelve a la luz global del flujo. */
+  protected setPromptLighting(
+    sceneId: string,
+    shotId: string | null,
+    index: number,
+    value: string | null,
+  ): void {
+    const prompt = this.promptAt(sceneId, shotId, index);
+    if (!prompt) return;
+    this.patchPrompt(sceneId, shotId, index, {
+      lighting: value,
+      text: this.applyLightingToText(prompt.text, value ?? this.lighting()),
+    });
+    this.commitSceneEdit();
+  }
+
+  /** Reemplaza el bloque de luz que la app agrega al final de un prompt. */
+  private applyLightingToText(text: string, lightingId: string | null): string {
+    const marker = 'LIGHTING AND ART DIRECTION - ';
+    const index = text.lastIndexOf(marker);
+    const base = index >= 0 ? text.slice(0, index).trimEnd() : text.trimEnd();
+    return [base, lightingPrompt(lightingId)].filter(Boolean).join('\n\n');
   }
 
   /** Cambia el modelo de video de una caja: si su ratio/calidad no existen en

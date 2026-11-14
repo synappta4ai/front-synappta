@@ -159,6 +159,8 @@ export class InfoproductComponent implements OnDestroy {
   protected readonly videoModel = signal<AiModel | null>(null);
   /** Esquema de iluminación / dirección de arte para los prompts y videos. */
   protected readonly lighting = signal<string | null>(null);
+  /** Luz propia de cada segmento (null = la global). */
+  protected readonly segmentLighting = signal<Record<number, string | null>>({});
   protected readonly composing = signal(false);
   protected readonly composeSeconds = signal(0);
   private composeTimer: ReturnType<typeof setInterval> | null = null;
@@ -463,6 +465,7 @@ export class InfoproductComponent implements OnDestroy {
       .subscribe((response) => {
         const vp = response.video_prompt;
         this.result.set(vp);
+        this.segmentLighting.set({});
         this.segmentPrompts.set(vp.segments.map((s) => s.prompt));
         this.segmentDurations.set(
           vp.segments.map((s) =>
@@ -485,6 +488,14 @@ export class InfoproductComponent implements OnDestroy {
   protected setSegmentDuration(index: number, value: number | string | null): void {
     const n = Math.max(1, Math.round(Number(value) || 1));
     this.segmentDurations.update((list) => list.map((d, i) => (i === index ? n : d)));
+  }
+
+  protected setSegmentLighting(index: number, value: string | null): void {
+    this.segmentLighting.update((map) => ({ ...map, [index]: value }));
+  }
+
+  private segmentLightingId(index: number): string | null {
+    return this.segmentLighting()[index] ?? this.lighting();
   }
 
   protected ingredientThumb(fileId: string): string {
@@ -514,7 +525,10 @@ export class InfoproductComponent implements OnDestroy {
     const code = this.takeCode();
     const useAudio = buildTarget(model).audio_reference;
     const payloads = indexes.map((index) => {
-      const text = [promptForGeneration(this.segmentPrompts()[index] ?? ''), lightingPrompt(this.lighting())]
+      const text = [
+        promptForGeneration(this.segmentPrompts()[index] ?? ''),
+        lightingPrompt(this.segmentLightingId(index)),
+      ]
         .filter(Boolean)
         .join('\n\n');
       const content: GenerateRequest['content'] = [
@@ -581,7 +595,9 @@ export class InfoproductComponent implements OnDestroy {
       {
         label: this.translate.instant('VIDEOMACHINE.QUEUE_SEGMENT_LABEL', { n: index + 1 }),
         source: 'infoproduct',
-        prompt,
+        prompt: [prompt, lightingPrompt(this.segmentLightingId(index))]
+          .filter(Boolean)
+          .join('\n\n'),
         assets,
         model: model.name,
         modelDisplayName: model.display_name || model.name,

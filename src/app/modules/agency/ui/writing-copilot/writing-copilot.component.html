@@ -85,8 +85,8 @@
           <summary class="cursor-pointer text-left text-sm font-bold text-ink-on-dark">
             {{ 'VIDEOMACHINE.WRITE_PARAMS_TITLE' | translate }}
           </summary>
-          <div class="mt-3 grid gap-4 sm:grid-cols-2">
-            <div class="flex flex-col gap-1 sm:col-span-2">
+          <div class="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div class="flex flex-col gap-1 sm:col-span-2 lg:col-span-3">
               <label for="wcBrain" class="text-xs font-bold text-ink-on-dark">
                 {{ 'VIDEOMACHINE.WRITE_BRAIN' | translate }}
               </label>
@@ -195,10 +195,10 @@
             </div>
 
             @if (timingSummary(); as summary) {
-              <p class="text-xs text-ink-muted-on-dark sm:col-span-2">{{ summary }}</p>
+              <p class="text-xs text-ink-muted-on-dark sm:col-span-2 lg:col-span-3">{{ summary }}</p>
             }
 
-            <div class="flex flex-col gap-1 sm:col-span-2">
+            <div class="flex flex-col gap-1">
               <label for="wcLook" class="text-xs font-bold text-ink-on-dark">
                 {{ 'VIDEOMACHINE.WRITE_LOOK' | translate }}
               </label>
@@ -214,13 +214,13 @@
             </div>
 
             <app-lighting-select
-              class="sm:col-span-2"
+              class="sm:col-span-2 lg:col-span-3"
               inputId="wcLighting"
               [value]="lighting()"
               (valueChange)="lighting.set($event)"
             />
 
-            <div class="flex flex-col gap-1 sm:col-span-2">
+            <div class="flex flex-col gap-1">
               <label for="wcVideoModel" class="text-xs font-bold text-ink-on-dark">
                 {{ 'VIDEOMACHINE.WRITE_VIDEO_MODEL' | translate }}
               </label>
@@ -239,7 +239,7 @@
               <small class="text-ink-muted-on-dark">{{ 'VIDEOMACHINE.WRITE_VIDEO_MODEL_HINT' | translate }}</small>
             </div>
 
-            <div class="flex flex-col gap-1 sm:col-span-2">
+            <div class="flex flex-col gap-1">
               <label for="wcAudio" class="text-xs font-bold text-ink-on-dark">
                 {{ 'VIDEOMACHINE.WRITE_AUDIO_MODE' | translate }}
               </label>
@@ -454,13 +454,12 @@
               tooltipStyleClass="app-tooltip"
             />
             <p-button
-              [label]="'VIDEOMACHINE.WRITE_TO_FINAL' | translate"
-              icon="md md-check"
+              [label]="'VIDEOMACHINE.WRITE_ART_TO' | translate"
+              icon="md md-light_mode"
               styleClass="cta-spend"
-              [loading]="sending()"
               [disabled]="!canTranslate()"
-              (onClick)="toFinalPrompt()"
-              [pTooltip]="'VIDEOMACHINE.WRITE_HINT_FINAL' | translate"
+              (onClick)="goToArtDirection()"
+              [pTooltip]="'VIDEOMACHINE.WRITE_ART_HINT' | translate"
               tooltipPosition="top"
               tooltipEvent="both"
               tooltipStyleClass="app-tooltip"
@@ -500,6 +499,93 @@
   }
 
   @if (step() === 3) {
+    <p-card styleClass="phase-card">
+      <ng-template #header>
+        <div class="flex flex-wrap items-center gap-3 border-b border-surface-border px-6 py-4">
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
+            <i class="md md-light_mode text-lg text-accent"></i>
+          </div>
+          <div>
+            <h2 class="text-lg font-bold text-ink-on-dark">
+              {{ 'VIDEOMACHINE.WRITE_ART_TITLE' | translate }}
+            </h2>
+            <p class="text-sm text-ink-muted-on-dark">
+              {{ 'VIDEOMACHINE.WRITE_ART_SUBTITLE' | translate }}
+            </p>
+          </div>
+        </div>
+      </ng-template>
+
+      <div class="flex flex-col gap-4">
+        @if (shots().length === 0) {
+          <p class="text-sm text-ink-muted-on-dark">{{ 'VIDEOMACHINE.WRITE_ART_EMPTY' | translate }}</p>
+        } @else {
+          <p class="text-xs text-ink-muted-on-dark">{{ 'VIDEOMACHINE.WRITE_ART_INTRO' | translate }}</p>
+          @for (shot of shots(); track shot.key) {
+            <div class="flex flex-col gap-2 rounded-xl border border-surface-border bg-surface-2 p-3 sm:flex-row sm:items-center">
+              <div class="flex min-w-0 flex-1 flex-col gap-1">
+                <span class="text-xs font-bold text-ink-on-dark">
+                  {{ 'VIDEOMACHINE.WRITE_ART_SHOT' | translate: { n: shot.index } }}
+                </span>
+                <span class="text-xs text-ink-muted-on-dark">{{ shot.excerpt }}</span>
+              </div>
+              <app-lighting-select
+                class="block w-full sm:w-72"
+                [compact]="true"
+                [inputId]="'wcShotLight-' + shot.key"
+                [value]="shotLighting()[shot.key] ?? lighting()"
+                (valueChange)="setShotLighting(shot.key, $event)"
+              />
+            </div>
+          }
+        }
+
+        <div class="flex flex-wrap items-center gap-3 border-t border-surface-border pt-5">
+          <p-button
+            [label]="'VIDEOMACHINE.WRITE_TO_FINAL' | translate"
+            icon="md md-check"
+            styleClass="cta-spend"
+            [loading]="sending()"
+            [disabled]="!canTranslate()"
+            (onClick)="toFinalPrompt()"
+            [pTooltip]="'VIDEOMACHINE.WRITE_HINT_FINAL' | translate"
+            tooltipPosition="top"
+            tooltipEvent="both"
+            tooltipStyleClass="app-tooltip"
+          />
+          <p-button
+            [label]="'VIDEOMACHINE.WRITE_BACK_TO_PROMPTS' | translate"
+            severity="secondary"
+            [text]="true"
+            icon="md md-arrow_back"
+            (onClick)="goToStep(2)"
+          />
+          <p-button
+            [label]="'VIDEOMACHINE.RESTART' | translate"
+            severity="secondary"
+            [text]="true"
+            icon="md md-refresh"
+            (onClick)="restart()"
+          />
+        </div>
+        @if (sending()) {
+          <div>
+            <p-progressbar
+              [value]="progress()"
+              [showValue]="false"
+              styleClass="wc-progress"
+              [attr.aria-label]="'VIDEOMACHINE.WRITE_SENDING' | translate"
+            />
+            <p class="mt-1 text-xs text-ink-muted-on-dark" aria-live="polite">
+              {{ 'VIDEOMACHINE.WRITE_SENDING_HINT' | translate: { seconds: seconds() } }}
+            </p>
+          </div>
+        }
+      </div>
+    </p-card>
+  }
+
+  @if (step() === 4) {
     <p-card styleClass="phase-card">
       <ng-template #header>
         <div class="flex flex-wrap items-center gap-3 border-b border-surface-border px-6 py-4">
@@ -558,6 +644,13 @@
               tooltipPosition="top"
               tooltipEvent="both"
               tooltipStyleClass="app-tooltip"
+            />
+            <p-button
+              [label]="'VIDEOMACHINE.WRITE_BACK_TO_ART' | translate"
+              severity="secondary"
+              [text]="true"
+              icon="md md-arrow_back"
+              (onClick)="goToStep(3)"
             />
             <p-button
               [label]="'VIDEOMACHINE.WRITE_BACK_TO_PROMPTS' | translate"

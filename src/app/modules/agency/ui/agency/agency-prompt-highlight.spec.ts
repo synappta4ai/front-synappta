@@ -63,6 +63,33 @@ describe('highlightPrompt', () => {
     ]);
   });
 
+  it('reconoce tags con extensión de archivo', () => {
+    const withFiles = new Map<string, PhotoKind | null>([
+      ['@andres.png', 'character'],
+      ['@camila.png', 'character'],
+      ['@cuarto.png', 'location'],
+      ['@bar2.png', 'product'],
+    ]);
+
+    expect(
+      highlightPrompt(
+        'Identidad de @Andres.png y @camila.png en @cuarto.png con @bar2.png.',
+        [],
+        withFiles,
+      ),
+    ).toEqual([
+      { text: 'Identidad de ', tone: 'plain' },
+      { text: '@Andres.png', tone: 'character' },
+      { text: ' y ', tone: 'plain' },
+      { text: '@camila.png', tone: 'character' },
+      { text: ' en ', tone: 'plain' },
+      { text: '@cuarto.png', tone: 'location' },
+      { text: ' con ', tone: 'plain' },
+      { text: '@bar2.png', tone: 'product' },
+      { text: '.', tone: 'plain' },
+    ]);
+  });
+
   it('no confunde el @ de un email con un tag', () => {
     expect(highlightPrompt('Escribir a ventas@ivan.com', [], kinds)).toEqual([
       { text: 'Escribir a ventas@ivan.com', tone: 'plain' },

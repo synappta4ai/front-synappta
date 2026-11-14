@@ -65,12 +65,12 @@ describe('writing copilot assets', () => {
     expect(refs).toContain('@track.mp3 = audio reference "track.mp3"');
   });
 
-  it('mapea solo las imagenes para el resaltado', () => {
+  it('mapea cada insumo a su tono de resaltado', () => {
     const kinds = promptKinds(tagAssets(assets));
     expect(kinds.get('@modelo.jpg')).toBe('character');
     expect(kinds.get('@cadena.jpg')).toBe('product');
     expect(kinds.get('@bar.jpg')).toBe('location');
-    expect(kinds.has('@calle.mp4')).toBe(false);
-    expect(kinds.has('@track.mp3')).toBe(false);
+    expect(kinds.get('@calle.mp4')).toBe('video');
+    expect(kinds.get('@track.mp3')).toBe('audio');
   });
 });

@@ -1,7 +1,4 @@
-<div class="flex flex-col gap-1">
-  <label [for]="inputId()" class="text-xs font-bold text-ink-on-dark">
-    {{ 'LIGHTING.LABEL' | translate }}
-  </label>
+@if (compact()) {
   <p-select
     [inputId]="inputId()"
     [options]="options()"
@@ -12,7 +9,100 @@
     [ngModelOptions]="{ standalone: true }"
     [placeholder]="'LIGHTING.SELECT' | translate"
     styleClass="w-full"
+    [panelStyle]="{ minWidth: '340px' }"
     appendTo="body"
-  />
-  <small class="text-ink-muted-on-dark">{{ 'LIGHTING.HINT' | translate }}</small>
-</div>
+  >
+    <ng-template pTemplate="selectedItem" let-option>
+      <span class="lighting-option">
+        @if (option.thumb) {
+          <img
+            class="lighting-thumb"
+            [src]="option.thumb"
+            alt=""
+            width="64"
+            height="36"
+            loading="lazy"
+            decoding="async"
+          />
+        }
+        <span class="truncate">{{ option.label }}</span>
+      </span>
+    </ng-template>
+    <ng-template #item let-option>
+      <span class="lighting-option">
+        @if (option.thumb) {
+          <img
+            class="lighting-thumb"
+            [src]="option.thumb"
+            alt=""
+            width="64"
+            height="36"
+            loading="lazy"
+            decoding="async"
+          />
+        } @else {
+          <span class="lighting-thumb lighting-thumb--empty" aria-hidden="true"></span>
+        }
+        <span class="lighting-option-text">
+          <span class="lighting-option-name">{{ option.label }}</span>
+          <span class="lighting-option-desc">{{ option.description }}</span>
+        </span>
+      </span>
+    </ng-template>
+  </p-select>
+} @else {
+  <div class="flex flex-col gap-2">
+    <label [for]="inputId()" class="text-xs font-bold text-ink-on-dark">
+      {{ 'LIGHTING.LABEL' | translate }}
+    </label>
+
+    <div class="lighting-cards" role="group" [attr.aria-label]="'LIGHTING.LABEL' | translate">
+      <button
+        type="button"
+        class="lighting-card lighting-card--auto"
+        [class.selected]="!value()"
+        [attr.aria-pressed]="!value()"
+        (click)="onChange(null)"
+      >
+        <span class="lighting-card-auto-icon" aria-hidden="true">
+          <i class="md md-auto_fix_high"></i>
+        </span>
+        <span class="lighting-card-body">
+          <span class="lighting-card-name">{{ 'LIGHTING.AUTO' | translate }}</span>
+          <span class="lighting-card-desc">{{ 'LIGHTING.AUTO_HINT' | translate }}</span>
+        </span>
+      </button>
+
+      @for (card of cards(); track card.id) {
+        <button
+          type="button"
+          class="lighting-card"
+          [class.selected]="value() === card.id"
+          [attr.aria-pressed]="value() === card.id"
+          [attr.aria-label]="card.name + ': ' + card.description"
+          [title]="card.description"
+          (click)="onChange(card.id)"
+        >
+          <img
+            class="lighting-card-img"
+            [src]="card.thumb"
+            [alt]="card.name"
+            width="640"
+            height="360"
+            loading="lazy"
+            decoding="async"
+          />
+          <span class="lighting-card-body">
+            <span class="lighting-card-name">{{ card.name }}</span>
+            <span class="lighting-card-desc">{{ card.description }}</span>
+          </span>
+          @if (value() === card.id) {
+            <span class="lighting-card-check" aria-hidden="true"><i class="md md-check"></i></span>
+          }
+        </button>
+      }
+    </div>
+
+    <small class="text-ink-muted-on-dark">{{ 'LIGHTING.HINT' | translate }}</small>
+  </div>
+}
