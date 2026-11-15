@@ -71,6 +71,12 @@ export class NavBarComponent {
         routerLink: '/tools/storyboard',
       },
       {
+        label: t('TOOLS.IMAGE_LAB'),
+        description: t('TOOLS.IMAGE_LAB_DESC'),
+        icon: 'md md-image',
+        routerLink: '/tools/image-lab',
+      },
+      {
         label: t('TOOLS.EDITOR'),
         description: t('TOOLS.EDITOR_DESC'),
         icon: 'md md-content_cut',
@@ -96,7 +102,11 @@ export class NavBarComponent {
     const adminItems: MenuItem[] = [
       { label: t('ADMIN.CONSOLE.MENU_MODELS'), icon: 'md md-memory', routerLink: '/admin/models' },
       { label: t('ADMIN.CONSOLE.MENU_MASTER'), icon: 'md md-star', routerLink: '/admin/maestro' },
-      { label: t('ADMIN.CONSOLE.MENU_VIDEOS'), icon: 'md md-videocam', routerLink: '/admin/videos' },
+      {
+        label: t('ADMIN.CONSOLE.MENU_VIDEOS'),
+        icon: 'md md-videocam',
+        routerLink: '/admin/videos',
+      },
       { label: t('ADMIN.CONSOLE.MENU_IMAGES'), icon: 'md md-image', routerLink: '/admin/imagenes' },
       { label: t('ADMIN.CONSOLE.MENU_LOGS'), icon: 'md md-list', routerLink: '/admin/logs' },
       {
@@ -106,9 +116,17 @@ export class NavBarComponent {
       },
       { label: t('ADMIN.CONSOLE.MENU_USERS'), icon: 'md md-people', routerLink: '/admin/users' },
       { label: t('ADMIN.CONSOLE.MENU_BUCKET'), icon: 'md md-storage', routerLink: '/admin/bucket' },
-      { label: t('ADMIN.CONSOLE.MENU_NOTIFICATIONS'), icon: 'md md-notifications', routerLink: '/admin/notifications' },
+      {
+        label: t('ADMIN.CONSOLE.MENU_NOTIFICATIONS'),
+        icon: 'md md-notifications',
+        routerLink: '/admin/notifications',
+      },
       { label: t('ADMIN.CONSOLE.MENU_TRASH'), icon: 'md md-delete', routerLink: '/admin/papelera' },
-      { label: t('ADMIN.CONSOLE.MENU_TENANTS'), icon: 'md md-business', routerLink: '/admin/tenants' },
+      {
+        label: t('ADMIN.CONSOLE.MENU_TENANTS'),
+        icon: 'md md-business',
+        routerLink: '/admin/tenants',
+      },
     ];
 
     // Sub-items del menú de herramientas (popover HERRAMIENTAS; se amplía sin tocar el back).

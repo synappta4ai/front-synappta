@@ -1,0 +1,246 @@
+<div class="studio-shell h-full" animate.enter="anim-page">
+  <!-- ══════════ Columna: parámetros ══════════ -->
+  <aside class="studio-left">
+    <p class="project-caption" [title]="'TOOLS.IMAGE_LAB_DESC' | translate">
+      <i class="md md-image"></i> {{ 'TOOLS.IMAGE_LAB' | translate }}
+    </p>
+
+    @if (error()) {
+      <p-message severity="error" [text]="error()!" />
+    }
+
+    <div class="panel">
+      <div class="panel-head">
+        <span><i class="md md-image"></i> {{ 'TOOLS.MODEL_LABEL' | translate }}</span>
+      </div>
+      <app-model-select
+        inputId="image-lab-model"
+        modality="image"
+        [filter]="true"
+        [prefer]="preferredModels"
+        [ngModel]="selectedModel()"
+        (ngModelChange)="selectedModel.set($event)"
+        (selectionChange)="activeModel.set($event)"
+      />
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <span><i class="md md-grid_view"></i> {{ 'TOOLS.FORMAT_LABEL' | translate }}</span>
+      </div>
+      <label for="image-lab-ratio" class="muted small mb-1 block">
+        {{ 'TOOLS.RATIO_LABEL' | translate }}
+      </label>
+      <p-select
+        inputId="image-lab-ratio"
+        [ngModel]="ratio()"
+        (ngModelChange)="onRatioChange($event)"
+        [options]="visibleRatioOptions()"
+        optionLabel="value"
+        optionValue="value"
+        [showClear]="false"
+        class="w-full"
+        appendTo="body"
+      >
+        <ng-template pTemplate="selectedItem" let-opt>
+          <span class="ratio-inline">
+            <span class="ratio-screen" [style.aspect-ratio]="opt.w + '/' + opt.h"></span>
+            {{ opt.value }}
+          </span>
+        </ng-template>
+        <ng-template #item let-opt>
+          <span class="ratio-inline">
+            <span class="ratio-screen" [style.aspect-ratio]="opt.w + '/' + opt.h"></span>
+            {{ opt.value }}
+          </span>
+        </ng-template>
+      </p-select>
+      <label for="image-lab-resolution" class="muted small mt-2 mb-1 block">
+        {{ 'TOOLS.RESOLUTION_LABEL' | translate }}
+      </label>
+      <p-select
+        inputId="image-lab-resolution"
+        [ngModel]="resolution()"
+        (ngModelChange)="resolution.set($event)"
+        [options]="resolutionOptions()"
+        [showClear]="false"
+        class="w-full"
+        appendTo="body"
+      >
+        <ng-template pTemplate="selectedItem" let-opt>
+          <span class="ratio-inline"
+            ><i class="md md-desktop_windows foot-icon"></i> {{ opt }}</span
+          >
+        </ng-template>
+        <ng-template #item let-opt>
+          <span class="ratio-inline"
+            ><i class="md md-desktop_windows foot-icon"></i> {{ opt }}</span
+          >
+        </ng-template>
+      </p-select>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <label for="image-lab-prompt">{{ 'TOOLS.IMAGE_LAB_PROMPT_LABEL' | translate }}</label>
+      </div>
+      <textarea
+        id="image-lab-prompt"
+        class="pose-textarea image-lab-prompt"
+        rows="6"
+        [ngModel]="prompt()"
+        (ngModelChange)="prompt.set($event)"
+        [placeholder]="'TOOLS.IMAGE_LAB_PROMPT_PLACEHOLDER' | translate"
+      ></textarea>
+      <p class="muted small mt-2">{{ 'TOOLS.IMAGE_LAB_PROMPT_HINT' | translate }}</p>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <span><i class="md md-photo_library"></i> {{ 'TOOLS.REFS_LABEL' | translate }}</span>
+        <p-button
+          [label]="'TOOLS.REFS_ADD' | translate"
+          icon="md md-upload"
+          severity="secondary"
+          size="small"
+          [text]="true"
+          [loading]="uploadingRefs()"
+          (onClick)="refsInput.click()"
+        />
+      </div>
+      <input
+        #refsInput
+        type="file"
+        accept="image/png,image/jpeg"
+        multiple
+        class="hidden"
+        [attr.aria-label]="'TOOLS.REFS_ADD' | translate"
+        (change)="onRefsPicked($event)"
+      />
+      <p class="muted small">{{ 'TOOLS.IMAGE_LAB_REFS_HINT' | translate }}</p>
+      @if (uploadingRefs()) {
+        <p class="muted small mt-2">{{ 'TOOLS.IMAGE_LAB_UPLOADING' | translate }}</p>
+      }
+      @if (refs().length === 0) {
+        <p class="muted small mt-2">{{ 'TOOLS.IMAGE_LAB_REFS_EMPTY' | translate }}</p>
+      } @else {
+        <div class="pose-refs">
+          @for (ref of refs(); track ref.id) {
+            <div class="pose-ref">
+              <img
+                [src]="ref.thumbnail_url ?? ref.url | serverUrl"
+                [alt]="ref.filename"
+                loading="lazy"
+                decoding="async"
+              />
+              <button
+                type="button"
+                class="pose-ref-clear"
+                (click)="removeRef(ref.id)"
+                [attr.aria-label]="ref.filename"
+              >
+                <ui-icon name="md-close" />
+              </button>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="panel">
+      <app-lighting-select
+        [pill]="true"
+        inputId="imageLabLighting"
+        [value]="lighting()"
+        (valueChange)="lighting.set($event)"
+      />
+    </div>
+
+    <div class="pose-generate-bar">
+      <p-button
+        [label]="
+          generating() ? ('TOOLS.GENERATING' | translate) : ('TOOLS.IMAGE_LAB_GENERATE' | translate)
+        "
+        icon="md md-auto_fix_high"
+        [loading]="generating()"
+        [disabled]="!canGenerate()"
+        styleClass="w-full"
+        (onClick)="generate()"
+      />
+      <p class="muted small text-center">{{ metaSummary() }}</p>
+    </div>
+  </aside>
+
+  <!-- ══════════ Visor: resultado ══════════ -->
+  <div class="studio-center">
+    <div class="panel pose-viewer">
+      <div class="panel-head">
+        <span>
+          <i class="md md-visibility"></i> {{ 'TOOLS.IMAGE_LAB_RESULT_TITLE' | translate }}
+        </span>
+        @if (result().length > 0) {
+          <p-tag [value]="metaSummary()" severity="info" styleClass="text-xs" />
+        }
+        @if (savedName()) {
+          <p-tag
+            [value]="'TOOLS.IMAGE_LAB_SAVED' | translate"
+            severity="success"
+            styleClass="text-xs"
+          />
+        }
+      </div>
+
+      @if (generating()) {
+        <div class="pose-loading" role="status" [attr.aria-label]="'TOOLS.GENERATING' | translate">
+          <video
+            #loadingMediaRef
+            class="pose-loading-media"
+            [src]="loadingVideo"
+            [poster]="loadingPoster"
+            autoplay
+            loop
+            [muted]="true"
+            playsinline
+            preload="auto"
+            aria-hidden="true"
+          ></video>
+          <div class="pose-loading-progress">
+            <span class="pose-loading-pct">{{ progress() ?? 0 }}%</span>
+            <span class="muted small">{{ 'TOOLS.GENERATING' | translate }}</span>
+          </div>
+        </div>
+      } @else if (result().length === 0) {
+        <div class="pose-empty">
+          <i class="md md-image"></i>
+          <span>{{ 'TOOLS.IMAGE_LAB_DESC' | translate }}</span>
+        </div>
+      } @else {
+        <div class="pose-canvas">
+          @for (output of result(); track $index) {
+            <img
+              [src]="output.url | serverUrl"
+              [alt]="'TOOLS.IMAGE_LAB_RESULT_ALT' | translate"
+              decoding="async"
+            />
+          }
+        </div>
+        <div class="viewer-actions">
+          <p-button
+            [label]="saving() ? ('TOOLS.SAVING' | translate) : ('TOOLS.IMAGE_LAB_SAVE' | translate)"
+            icon="md md-inventory_2"
+            severity="secondary"
+            [loading]="saving()"
+            [disabled]="saving()"
+            (onClick)="saveToResources()"
+          />
+          <p-button
+            [label]="'TOOLS.IMAGE_LAB_DOWNLOAD' | translate"
+            icon="md md-download"
+            severity="secondary"
+            (onClick)="download()"
+          />
+        </div>
+      }
+    </div>
+  </div>
+</div>

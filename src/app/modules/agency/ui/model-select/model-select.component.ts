@@ -93,6 +93,8 @@ export class ModelSelectComponent implements ControlValueAccessor {
   readonly provider = input<CredentialProvider | null>(null);
   /** Sólo estos nombres (para herramientas atadas a un modelo concreto). */
   readonly names = input<readonly string[] | null>(null);
+  /** Auto-select: gana el primer nombre de esta lista que exista en el catálogo. */
+  readonly prefer = input<readonly string[] | null>(null);
   /** Sólo modelos que acepten imágenes de referencia (max_references > 0 o ruta multi-referencia). */
   readonly requiresReferences = input(false);
   /** Texto ya traducido de la opción vacía ('' = automático); sin valor no hay opción vacía. */
@@ -152,13 +154,10 @@ export class ModelSelectComponent implements ControlValueAccessor {
         (!names || names.includes(model.name)) &&
         (!ratio || (model.defaults?.ratios ?? []).includes(ratio)) &&
         (!provider || model.credential_provider === provider) &&
-        (!requiresReferences ||
-          (model.max_references ?? 0) > 0 ||
-          !!model.reference_endpoint),
+        (!requiresReferences || (model.max_references ?? 0) > 0 || !!model.reference_endpoint),
     );
     const autoLabel = this.autoLabel();
-    const auto: AiModel[] =
-      autoLabel !== null ? [this.autoOption(autoLabel)] : [];
+    const auto: AiModel[] = autoLabel !== null ? [this.autoOption(autoLabel)] : [];
     // Los extras son de la modalidad del selector: un LLM de la credencial
     // no puede colarse en un desplegable de imagen (ni al revés).
     const allowed = new Set<Modality>(this.modalities());
@@ -252,10 +251,10 @@ export class ModelSelectComponent implements ControlValueAccessor {
       if (!current && !this.autoSelect()) {
         return;
       }
-      const preferred =
-        this.modalities().includes('image') && !this.modalities().includes('video')
-          ? options.find((model) => model.name === DEFAULT_IMAGE_MODEL)?.name
-          : undefined;
+      const isImageOnly =
+        this.modalities().includes('image') && !this.modalities().includes('video');
+      const preferNames = this.prefer() ?? (isImageOnly ? [DEFAULT_IMAGE_MODEL] : []);
+      const preferred = preferNames.find((name) => options.some((model) => model.name === name));
       this.control.setValue(preferred ?? options[0]!.name);
     });
   }

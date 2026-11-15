@@ -16,6 +16,7 @@ import { StudioService } from '@modules/studio/services';
 import { environment } from '@env/environment';
 
 import {
+  IMAGE_LAB_PIECE_CODE,
   LOCATION_PIECE_CODE,
   LOCATION_SYSTEM_ASSET,
   POSE_SHEET_PIECE_CODE,
@@ -174,6 +175,46 @@ export class ToolsService {
     return this.agencyService.pollTaskUntilDone('image', taskId);
   }
 
+  /** Anchor proyecto/pieza para los logs del Estudio de imagen (idempotente). */
+  ensureImageLabAnchor(projectName: string): Observable<PoseSheetAnchor> {
+    return this.studioService.ensureTakeSlot(projectName, IMAGE_LAB_PIECE_CODE);
+  }
+
+  generateImageLab(request: {
+    model: string;
+    prompt: string;
+    ratio: string;
+    resolution: string;
+    referenceIds: { id: string; name: string }[];
+    eventId: string;
+    pieceId: string;
+    pieceCode: string;
+  }): Observable<GenerateResponse> {
+    const content: ContentItem[] = [
+      ...request.referenceIds.map((ref): ContentItem => ({
+        type: 'image',
+        id: ref.id,
+        name: ref.name,
+      })),
+      { type: 'text', text: request.prompt },
+    ];
+    const payload: GenerateRequest = {
+      model: request.model,
+      content,
+      ratio: request.ratio,
+      resolution: request.resolution,
+      event_id: request.eventId,
+      piece_id: request.pieceId,
+      piece_code: request.pieceCode,
+      generation_number: ++this.sequence,
+    };
+    return this.agencyService.generate('image', payload);
+  }
+
+  trackImageLab(taskId: string): Observable<StatusResponse> {
+    return this.agencyService.pollTaskUntilDone('image', taskId);
+  }
+
   /** System prompt por defecto de la locación (editable por el usuario). */
   loadLocationPrompt(): Observable<string> {
     return this.repository.getSystemPrompt(LOCATION_SYSTEM_ASSET);
@@ -314,16 +355,35 @@ export class ToolsService {
     name: string;
     eventId: string;
   }): Observable<Ingredient> {
-    return from(this.downloadOutput(request.outputUrl, request.name)).pipe(
-      mergeMap((file) => this.libraryService.uploadFile(file, 'images', request.eventId)),
+    return this.saveOutputAsProp(request.outputUrl, request.name, request.eventId);
+  }
+
+  /** Guarda una imagen del Estudio de imagen en Recursos como prop. */
+  saveImageLabAsProp(request: {
+    outputUrl: string;
+    name: string;
+    eventId: string;
+  }): Observable<Ingredient> {
+    return this.saveOutputAsProp(request.outputUrl, request.name, request.eventId);
+  }
+
+  private saveOutputAsProp(
+    outputUrl: string,
+    name: string,
+    eventId: string,
+  ): Observable<Ingredient> {
+    return from(this.downloadOutput(outputUrl, name)).pipe(
+      mergeMap((file) => this.libraryService.uploadFile(file, 'images', eventId)),
       mergeMap((asset) =>
-        this.libraryService.createIngredient({ type: 'prop', name: request.name }).pipe(
-          mergeMap((ingredient) =>
-            this.libraryService
-              .addIngredientFile(ingredient.id, { file_id: asset.id })
-              .pipe(map(() => ingredient)),
+        this.libraryService
+          .createIngredient({ type: 'prop', name })
+          .pipe(
+            mergeMap((ingredient) =>
+              this.libraryService
+                .addIngredientFile(ingredient.id, { file_id: asset.id })
+                .pipe(map(() => ingredient)),
+            ),
           ),
-        ),
       ),
     );
   }
@@ -334,14 +394,64 @@ export class ToolsService {
 
   private async fetchAsFile(url: string, fileName: string): Promise<File> {
     const absolute = /^https?:\/\//i.test(url) ? url : `${this.apiOrigin}${url}`;
-    const res = await fetch(absolute);
-    if (!res.ok) {
-      throw new Error(`download failed: ${res.status}`);
+    try {
+      const res = await fetch(absolute);
+      if (res.ok) {
+        return await this.blobToFile(await res.blob(), fileName);
+      }
+    } catch {
+      // El 302 del back remoto hacia el bucket firmado rompe el fetch/XHR en
+      // Chromium (redirect + CORS). La imagen con crossOrigin sí sigue la
+      // cadena, así que bajamos los bytes por canvas como último recurso.
+      const blob = await this.fetchViaImageCanvas(absolute);
+      return this.blobToFile(blob, fileName);
     }
-    const blob = await res.blob();
+    const blob = await this.fetchViaImageCanvas(absolute);
+    return this.blobToFile(blob, fileName);
+  }
+
+  private blobToFile(blob: Blob, fileName: string): File {
     const ext = blob.type.includes('png') ? 'png' : 'jpg';
     return new File([blob], `${fileName}.${ext}`, {
       type: blob.type || 'image/png',
+    });
+  }
+
+  /** Canvas export de una imagen cross-origin: corre solo en el browser. */
+  private fetchViaImageCanvas(url: string): Promise<Blob> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            reject(new Error('canvas context unavailable'));
+            return;
+          }
+          ctx.drawImage(img, 0, 0);
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                resolve(blob);
+              } else {
+                reject(new Error('canvas export failed'));
+              }
+            },
+            'image/jpeg',
+            0.95,
+          );
+        } catch (err: unknown) {
+          reject(err instanceof Error ? err : new Error(String(err)));
+        }
+      };
+      img.onerror = () => reject(new Error('image download failed'));
+      // El cache-buster evita reutilizar la entrada de caché guardada sin
+      // cabeceras CORS (la misma URL ya corrió como <img> sin crossOrigin).
+      img.src = url.includes('?') ? `${url}&cb=${Date.now()}` : `${url}?cb=${Date.now()}`;
     });
   }
 }

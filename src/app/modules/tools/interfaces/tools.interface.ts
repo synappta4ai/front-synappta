@@ -206,3 +206,16 @@ export const STORYBOARD_SYSTEM_ASSET = './assets/tools/storyboard.system.md';
 /** Animación de carga compartida por las herramientas (servida en /assets). */
 export const TOOLS_LOADING_VIDEO = './assets/tools/animation.mp4';
 export const TOOLS_LOADING_POSTER = './assets/tools/carga-poster.jpeg';
+
+/** Anchor de proyecto/pieza para los logs del Estudio de imagen (idempotente por código). */
+export const IMAGE_LAB_PIECE_CODE = 'TOOLS-IMAGE-LAB';
+
+/**
+ * Preferencia de modelo del Estudio de imagen: gana el primero de la lista
+ * que exista en el catálogo (Nano Banana de OpenRouter y sus sucesores).
+ */
+export const IMAGE_LAB_PREFERRED_MODELS: readonly string[] = [
+  'openrouter/google/gemini-3.1-flash-image-preview',
+  'gemini-3-pro-image-preview',
+  'gemini-nano-banana',
+];
