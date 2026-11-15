@@ -1,13 +1,10 @@
-# Plantillas de iluminación (Higgsfield, Video Relight)
+# Plantillas de iluminación para video IA
 
-Fuente: capturas del blog de @rourkeblog. 29 listos, 2 pendientes (Clamshell, Bloom/halation).
+Placeholders: `{N}` = número de imagen, `{STYLE}` = nombre del esquema, `{LIGHTING_BLOCK}` = bloque elegido.
 
-## Uso
-
-Plantilla base fija; la app reemplaza `{N}`, `{STYLE}` y `{LIGHTING_BLOCK}` con el bloque del esquema elegido. En app: reemplaza `his/him` y `@video1/@imagenN` según tus variables.
+# SET 1 - Formato largo (31)
 
 ## Plantilla base
-
 ```
 CINEMATIC CAMERA SETTINGS: exactly the camera, lens, focal length, framing and 9:16 vertical format of @video1; 25 fps, 180-degree shutter, natural motion blur; the grain, texture, lens rendering and color grade of @imagen{N}.
 
@@ -15,36 +12,35 @@ Create a 9:16 vertical cinematic video in one continuous shot, the same length a
 
 REFERENCES:
 @video1 = the master for camera, framing, perspective, the room layout, the subject, face, outfit, performance, timing and voice - all preserved exactly.
-@imagen{N} = the master for the LOOK ({STYLE}): mood, light, light effects, tone, color palette, background brightness, shadows, blacks, highlights, halation and patina. NEVER a start frame, NEVER the first frame, NEVER a layout.
+@imagen{N} = the master for the LOOK ({STYLE}): mood, light, light effects, tone, color palette, background brightness, shadows, blacks, highlights, halation and patina. NEVER a start frame, NEVER the first frame, NEVER a layout: its framing, aspect ratio, composition, camera angle, location, people, faces, hair, clothes and objects are NEVER used.
 
-MASTER LOCK - HIGHEST PRIORITY: @video1 is the master. EVERYTHING is identical to @video1, frame by frame, for the entire duration: camera, angle, height, lens, perspective, framing, distance, subject size, every camera movement, room layout, every object, and the subject's position, movement, gesture, gaze, blink, expression, lip movement, acting and timing. His FACE stays exactly the face in @video1. Preserve the original VOICE and speech from @video1 exactly. Never add, remove, change, anticipate or delay any action or camera move. One continuous shot, no cuts.
+MASTER LOCK - HIGHEST PRIORITY: @video1 is the master. EVERYTHING is identical to @video1, frame by frame, for the entire duration: the camera, its angle, height, lens, perspective, framing, distance and subject size in frame, every camera movement and handheld shake, the room layout and every object in it, and the subject - position, every body movement, hand gesture, head turn, gaze, blink, expression, lip movement, acting and timing, all at the same moment and speed as @video1. The subject's FACE stays exactly the face in @video1 - same identity, same features, same expressions - only re-lit. Outfit, cap and hair stay exactly as in @video1. Preserve the original VOICE and speech from @video1 exactly - same words, same timing, same tone, lips matching every syllable. Never add, remove, change, anticipate or delay any action or camera move. One continuous shot, no cuts.
 
-LOOK LOCK - HIGHEST PRIORITY: every frame must look like it was shot on the set of @imagen{N}, with its lights, lens and color grade. The original bright, neutral look of @video1 must disappear completely: the room is re-lit and re-colored to match the background of @imagen{N}. Real light that wraps his face and body and reacts to every gesture - never a flat filter, never a color overlay. His eyes stay natural, never glowing.
+LOOK LOCK - HIGHEST PRIORITY: every frame must look like it was shot on the set of @imagen{N}, with its lights, its lens and its color grade. Same mood, same light sources and directions, same light effects, same tone and color palette, same exposure, same brightness of the background, same contrast, same saturation, same shadows, same blacks, same highlights, same halation, haze, grain and patina, same skin color. The original bright, neutral look of @video1 must disappear completely: the walls and every object of @video1 are re-lit and re-colored to match the background of @imagen{N} - if the background of @imagen{N} is dark, the room of @video1 becomes just as dark. Real light that wraps the face and body and reacts to every gesture of @video1 - never a flat filter, never a color overlay. The eyes stay natural, never glowing.
 
 {LIGHTING_BLOCK}
 
-THE ONLY CHANGES from @video1 are the look of @imagen{N} and this: NO microphone - the clip mic on his chest in @video1 is removed, no mic, no cable, no clip.
+THE ONLY CHANGES from @video1 are the look of @imagen{N} and this: NO microphone - the clip mic on the subject's chest in @video1 is removed, no mic, no cable, no clip.
 
 Not a 3D render, no digital sharpness, no AI smoothing.
 
 AUDIO: keep the original voice and sounds from @video1 untouched. No added sound effects. NO music, NO score.
 ```
 
-## Esquemas
+### 01. Clamshell [BORRADOR, no es del blog]
+```
+LIGHTING STYLE - CLAMSHELL, match it exactly:
+- EXPOSURE AND MOOD: Bright, soft, flattering beauty-dish look, clean and intimate.
+- THE ROOM: The room stays soft and slightly darker than the face, gently falling off behind the subject, no hard background light.
+- LIGHT ON THE SUBJECT: Two large soft sources in a clamshell: a soft key from above the lens and a soft fill from below, wrapping the face evenly, small catchlights, minimal shadows under the chin and eyes.
+- COLOR PALETTE: Natural clean skin tones, soft neutral whites, muted background colors.
+- SHADOWS AND BLACKS: Gently lifted soft blacks, no crushed shadows.
+- HIGHLIGHTS: Soft creamy skin highlights, never clipped.
+- CONTRAST AND SATURATION: Low-medium contrast, natural saturation.
+- PATINA: Fine natural grain, clean polished beauty finish.
+```
 
-### 01\. Clamshell
-
-CINEMATIC CAMERA SETTINGS: exactly the camera, lens, focal length, framing and 9:16 vertical format of @video1; 25 fps, 180-degree shutter, natural motion blur; the grain, texture, lens rendering and color grade of @Imagen 1.  
-Create a 9:16 vertical cinematic video in one continuous shot, the same length as @video1.  
-REFERENCES:  
-@video1 \= the master for camera, framing, perspective, the room layout, the man, his face, outfit, performance, timing and voice \- all preserved exactly.  
-@Imagen 1 \= the master for the LOOK (CLAMSHELL): mood, light, light effects, tone, color palette, background brightness, shadows, blacks, highlights, halation and patina. NEVER a start frame, NEVER the first frame, NEVER a layout: its framing, aspect ratio, composition, camera angle, location, people, faces, hair, clothes and objects are NEVER used.  
-MASTER LOCK \- HIGHEST PRIORITY: @video1 is the master. EVERYTHING is identical to @video1, frame by frame, for the entire duration: the camera, its angle, height, lens, perspective, framing, distance and subject size in frame, every camera movement and handheld shake, the room layout and every piece of furniture, plant and object in it, and the man \- his position, every body movement, hand gesture, head turn, gaze, blink, expression, lip movement, acting and timing, all at the same moment and speed as @video1. His FACE stays exactly the face in @video1 \- same identity, same features, same expressions \- only re-lit. His outfit, cap and hair stay exactly as in @video1. Preserve his original VOICE and speech from @video1 exactly \- same words, same timing, same tone, lips matching every syllable. Never add, remove, change, anticipate or delay any action or camera move. One continuous shot, no cuts.  
-LOOK LOCK \- HIGHEST PRIORITY: every frame must look like it was shot on the set of @Imagen 1, with its lights, its lens and its color grade. Same mood, same light sources and directions, same light effects, same tone and color palette, same exposure, same brightness of the background, same contrast, same saturation, same shadows, same blacks, same highlights, same halation, haze, grain and patina, same skin color. The original bright, neutral look of @video1 (white-beige walls, light sofa, daylight) must disappear completely: the walls, the sofa, the shelf and every object of @video1 are re-lit and re-colored to match the background of @Imagen 1 \- if the background of @Imagen 1 is dark, the room of @video1 becomes just as dark. Real light that wraps his face and body and reacts to every gesture of @video1 \- never a flat filter, never a color overlay. His eyes stay natural, never glowing.  
-.
-
-### 02\. Three-point
-
+### 02. Three-point
 ```
 LIGHTING STYLE - THREE-POINT, match it exactly:
 - EXPOSURE AND MOOD: Low, warm and intimate evening interior, the face NOT brighter than the room.
@@ -57,8 +53,7 @@ LIGHTING STYLE - THREE-POINT, match it exactly:
 - PATINA: Soft creamy film texture, fine grain, gentle bloom on the warm practicals.
 ```
 
-### 03\. Cross lighting
-
+### 03. Cross lighting
 ```
 LIGHTING STYLE - CROSS LIGHTING, match it exactly:
 - EXPOSURE AND MOOD: Very dark, low-key, claustrophobic nightclub mood, about three stops under the original.
@@ -71,8 +66,7 @@ LIGHTING STYLE - CROSS LIGHTING, match it exactly:
 - PATINA: Heavy grain, murky soft image, smoky darkness.
 ```
 
-### 04\. Kicker
-
+### 04. Kicker
 ```
 LIGHTING STYLE - KICKER, match it exactly:
 - EXPOSURE AND MOOD: Medium-low key, warm and intimate with a cool window behind.
@@ -85,8 +79,7 @@ LIGHTING STYLE - KICKER, match it exactly:
 - PATINA: Rich 35mm film, fine grain, slight halation around the window glow.
 ```
 
-### 05\. Eye light
-
+### 05. Eye light
 ```
 LIGHTING STYLE - EYE LIGHT, match it exactly:
 - EXPOSURE AND MOOD: Dark, hot and claustrophobic.
@@ -99,13 +92,12 @@ LIGHTING STYLE - EYE LIGHT, match it exactly:
 - PATINA: Gritty 1990s 35mm film, coarse grain, a sickly warm cast.
 ```
 
-### 06\. Ring light
-
+### 06. Ring light
 ```
 LIGHTING STYLE - RING LIGHT, match it exactly:
 - EXPOSURE AND MOOD: Low-key night interior, dim overall, the face moderately exposed, a warm intimate dressing-room mood.
 - THE ROOM: The bright walls become DARK: a dim dusty mauve-purple and blue-grey, with soft out-of-focus pink, lavender and baby-blue practical bokeh; shelves fall into shadow; nothing in the room stays bright or beige.
-- LIGHT ON THE SUBJECT: A soft warm frontal light from a ring light at the camera position, flat on the face, warm amber-orange, golden-brown skin; the ring light is never visible in frame. The eyes stay natural, never glowing, never lit up.
+- LIGHT ON THE SUBJECT: A soft warm frontal light from a ring light at the camera position, flat on the face, warm amber-orange, golden-brown skin; the ring light is never visible in frame. The eyes stay natural, never glowing.
 - COLOR PALETTE: Warm amber-orange, dusty mauve, lavender, baby blue, hot-pink accents, brown.
 - SHADOWS AND BLACKS: Lifted dark brown-mauve, never pure black.
 - HIGHLIGHTS: Warm orange-cream, soft roll-off.
@@ -113,8 +105,7 @@ LIGHTING STYLE - RING LIGHT, match it exactly:
 - PATINA: Soft image, slight haze, gentle bloom on the practical lights, fine grain.
 ```
 
-### 07\. Direct flash
-
+### 07. Direct flash
 ```
 LIGHTING STYLE - DIRECT FLASH, match it exactly:
 - EXPOSURE AND MOOD: Night, raw paparazzi snapshot: subject bright, background black.
@@ -127,8 +118,7 @@ LIGHTING STYLE - DIRECT FLASH, match it exactly:
 - PATINA: 35mm point-and-shoot film, heavy grain, slight vignette, a warm-green film tint.
 ```
 
-### 08\. Harsh midday sun
-
+### 08. Harsh midday sun
 ```
 LIGHTING STYLE - HARSH MIDDAY SUN, match it exactly:
 - EXPOSURE AND MOOD: Bright, hard summer daylight, restrained grade.
@@ -141,8 +131,7 @@ LIGHTING STYLE - HARSH MIDDAY SUN, match it exactly:
 - PATINA: Clean natural 35mm, fine grain.
 ```
 
-### 09\. Snow light
-
+### 09. Snow light
 ```
 LIGHTING STYLE - SNOW LIGHT, match it exactly:
 - EXPOSURE AND MOOD: Bright, cold daylight, crisp.
@@ -155,8 +144,7 @@ LIGHTING STYLE - SNOW LIGHT, match it exactly:
 - PATINA: Crisp image, fine grain.
 ```
 
-### 10\. Lens flare
-
+### 10. Lens flare
 ```
 LIGHTING STYLE - LENS FLARE, match it exactly:
 - EXPOSURE AND MOOD: Golden hour, warm, backlit and dreamy.
@@ -170,8 +158,7 @@ LIGHTING STYLE - LENS FLARE, match it exactly:
 ATMOSPHERE RULE: the haze, the volumetric light and the particles in the air are always present and always moving, for the entire duration, never static.
 ```
 
-### 11\. Lightning
-
+### 11. Lightning
 ```
 LIGHTING STYLE - LIGHTNING, match it exactly:
 - EXPOSURE AND MOOD: Dark stormy night, tense.
@@ -184,8 +171,7 @@ LIGHTING STYLE - LIGHTNING, match it exactly:
 - PATINA: Crisp cinematic image, fine grain.
 ```
 
-### 12\. Atmospheric fog
-
+### 12. Atmospheric fog
 ```
 LIGHTING STYLE - ATMOSPHERIC FOG, match it exactly:
 - EXPOSURE AND MOOD: Cold, misty, quiet.
@@ -199,8 +185,7 @@ LIGHTING STYLE - ATMOSPHERIC FOG, match it exactly:
 ATMOSPHERE RULE: the haze, the volumetric light and the particles in the air are always present and always moving, for the entire duration, never static.
 ```
 
-### 13\. Sodium vapour
-
+### 13. Sodium vapour
 ```
 LIGHTING STYLE - SODIUM VAPOUR, match it exactly:
 - EXPOSURE AND MOOD: Very dark gritty night.
@@ -213,8 +198,7 @@ LIGHTING STYLE - SODIUM VAPOUR, match it exactly:
 - PATINA: Gritty grain, deep blacks.
 ```
 
-### 14\. Fluorescent
-
+### 14. Fluorescent
 ```
 LIGHTING STYLE - FLUORESCENT, match it exactly:
 - EXPOSURE AND MOOD: Flat, tired, institutional.
@@ -227,8 +211,7 @@ LIGHTING STYLE - FLUORESCENT, match it exactly:
 - PATINA: Clean digital cinema, shallow depth of field, soft bokeh.
 ```
 
-### 15\. Bare bulb
-
+### 15. Bare bulb
 ```
 LIGHTING STYLE - BARE BULB, match it exactly:
 - EXPOSURE AND MOOD: Low-key, gritty, sweaty basement.
@@ -241,8 +224,7 @@ LIGHTING STYLE - BARE BULB, match it exactly:
 - PATINA: 1990s 35mm film, grain.
 ```
 
-### 16\. Flashlight
-
+### 16. Flashlight
 ```
 LIGHTING STYLE - FLASHLIGHT, match it exactly:
 - EXPOSURE AND MOOD: Dim, cold, clinical.
@@ -256,8 +238,7 @@ LIGHTING STYLE - FLASHLIGHT, match it exactly:
 ATMOSPHERE RULE: the haze, the volumetric light and the particles in the air are always present and always moving, for the entire duration, never static.
 ```
 
-### 17\. Dashboard light
-
+### 17. Dashboard light
 ```
 LIGHTING STYLE - DASHBOARD LIGHT, match it exactly:
 - EXPOSURE AND MOOD: Night, hypnotic, almost monochrome cyan.
@@ -271,8 +252,7 @@ LIGHTING STYLE - DASHBOARD LIGHT, match it exactly:
 ATMOSPHERE RULE: the haze, the volumetric light and the particles in the air are always present and always moving, for the entire duration, never static.
 ```
 
-### 18\. Police lights
-
+### 18. Police lights
 ```
 LIGHTING STYLE - POLICE LIGHTS, match it exactly:
 - EXPOSURE AND MOOD: Almost total darkness, tense night.
@@ -285,8 +265,7 @@ LIGHTING STYLE - POLICE LIGHTS, match it exactly:
 - PATINA: Grain, sweaty sheen, dotted bokeh.
 ```
 
-### 19\. String lights
-
+### 19. String lights
 ```
 LIGHTING STYLE - STRING LIGHTS, match it exactly:
 - EXPOSURE AND MOOD: Warm festive night.
@@ -299,8 +278,7 @@ LIGHTING STYLE - STRING LIGHTS, match it exactly:
 - PATINA: Warm soft image, slight haze, glow around the bulbs.
 ```
 
-### 20\. Projector beam
-
+### 20. Projector beam
 ```
 LIGHTING STYLE - PROJECTOR BEAM, match it exactly:
 - EXPOSURE AND MOOD: Dark, awe, cinema.
@@ -314,8 +292,7 @@ LIGHTING STYLE - PROJECTOR BEAM, match it exactly:
 ATMOSPHERE RULE: the haze, the volumetric light and the particles in the air are always present and always moving, for the entire duration, never static.
 ```
 
-### 21\. Stained glass
-
+### 21. Stained glass
 ```
 LIGHTING STYLE - STAINED GLASS, match it exactly:
 - EXPOSURE AND MOOD: Dark, sacred, contemplative.
@@ -329,13 +306,12 @@ LIGHTING STYLE - STAINED GLASS, match it exactly:
 ATMOSPHERE RULE: the haze, the volumetric light and the particles in the air are always present and always moving, for the entire duration, never static.
 ```
 
-### 22\. Searchlight
-
+### 22. Searchlight
 ```
 LIGHTING STYLE - SEARCHLIGHT, match it exactly:
 - EXPOSURE AND MOOD: Black night, tension.
 - THE ROOM: The room is pure black.
-- LIGHT ON THE SUBJECT: One hard searchlight beam from high above on frame left cuts diagonally through haze and sweeps slowly over the subject; he is almost a silhouette with an edge of light.
+- LIGHT ON THE SUBJECT: One hard searchlight beam from high above on frame left cuts diagonally through haze and sweeps slowly over the subject, who is almost a silhouette with an edge of light.
 - COLOR PALETTE: Black, navy, pale cyan-white.
 - SHADOWS AND BLACKS: Pure black.
 - HIGHLIGHTS: Pale cyan-white beam.
@@ -344,8 +320,7 @@ LIGHTING STYLE - SEARCHLIGHT, match it exactly:
 ATMOSPHERE RULE: the haze, the volumetric light and the particles in the air are always present and always moving, for the entire duration, never static.
 ```
 
-### 23\. Explosion
-
+### 23. Explosion
 ```
 LIGHTING STYLE - EXPLOSION, match it exactly:
 - EXPOSURE AND MOOD: Dramatic, chaotic.
@@ -359,8 +334,7 @@ LIGHTING STYLE - EXPLOSION, match it exactly:
 ATMOSPHERE RULE: the haze, the volumetric light and the particles in the air are always present and always moving, for the entire duration, never static.
 ```
 
-### 24\. Muzzle flash
-
+### 24. Muzzle flash
 ```
 LIGHTING STYLE - MUZZLE FLASH, match it exactly:
 - EXPOSURE AND MOOD: Gritty, raw action.
@@ -373,8 +347,7 @@ LIGHTING STYLE - MUZZLE FLASH, match it exactly:
 - PATINA: 1990s 35mm film, grain, a slight smear.
 ```
 
-### 25\. Laser lights
-
+### 25. Laser lights
 ```
 LIGHTING STYLE - LASER LIGHTS, match it exactly:
 - EXPOSURE AND MOOD: Dark, flat, mysterious.
@@ -388,8 +361,7 @@ LIGHTING STYLE - LASER LIGHTS, match it exactly:
 ATMOSPHERE RULE: the haze, the volumetric light and the particles in the air are always present and always moving, for the entire duration, never static.
 ```
 
-### 26\. Blacklight (UV)
-
+### 26. Blacklight (UV)
 ```
 LIGHTING STYLE - BLACKLIGHT (UV), match it exactly:
 - EXPOSURE AND MOOD: Dark club, electric.
@@ -402,8 +374,7 @@ LIGHTING STYLE - BLACKLIGHT (UV), match it exactly:
 - PATINA: Glow, slight bloom.
 ```
 
-### 27\. Bi-color light
-
+### 27. Bi-color light
 ```
 LIGHTING STYLE - BI-COLOR LIGHT, match it exactly:
 - EXPOSURE AND MOOD: Night party, cool and seductive.
@@ -416,8 +387,7 @@ LIGHTING STYLE - BI-COLOR LIGHT, match it exactly:
 - PATINA: Shallow depth of field, sparkly bokeh.
 ```
 
-### 28\. Mixed colour temperature
-
+### 28. Mixed colour temperature
 ```
 LIGHTING STYLE - MIXED COLOUR TEMPERATURE, match it exactly:
 - EXPOSURE AND MOOD: Warm afternoon, stylish.
@@ -430,8 +400,7 @@ LIGHTING STYLE - MIXED COLOUR TEMPERATURE, match it exactly:
 - PATINA: Rich warm 35mm.
 ```
 
-### 29\. Cast shadow
-
+### 29. Cast shadow
 ```
 LIGHTING STYLE - CAST SHADOW, match it exactly:
 - EXPOSURE AND MOOD: Warm, expressionist.
@@ -444,8 +413,7 @@ LIGHTING STYLE - CAST SHADOW, match it exactly:
 - PATINA: Warm grain.
 ```
 
-### 30\. City bokeh
-
+### 30. City bokeh
 ```
 LIGHTING STYLE - CITY BOKEH, match it exactly:
 - EXPOSURE AND MOOD: Cool dusk, melancholic.
@@ -458,24 +426,180 @@ LIGHTING STYLE - CITY BOKEH, match it exactly:
 - PATINA: Soft, natural, fine grain.
 ```
 
-### 31\. Bloom / halation
+### 31. Bloom / halation [BORRADOR, no es del blog]
+```
+LIGHTING STYLE - BLOOM / HALATION, match it exactly:
+- EXPOSURE AND MOOD: Dreamy, glowing, soft and nostalgic.
+- THE ROOM: The room keeps its shapes but every bright area blooms softly into the surroundings, a gentle luminous veil over the whole frame.
+- LIGHT ON THE SUBJECT: Soft light on the face with a glowing halo around bright edges, a subtle warm-red halation fringe around highlights and the hair.
+- COLOR PALETTE: Warm cream, soft amber, gentle pastel tones, skin warm and glowing.
+- SHADOWS AND BLACKS: Softly lifted blacks with a faint haze.
+- HIGHLIGHTS: Strongly blooming whites with warm-red halation edges.
+- CONTRAST AND SATURATION: Low-medium contrast, medium-low saturation.
+- PATINA: Film halation, soft diffusion, fine grain.
+```
 
-CINEMATIC CAMERA SETTINGS: exactly the camera, lens, focal length, framing and 9:16 vertical format of @video1; 25 fps, 180-degree shutter, natural motion blur; the grain, texture, lens rendering and color grade of @Imagen 31.  
-Create a 9:16 vertical cinematic video in one continuous shot, the same length as @video1.  
-REFERENCES:  
-@video1 \= the master for camera, framing, perspective, the room layout, the man, his face, outfit, performance, timing and voice \- all preserved exactly.  
-@Imagen 31 \= the master for the LOOK (CITY BOKEH): mood, light, light effects, tone, color palette, background brightness, shadows, blacks, highlights, halation and patina. NEVER a start frame, NEVER the first frame, NEVER a layout: its framing, aspect ratio, composition, camera angle, location, people, faces, hair, clothes and objects are NEVER used.  
-MASTER LOCK \- HIGHEST PRIORITY: @video1 is the master. EVERYTHING is identical to @video1, frame by frame, for the entire duration: the camera, its angle, height, lens, perspective, framing, distance and subject size in frame, every camera movement and handheld shake, the room layout and every piece of furniture, plant and object in it, and the man \- his position, every body movement, hand gesture, head turn, gaze, blink, expression, lip movement, acting and timing, all at the same moment and speed as @video1. His FACE stays exactly the face in @video1 \- same identity, same features, same expressions \- only re-lit. His outfit, cap and hair stay exactly as in @video1. Preserve his original VOICE and speech from @video1 exactly \- same words, same timing, same tone, lips matching every syllable. Never add, remove, change, anticipate or delay any action or camera move. One continuous shot, no cuts.  
-LOOK LOCK \- HIGHEST PRIORITY: every frame must look like it was shot on the set of @Imagen 31, with its lights, its lens and its color grade. Same mood, same light sources and directions, same light effects, same tone and color palette, same exposure, same brightness of the background, same contrast, same saturation, same shadows, same blacks, same highlights, same halation, haze, grain and patina, same skin color. The original bright, neutral look of @video1 (white-beige walls, light sofa, daylight) must disappear completely: the walls, the sofa, the shelf and every object of @video1 are re-lit and re-colored to match the background of @Imagen 31 \- if the background of @Imagen 31 is dark, the room of @video1 becomes just as dark. Real light that wraps his face and body and reacts to every gesture of @video1 \- never a flat filter, never a color overlay. His eyes stay natural, never glowing.  
-THE LOOK OF @Imagen 31 \- CITY BOKEH, match it exactly:  
-\- EXPOSURE AND MOOD: Cool dusk, melancholic.  
-\- THE ROOM: The background becomes heavily defocused, cool blue-grey dusk, with round bokeh lights in pink, red and white; the walls blue-grey.  
-\- LIGHT ON HIM: Soft cool dusk light on his face.  
-\- COLOR PALETTE: Slate blue, grey, muted teal, pink-red, white.  
-\- SHADOWS AND BLACKS: Slightly lifted blue-grey.  
-\- HIGHLIGHTS: Cool white.  
-\- CONTRAST AND SATURATION: Medium contrast, low saturation.  
-\- PATINA: Soft, natural, fine grain.  
-THE ONLY CHANGES from @video1 are the look of @Imagen 31 and this: NO microphone \- the clip mic on his chest in @video1 is removed, no mic, no cable, no clip.  
-Not a 3D render, no digital sharpness, no AI smoothing.  
-AUDIO: keep the original voice and sounds from @video1 untouched. No added sound effects. NO music, NO score.  
+
+# SET 2 - Formato corto (28 + 3 pendientes)
+
+## Plantilla base
+```
+LIGHTING & COLOUR CHANGE ONLY - {STYLE}.
+
+REFERENCES: @video1 is my original video and the only source for the subject, scene, framing and action. @imagen{N} is a reference for lighting, colour and light effects only. Do not copy its people, clothes, location or composition, or use it as a start frame.
+
+PRESERVE MY SHOT: Keep the same subjects, faces, hair, clothing, setting and objects. Preserve the camera movement, framing, duration, timing, expressions, gestures and lip sync. Do not add, remove or reposition subjects or objects.
+
+LIGHTING: Relight my original scene using @imagen{N} as the lighting reference. {LIGHTING_BLOCK} Keep shadows, falloff and reflections physically believable and consistent as the subject and camera move.
+
+FINISH: Photorealistic, natural skin texture and the original lens perspective. Preserve the original speech and audio. No added music or text.
+```
+
+### 01. High key
+```
+Bright, even, almost shadowless light from large soft frontal sources and strong fill. Use low contrast, airy whites and clean, bright skin. Make the existing setting luminous, with minimal shadows under the chin and on surrounding surfaces, for a crisp commercial look.
+```
+
+### 02. Low key
+```
+Let the existing setting fall mostly into deep shadow. Use one soft key light to create a pool of light on the subject's face and upper body. Keep high contrast, a moody near-black background and only faint shapes of the existing surroundings.
+```
+
+### 03. Rembrandt
+```
+Use one key light high and about 45 degrees to the side. Leave the far cheek in shadow with a small bright triangle beneath the eye on that side. Use little fill, rich moody contrast, painterly warm tones and a darker background.
+```
+
+### 04. Butterfly (Paramount)
+```
+Place the key light high and directly in front of the face. Create a small butterfly-shaped shadow beneath the nose, with soft shadows under the chin and cheekbones. Use a glamorous classic Hollywood portrait look and soft falloff behind the subject.
+```
+
+### 05. Split
+```
+Use a hard side light at 90 degrees to illuminate exactly half of the subject's face. Let the other half fall into darkness, with a sharp vertical division down the face. Keep dramatic high contrast and dark surroundings.
+```
+
+### 06. Loop
+```
+Use a soft key light slightly off-axis and just above eye level. Create a small nose shadow looping down towards the cheek, with gentle fill and soft modelling across the face. Keep the lighting natural and flattering.
+```
+
+### 07. Broad
+```
+Light the side of the face turned towards the camera. Make this broader, visible side bright, with gentle shadow on the far side. Use a soft, open feel and natural warm portrait tones.
+```
+
+### 08. Short
+```
+Light the side of the face turned away from the camera. Let the nearer side fall into soft shadow. Use a sculpted, moodier portrait look with greater depth and a darker tone in the existing surroundings.
+```
+
+### 09. Chiaroscuro
+```
+Use painterly, very high contrast. Carve the subject's face and hands out of deep darkness with one strong directional light. Keep rich warm highlights and deep blacks, with the existing setting almost disappearing into shadow like an old-master painting.
+```
+
+### 10. Silhouette
+```
+Light the existing background brightly and evenly, almost white. Leave the subject unlit from the front so the body and face read as a dark silhouette. Retain only a faint hint of facial detail; preserve the original outline and movements.
+```
+
+### 11. Rim / Backlight
+PENDIENTE: Captura no recibida.
+
+### 12. Hard light
+```
+Use a small, direct, unfiltered light source. Create crisp, sharp-edged shadows from the subject and existing clothing or objects onto nearby surfaces. Preserve believable shadow placement, with high clarity, punchy contrast and strong directional modelling.
+```
+
+### 13. Soft light
+```
+Use a large diffused source that wraps around the subject. Let shadows roll off very gently, with low contrast and soft, natural skin highlights. Keep skin texture intact and the existing setting softly lit for a calm, elegant look.
+```
+
+### 14. Bounce
+PENDIENTE: Captura no recibida.
+
+### 15. Top light
+```
+Use a single light directly overhead. Brighten the top of the head or existing headwear and the shoulders. Let the eye sockets and sides fall into shadow, with strong shadows under the nose and chin for an interrogation-room mood.
+```
+
+### 16. Under lighting
+```
+Light the subject from below, pointing upwards at the face. Throw shadows upwards over the eyes and forehead. Use warm uplight and long upward shadows on existing background surfaces for an eerie campfire-story or horror look.
+```
+
+### 17. Golden hour
+```
+Use low, warm sunlight pouring into the existing scene from the side. Create long, soft shadows, golden skin and warm highlights in existing hair. Add slight lens glow and a rich amber grade while preserving the original setting.
+```
+
+### 18. Blue hour
+```
+Fill the existing scene with cool ambient dusk light, without hard sunlight. Use deep, soft blues in the surroundings and gentle cool daylight on the face. Keep a calm, melancholic mood and slightly reduced exposure.
+```
+
+### 19. Day-for-night
+```
+Grade the existing scene deep blue and reduce the exposure to suggest night. Use cool moonlit tones, a darkened background, deep shadows and desaturated, cooler skin. Keep enough detail to read the subject and the original action.
+```
+
+### 20. Moonlight
+```
+Use a cool, soft, low-level blue-silver key, as if moonlight were entering from outside the frame. Keep gentle shadows, dark surroundings and a quiet nocturnal atmosphere, with the face softly readable.
+```
+
+### 21. Window light
+```
+Use natural, soft side light as if from one large window outside the frame. Let it fall off across the subject's face and body, leaving the other side in gentle shadow. Keep realistic daylight and a calm documentary feel.
+```
+
+### 22. Practical
+```
+Create warm pools of tungsten light across the subject and existing background surfaces, with darker spaces between them. Make the light feel motivated by household lamps. Use existing lamps where present; otherwise keep the implied sources off-screen. Do not add lamps or other props.
+```
+
+### 23. Firelight / Candlelight
+```
+Use a warm, low orange light from below and to one side. Let it flicker gently like firelight or candlelight across the face and existing surfaces. Keep deep, dark surroundings and an intimate warm mood, without adding visible flames or candles.
+```
+
+### 24. Venetian blinds
+```
+Project hard, parallel slats of light and shadow across the subject and existing background surfaces, as if through Venetian blinds outside the frame. Use strong film-noir contrast and a smoky, dark mood. Preserve the original scene geometry.
+```
+
+### 25. Dappled / Gobo
+```
+Create broken, patterned light as if sunlight were passing through leaves outside the frame. Let soft patches of light and leaf-shaped shadows shift gently across the face, body and existing surfaces. Keep their movement natural and do not add foliage.
+```
+
+### 26. Volumetric (God rays)
+```
+Use a light atmospheric haze with bright visible beams cutting diagonally through the existing scene, as if from an off-screen window. Let the rays glow in the haze and catch the subject's shoulders and existing headwear. Create dreamy depth without adding a window or props.
+```
+
+### 27. Overcast / Flat
+```
+Use diffused grey-sky daylight with little direction or drama. Make the light very even, soft and almost shadowless. Use muted, desaturated colours and a cool neutral grade for a quiet, realistic look.
+```
+
+### 28. Neon
+```
+Flood the existing scene with saturated neon colour: warm orange-red light from one side and electric blue light from the other. Create coloured reflections across the subject and nearby surfaces, with rich dark shadows and a night-club mood. Keep the light sources off-screen.
+```
+
+### 29. Teal & Orange
+```
+Use warm orange key light on the subject's skin against cool teal shadows and a teal-toned background. Keep strong complementary contrast and a cinematic teal-and-orange grade, while retaining the original setting and natural skin texture.
+```
+
+### 30. Monochrome
+PENDIENTE: Captura no recibida.
+
+### 31. Screen glow
+```
+Light the subject's face and hands with a cool blue-white glow, as if from a screen just outside the frame. Let the light flicker softly with implied screen content. Keep the rest of the existing scene dark and do not add a screen or device.
+```
