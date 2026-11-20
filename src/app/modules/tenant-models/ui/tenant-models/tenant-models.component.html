@@ -1,7 +1,7 @@
-<div animate.enter="anim-page">
-  <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
+<app-page-container animate.enter="anim-page">
+  <div class="mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-surface-border pb-4">
     <div>
-      <h3 class="font-bold text-ink-on-dark">{{ 'TENANT_MODELS.TITLE' | translate }}</h3>
+      <h1 class="text-[1.75rem] font-bold text-ink">{{ 'TENANT_MODELS.TITLE' | translate }}</h1>
       <p class="text-sm text-ink-muted-on-dark">{{ 'TENANT_MODELS.DESC' | translate }}</p>
     </div>
     <p-button
@@ -160,4 +160,4 @@
       </p-table>
     }
   }
-</div>
+</app-page-container>

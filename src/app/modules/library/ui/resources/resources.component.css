@@ -21,6 +21,31 @@
   padding-left: 34px;
 }
 
+.total-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--color-surface-border-strong);
+  border-radius: 999px;
+  background: var(--color-surface-2);
+  color: var(--color-ink-on-dark);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.total-chip strong {
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.total-chip small {
+  font-weight: 400;
+  color: var(--color-ink-muted-on-dark);
+}
+
 .upload-btn {
   display: inline-flex;
   align-items: center;
@@ -177,6 +202,8 @@
 /* ── Cards ────────────────────────────────────────────────────────────── */
 
 .resource-card {
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   border: 1px solid var(--color-surface-border);
   border-radius: 18px;
@@ -340,6 +367,7 @@
 
 .resource-card__body {
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: 6px;
   padding: 10px 12px 12px;
@@ -378,8 +406,10 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  margin-top: auto;
   font-size: 11px;
   color: var(--color-ink-muted-on-dark);
+  font-variant-numeric: tabular-nums;
 }
 
 /* ── Paginación ───────────────────────────────────────────────────────── */

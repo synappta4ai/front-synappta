@@ -1515,6 +1515,7 @@
     "FILTER_ALL": "Todos",
     "FILTER_IMAGES": "Imágenes",
     "FILTER_VIDEOS": "Videos",
+    "FILTER_AUDIO": "Audio",
     "FILTER_CHARACTER": "Personaje",
     "FILTER_LOCATION": "Ubicación",
     "FILTER_PROPS": "Props",
@@ -2292,6 +2293,13 @@
     "CONNECT": "Conectar GPU",
     "DOWNLOAD": "Descargar Worker",
     "DOWNLOAD_TOOLTIP": "Baja el instalador (.exe) del Synapta Worker para la máquina con GPU: doble click y listo. En Mac/Linux baja el zip.",
+    "UPDATE": {
+      "TITLE": "Actualizar Worker",
+      "SUBTITLE": "Subí el instalador .zip nuevo y ordená al worker que se actualice solo.",
+      "SELECT": "Seleccionar instalador .zip",
+      "BUTTON": "Actualizar Worker",
+      "TOOLTIP": "Sube el .zip al back y le ordena al worker que se descargue, reemplace archivos y se relance."
+    },
     "ONLINE_COUNT": "{{count}} en línea",
     "REVOKE": "Desconectar",
     "REVOKE_TOOLTIP": "Quita el permiso de esta máquina. Para volver a conectarla, repetí el emparejamiento.",
@@ -2322,13 +2330,6 @@
       "DOWNLOAD_REQUESTED": "Descarga de \"{{name}}\" pedida a {{worker}}: arranca en ~20 s y verás el progreso acá.",
       "DOWNLOAD_BRIDGE_TOOLTIP": "Pide la descarga a {{worker}} (arranca en el próximo heartbeat).",
       "VRAM_REQ": "Requiere {{gb}} GB de VRAM",
-      "UPDATE": {
-        "TITLE": "Actualizar Worker",
-        "SUBTITLE": "Subí el instalador .zip nuevo y ordená al worker que se actualice solo.",
-        "SELECT": "Seleccionar instalador .zip",
-        "BUTTON": "Actualizar Worker",
-        "TOOLTIP": "Sube el .zip al back y le ordena al worker que se descargue, reemplace archivos y se relance."
-      },
       "ERRORS": {
         "LOAD": "No pude cargar los modelos del worker. Reintentá en unos segundos.",
         "OPERATION": "La operación sobre el modelo falló. Revisá el estado del worker y reintentá."

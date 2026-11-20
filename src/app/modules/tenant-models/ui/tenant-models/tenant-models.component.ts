@@ -14,6 +14,7 @@ import { ToggleSwitch } from 'primeng/toggleswitch';
 
 import { AiModel, Modality, TenantModelPref } from '@modules/agency/interfaces';
 import { AgencyService } from '@modules/agency/services';
+import { PageContainerComponent } from '@shared/components/index';
 
 interface TenantRow {
   name: string;
@@ -42,6 +43,7 @@ interface TenantRow {
     InputNumber,
     InputText,
     Message,
+    PageContainerComponent,
     Select,
     TableModule,
     Tag,

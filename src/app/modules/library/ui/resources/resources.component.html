@@ -92,7 +92,7 @@
       <p>{{ 'LIBRARY.EMPTY_HINT' | translate }}</p>
     </div>
   } @else {
-    <div class="grid grid-cols-2 items-start gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+    <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
       @for (group of filteredGroups(); track group.key; let i = $index) {
         @let file = group.primary;
         <div
