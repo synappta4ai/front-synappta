@@ -1,0 +1,138 @@
+.compact-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid var(--color-surface-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface-2);
+  color: var(--color-ink-on-dark);
+  cursor: pointer;
+  transition:
+    border-color 0.15s var(--ease-app),
+    background-color 0.15s var(--ease-app);
+}
+
+.compact-chip:hover,
+.compact-chip:focus-visible {
+  border-color: var(--color-accent);
+  background: var(--color-surface-hover);
+  outline: none;
+}
+
+.compact-chip-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted-on-dark);
+}
+
+.compact-chip-value {
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.compact-chip-chevron {
+  font-size: 16px;
+  color: var(--color-ink-muted-on-dark);
+}
+
+.compact-list {
+  display: flex;
+  min-width: 11rem;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.25rem;
+}
+
+.compact-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-ink-on-dark);
+  font-size: 0.8rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.compact-option:hover,
+.compact-option:focus-visible {
+  background: var(--color-surface-2);
+  outline: none;
+}
+
+.compact-option.active {
+  color: var(--color-accent);
+  font-weight: 700;
+}
+
+.compact-number {
+  display: flex;
+  min-width: 11rem;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.6rem;
+}
+
+.compact-number-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted-on-dark);
+}
+
+.compact-number-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.compact-step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--color-surface-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-2);
+  color: var(--color-ink-on-dark);
+  cursor: pointer;
+}
+
+.compact-step:hover,
+.compact-step:focus-visible {
+  border-color: var(--color-accent);
+  outline: none;
+}
+
+.compact-number-input {
+  width: 5.5rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--color-surface-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-2);
+  color: var(--color-ink-on-dark);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-align: center;
+  outline: none;
+}
+
+.compact-number-input:focus {
+  border-color: var(--color-accent);
+}
+
+.compact-number-suffix {
+  font-size: 0.65rem;
+  color: var(--color-ink-muted-on-dark);
+}

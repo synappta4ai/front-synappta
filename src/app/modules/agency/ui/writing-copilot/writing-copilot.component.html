@@ -12,17 +12,37 @@
   @if (step() === 1) {
     <p-card styleClass="phase-card">
       <ng-template #header>
-        <div class="flex flex-wrap items-center gap-3 border-b border-surface-border px-6 py-4">
-          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
-            <i class="md md-edit_note text-lg text-accent"></i>
+        <div class="flex flex-wrap items-start justify-between gap-4 border-b border-surface-border px-6 py-4">
+          <div class="flex items-center gap-3">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-2">
+              <i class="md md-edit_note text-lg text-accent"></i>
+            </div>
+            <div>
+              <h2 class="text-lg font-bold text-ink-on-dark">
+                {{ 'VIDEOMACHINE.WRITE_TITLE' | translate }}
+              </h2>
+              <p class="text-sm text-ink-muted-on-dark">
+                {{ 'VIDEOMACHINE.WRITE_SUBTITLE' | translate }}
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 class="text-lg font-bold text-ink-on-dark">
-              {{ 'VIDEOMACHINE.WRITE_TITLE' | translate }}
-            </h2>
-            <p class="text-sm text-ink-muted-on-dark">
-              {{ 'VIDEOMACHINE.WRITE_SUBTITLE' | translate }}
-            </p>
+          <div class="flex w-full flex-col gap-1 sm:w-72">
+            <label for="wcVideoType" class="text-xs font-bold text-ink-on-dark">
+              {{ 'VIDEOMACHINE.WRITE_VIDEO_TYPE' | translate }}
+            </label>
+            <p-select
+              inputId="wcVideoType"
+              [options]="videoTypeOptions()"
+              optionLabel="label"
+              optionValue="value"
+              [ngModel]="videoType()"
+              (ngModelChange)="videoType.set($event)"
+              [ngModelOptions]="{ standalone: true }"
+              [placeholder]="'VIDEOMACHINE.WRITE_VIDEO_TYPE_PLACEHOLDER' | translate"
+              styleClass="w-full"
+              appendTo="body"
+            />
+            <small class="text-ink-muted-on-dark">{{ 'VIDEOMACHINE.WRITE_VIDEO_TYPE_HINT' | translate }}</small>
           </div>
         </div>
       </ng-template>
@@ -61,159 +81,149 @@
           ></textarea>
         </div>
 
+        <div class="flex flex-wrap items-center gap-2">
+          <app-lighting-select
+            [pill]="true"
+            inputId="wcLighting"
+            [value]="lighting()"
+            (valueChange)="lighting.set($event)"
+          />
+          <app-camera-movement-select
+            [pill]="true"
+            inputId="wcCamera"
+            [value]="camera()"
+            (valueChange)="camera.set($event)"
+          />
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <app-compact-select
+            [label]="'VIDEOMACHINE.WRITE_LANGUAGE_SHORT' | translate"
+            [options]="languageOptions()"
+            [value]="outputLanguage()"
+            (valueChange)="setLanguage($event)"
+          />
+          <app-compact-select
+            [label]="'VIDEOMACHINE.WRITE_DELIVERY_SHORT' | translate"
+            [options]="deliveryOptions()"
+            [value]="delivery()"
+            (valueChange)="setDelivery($event)"
+          />
+          <app-compact-select
+            [label]="'VIDEOMACHINE.WRITE_ASPECT_SHORT' | translate"
+            [options]="aspectOptions"
+            [value]="aspectRatio()"
+            (valueChange)="setAspect($event)"
+          />
+          <app-compact-select
+            [label]="'VIDEOMACHINE.WRITE_AUDIO_SHORT' | translate"
+            [options]="audioOptions()"
+            [value]="audioMode()"
+            (valueChange)="setAudio($event)"
+          />
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <app-compact-number
+            [label]="'VIDEOMACHINE.WRITE_TOTAL_SHORT' | translate"
+            suffix=" s"
+            [min]="1"
+            [value]="totalDuration()"
+            (valueChange)="totalDuration.set($event)"
+          />
+          <app-compact-number
+            [label]="'VIDEOMACHINE.WRITE_CLIP_SHORT' | translate"
+            suffix=" s"
+            [min]="1"
+            [value]="maxClipS()"
+            (valueChange)="maxClipS.set($event)"
+          />
+          <app-compact-number
+            [label]="'VIDEOMACHINE.WRITE_SHOTS_SHORT' | translate"
+            [min]="1"
+            [max]="30"
+            [value]="shotCount()"
+            (valueChange)="shotCount.set($event)"
+          />
+          <app-compact-number
+            [label]="'VIDEOMACHINE.WRITE_FPS_SHORT' | translate"
+            suffix=" fps"
+            [min]="1"
+            [max]="120"
+            [value]="fps()"
+            (valueChange)="fps.set($event)"
+          />
+          <app-compact-number
+            [label]="'VIDEOMACHINE.WRITE_CUTS_SHORT' | translate"
+            [min]="1"
+            [max]="10"
+            [value]="cutsPerShot()"
+            (valueChange)="cutsPerShot.set($event)"
+          />
+        </div>
+
+        @if (timingSummary(); as summary) {
+          <p class="text-xs text-ink-muted-on-dark">{{ summary }}</p>
+        }
+
         <details class="rounded-xl border border-surface-border bg-surface-2 px-4 py-3">
           <summary class="cursor-pointer text-left text-sm font-bold text-ink-on-dark">
             {{ 'VIDEOMACHINE.WRITE_PARAMS_TITLE' | translate }}
           </summary>
-          <div class="mt-3 grid gap-4 sm:grid-cols-2">
-            <div class="flex flex-col gap-1 sm:col-span-2">
-              <label for="wcBrain" class="text-xs font-bold text-ink-on-dark">
-                {{ 'VIDEOMACHINE.WRITE_BRAIN' | translate }}
-              </label>
-              <p-select
-                inputId="wcBrain"
-                [options]="brainOptions()"
-                optionLabel="label"
-                optionValue="value"
-                [ngModel]="brainModel()"
-                (ngModelChange)="brainModel.set($event)"
-                [ngModelOptions]="{ standalone: true }"
-                [placeholder]="'VIDEOMACHINE.WRITE_BRAIN_PLACEHOLDER' | translate"
-                styleClass="w-full"
-                appendTo="body"
-              />
-              <small class="text-ink-muted-on-dark">{{ 'VIDEOMACHINE.WRITE_BRAIN_HINT' | translate }}</small>
-            </div>
+          <div class="mt-3 flex flex-col gap-4">
+            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div class="flex flex-col gap-1 sm:col-span-2 lg:col-span-3">
+                <label for="wcBrain" class="text-xs font-bold text-ink-on-dark">
+                  {{ 'VIDEOMACHINE.WRITE_BRAIN' | translate }}
+                </label>
+                <p-select
+                  inputId="wcBrain"
+                  [options]="brainOptions()"
+                  optionLabel="label"
+                  optionValue="value"
+                  [ngModel]="brainModel()"
+                  (ngModelChange)="brainModel.set($event)"
+                  [ngModelOptions]="{ standalone: true }"
+                  [placeholder]="'VIDEOMACHINE.WRITE_BRAIN_PLACEHOLDER' | translate"
+                  styleClass="w-full"
+                  appendTo="body"
+                />
+                <small class="text-ink-muted-on-dark">{{ 'VIDEOMACHINE.WRITE_BRAIN_HINT' | translate }}</small>
+              </div>
 
-            <div class="flex flex-col gap-1">
-              <label for="wcLanguage" class="text-xs font-bold text-ink-on-dark">
-                {{ 'VIDEOMACHINE.WRITE_LANGUAGE' | translate }}
-              </label>
-              <p-select
-                inputId="wcLanguage"
-                [options]="languageOptions()"
-                optionLabel="label"
-                optionValue="value"
-                [ngModel]="outputLanguage()"
-                (ngModelChange)="outputLanguage.set($event)"
-                [ngModelOptions]="{ standalone: true }"
-                styleClass="w-full"
-                appendTo="body"
-              />
-            </div>
+              <div class="flex flex-col gap-1">
+                <label for="wcLook" class="text-xs font-bold text-ink-on-dark">
+                  {{ 'VIDEOMACHINE.WRITE_LOOK' | translate }}
+                </label>
+                <input
+                  pInputText
+                  id="wcLook"
+                  class="w-full"
+                  [ngModel]="look()"
+                  (ngModelChange)="look.set($event)"
+                  [ngModelOptions]="{ standalone: true }"
+                  [placeholder]="'VIDEOMACHINE.WRITE_LOOK_PLACEHOLDER' | translate"
+                />
+              </div>
 
-            <div class="flex flex-col gap-1">
-              <label for="wcDelivery" class="text-xs font-bold text-ink-on-dark">
-                {{ 'VIDEOMACHINE.WRITE_DELIVERY' | translate }}
-              </label>
-              <p-select
-                inputId="wcDelivery"
-                [options]="deliveryOptions()"
-                optionLabel="label"
-                optionValue="value"
-                [ngModel]="delivery()"
-                (ngModelChange)="delivery.set($event)"
-                [ngModelOptions]="{ standalone: true }"
-                styleClass="w-full"
-                appendTo="body"
-              />
-            </div>
-
-            <div class="flex flex-col gap-1">
-              <label for="wcAspect" class="text-xs font-bold text-ink-on-dark">
-                {{ 'VIDEOMACHINE.WRITE_ASPECT' | translate }}
-              </label>
-              <p-select
-                inputId="wcAspect"
-                [options]="aspectOptions"
-                optionLabel="label"
-                optionValue="value"
-                [ngModel]="aspectRatio()"
-                (ngModelChange)="aspectRatio.set($event)"
-                [ngModelOptions]="{ standalone: true }"
-                styleClass="w-full"
-                appendTo="body"
-              />
-            </div>
-
-            <div class="flex flex-col gap-1">
-              <label for="wcTotal" class="text-xs font-bold text-ink-on-dark">
-                {{ 'VIDEOMACHINE.WRITE_TOTAL_DURATION' | translate }}
-              </label>
-              <input pInputText id="wcTotal" type="number" min="1" class="w-full" [ngModel]="totalDuration()" (ngModelChange)="totalDuration.set($event ? +$event : null)" [ngModelOptions]="{ standalone: true }" />
-            </div>
-
-            <div class="flex flex-col gap-1">
-              <label for="wcClip" class="text-xs font-bold text-ink-on-dark">
-                {{ 'VIDEOMACHINE.WRITE_MAX_CLIP' | translate }}
-              </label>
-              <input pInputText id="wcClip" type="number" min="1" class="w-full" [ngModel]="maxClipS()" (ngModelChange)="maxClipS.set($event ? +$event : null)" [ngModelOptions]="{ standalone: true }" />
-            </div>
-
-            <div class="flex flex-col gap-1">
-              <label for="wcShots" class="text-xs font-bold text-ink-on-dark">
-                {{ 'VIDEOMACHINE.WRITE_SHOTS' | translate }}
-              </label>
-              <input pInputText id="wcShots" type="number" min="1" max="30" class="w-full" [ngModel]="shotCount()" (ngModelChange)="shotCount.set($event ? +$event : null)" [ngModelOptions]="{ standalone: true }" />
-              <small class="text-ink-muted-on-dark">{{ 'VIDEOMACHINE.WRITE_SHOTS_HINT' | translate }}</small>
-            </div>
-
-            <div class="flex flex-col gap-1">
-              <label for="wcFps" class="text-xs font-bold text-ink-on-dark">
-                {{ 'VIDEOMACHINE.WRITE_FPS' | translate }}
-              </label>
-              <input pInputText id="wcFps" type="number" min="1" max="120" class="w-full" [ngModel]="fps()" (ngModelChange)="fps.set($event ? +$event : null)" [ngModelOptions]="{ standalone: true }" />
-            </div>
-
-            <div class="flex flex-col gap-1 sm:col-span-2">
-              <label for="wcLook" class="text-xs font-bold text-ink-on-dark">
-                {{ 'VIDEOMACHINE.WRITE_LOOK' | translate }}
-              </label>
-              <input
-                pInputText
-                id="wcLook"
-                class="w-full"
-                [ngModel]="look()"
-                (ngModelChange)="look.set($event)"
-                [ngModelOptions]="{ standalone: true }"
-                [placeholder]="'VIDEOMACHINE.WRITE_LOOK_PLACEHOLDER' | translate"
-              />
-            </div>
-
-            <div class="flex flex-col gap-1 sm:col-span-2">
-              <label for="wcVideoModel" class="text-xs font-bold text-ink-on-dark">
-                {{ 'VIDEOMACHINE.WRITE_VIDEO_MODEL' | translate }}
-              </label>
-              <p-select
-                inputId="wcVideoModel"
-                [options]="videoOptions()"
-                optionLabel="label"
-                optionValue="value"
-                [ngModel]="videoModel()?.name"
-                (ngModelChange)="onVideoModelChange($event)"
-                [ngModelOptions]="{ standalone: true }"
-                [placeholder]="'VIDEOMACHINE.WRITE_VIDEO_MODEL_PLACEHOLDER' | translate"
-                styleClass="w-full"
-                appendTo="body"
-              />
-              <small class="text-ink-muted-on-dark">{{ 'VIDEOMACHINE.WRITE_VIDEO_MODEL_HINT' | translate }}</small>
-            </div>
-
-            <div class="flex flex-col gap-1 sm:col-span-2">
-              <label for="wcAudio" class="text-xs font-bold text-ink-on-dark">
-                {{ 'VIDEOMACHINE.WRITE_AUDIO_MODE' | translate }}
-              </label>
-              <p-select
-                inputId="wcAudio"
-                [options]="audioOptions()"
-                optionLabel="label"
-                optionValue="value"
-                [ngModel]="audioMode()"
-                (ngModelChange)="audioMode.set($event)"
-                [ngModelOptions]="{ standalone: true }"
-                styleClass="w-full"
-                appendTo="body"
-              />
+              <div class="flex flex-col gap-1 sm:col-span-2">
+                <label for="wcVideoModel" class="text-xs font-bold text-ink-on-dark">
+                  {{ 'VIDEOMACHINE.WRITE_VIDEO_MODEL' | translate }}
+                </label>
+                <p-select
+                  inputId="wcVideoModel"
+                  [options]="videoOptions()"
+                  optionLabel="label"
+                  optionValue="value"
+                  [ngModel]="videoModel()?.name"
+                  (ngModelChange)="onVideoModelChange($event)"
+                  [ngModelOptions]="{ standalone: true }"
+                  [placeholder]="'VIDEOMACHINE.WRITE_VIDEO_MODEL_PLACEHOLDER' | translate"
+                  styleClass="w-full"
+                  appendTo="body"
+                />
+                <small class="text-ink-muted-on-dark">{{ 'VIDEOMACHINE.WRITE_VIDEO_MODEL_HINT' | translate }}</small>
+              </div>
             </div>
           </div>
         </details>
@@ -296,6 +306,10 @@
             [loading]="sending()"
             [disabled]="!canSend()"
             (onClick)="start()"
+            [pTooltip]="'VIDEOMACHINE.WRITE_HINT_GENERATE' | translate"
+            tooltipPosition="top"
+            tooltipEvent="both"
+            tooltipStyleClass="app-tooltip"
           />
         </div>
         @if (sending()) {
@@ -374,6 +388,10 @@
               [label]="action.label"
               [disabled]="sending()"
               (onClick)="sendFollowUp(action.message)"
+              [pTooltip]="'VIDEOMACHINE.WRITE_HINT_SEND' | translate"
+              tooltipPosition="top"
+              tooltipEvent="both"
+              tooltipStyleClass="app-tooltip"
             />
           }
         </div>
@@ -400,14 +418,21 @@
               [loading]="sending()"
               [disabled]="!canFollowUp()"
               (onClick)="sendFollowUp()"
+              [pTooltip]="'VIDEOMACHINE.WRITE_HINT_SEND' | translate"
+              tooltipPosition="top"
+              tooltipEvent="both"
+              tooltipStyleClass="app-tooltip"
             />
             <p-button
-              [label]="'VIDEOMACHINE.WRITE_TO_FINAL' | translate"
-              icon="md md-check"
+              [label]="'VIDEOMACHINE.WRITE_ART_TO' | translate"
+              icon="md md-light_mode"
               styleClass="cta-spend"
-              [loading]="sending()"
               [disabled]="!canTranslate()"
-              (onClick)="toFinalPrompt()"
+              (onClick)="goToArtDirection()"
+              [pTooltip]="'VIDEOMACHINE.WRITE_ART_HINT' | translate"
+              tooltipPosition="top"
+              tooltipEvent="both"
+              tooltipStyleClass="app-tooltip"
             />
             <p-button
               [label]="'VIDEOMACHINE.WRITE_BACK' | translate"
@@ -444,6 +469,103 @@
   }
 
   @if (step() === 3) {
+    <p-card styleClass="phase-card">
+      <ng-template #header>
+        <div class="flex flex-wrap items-center gap-3 border-b border-surface-border px-6 py-4">
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
+            <i class="md md-light_mode text-lg text-accent"></i>
+          </div>
+          <div>
+            <h2 class="text-lg font-bold text-ink-on-dark">
+              {{ 'VIDEOMACHINE.WRITE_ART_TITLE' | translate }}
+            </h2>
+            <p class="text-sm text-ink-muted-on-dark">
+              {{ 'VIDEOMACHINE.WRITE_ART_SUBTITLE' | translate }}
+            </p>
+          </div>
+        </div>
+      </ng-template>
+
+      <div class="flex flex-col gap-4">
+        @if (shots().length === 0) {
+          <p class="text-sm text-ink-muted-on-dark">{{ 'VIDEOMACHINE.WRITE_ART_EMPTY' | translate }}</p>
+        } @else {
+          <p class="text-xs text-ink-muted-on-dark">{{ 'VIDEOMACHINE.WRITE_ART_INTRO' | translate }}</p>
+          @for (shot of shots(); track shot.key) {
+            <div class="flex flex-col gap-2 rounded-xl border border-surface-border bg-surface-2 p-3 sm:flex-row sm:items-center">
+              <div class="flex min-w-0 flex-1 flex-col gap-1">
+                <span class="text-xs font-bold text-ink-on-dark">
+                  {{ 'VIDEOMACHINE.WRITE_ART_SHOT' | translate: { n: shot.index } }}
+                </span>
+                <span class="text-xs text-ink-muted-on-dark">{{ shot.excerpt }}</span>
+              </div>
+              <div class="flex w-full flex-col gap-2 sm:w-80">
+                <app-lighting-select
+                  class="block w-full"
+                  [compact]="true"
+                  [inputId]="'wcShotLight-' + shot.key"
+                  [value]="shotLighting()[shot.key] ?? lighting()"
+                  (valueChange)="setShotLighting(shot.key, $event)"
+                />
+                <app-camera-movement-select
+                  class="block w-full"
+                  [compact]="true"
+                  [inputId]="'wcShotCamera-' + shot.key"
+                  [value]="shotCamera()[shot.key] ?? camera()"
+                  (valueChange)="setShotCamera(shot.key, $event)"
+                />
+              </div>
+
+            </div>
+          }
+        }
+
+        <div class="flex flex-wrap items-center gap-3 border-t border-surface-border pt-5">
+          <p-button
+            [label]="'VIDEOMACHINE.WRITE_TO_FINAL' | translate"
+            icon="md md-check"
+            styleClass="cta-spend"
+            [loading]="sending()"
+            [disabled]="!canTranslate()"
+            (onClick)="toFinalPrompt()"
+            [pTooltip]="'VIDEOMACHINE.WRITE_HINT_FINAL' | translate"
+            tooltipPosition="top"
+            tooltipEvent="both"
+            tooltipStyleClass="app-tooltip"
+          />
+          <p-button
+            [label]="'VIDEOMACHINE.WRITE_BACK_TO_PROMPTS' | translate"
+            severity="secondary"
+            [text]="true"
+            icon="md md-arrow_back"
+            (onClick)="goToStep(2)"
+          />
+          <p-button
+            [label]="'VIDEOMACHINE.RESTART' | translate"
+            severity="secondary"
+            [text]="true"
+            icon="md md-refresh"
+            (onClick)="restart()"
+          />
+        </div>
+        @if (sending()) {
+          <div>
+            <p-progressbar
+              [value]="progress()"
+              [showValue]="false"
+              styleClass="wc-progress"
+              [attr.aria-label]="'VIDEOMACHINE.WRITE_SENDING' | translate"
+            />
+            <p class="mt-1 text-xs text-ink-muted-on-dark" aria-live="polite">
+              {{ 'VIDEOMACHINE.WRITE_SENDING_HINT' | translate: { seconds: seconds() } }}
+            </p>
+          </div>
+        }
+      </div>
+    </p-card>
+  }
+
+  @if (step() === 4) {
     <p-card styleClass="phase-card">
       <ng-template #header>
         <div class="flex flex-wrap items-center gap-3 border-b border-surface-border px-6 py-4">
@@ -487,6 +609,10 @@
               [text]="true"
               icon="md md-list"
               (onClick)="sendToQueue()"
+              [pTooltip]="'VIDEOMACHINE.WRITE_HINT_QUEUE' | translate"
+              tooltipPosition="top"
+              tooltipEvent="both"
+              tooltipStyleClass="app-tooltip"
             />
             <p-button
               [label]="'VIDEOMACHINE.WRITE_STUDIO' | translate"
@@ -494,6 +620,17 @@
               [disabled]="!videoModel()"
               styleClass="cta-spend"
               (onClick)="openInStudio()"
+              [pTooltip]="'VIDEOMACHINE.WRITE_HINT_STUDIO' | translate"
+              tooltipPosition="top"
+              tooltipEvent="both"
+              tooltipStyleClass="app-tooltip"
+            />
+            <p-button
+              [label]="'VIDEOMACHINE.WRITE_BACK_TO_ART' | translate"
+              severity="secondary"
+              [text]="true"
+              icon="md md-arrow_back"
+              (onClick)="goToStep(3)"
             />
             <p-button
               [label]="'VIDEOMACHINE.WRITE_BACK_TO_PROMPTS' | translate"

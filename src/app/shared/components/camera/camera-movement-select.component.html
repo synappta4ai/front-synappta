@@ -1,0 +1,192 @@
+@if (!compact() && !pill()) {
+  <label [for]="inputId()" class="text-xs font-bold text-ink-on-dark">
+    {{ 'CAMERA.TITLE' | translate }}
+  </label>
+}
+<button
+  type="button"
+  [id]="inputId()"
+  class="camera-trigger"
+  [class.compact]="compact()"
+  [class.pill]="pill()"
+  aria-haspopup="dialog"
+  [attr.aria-expanded]="dialogOpen()"
+  (click)="openPicker()"
+>
+  <span class="camera-trigger-icon" aria-hidden="true"><i class="md md-movie"></i></span>
+  <span class="camera-trigger-text">
+    @if (pill()) {
+      <span class="camera-pill-label">{{ 'CAMERA.TITLE' | translate }}</span>
+      <span class="camera-pill-value">
+        {{ selectedNames().length ? selectedNames().join(' → ') : ('CAMERA.AUTO_SHORT' | translate) }}
+      </span>
+    } @else if (selectedNames().length === 0) {
+      <span class="camera-trigger-name">{{ 'CAMERA.NONE' | translate }}</span>
+      @if (!compact()) {
+        <span class="camera-trigger-desc">{{ 'CAMERA.NONE_HINT' | translate }}</span>
+      }
+    } @else {
+      <span class="camera-trigger-name">{{ selectedNames().join(' → ') }}</span>
+      @if (!compact()) {
+        <span class="camera-trigger-desc">
+          {{ 'CAMERA.SELECTED' | translate: { count: selectedNames().length } }}
+        </span>
+      }
+    }
+  </span>
+  <i class="md md-expand_more camera-trigger-chevron" aria-hidden="true"></i>
+</button>
+@if (!compact() && !pill()) {
+  <small class="text-ink-muted-on-dark">{{ 'CAMERA.HINT' | translate }}</small>
+}
+
+<p-dialog
+  [visible]="dialogOpen()"
+  (visibleChange)="dialogOpen.set($event)"
+  [modal]="true"
+  [showHeader]="false"
+  [style]="{ width: 'min(1060px, 95vw)' }"
+  [contentStyle]="{ padding: '0' }"
+  styleClass="preset-dialog"
+  appendTo="body"
+>
+  <div class="camera-modal">
+    <header class="preset-head">
+      <h2>{{ 'CAMERA.TITLE' | translate }}</h2>
+      <div class="preset-head-actions">
+        <button type="button" class="preset-reset" (click)="reset()">
+          {{ 'CAMERA.RESET' | translate }}
+        </button>
+        <button
+          type="button"
+          class="preset-close"
+          [attr.aria-label]="'CAMERA.CLOSE' | translate"
+          (click)="dialogOpen.set(false)"
+        >
+          <i class="md md-close" aria-hidden="true"></i>
+        </button>
+      </div>
+    </header>
+
+    <div class="camera-layout">
+      <nav class="camera-rail" [attr.aria-label]="'CAMERA.TITLE' | translate">
+        <button
+          type="button"
+          class="camera-rail-item"
+          [class.active]="tab() === 'config'"
+          (click)="tab.set('config')"
+        >
+          <i class="md md-settings" aria-hidden="true"></i>
+          {{ 'CAMERA.CONFIG' | translate }}
+        </button>
+        <button
+          type="button"
+          class="camera-rail-item"
+          [class.active]="tab() === 'movement'"
+          (click)="tab.set('movement')"
+        >
+          <i class="md md-movie" aria-hidden="true"></i>
+          {{ 'CAMERA.MOVEMENT' | translate }}
+        </button>
+      </nav>
+
+      <section class="camera-panel">
+        @if (tab() === 'config') {
+          <div class="camera-subhead">
+            <h3>{{ 'CAMERA.CONFIG' | translate }}</h3>
+            <p>{{ 'CAMERA.CONFIG_HINT' | translate }}</p>
+          </div>
+          <p class="camera-config-note">{{ 'CAMERA.CONFIG_NOTE' | translate }}</p>
+        } @else {
+          <div class="camera-subhead">
+            <div>
+              <h3>{{ 'CAMERA.DIRECT' | translate }}</h3>
+              <p>{{ 'CAMERA.DIRECT_HINT' | translate }}</p>
+            </div>
+          </div>
+
+          <div class="preset-toolbar">
+            <label class="preset-search">
+              <i class="md md-search" aria-hidden="true"></i>
+              <input
+                pInputText
+                [ngModel]="query()"
+                (ngModelChange)="query.set($event)"
+                [placeholder]="'CAMERA.SEARCH' | translate"
+                [attr.aria-label]="'CAMERA.SEARCH' | translate"
+              />
+            </label>
+            <label class="preset-sort">
+              <span>{{ 'CAMERA.SORT' | translate }}</span>
+              <p-select
+                [options]="sortOptions()"
+                optionLabel="label"
+                optionValue="value"
+                [ngModel]="sort()"
+                (ngModelChange)="sort.set($event)"
+                [ngModelOptions]="{ standalone: true }"
+                styleClass="w-44"
+                appendTo="body"
+              />
+            </label>
+          </div>
+
+          <div class="camera-grid">
+            @for (movement of filtered(); track movement.id) {
+              <button
+                type="button"
+                class="camera-card"
+                [class.selected]="isSelected(movement.id)"
+                [attr.aria-pressed]="isSelected(movement.id)"
+                [attr.aria-label]="movement.name + ' - ' + movement.family"
+                (click)="toggle(movement.id)"
+              >
+                <span class="camera-visual">
+                  @switch (previewState(movement.id)) {
+                    @case ('mp4') {
+                      <video
+                        class="camera-preview"
+                        [src]="previewUrl(movement.id, 'mp4')"
+                        autoplay
+                        muted
+                        loop
+                        playsinline
+                        preload="metadata"
+                        (error)="onPreviewError(movement.id, 'mp4')"
+                      ></video>
+                    }
+                    @case ('gif') {
+                      <img
+                        class="camera-preview"
+                        [src]="previewUrl(movement.id, 'gif')"
+                        alt=""
+                        (error)="onPreviewError(movement.id, 'gif')"
+                      />
+                    }
+                    @default {
+                      <span class="camera-placeholder">
+                        <i class="md md-play_arrow" aria-hidden="true"></i>
+                        <span>{{ 'CAMERA.VIDEO_SOON' | translate }}</span>
+                      </span>
+                    }
+                  }
+                  @if (isSelected(movement.id)) {
+                    <span class="camera-order">{{ orderOf(movement.id) }}</span>
+                  }
+                </span>
+                <span class="camera-card-name">{{ movement.name }}</span>
+                <span class="camera-card-family">{{ movement.family }}</span>
+              </button>
+            }
+          </div>
+
+          @if (filtered().length === 0) {
+            <p class="preset-empty">{{ 'CAMERA.EMPTY' | translate }}</p>
+          }
+          <p class="camera-order-hint">{{ 'CAMERA.ORDER_HINT' | translate }}</p>
+        }
+      </section>
+    </div>
+  </div>
+
+</p-dialog>

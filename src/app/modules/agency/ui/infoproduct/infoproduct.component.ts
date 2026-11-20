@@ -39,6 +39,10 @@ import {
 } from '@modules/agency/interfaces';
 import { InfoproductService, ModelCatalogService } from '@modules/agency/services';
 import { GenerationQueueService } from '@services/generation-queue.service';
+import { CameraMovementSelectComponent } from '@shared/components/camera/camera-movement-select.component';
+import { cameraMovementPrompt } from '@shared/components/camera/camera-movements';
+import { LightingSelectComponent } from '@shared/components/lighting/lighting-select.component';
+import { lightingPrompt } from '@shared/components/lighting/lighting-templates';
 import { FileAsset } from '@modules/library/interfaces';
 import { LibraryService } from '@modules/library/services';
 import { ModelSelectComponent } from '../model-select/model-select.component';
@@ -84,6 +88,8 @@ const FALLBACK_RESOLUTIONS = ['480p', '720p', '1080p'];
     ToggleSwitch,
     Tooltip,
     ModelSelectComponent,
+    LightingSelectComponent,
+    CameraMovementSelectComponent,
   ],
   templateUrl: './infoproduct.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -100,12 +106,21 @@ export class InfoproductComponent implements OnDestroy {
   protected readonly error = signal<string | null>(null);
 
   protected readonly stepItems = computed<MenuItem[]>(() => {
-    const keys = ['VIDEOMACHINE.STEP_SOURCE', 'VIDEOMACHINE.STEP_BREAKDOWN', 'VIDEOMACHINE.STEP_PROMPT'];
-    return keys.map((key, i) => ({
-      label: this.translate.instant(key),
-      command: () => this.goTo((i + 1) as Step),
-      disabled: i === 1 ? !this.analysis() && !this.useFormat() : i === 2 ? !this.result() : false,
-    }));
+    this.translate.currentLang();
+    const steps: readonly [string, string][] = [
+      ['VIDEOMACHINE.STEP_SOURCE', 'VIDEOMACHINE.STEP_SOURCE_HINT'],
+      ['VIDEOMACHINE.STEP_BREAKDOWN', 'VIDEOMACHINE.STEP_BREAKDOWN_HINT'],
+      ['VIDEOMACHINE.STEP_PROMPT', 'VIDEOMACHINE.STEP_PROMPT_HINT'],
+    ];
+    return steps.map(([labelKey, hintKey], i) => {
+      const hint = this.translate.instant(hintKey);
+      return {
+        label: `${this.translate.instant(labelKey)}<span class="sr-only"> — ${hint}</span><span class="vm-step-tip" aria-hidden="true">${hint}</span>`,
+        escape: false,
+        command: () => this.goTo((i + 1) as Step),
+        disabled: i === 1 ? !this.analysis() && !this.useFormat() : i === 2 ? !this.result() : false,
+      };
+    });
   });
 
   // ── Paso 1: fuente ──────────────────────────────────────────────
@@ -145,6 +160,14 @@ export class InfoproductComponent implements OnDestroy {
   protected readonly attachments = signal<readonly Attachment[]>([]);
   protected readonly uploading = signal(false);
   protected readonly videoModel = signal<AiModel | null>(null);
+  /** Esquema de iluminación / dirección de arte para los prompts y videos. */
+  protected readonly lighting = signal<string | null>(null);
+  /** Luz propia de cada segmento (null = la global). */
+  protected readonly segmentLighting = signal<Record<number, string | null>>({});
+  /** Movimientos de cámara base del video. */
+  protected readonly camera = signal<string[]>([]);
+  /** Movimientos propios de cada segmento. */
+  protected readonly segmentCamera = signal<Record<number, string[]>>({});
   protected readonly composing = signal(false);
   protected readonly composeSeconds = signal(0);
   private composeTimer: ReturnType<typeof setInterval> | null = null;
@@ -437,6 +460,8 @@ export class InfoproductComponent implements OnDestroy {
         aspect_ratio: this.analysis()?.meta.aspect_ratio,
         notes: this.notes().trim() || undefined,
         format_id: this.useFormat() ? (this.formatId() ?? undefined) : undefined,
+        lighting: lightingPrompt(this.lighting()) || undefined,
+        camera_movements: cameraMovementPrompt(this.camera()) || undefined,
       })
       .pipe(
         catchError((err: unknown) => {
@@ -448,6 +473,8 @@ export class InfoproductComponent implements OnDestroy {
       .subscribe((response) => {
         const vp = response.video_prompt;
         this.result.set(vp);
+        this.segmentLighting.set({});
+        this.segmentCamera.set({});
         this.segmentPrompts.set(vp.segments.map((s) => s.prompt));
         this.segmentDurations.set(
           vp.segments.map((s) =>
@@ -470,6 +497,22 @@ export class InfoproductComponent implements OnDestroy {
   protected setSegmentDuration(index: number, value: number | string | null): void {
     const n = Math.max(1, Math.round(Number(value) || 1));
     this.segmentDurations.update((list) => list.map((d, i) => (i === index ? n : d)));
+  }
+
+  protected setSegmentLighting(index: number, value: string | null): void {
+    this.segmentLighting.update((map) => ({ ...map, [index]: value }));
+  }
+
+  private segmentLightingId(index: number): string | null {
+    return this.segmentLighting()[index] ?? this.lighting();
+  }
+
+  protected setSegmentCamera(index: number, value: string[]): void {
+    this.segmentCamera.update((map) => ({ ...map, [index]: value }));
+  }
+
+  private segmentCameraIds(index: number): readonly string[] {
+    return this.segmentCamera()[index] ?? this.camera();
   }
 
   protected ingredientThumb(fileId: string): string {
@@ -499,7 +542,13 @@ export class InfoproductComponent implements OnDestroy {
     const code = this.takeCode();
     const useAudio = buildTarget(model).audio_reference;
     const payloads = indexes.map((index) => {
-      const text = promptForGeneration(this.segmentPrompts()[index] ?? '');
+      const text = [
+        promptForGeneration(this.segmentPrompts()[index] ?? ''),
+        lightingPrompt(this.segmentLightingId(index)),
+        cameraMovementPrompt(this.segmentCameraIds(index)),
+      ]
+        .filter(Boolean)
+        .join('\n\n');
       const content: GenerateRequest['content'] = [
         ...vp.ingredients.map((ing) => ({
           type: 'image' as const,
@@ -564,7 +613,13 @@ export class InfoproductComponent implements OnDestroy {
       {
         label: this.translate.instant('VIDEOMACHINE.QUEUE_SEGMENT_LABEL', { n: index + 1 }),
         source: 'infoproduct',
-        prompt,
+        prompt: [
+          prompt,
+          lightingPrompt(this.segmentLightingId(index)),
+          cameraMovementPrompt(this.segmentCameraIds(index)),
+        ]
+          .filter(Boolean)
+          .join('\n\n'),
         assets,
         model: model.name,
         modelDisplayName: model.display_name || model.name,

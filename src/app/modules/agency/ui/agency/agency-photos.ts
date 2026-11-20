@@ -136,7 +136,7 @@ export function photoKindToFuncion(kind: PhotoKind): string {
 /** Tags `@nombre` presentes en el texto de un prompt (sin repetir, en
  *  minúsculas). Ignora un `@` pegado a una palabra (emails: `a@b`). */
 export function parseTagsFromText(text: string): string[] {
-  const pattern = /(^|[^\w@])@([a-z0-9][a-z0-9-]*)/gi;
+  const pattern = /(^|[^\w@])@([a-z0-9][a-z0-9_-]*(?:\.[a-z0-9_-]+)*)/gi;
   const tags: string[] = [];
   let match: RegExpExecArray | null;
   while ((match = pattern.exec(text)) !== null) {

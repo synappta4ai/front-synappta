@@ -26,6 +26,8 @@ import { FileAsset } from '@modules/library/interfaces';
 import { LibraryService } from '@modules/library/services';
 import { ServerUrlPipe } from '@pipes/server-url.pipe';
 import { UiIcon } from '@shared/components/ui-icon/ui-icon.component';
+import { LightingSelectComponent } from '@shared/components/lighting/lighting-select.component';
+import { lightingPrompt } from '@shared/components/lighting/lighting-templates';
 
 import {
   POSE_SHEET_PIECE_CODE,
@@ -57,6 +59,7 @@ const PROGRESS_EXPECTED_MS = 75_000;
     Tag,
     ServerUrlPipe,
     UiIcon,
+    LightingSelectComponent,
   ],
   templateUrl: './pose-sheet.component.html',
   styleUrl: './pose-sheet.component.css',
@@ -90,6 +93,8 @@ export class PoseSheetComponent implements OnInit {
   /** Modelo elegido (nombre del catálogo); el desplegable lista todos los
    *  modelos de imagen disponibles, igual que el Studio. */
   protected readonly selectedModel = signal('');
+  /** Esquema de iluminación / dirección de arte de la hoja. */
+  protected readonly lighting = signal<string | null>(null);
 
   protected readonly variant = signal<PoseSheetVariant>('body');
   protected readonly defaultPrompt = signal('');
@@ -307,6 +312,8 @@ export class PoseSheetComponent implements OnInit {
     if (who) {
       parts.push(`Character: ${who}`);
     }
+    const light = lightingPrompt(this.lighting());
+    if (light) parts.push(light);
     return parts.filter(Boolean).join('\n\n');
   }
 }

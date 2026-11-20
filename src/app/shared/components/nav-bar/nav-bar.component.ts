@@ -71,6 +71,12 @@ export class NavBarComponent {
         routerLink: '/tools/storyboard',
       },
       {
+        label: t('TOOLS.IMAGE_LAB'),
+        description: t('TOOLS.IMAGE_LAB_DESC'),
+        icon: 'md md-image',
+        routerLink: '/tools/image-lab',
+      },
+      {
         label: t('TOOLS.EDITOR'),
         description: t('TOOLS.EDITOR_DESC'),
         icon: 'md md-content_cut',
@@ -96,7 +102,11 @@ export class NavBarComponent {
     const adminItems: MenuItem[] = [
       { label: t('ADMIN.CONSOLE.MENU_MODELS'), icon: 'md md-memory', routerLink: '/admin/models' },
       { label: t('ADMIN.CONSOLE.MENU_MASTER'), icon: 'md md-star', routerLink: '/admin/maestro' },
-      { label: t('ADMIN.CONSOLE.MENU_VIDEOS'), icon: 'md md-videocam', routerLink: '/admin/videos' },
+      {
+        label: t('ADMIN.CONSOLE.MENU_VIDEOS'),
+        icon: 'md md-videocam',
+        routerLink: '/admin/videos',
+      },
       { label: t('ADMIN.CONSOLE.MENU_IMAGES'), icon: 'md md-image', routerLink: '/admin/imagenes' },
       { label: t('ADMIN.CONSOLE.MENU_LOGS'), icon: 'md md-list', routerLink: '/admin/logs' },
       {
@@ -106,23 +116,30 @@ export class NavBarComponent {
       },
       { label: t('ADMIN.CONSOLE.MENU_USERS'), icon: 'md md-people', routerLink: '/admin/users' },
       { label: t('ADMIN.CONSOLE.MENU_BUCKET'), icon: 'md md-storage', routerLink: '/admin/bucket' },
-      { label: t('ADMIN.CONSOLE.MENU_NOTIFICATIONS'), icon: 'md md-notifications', routerLink: '/admin/notifications' },
+      {
+        label: t('ADMIN.CONSOLE.MENU_NOTIFICATIONS'),
+        icon: 'md md-notifications',
+        routerLink: '/admin/notifications',
+      },
       { label: t('ADMIN.CONSOLE.MENU_TRASH'), icon: 'md md-delete', routerLink: '/admin/papelera' },
-      { label: t('ADMIN.CONSOLE.MENU_TENANTS'), icon: 'md md-business', routerLink: '/admin/tenants' },
+      {
+        label: t('ADMIN.CONSOLE.MENU_TENANTS'),
+        icon: 'md md-business',
+        routerLink: '/admin/tenants',
+      },
     ];
 
     // Sub-items del menú de herramientas (popover HERRAMIENTAS; se amplía sin tocar el back).
     // Nota: solo toolItems alimenta el popover; no duplicar la lista acá.
 
     return [
-      { label: t('APP.ROUTES.AGENCY'), icon: 'md md-work', routerLink: '/agency' },
-      { label: t('APP.ROUTES.STUDIO'), icon: 'md md-bolt', routerLink: '/studio' },
-      { label: t('APP.ROUTES.PROJECTS'), icon: 'md md-folder', routerLink: '/projects' },
-      { label: t('APP.ROUTES.RESOURCES'), icon: 'md md-photo_library', routerLink: '/resources' },
-      { label: t('APP.ROUTES.MY_GENERATIONS'), icon: 'md md-movie', routerLink: '/my-generations' },
+      { label: t('APP.ROUTES.AGENCY'), routerLink: '/agency' },
+      { label: t('APP.ROUTES.STUDIO'), routerLink: '/studio' },
+      { label: t('APP.ROUTES.PROJECTS'), routerLink: '/projects' },
+      { label: t('APP.ROUTES.RESOURCES'), routerLink: '/resources' },
+      { label: t('APP.ROUTES.MY_GENERATIONS'), routerLink: '/my-generations' },
       {
         label: t('TOOLS.TITLE'),
-        icon: 'md md-auto_fix_high',
         // Sin routerLink PrimeNG nunca la marca activa: el resaltado en
         // /tools/* lo pone esta clase (ver CSS .tools-active + pill).
         styleClass: this.toolsRouteActive() ? 'tools-active' : undefined,
@@ -136,7 +153,6 @@ export class NavBarComponent {
       },
       {
         label: t('ADMIN.CONSOLE.MENU_TITLE'),
-        icon: 'md md-settings',
         routerLink: '/admin',
         routerLinkActiveOptions: { exact: false },
         items: adminItems,

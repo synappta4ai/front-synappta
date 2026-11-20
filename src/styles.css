@@ -464,9 +464,10 @@
   --space-16: 4rem;
   --space-20: 5rem;
 
-  /* Anillo de foco de doble capa: accent (visible sobre surface) + ink
-     (visible sobre background, donde accent no llega a 3:1) */
-  --focus-shadow: 0 0 0 5px var(--color-ink);
+  /* Foco: outline accent (legible sobre cualquier superficie) + glow suave.
+     El halo sólido anterior (5px ink) se leía como un marco blanco fijo en
+     oscuro y negro en claro. */
+  --focus-shadow: 0 0 0 4px color-mix(in srgb, var(--color-focus-ring) 22%, transparent);
 }
 
 /* ============================================
@@ -667,11 +668,47 @@ input {
   background: var(--color-choice);
 }
 
-/* Foco visible: doble anillo accent + ink */
+/* Foco visible: outline accent + glow del mismo tono */
 *:focus-visible {
   outline: 2px solid var(--color-focus-ring);
   outline-offset: 2px;
   box-shadow: var(--focus-shadow);
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-accent) 30%, transparent);
+}
+
+/* Aceleradores táctiles: evita el doble-tap y el delay de 300ms en móvil. */
+button,
+[role='button'],
+label[tabindex],
+summary {
+  touch-action: manipulation;
+}
+
+/* Títulos más equilibrados (evita huérfanas en una sola palabra). */
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+
+/* Los overlays no arrastran el scroll de la página detrás. */
+.p-dialog,
+.p-popover,
+.p-overlaypanel,
+.p-select-overlay,
+.p-multiselect-overlay,
+.p-menu,
+.p-tieredmenu {
+  overscroll-behavior: contain;
+}
+
+/* Cifras alineadas en tablas y bloques numéricos. */
+.p-datatable .p-datatable-tbody > tr > td,
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }
 
 /* ============================================
@@ -820,6 +857,18 @@ input {
 .p-button.p-button-text.p-button-danger:hover:not(:disabled) {
   background: var(--color-surface-hover);
   color: var(--color-danger);
+}
+
+/* Acción destructiva silenciosa en filas de lista (Projects): gris hasta
+   hover/focus, para que no compita con la acción principal de abrir. */
+.p-button.p-button-text.projects-delete:not(:disabled) {
+  color: var(--color-ink-muted);
+}
+
+.p-button.p-button-text.projects-delete:not(:disabled):hover,
+.p-button.p-button-text.projects-delete:not(:disabled):focus-visible {
+  background: color-mix(in srgb, var(--color-danger) 14%, transparent);
+  color: var(--color-danger-strong);
 }
 
 /* Outlined */
@@ -1187,6 +1236,67 @@ input {
   color: inherit;
 }
 
+/* Descripción del paso: burbuja anclada al label del paso (no al <li> ancho
+   del stepper), para que aparezca centrada justo arriba del paso apuntado.
+   Se muestra al hover y al foco de teclado; el texto también viaja en
+   `.sr-only` para lectores de pantalla. */
+.p-steps .p-steps-item {
+  position: relative;
+}
+
+.p-steps .p-steps-item .p-steps-item-label {
+  position: relative;
+  /* El tema de PrimeNG recorta el label y el link para el ellipsis; la
+     burbuja vive dentro del label, así que liberamos el recorte. */
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.p-steps .p-steps-item .p-steps-item-link {
+  overflow: visible;
+}
+
+.p-steps .vm-step-tip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 3rem);
+  z-index: 20;
+  width: max-content;
+  max-width: 18rem;
+  padding: 0.5rem 0.625rem;
+  border: 1px solid var(--color-surface-border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-2);
+  color: var(--color-ink-on-dark);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1.45;
+  text-align: left;
+  white-space: normal;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateX(-50%) translateY(4px);
+  transition:
+    opacity 0.15s var(--ease-app),
+    transform 0.15s var(--ease-app),
+    visibility 0.15s var(--ease-app);
+}
+
+.p-steps .p-steps-item:hover .vm-step-tip,
+.p-steps .p-steps-item:focus-within .vm-step-tip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .p-steps .vm-step-tip {
+    transition: none;
+  }
+}
+
 /* ============================================
    PrimeNG: checkbox, spinner, progress
    ============================================ */
@@ -1442,6 +1552,13 @@ input {
 /* Empuja los menús y el bloque derecho (campana/tema) a la derecha */
 .p-menubar .p-menubar-root-list {
   margin-left: auto;
+}
+
+/* Cambio de ítem con transición (antes el color saltaba de golpe). */
+.p-menubar .p-menubar-item-link {
+  transition:
+    color 150ms var(--ease-app),
+    background-color 150ms var(--ease-app);
 }
 
 /* En móvil, el hamburger va después del bloque derecho */
@@ -3575,6 +3692,12 @@ main:has(> app-location) {
   margin-bottom: 8px;
 }
 
+/* La píldora de iluminación ocupa el ancho del panel: era la única fila del
+   estudio con un control angosto y medio panel muerto al lado. */
+.studio-shell .panel .lighting-trigger.pill {
+  width: 100%;
+}
+
 .studio-shell .foot-icon {
   font-size: 11px;
   color: var(--st-text-2);
@@ -3824,6 +3947,19 @@ main:has(> app-location) {
   margin-right: 6px;
 }
 
+/* El título no se parte ("Take / Reel" en dos líneas): los chips de día
+   ceden el espacio y scrollean en su propia fila. */
+.studio-shell .reel-head > span:first-child,
+.studio-shell .queue-head > span:first-child {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.studio-shell .reel-head .day-chips {
+  min-width: 0;
+  justify-content: flex-end;
+}
+
 .studio-shell .reel-list {
   padding-bottom: 5px;
   display: flex;
@@ -3858,6 +3994,8 @@ main:has(> app-location) {
 }
 
 .studio-shell .take-card:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
   box-shadow: var(--focus-shadow);
 }
 
@@ -4984,6 +5122,19 @@ main:has(> app-location) {
   padding-right: 4px;
 }
 
+/* Tooltips explicativos de VideoMachine: textos cortos pero completos, con
+   ancho acotado para que no se conviertan en una linea infinita. */
+.p-tooltip.app-tooltip {
+  max-width: 18rem;
+}
+
+.p-tooltip.app-tooltip .p-tooltip-text {
+  padding: 0.5rem 0.625rem;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  white-space: normal;
+}
+
 .p-iconfield p-inputicon {
   margin-top: -7px !important;
   margin-right: 16px !important;
@@ -5218,36 +5369,6 @@ main:has(> app-location) {
 /* ── Chat asistente del agente experto (/agency) ───────────
    Panel lateral fijo: burbujas del usuario/experto, typing y
    formulario. Mismos tokens que el resto de la página. */
-.agency-chat-fab {
-  position: fixed;
-  right: 24px;
-  bottom: 24px;
-  z-index: 40;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 52px;
-  height: 52px;
-  border: 0;
-  border-radius: var(--radius-full);
-  background: var(--color-accent);
-  color: var(--color-on-accent);
-  cursor: pointer;
-  box-shadow: 0 6px 20px rgb(0 0 0 / 25%);
-  transition:
-    background-color 120ms ease,
-    transform 120ms ease;
-}
-
-.agency-chat-fab:hover {
-  background: var(--color-accent-hover);
-  transform: translateY(-1px);
-}
-
-.agency-chat-fab i {
-  font-size: 24px;
-}
-
 .agency-chat-panel {
   position: fixed;
   right: 24px;

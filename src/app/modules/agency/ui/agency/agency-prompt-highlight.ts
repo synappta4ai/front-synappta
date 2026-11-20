@@ -7,7 +7,7 @@
  * Sin dependencias de Angular: es la parte del flujo que se prueba sola.
  */
 
-import type { PhotoKind } from './agency-photos';
+// Los tonos cubren imágenes (personaje/producto/locación/props), audio y video.
 
 /** Tono visual de un fragmento del prompt. */
 export type PromptTone =
@@ -32,8 +32,10 @@ export interface PromptSlotSpan {
   tone: 'character' | 'location' | 'product';
 }
 
-/** Tag de referencia dentro del texto (mismo criterio que parseTagsFromText). */
-const TAG_PATTERN = /@[a-z0-9][a-z0-9-]*/gi;
+/** Tag de referencia dentro del texto (mismo criterio que parseTagsFromText).
+ *  Acepta la extensión del archivo (`@Andres.png`) pero no el punto final de
+ *  la frase. */
+const TAG_PATTERN = /@[a-z0-9][a-z0-9_-]*(?:\.[a-z0-9_-]+)*/gi;
 
 interface Match {
   start: number;
@@ -41,7 +43,7 @@ interface Match {
   tone: PromptTone;
 }
 
-function toneForTag(tag: string, kinds: ReadonlyMap<string, PhotoKind | null>): PromptTone {
+function toneForTag(tag: string, kinds: ReadonlyMap<string, PromptTone | null>): PromptTone {
   const key = tag.toLowerCase();
   if (kinds.has(key)) {
     return kinds.get(key) ?? 'unknown';
@@ -60,7 +62,7 @@ function toneForTag(tag: string, kinds: ReadonlyMap<string, PhotoKind | null>): 
 /** Tags con su posición; descarta un `@` pegado a una palabra (emails). */
 function tagMatches(
   text: string,
-  kinds: ReadonlyMap<string, PhotoKind | null>,
+  kinds: ReadonlyMap<string, PromptTone | null>,
 ): Match[] {
   const matches: Match[] = [];
   for (const match of text.matchAll(TAG_PATTERN)) {
@@ -102,7 +104,7 @@ function merge(segments: PromptSegment[]): PromptSegment[] {
 export function highlightPrompt(
   text: string,
   slots: readonly PromptSlotSpan[],
-  kinds: ReadonlyMap<string, PhotoKind | null>,
+  kinds: ReadonlyMap<string, PromptTone | null>,
 ): PromptSegment[] {
   if (!text) {
     return [];

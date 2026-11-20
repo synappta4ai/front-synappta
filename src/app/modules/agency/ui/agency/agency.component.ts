@@ -61,6 +61,10 @@ import { PageContainerComponent, ValidatorErrors } from '@shared/components/inde
 import { UiIcon } from '@shared/components/ui-icon/ui-icon.component';
 import { AssetEditDialogComponent } from '@shared/components/asset-edit-dialog/asset-edit-dialog';
 import { AutogrowDirective } from '@shared/components/autogrow/autogrow.directive';
+import { CameraMovementSelectComponent } from '@shared/components/camera/camera-movement-select.component';
+import { cameraMovementPrompt } from '@shared/components/camera/camera-movements';
+import { LightingSelectComponent } from '@shared/components/lighting/lighting-select.component';
+import { lightingPrompt } from '@shared/components/lighting/lighting-templates';
 import { UserSessionStore } from '@core/store/user.session';
 import { GenerationEventsStore } from '@core/store/generation.events';
 import { StudioTake } from '@modules/studio/interfaces';
@@ -224,6 +228,10 @@ interface VideoPrompt {
   ratio?: string | null;
   /** Task id de la generación: habilita calificar e "Ir a estudio" desde la card. */
   taskId?: string | null;
+  /** Esquema de luz propio de esta toma (null = el global del flujo). */
+  lighting?: string | null;
+  /** Movimientos de cámara propios de esta toma (null = los globales). */
+  camera?: string[] | null;
 }
 
 interface StoryboardScene {
@@ -431,6 +439,8 @@ function parseAgentEvent(rawEvent: string): { name: string; data: Record<string,
     LowerCasePipe,
     TranslatePipe,
     AssetEditDialogComponent,
+    LightingSelectComponent,
+    CameraMovementSelectComponent,
   ],
   templateUrl: './agency.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -561,12 +571,43 @@ export class AgencyComponent {
     this.phases().findIndex((p) => p.key === this.currentPhase()),
   );
 
-  protected readonly stepItems = computed<MenuItem[]>(() =>
-    this.phases().map((phase, i) => ({
-      label: phase.name,
-      command: () => this.goToPhase(phase.key),
-    })),
-  );
+  protected readonly stepItems = computed<MenuItem[]>(() => {
+    this.translate.currentLang();
+    return this.phases().map((phase) => {
+      const hint = this.phaseHint(phase.key);
+      return {
+        label: `${phase.name}<span class="sr-only"> — ${hint}</span><span class="vm-step-tip" aria-hidden="true">${hint}</span>`,
+        escape: false,
+        command: () => this.goToPhase(phase.key),
+      };
+    });
+  });
+
+  /** Qué hace cada paso, según el experto elegido. */
+  private phaseHint(phase: WorkflowPhase): string {
+    switch (phase) {
+      case 'input':
+        return this.translate.instant('AGENCY.STUDIO.HINT_PHASE_INPUT');
+      case 'angles':
+        return this.translate.instant(
+          this.agent() === 'real_estate'
+            ? 'AGENCY.STUDIO.HINT_PHASE_ANGLES'
+            : 'AGENCY.STUDIO.HINT_PHASE_PROMPTS',
+        );
+      case 'storyboard':
+        return this.translate.instant('AGENCY.STUDIO.HINT_PHASE_STORYBOARD');
+      default:
+        return this.translate.instant('AGENCY.STUDIO.HINT_PHASE_SCENES');
+    }
+  }
+
+  /** Tooltip del CTA del paso 1: ángulos (inmobiliaria) o prompts. */
+  protected readonly generateHint = computed(() => {
+    this.translate.currentLang();
+    return this.agent() === 'real_estate'
+      ? this.translate.instant('AGENCY.STUDIO.HINT_GENERATE_ANGLES', { noun: this.anglesNoun() })
+      : this.translate.instant('AGENCY.STUDIO.HINT_GENERATE_PROMPTS');
+  });
 
   protected readonly models = signal<readonly AiModel[]>([]);
   /** Credenciales del tenant: de ahí salen los modelos LLM configurados. */
@@ -667,6 +708,11 @@ export class AgencyComponent {
    *  Sin input en la UI (se eliminó del panel): se conserva por compatibilidad
    *  con avances guardados que todavía traen `videoSettings.tags`. */
   protected readonly videoTags = signal('');
+  /** Esquema de iluminación / dirección de arte del flujo (aplica a todos
+   *  los prompts, hojas de storyboard y videos generados). */
+  protected readonly lighting = signal<string | null>(null);
+  /** Movimientos de cámara del flujo (base para todas las tomas). */
+  protected readonly camera = signal<string[]>([]);
 
   /** Escena actual de la modal. */
   protected readonly boardScene = computed(() => {
@@ -1797,6 +1843,8 @@ export class AgencyComponent {
       duracion_total_s: this.videoDuration(),
       aspecto: this.boardRatio() || this.videoRatio(),
       duracion_minima_vineta_s: 1.5,
+      ...(this.lighting() ? { iluminacion: lightingPrompt(this.lighting()) } : {}),
+      ...(this.camera().length ? { movimiento_camara: cameraMovementPrompt(this.camera()) } : {}),
     };
     this.boardAgentLoading.set(true);
     this.error.set(null);
@@ -1902,6 +1950,8 @@ export class AgencyComponent {
       aspecto: this.videoRatio(),
       resolucion: this.videoResolution(),
       sonido: this.videoAudio(),
+      ...(this.lighting() ? { iluminacion: lightingPrompt(this.lighting()) } : {}),
+      ...(this.camera().length ? { movimiento_camara: cameraMovementPrompt(this.camera()) } : {}),
     };
     this.clipAgentSceneId.set(scene.id);
     this.error.set(null);
@@ -1996,7 +2046,9 @@ export class AgencyComponent {
   /** Genera la imagen-guía (hoja con varias viñetas) de la escena abierta. */
   protected submitBoardImage(): void {
     const scene = this.boardScene();
-    const prompt = this.boardPrompt().trim();
+    const prompt = [this.boardPrompt().trim(), lightingPrompt(this.lighting())]
+      .filter(Boolean)
+      .join('\n\n');
     if (!scene || scene.boardGenerating) return;
     if (!prompt) {
       this.error.set(this.translate.instant('AGENCY.STUDIO.ERRORS.BOARD_PROMPT'));
@@ -2443,6 +2495,8 @@ export class AgencyComponent {
       ...(agent === 'commercial' ? { cantidad_prompts: count } : {}),
       ...(agent === 'commercial' ? { referencias_subidas: this.referenciasSubidas() } : {}),
       ...(agent === 'cinema' ? { registro: 'cine' } : agent === 'commercial' ? { registro: 'comercial' } : {}),
+      ...(this.lighting() ? { iluminacion: lightingPrompt(this.lighting()) } : {}),
+      ...(this.camera().length ? { movimiento_camara: cameraMovementPrompt(this.camera()) } : {}),
     };
 
     return new Observable<SalesAngle[]>((subscriber) => {
@@ -2652,6 +2706,8 @@ export class AgencyComponent {
       angles: this.angles(),
       storyboard: this.storyboard(),
       projectDescription: this.projectDescription(),
+      lighting: this.lighting(),
+      camera: this.camera(),
       // Imágenes pedidas por el experto en el paso 1 y lo que el usuario subió.
       stepPhotos: this.stepPhotos(),
       stepPhotosSkipped: this.stepPhotosSkipped(),
@@ -2697,6 +2753,8 @@ export class AgencyComponent {
       this.videoAudio.set(true);
       this.agent.set('commercial');
       this.projectPhotos.set([]);
+      this.lighting.set(null);
+      this.camera.set([]);
       return;
     }
     let agency: Record<string, unknown> | null = null;
@@ -2722,6 +2780,12 @@ export class AgencyComponent {
     this.modelText.set(models.text ?? '');
     this.modelImage.set(models.image ?? '');
     this.modelVideo.set(models.video ?? '');
+    this.lighting.set(typeof agency['lighting'] === 'string' ? (agency['lighting'] as string) : null);
+    this.camera.set(
+      Array.isArray(agency['camera'])
+        ? (agency['camera'] as unknown[]).filter((id): id is string => typeof id === 'string')
+        : [],
+    );
 
     const videoSettings = (agency['videoSettings'] ?? {}) as {
       duration?: number;
@@ -3177,18 +3241,31 @@ export class AgencyComponent {
     resolution: string,
   ): VideoPrompt[] {
     const previous = (shot ? shot.prompts : scene.prompts) ?? [];
-    return Array.from({ length: segments }, (_, i) => ({
-      text: this.buildPromptText(scene, shot, i, segments, tags, ratio, resolution),
-      videoUrl: previous[i]?.videoUrl ?? null,
-      // Conserva el estado si el prompt ya se está generando en este momento.
-      generating: previous[i]?.generating ?? false,
-      // Overrides por prompt: sobreviven al rearmado de la config global.
-      duration: previous[i]?.duration ?? null,
-      resolution: previous[i]?.resolution ?? null,
-      audio: previous[i]?.audio ?? null,
-      videoModel: previous[i]?.videoModel ?? null,
-      ratio: previous[i]?.ratio ?? null,
-    }));
+    return Array.from({ length: segments }, (_, i) => {
+      const light = previous[i]?.lighting ?? this.lighting();
+      const camera = previous[i]?.camera ?? this.camera();
+      const text = [
+        this.buildPromptText(scene, shot, i, segments, tags, ratio, resolution),
+        lightingPrompt(light),
+        cameraMovementPrompt(camera),
+      ]
+        .filter(Boolean)
+        .join('\n\n');
+      return {
+        text,
+        videoUrl: previous[i]?.videoUrl ?? null,
+        // Conserva el estado si el prompt ya se está generando en este momento.
+        generating: previous[i]?.generating ?? false,
+        // Overrides por prompt: sobreviven al rearmado de la config global.
+        duration: previous[i]?.duration ?? null,
+        resolution: previous[i]?.resolution ?? null,
+        audio: previous[i]?.audio ?? null,
+        videoModel: previous[i]?.videoModel ?? null,
+        ratio: previous[i]?.ratio ?? null,
+        lighting: previous[i]?.lighting ?? null,
+        camera: previous[i]?.camera ?? null,
+      };
+    });
   }
 
   /** Texto de un prompt: escena/toma + referencia al storyboard + tags de
@@ -3460,6 +3537,64 @@ export class AgencyComponent {
     value: boolean,
   ): void {
     this.patchPromptSpec(sceneId, shotId, index, { audio: value });
+  }
+
+  /** Luz propia de una toma: null vuelve a la luz global del flujo. */
+  protected setPromptLighting(
+    sceneId: string,
+    shotId: string | null,
+    index: number,
+    value: string | null,
+  ): void {
+    const prompt = this.promptAt(sceneId, shotId, index);
+    if (!prompt) return;
+    this.patchPrompt(sceneId, shotId, index, {
+      lighting: value,
+      text: this.applyDirectivesToText(prompt.text, {
+        lighting: value ?? this.lighting(),
+        camera: prompt.camera ?? this.camera(),
+      }),
+    });
+    this.commitSceneEdit();
+  }
+
+  /** Movimientos de cámara propios de una toma ([] = los globales). */
+  protected setPromptCamera(
+    sceneId: string,
+    shotId: string | null,
+    index: number,
+    value: string[],
+  ): void {
+    const prompt = this.promptAt(sceneId, shotId, index);
+    if (!prompt) return;
+    this.patchPrompt(sceneId, shotId, index, {
+      camera: value,
+      text: this.applyDirectivesToText(prompt.text, {
+        lighting: prompt.lighting ?? this.lighting(),
+        camera: value,
+      }),
+    });
+    this.commitSceneEdit();
+  }
+
+  /** Reemplaza los bloques de luz y cámara que la app agrega al final. */
+  private applyDirectivesToText(
+    text: string,
+    directives: { lighting: string | null; camera: readonly string[] },
+  ): string {
+    const markers = [
+      'LIGHTING AND ART DIRECTION - ',
+      'CAMERA MOVEMENTS (apply in this exact order):',
+    ];
+    let cut = text.length;
+    for (const marker of markers) {
+      const index = text.indexOf(marker);
+      if (index >= 0) cut = Math.min(cut, index);
+    }
+    const base = text.slice(0, cut).trimEnd();
+    return [base, lightingPrompt(directives.lighting), cameraMovementPrompt(directives.camera)]
+      .filter(Boolean)
+      .join('\n\n');
   }
 
   /** Cambia el modelo de video de una caja: si su ratio/calidad no existen en

@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 
+import { ImageLabComponent } from './ui/image-lab/image-lab.component';
 import { LocationComponent } from './ui/location/location.component';
 import { PoseSheetComponent } from './ui/pose-sheet/pose-sheet.component';
 import { StoryboardComponent } from './ui/storyboard/storyboard.component';
@@ -20,6 +21,10 @@ export const toolsRoutes: Routes = [
   {
     path: 'storyboard',
     component: StoryboardComponent,
+  },
+  {
+    path: 'image-lab',
+    component: ImageLabComponent,
   },
   {
     path: 'editor',
