@@ -673,6 +673,10 @@
       "AVATAR_ALT": "Foto de perfil",
       "LOGO_ALT": "Logo Synapta"
     },
+    "IMAGE_VIEWER": {
+      "ARIA": "Vista ampliada de la imagen",
+      "CLOSE": "Cerrar imagen"
+    },
     "FOOTER": {
       "CONTACT_ARIA": "Contacto y redes",
       "LANG_ARIA": "Cambiar idioma",
@@ -997,7 +1001,10 @@
       "COL_ACTIONS": "Acciones",
       "LOADING": "Cargando tenants…",
       "ACTIVE": "Activo",
-      "INACTIVE": "Inactivo",
+    "INACTIVE": "Inactivo",
+    "ACTIVE_PROJECT": "En trabajo",
+    "ACTIVE_PROJECT_NONE": "Sin proyecto",
+    "SELECT_ACTIVE": "Elegir {{name}} como proyecto de trabajo",
       "USERS": "Usuarios",
       "STORAGE": "Bucket",
       "STORAGE_HINT": "Credenciales del bucket del tenant",

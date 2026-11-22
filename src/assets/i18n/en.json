@@ -673,6 +673,10 @@
       "AVATAR_ALT": "Profile photo",
       "LOGO_ALT": "Synapta logo"
     },
+    "IMAGE_VIEWER": {
+      "ARIA": "Enlarged image view",
+      "CLOSE": "Close image"
+    },
     "FOOTER": {
       "CONTACT_ARIA": "Contact & social",
       "LANG_ARIA": "Change language",
@@ -997,7 +1001,10 @@
       "COL_ACTIONS": "Actions",
       "LOADING": "Loading tenants…",
       "ACTIVE": "Active",
-      "INACTIVE": "Inactive",
+    "INACTIVE": "Inactive",
+    "ACTIVE_PROJECT": "Working on",
+    "ACTIVE_PROJECT_NONE": "No project",
+    "SELECT_ACTIVE": "Set {{name}} as working project",
       "USERS": "Users",
       "STORAGE": "Bucket",
       "STORAGE_HINT": "Tenant's bucket credentials",
