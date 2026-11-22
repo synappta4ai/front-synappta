@@ -159,7 +159,9 @@
         [pill]="true"
         inputId="imageLabLighting"
         [value]="lighting()"
+        [intensity]="lookIntensity()"
         (valueChange)="lighting.set($event)"
+        (intensityChange)="lookIntensity.set($event)"
       />
     </div>
 
@@ -222,15 +224,53 @@
           <span>{{ 'TOOLS.IMAGE_LAB_DESC' | translate }}</span>
         </div>
       } @else {
-        <div class="pose-canvas">
-          @for (output of result(); track $index) {
+        @if (beforeRef(); as before) {
+          <div
+            class="ba-compare"
+            role="slider"
+            tabindex="0"
+            aria-orientation="horizontal"
+            [attr.aria-valuemin]="0"
+            [attr.aria-valuemax]="100"
+            [attr.aria-valuenow]="compare()"
+            [attr.aria-label]="'TOOLS.IMAGE_LAB_COMPARE' | translate"
+            (pointerdown)="startCompare($event)"
+            (pointermove)="moveCompare($event)"
+            (keydown)="onCompareKey($event)"
+          >
             <img
-              [src]="output.url | serverUrl"
-              [alt]="'TOOLS.IMAGE_LAB_RESULT_ALT' | translate"
+              class="ba-img"
+              [src]="result()[0].url | serverUrl"
+              [alt]="'TOOLS.IMAGE_LAB_AFTER' | translate"
               decoding="async"
             />
-          }
-        </div>
+            <img
+              class="ba-img ba-before"
+              [src]="before.url | serverUrl"
+              [alt]="'TOOLS.IMAGE_LAB_BEFORE' | translate"
+              [style.clip-path]="'inset(0 ' + (100 - compare()) + '% 0 0)'"
+              decoding="async"
+            />
+            <span class="ba-divider" aria-hidden="true" [style.left.%]="compare()">
+              <span class="ba-handle">
+                <i class="md md-chevron_left"></i>
+                <i class="md md-chevron_right"></i>
+              </span>
+            </span>
+            <span class="ba-label ba-label--before">{{ 'TOOLS.IMAGE_LAB_BEFORE' | translate }}</span>
+            <span class="ba-label ba-label--after">{{ 'TOOLS.IMAGE_LAB_AFTER' | translate }}</span>
+          </div>
+        } @else {
+          <div class="pose-canvas">
+            @for (output of result(); track $index) {
+              <img
+                [src]="output.url | serverUrl"
+                [alt]="'TOOLS.IMAGE_LAB_RESULT_ALT' | translate"
+                decoding="async"
+              />
+            }
+          </div>
+        }
         <div class="viewer-actions">
           <p-button
             [label]="saving() ? ('TOOLS.SAVING' | translate) : ('TOOLS.IMAGE_LAB_SAVE' | translate)"

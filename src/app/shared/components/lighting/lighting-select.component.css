@@ -396,7 +396,7 @@
   }
 }
 
-/* P�ldora compacta para barras de configuraci�n. */
+/* Píldora compacta para barras de configuraciín. */
 .lighting-trigger.pill {
   width: auto;
   min-height: 3.4rem;
@@ -430,4 +430,169 @@
   max-width: 14rem;
   font-size: 0.8rem;
   font-weight: 700;
+}
+
+/* Intensidad del look (Sutil / Media / Fuerte). */
+.look-intensity {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.look-intensity-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted-on-dark);
+}
+
+.look-intensity-options {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem;
+  border: 1px solid var(--color-surface-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface-2);
+}
+
+.look-intensity-option {
+  padding: 0.25rem 0.65rem;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-ink-muted-on-dark);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.15s var(--ease-app),
+    color 0.15s var(--ease-app);
+}
+
+.look-intensity-option:hover,
+.look-intensity-option:focus-visible {
+  color: var(--color-ink-on-dark);
+  outline: none;
+}
+
+.look-intensity-option.selected {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.preset-intensity {
+  flex: 0 0 auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .look-intensity-option {
+    transition: none;
+  }
+}
+
+/* Píldora unificada: chip del look + intensidad dentro del mismo control. */
+.lighting-pill-group {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: auto;
+  min-height: 3.4rem;
+  box-sizing: border-box;
+  padding: 0.4rem 0.5rem 0.4rem 0.7rem;
+  border: 1px solid var(--color-surface-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-2);
+  transition:
+    border-color 0.15s var(--ease-app),
+    background-color 0.15s var(--ease-app);
+}
+
+.lighting-pill-group:hover,
+.lighting-pill-group:focus-within {
+  border-color: var(--color-accent);
+  background: var(--color-surface-hover);
+}
+
+.lighting-pill-group.is-configured {
+  border-color: var(--color-accent);
+  box-shadow: inset 0 0 0 1px var(--color-accent);
+}
+
+.lighting-pill-group.is-configured .lighting-pill-label,
+.lighting-pill-group.is-configured .lighting-pill-value {
+  color: var(--color-accent);
+}
+
+.lighting-pill-group.is-attention {
+  border-color: var(--color-danger);
+  box-shadow: 0 0 0 1px var(--color-danger);
+}
+
+.lighting-pill-group.is-attention .lighting-pill-label,
+.lighting-pill-group.is-attention .lighting-pill-value {
+  color: var(--color-danger);
+}
+
+.lighting-trigger.pill.in-group {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.lighting-trigger.pill.in-group:hover,
+.lighting-trigger.pill.in-group:focus-visible {
+  border: 0;
+  background: transparent;
+  outline: none;
+}
+
+.look-intensity-inline {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--color-surface-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+}
+
+.look-intensity-step {
+  padding: 0.2rem 0.4rem;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-ink-muted-on-dark);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition:
+    background-color 0.15s var(--ease-app),
+    color 0.15s var(--ease-app);
+}
+
+.look-intensity-step:hover,
+.look-intensity-step:focus-visible {
+  color: var(--color-ink-on-dark);
+  outline: none;
+}
+
+.look-intensity-step.selected {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .look-intensity-step {
+    transition: none;
+  }
 }

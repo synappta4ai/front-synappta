@@ -29,7 +29,7 @@ import { LibraryService } from '@modules/library/services';
 import { ServerUrlPipe } from '@pipes/server-url.pipe';
 import { UiIcon } from '@shared/components/ui-icon/ui-icon.component';
 import { LightingSelectComponent } from '@shared/components/lighting/lighting-select.component';
-import { lightingPrompt } from '@shared/components/lighting/lighting-templates';
+import { LookIntensity } from '@shared/components/lighting/lighting-templates';
 import { downloadRemoteFile } from '@utils/download-url';
 import { environment } from '@env/environment';
 
@@ -97,6 +97,7 @@ export class ImageLabComponent {
   protected readonly activeModel = signal<AiModel | null>(null);
   /** Esquema de iluminación / dirección de arte de la imagen. */
   protected readonly lighting = signal<string | null>(null);
+  protected readonly lookIntensity = signal<LookIntensity>('medium');
 
   protected readonly ratio = signal<string>(LOCATION_DEFAULT_RATIO);
   protected readonly resolution = signal<string>(LOCATION_DEFAULT_RESOLUTION);
@@ -140,6 +141,10 @@ export class ImageLabComponent {
   protected readonly prompt = signal('');
   protected readonly refs = signal<readonly FileAsset[]>([]);
   protected readonly uploadingRefs = signal(false);
+  /** Imagen de entrada que el look re-ilumina (primera referencia). */
+  protected readonly beforeRef = computed<FileAsset | null>(() => this.refs()[0] ?? null);
+  /** Posición del divisor antes/después (0-100). */
+  protected readonly compare = signal(50);
 
   protected readonly generating = signal(false);
   protected readonly progress = signal<number | null>(null);
@@ -153,8 +158,16 @@ export class ImageLabComponent {
   /** Tarea de la generación mostrada: enlaza el recurso guardado con su log. */
   private lastTaskId = '';
 
+  /** Con imagen de entrada + look alcanza: no hace falta escribir prompt. */
+  private readonly canUseDefaultPrompt = computed(
+    () => this.refs().length > 0 && this.lighting() !== null,
+  );
+
   protected readonly canGenerate = computed(
-    () => !!this.selectedModel() && this.prompt().trim().length > 0 && !this.generating(),
+    () =>
+      !!this.selectedModel() &&
+      !this.generating() &&
+      (this.prompt().trim().length > 0 || this.canUseDefaultPrompt()),
   );
 
   protected readonly metaSummary = computed(() => `${this.ratio()} · ${this.resolution()}`);
@@ -202,13 +215,62 @@ export class ImageLabComponent {
         finalize(() => this.uploadingRefs.set(false)),
       )
       .subscribe({
-        next: (assets) => this.refs.update((refs) => [...assets, ...refs]),
+        next: (assets) => this.refs.update((refs) => [...refs, ...assets]),
         error: () => this.error.set(this.translate.instant('TOOLS.IMAGE_LAB_REFS_ERROR')),
       });
   }
 
   protected removeRef(id: string): void {
     this.refs.update((refs) => refs.filter((ref) => ref.id !== id));
+  }
+
+  /** Arranca el arrastre del divisor antes/después. */
+  protected startCompare(event: PointerEvent): void {
+    const el = event.currentTarget as HTMLElement | null;
+    if (!el) {
+      return;
+    }
+    el.setPointerCapture?.(event.pointerId);
+    this.updateCompare(event, el);
+  }
+
+  /** Sigue el puntero mientras el divisor está agarrado. */
+  protected moveCompare(event: PointerEvent): void {
+    if (event.buttons === 0) {
+      return;
+    }
+    this.updateCompare(event, event.currentTarget as HTMLElement);
+  }
+
+  /** Teclado accesible: flechas, Inicio y Fin mueven el divisor. */
+  protected onCompareKey(event: KeyboardEvent): void {
+    const step = event.shiftKey ? 10 : 2;
+    switch (event.key) {
+      case 'ArrowLeft':
+        this.compare.update((v) => Math.max(0, v - step));
+        break;
+      case 'ArrowRight':
+        this.compare.update((v) => Math.min(100, v + step));
+        break;
+      case 'Home':
+        this.compare.set(0);
+        break;
+      case 'End':
+        this.compare.set(100);
+        break;
+      default:
+        return;
+    }
+    event.preventDefault();
+  }
+
+  private updateCompare(event: PointerEvent, el: HTMLElement): void {
+    const rect = el.getBoundingClientRect();
+    if (rect.width <= 0) {
+      return;
+    }
+    const pct = ((event.clientX - rect.left) / rect.width) * 100;
+    this.compare.set(Math.min(100, Math.max(0, Math.round(pct))));
   }
 
   protected generate(): void {
@@ -235,6 +297,8 @@ export class ImageLabComponent {
             ratio: this.ratio(),
             resolution: this.resolution(),
             referenceIds: this.refs().map((ref) => ({ id: ref.id, name: ref.filename })),
+            look: this.lighting(),
+            lookIntensity: this.lookIntensity(),
             eventId: anchor.project.id,
             pieceId: anchor.piece.id,
             pieceCode: IMAGE_LAB_PIECE_CODE,
@@ -306,11 +370,14 @@ export class ImageLabComponent {
   }
 
   private composePrompt(): string {
-    const prompt = this.prompt().trim();
-    if (!prompt) {
-      return '';
+    const text = this.prompt().trim();
+    if (text) {
+      return text;
     }
-    return [prompt, lightingPrompt(this.lighting())].filter(Boolean).join('\n\n');
+    if (this.canUseDefaultPrompt()) {
+      return this.translate.instant('TOOLS.IMAGE_LAB_DEFAULT_PROMPT');
+    }
+    return '';
   }
 
   private applyOutputs(outputs: readonly StatusOutput[]): void {
@@ -318,6 +385,7 @@ export class ImageLabComponent {
       return;
     }
     this.result.set(outputs);
+    this.compare.set(50);
     this.progress.set(100);
   }
 

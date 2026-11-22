@@ -3,18 +3,8 @@
     {{ 'LIGHTING.LABEL' | translate }}
   </label>
 }
-<button
-  type="button"
-  [id]="inputId()"
-  class="lighting-trigger"
-  [class.compact]="compact()"
-  [class.pill]="pill()"
-  [class.is-configured]="configured()"
-  [class.is-attention]="attention()"
-  aria-haspopup="dialog"
-  [attr.aria-expanded]="dialogOpen()"
-  (click)="openPicker()"
->
+
+<ng-template #triggerContent>
   @if (pill()) {
     <span class="lighting-pill-icon" aria-hidden="true"><i class="md md-light_mode"></i></span>
     <span class="lighting-trigger-text">
@@ -32,6 +22,7 @@
       height="36"
       loading="lazy"
       decoding="async"
+      (error)="onThumbError($event)"
     />
     <span class="lighting-trigger-text">
       <span class="lighting-trigger-name">{{ current.name }}</span>
@@ -40,7 +31,9 @@
       }
     </span>
   } @else {
-    <span class="lighting-trigger-auto" aria-hidden="true"><i class="md md-auto_fix_high"></i></span>
+    <span class="lighting-trigger-auto" aria-hidden="true"
+      ><i class="md md-auto_fix_high"></i
+    ></span>
     <span class="lighting-trigger-text">
       <span class="lighting-trigger-name">{{ 'LIGHTING.AUTO' | translate }}</span>
       @if (!compact()) {
@@ -49,7 +42,62 @@
     </span>
   }
   <i class="md md-expand_more lighting-trigger-chevron" aria-hidden="true"></i>
-</button>
+</ng-template>
+
+@if (pill()) {
+  <div
+    class="lighting-pill-group"
+    [class.is-configured]="configured()"
+    [class.is-attention]="attention()"
+  >
+    <button
+      type="button"
+      [id]="inputId()"
+      class="lighting-trigger pill in-group"
+      aria-haspopup="dialog"
+      [attr.aria-expanded]="dialogOpen()"
+      (click)="openPicker()"
+    >
+      <ng-container [ngTemplateOutlet]="triggerContent" />
+    </button>
+    @if (intensityInline()) {
+      <div
+        class="look-intensity-inline"
+        role="group"
+        [attr.aria-label]="'LIGHTING.INTENSITY_LABEL' | translate"
+      >
+        @for (option of intensityOptions(); track option.value) {
+          <button
+            type="button"
+            class="look-intensity-step"
+            [class.selected]="intensity() === option.value"
+            [attr.aria-pressed]="intensity() === option.value"
+            [attr.aria-label]="option.label"
+            [title]="option.label"
+            (click)="setIntensity(option.value)"
+          >
+            {{ option.short }}
+          </button>
+        }
+      </div>
+    }
+  </div>
+} @else {
+  <button
+    type="button"
+    [id]="inputId()"
+    class="lighting-trigger"
+    [class.compact]="compact()"
+    [class.is-configured]="configured()"
+    [class.is-attention]="attention()"
+    aria-haspopup="dialog"
+    [attr.aria-expanded]="dialogOpen()"
+    (click)="openPicker()"
+  >
+    <ng-container [ngTemplateOutlet]="triggerContent" />
+  </button>
+}
+
 @if (!compact() && !pill()) {
   <small class="text-ink-muted-on-dark">{{ 'LIGHTING.HINT' | translate }}</small>
 }
@@ -86,6 +134,26 @@
       <div>
         <h3>{{ 'LIGHTING.CONFIGURE' | translate }}</h3>
         <p>{{ 'LIGHTING.CONFIGURE_HINT' | translate }}</p>
+      </div>
+      <div
+        class="look-intensity preset-intensity"
+        role="group"
+        [attr.aria-label]="'LIGHTING.INTENSITY_LABEL' | translate"
+      >
+        <span class="look-intensity-label">{{ 'LIGHTING.INTENSITY_LABEL' | translate }}</span>
+        <div class="look-intensity-options">
+          @for (option of intensityOptions(); track option.value) {
+            <button
+              type="button"
+              class="look-intensity-option"
+              [class.selected]="intensity() === option.value"
+              [attr.aria-pressed]="intensity() === option.value"
+              (click)="setIntensity(option.value)"
+            >
+              {{ option.label }}
+            </button>
+          }
+        </div>
       </div>
     </div>
 
@@ -150,6 +218,7 @@
             height="360"
             loading="lazy"
             decoding="async"
+            (error)="onThumbError($event)"
           />
           <span class="lighting-card-body">
             <span class="lighting-card-name">{{ card.name }}</span>

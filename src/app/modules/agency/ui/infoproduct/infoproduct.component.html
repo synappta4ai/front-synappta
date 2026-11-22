@@ -582,12 +582,17 @@
             />
           </div>
 
-          <div class="flex flex-wrap items-center gap-2 sm:col-span-2">
+          <div
+            class="flex flex-wrap items-center gap-2 sm:col-span-2 [&>app-camera-movement-select>button]:w-full [&>app-camera-movement-select]:min-w-0 [&>app-camera-movement-select]:flex-1 [&>app-lighting-select]:min-w-0 [&>app-lighting-select]:flex-1"
+          >
             <app-lighting-select
               [pill]="true"
+              [intensityInline]="false"
               inputId="vmLighting"
               [value]="lighting()"
+              [intensity]="lookIntensity()"
               (valueChange)="lighting.set($event)"
+              (intensityChange)="lookIntensity.set($event)"
             />
             <app-camera-movement-select
               [pill]="true"
@@ -786,7 +791,9 @@
                     [compact]="true"
                     [inputId]="'vmSegLight-' + i"
                     [value]="segmentLighting()[i] ?? lighting()"
+                    [intensity]="lookIntensity()"
                     (valueChange)="setSegmentLighting(i, $event)"
+                    (intensityChange)="lookIntensity.set($event)"
                   />
                 </span>
                 <span class="flex items-center gap-1.5 text-xs text-ink-muted-on-dark">

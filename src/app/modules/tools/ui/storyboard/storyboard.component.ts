@@ -29,7 +29,7 @@ import { LibraryService } from '@modules/library/services';
 import { ServerUrlPipe } from '@pipes/server-url.pipe';
 import { UiIcon } from '@shared/components/ui-icon/ui-icon.component';
 import { LightingSelectComponent } from '@shared/components/lighting/lighting-select.component';
-import { lightingPrompt } from '@shared/components/lighting/lighting-templates';
+import { LookIntensity } from '@shared/components/lighting/lighting-templates';
 import { downloadRemoteFile } from '@utils/download-url';
 import { environment } from '@env/environment';
 
@@ -113,6 +113,7 @@ export class StoryboardComponent implements OnInit {
   protected readonly selectedModel = signal('');
   /** Esquema de iluminación / dirección de arte de la hoja. */
   protected readonly lighting = signal<string | null>(null);
+  protected readonly lookIntensity = signal<LookIntensity>('medium');
   /** Modelo completo, para leer sus defaults (resoluciones). */
   protected readonly activeModel = signal<AiModel | null>(null);
 
@@ -262,6 +263,8 @@ export class StoryboardComponent implements OnInit {
               id: ref.asset.id,
               name: ref.asset.filename,
             })),
+            look: this.lighting(),
+            lookIntensity: this.lookIntensity(),
             eventId: anchor.project.id,
             pieceId: anchor.piece.id,
             pieceCode: STORYBOARD_PIECE_CODE,
@@ -461,8 +464,6 @@ export class StoryboardComponent implements OnInit {
       )
       .join('\n');
 
-    const light = lightingPrompt(this.lighting());
-
     return [
       this.systemPrompt().trim(),
       'USER STORY IDEA:',
@@ -475,7 +476,6 @@ export class StoryboardComponent implements OnInit {
       panelDirections,
       'REFERENCE MANIFEST:',
       manifest,
-      light,
       'FINAL RENDER DIRECTIVE:',
       'Render the finished image now. Output only the image; do not return JSON, Markdown, code, or explanatory text. Keep every header and footer line legible and preserve the exact reference identity across all panels.',
     ]

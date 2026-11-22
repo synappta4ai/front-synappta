@@ -590,7 +590,9 @@
         [pill]="true"
         inputId="studioLighting"
         [value]="lighting()"
+        [intensity]="lookIntensity()"
         (valueChange)="lighting.set($event)"
+        (intensityChange)="lookIntensity.set($event)"
       />
     </div>
 

@@ -31,7 +31,7 @@ import { CompactNumberComponent } from '@shared/components/compact-param/compact
 import { CompactSelectComponent } from '@shared/components/compact-param/compact-select.component';
 import { cameraMovementPrompt } from '@shared/components/camera/camera-movements';
 import { LightingSelectComponent } from '@shared/components/lighting/lighting-select.component';
-import { LIGHTING_TEMPLATES, lightingPrompt } from '@shared/components/lighting/lighting-templates';
+import { LIGHTING_TEMPLATES, LookIntensity } from '@shared/components/lighting/lighting-templates';
 import { highlightPrompt, PromptSegment } from '../agency/agency-prompt-highlight';
 import { attachmentKind, Attachment } from '../infoproduct/infoproduct-helpers';
 import {
@@ -153,6 +153,7 @@ export class WritingCopilotComponent implements OnDestroy {
   protected readonly videoModel = signal<AiModel | null>(null);
   /** Esquema de iluminación / dirección de arte para todos los prompts. */
   protected readonly lighting = signal<string | null>(null);
+  protected readonly lookIntensity = signal<LookIntensity>('medium');
 
   // â”€â”€ Paso 2: conversaciÃ³n + insumos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   protected readonly followUp = signal('');
@@ -794,7 +795,10 @@ export class WritingCopilotComponent implements OnDestroy {
     const videoType = this.videoType();
     if (videoType) params.video_type = videoType;
     const light = this.lighting();
-    if (light) params.lighting = lightingPrompt(light);
+    if (light) {
+      params.look_id = light;
+      params.look_intensity = this.lookIntensity();
+    }
     const camera = cameraMovementPrompt(this.camera());
     if (camera) params.camera_movements = camera;
     if (this.outputLanguage()) params.output_language = this.outputLanguage();

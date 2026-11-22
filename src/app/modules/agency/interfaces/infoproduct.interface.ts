@@ -297,6 +297,10 @@ export interface ComposeRequest {
   format_id?: string;
   /** Bloque de iluminación / dirección de arte elegido. */
   lighting?: string;
+  /** Id del look elegido (el back ensambla el bloque). */
+  look?: string;
+  /** Intensidad del look elegido (default media). */
+  look_intensity?: 'subtle' | 'medium' | 'strong';
   /** Bloque de movimientos de cámara en orden. */
   camera_movements?: string;
 }

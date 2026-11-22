@@ -65,7 +65,7 @@ import { AutogrowDirective } from '@shared/components/autogrow/autogrow.directiv
 import { CameraMovementSelectComponent } from '@shared/components/camera/camera-movement-select.component';
 import { cameraMovementPrompt } from '@shared/components/camera/camera-movements';
 import { LightingSelectComponent } from '@shared/components/lighting/lighting-select.component';
-import { lightingPrompt } from '@shared/components/lighting/lighting-templates';
+import { LookIntensity } from '@shared/components/lighting/lighting-templates';
 import { UserSessionStore } from '@core/store/user.session';
 import { GenerationEventsStore } from '@core/store/generation.events';
 import { StudioTake } from '@modules/studio/interfaces';
@@ -714,6 +714,8 @@ export class AgencyComponent {
   /** Esquema de iluminación / dirección de arte del flujo (aplica a todos
    *  los prompts, hojas de storyboard y videos generados). */
   protected readonly lighting = signal<string | null>(null);
+  /** Intensidad del look elegida (default media). */
+  protected readonly lookIntensity = signal<LookIntensity>('medium');
   /** Movimientos de cámara del flujo (base para todas las tomas). */
   protected readonly camera = signal<string[]>([]);
 
@@ -1871,7 +1873,7 @@ export class AgencyComponent {
       duracion_total_s: this.videoDuration(),
       aspecto: this.boardRatio() || this.videoRatio(),
       duracion_minima_vineta_s: 1.5,
-      ...(this.lighting() ? { iluminacion: lightingPrompt(this.lighting()) } : {}),
+      ...(this.lighting() ? { look: this.lighting(), look_intensity: this.lookIntensity() } : {}),
       ...(this.camera().length ? { movimiento_camara: cameraMovementPrompt(this.camera()) } : {}),
     };
     this.boardAgentLoading.set(true);
@@ -1978,7 +1980,7 @@ export class AgencyComponent {
       aspecto: this.videoRatio(),
       resolucion: this.videoResolution(),
       sonido: this.videoAudio(),
-      ...(this.lighting() ? { iluminacion: lightingPrompt(this.lighting()) } : {}),
+      ...(this.lighting() ? { look: this.lighting(), look_intensity: this.lookIntensity() } : {}),
       ...(this.camera().length ? { movimiento_camara: cameraMovementPrompt(this.camera()) } : {}),
     };
     this.clipAgentSceneId.set(scene.id);
@@ -2074,9 +2076,7 @@ export class AgencyComponent {
   /** Genera la imagen-guía (hoja con varias viñetas) de la escena abierta. */
   protected submitBoardImage(): void {
     const scene = this.boardScene();
-    const prompt = [this.boardPrompt().trim(), lightingPrompt(this.lighting())]
-      .filter(Boolean)
-      .join('\n\n');
+    const prompt = this.boardPrompt().trim();
     if (!scene || scene.boardGenerating) return;
     if (!prompt) {
       this.error.set(this.translate.instant('AGENCY.STUDIO.ERRORS.BOARD_PROMPT'));
@@ -2143,6 +2143,9 @@ export class AgencyComponent {
             content,
             ...(ratio ? { ratio } : {}),
             ...(resolution ? { resolution } : {}),
+            ...(this.lighting()
+              ? { look: this.lighting(), look_intensity: this.lookIntensity() }
+              : {}),
             event_id: project.id,
             piece_id: piece.id,
             piece_code: piece.piece_code ?? `SCENE-${scene.id.toUpperCase()}`,
@@ -2525,7 +2528,7 @@ export class AgencyComponent {
       ...(agent === 'commercial' ? { cantidad_prompts: count } : {}),
       ...(agent === 'commercial' ? { referencias_subidas: this.referenciasSubidas() } : {}),
       ...(agent === 'cinema' ? { registro: 'cine' } : agent === 'commercial' ? { registro: 'comercial' } : {}),
-      ...(this.lighting() ? { iluminacion: lightingPrompt(this.lighting()) } : {}),
+      ...(this.lighting() ? { look: this.lighting(), look_intensity: this.lookIntensity() } : {}),
       ...(this.camera().length ? { movimiento_camara: cameraMovementPrompt(this.camera()) } : {}),
     };
 
@@ -2737,6 +2740,7 @@ export class AgencyComponent {
       storyboard: this.storyboard(),
       projectDescription: this.projectDescription(),
       lighting: this.lighting(),
+      lookIntensity: this.lookIntensity(),
       camera: this.camera(),
       // Imágenes pedidas por el experto en el paso 1 y lo que el usuario subió.
       stepPhotos: this.stepPhotos(),
@@ -2811,6 +2815,11 @@ export class AgencyComponent {
     this.modelImage.set(models.image ?? '');
     this.modelVideo.set(models.video ?? '');
     this.lighting.set(typeof agency['lighting'] === 'string' ? (agency['lighting'] as string) : null);
+    this.lookIntensity.set(
+      agency['lookIntensity'] === 'subtle' || agency['lookIntensity'] === 'strong'
+        ? agency['lookIntensity']
+        : 'medium',
+    );
     this.camera.set(
       Array.isArray(agency['camera'])
         ? (agency['camera'] as unknown[]).filter((id): id is string => typeof id === 'string')
@@ -3272,11 +3281,9 @@ export class AgencyComponent {
   ): VideoPrompt[] {
     const previous = (shot ? shot.prompts : scene.prompts) ?? [];
     return Array.from({ length: segments }, (_, i) => {
-      const light = previous[i]?.lighting ?? this.lighting();
       const camera = previous[i]?.camera ?? this.camera();
       const text = [
         this.buildPromptText(scene, shot, i, segments, tags, ratio, resolution),
-        lightingPrompt(light),
         cameraMovementPrompt(camera),
       ]
         .filter(Boolean)
@@ -3622,9 +3629,7 @@ export class AgencyComponent {
       if (index >= 0) cut = Math.min(cut, index);
     }
     const base = text.slice(0, cut).trimEnd();
-    return [base, lightingPrompt(directives.lighting), cameraMovementPrompt(directives.camera)]
-      .filter(Boolean)
-      .join('\n\n');
+    return [base, cameraMovementPrompt(directives.camera)].filter(Boolean).join('\n\n');
   }
 
   /** Cambia el modelo de video de una caja: si su ratio/calidad no existen en
@@ -4096,6 +4101,7 @@ export class AgencyComponent {
     // entre sí al guardarse en la pieza (SaveGeneration desactiva el mismo nro).
     const generationNumber = shotId ? (shotIndex + 1) * 100 + index + 1 : index + 1;
     const resolution = prompt.resolution ?? this.videoResolution();
+    const look = prompt.lighting ?? this.lighting();
     return {
       model: chosen.name,
       content,
@@ -4103,6 +4109,7 @@ export class AgencyComponent {
       duration: prompt.duration ?? this.segmentDuration(index),
       ...(resolution ? { resolution } : {}),
       generate_audio: prompt.audio ?? this.videoAudio(),
+      ...(look ? { look, look_intensity: this.lookIntensity() } : {}),
       event_id: project?.id ?? '',
       piece_id: piece?.id ?? '',
       piece_code: piece?.piece_code ?? `SCENE-${scene.id.toUpperCase()}`,

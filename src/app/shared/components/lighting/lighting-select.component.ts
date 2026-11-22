@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -13,7 +14,12 @@ import { Dialog } from 'primeng/dialog';
 import { InputText } from 'primeng/inputtext';
 import { Select } from 'primeng/select';
 
-import { LIGHTING_TEMPLATES, LightingTemplate } from './lighting-templates';
+import {
+  DEFAULT_LOOK_INTENSITY,
+  LIGHTING_TEMPLATES,
+  LightingTemplate,
+  LookIntensity,
+} from './lighting-templates';
 
 interface LightingCard {
   id: string;
@@ -31,7 +37,7 @@ type LightingSort = 'original' | 'name';
  */
 @Component({
   selector: 'app-lighting-select',
-  imports: [FormsModule, Dialog, InputText, Select, TranslatePipe],
+  imports: [FormsModule, Dialog, InputText, NgTemplateOutlet, Select, TranslatePipe],
   templateUrl: './lighting-select.component.html',
   styleUrl: './lighting-select.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -49,7 +55,12 @@ export class LightingSelectComponent {
   readonly configured = input(false);
   /** Falta elegir este preset para poder continuar. */
   readonly attention = input(false);
+  /** Intensidad elegida del look (por defecto Media). */
+  readonly intensity = input<LookIntensity>(DEFAULT_LOOK_INTENSITY);
+  /** Muestra la intensidad dentro de la píldora (si no, solo en el modal). */
+  readonly intensityInline = input(true);
   readonly valueChange = output<string | null>();
+  readonly intensityChange = output<LookIntensity>();
 
   protected readonly dialogOpen = signal(false);
   protected readonly query = signal('');
@@ -65,8 +76,7 @@ export class LightingSelectComponent {
     const cards = term
       ? this.cards().filter(
           (card) =>
-            card.name.toLowerCase().includes(term) ||
-            card.description.toLowerCase().includes(term),
+            card.name.toLowerCase().includes(term) || card.description.toLowerCase().includes(term),
         )
       : [...this.cards()];
     if (this.sort() === 'name') {
@@ -77,14 +87,38 @@ export class LightingSelectComponent {
 
   protected readonly selected = computed(() => {
     const id = this.value();
-    return id ? this.cards().find((card) => card.id === id) ?? null : null;
+    return id ? (this.cards().find((card) => card.id === id) ?? null) : null;
   });
 
   protected readonly sortOptions = computed(() => {
     this.translate.currentLang();
     return [
-      { label: this.translate.instant('LIGHTING.SORT_ORIGINAL'), value: 'original' as LightingSort },
+      {
+        label: this.translate.instant('LIGHTING.SORT_ORIGINAL'),
+        value: 'original' as LightingSort,
+      },
       { label: this.translate.instant('LIGHTING.SORT_NAME'), value: 'name' as LightingSort },
+    ];
+  });
+
+  protected readonly intensityOptions = computed(() => {
+    this.translate.currentLang();
+    return [
+      {
+        label: this.translate.instant('LIGHTING.INTENSITY_SUBTLE'),
+        short: this.translate.instant('LIGHTING.INTENSITY_SUBTLE_SHORT'),
+        value: 'subtle' as LookIntensity,
+      },
+      {
+        label: this.translate.instant('LIGHTING.INTENSITY_MEDIUM'),
+        short: this.translate.instant('LIGHTING.INTENSITY_MEDIUM_SHORT'),
+        value: 'medium' as LookIntensity,
+      },
+      {
+        label: this.translate.instant('LIGHTING.INTENSITY_STRONG'),
+        short: this.translate.instant('LIGHTING.INTENSITY_STRONG_SHORT'),
+        value: 'strong' as LookIntensity,
+      },
     ];
   });
 
@@ -100,6 +134,20 @@ export class LightingSelectComponent {
 
   protected reset(): void {
     this.valueChange.emit(null);
+  }
+
+  protected setIntensity(value: LookIntensity): void {
+    this.intensityChange.emit(value);
+  }
+
+  /** Miniatura faltante: cae al placeholder sin romper la tarjeta. */
+  protected onThumbError(event: Event): void {
+    const img = event.target as HTMLImageElement | null;
+    if (!img || img.dataset['fallback'] === '1') {
+      return;
+    }
+    img.dataset['fallback'] = '1';
+    img.src = '/assets/lighting/_placeholder.svg';
   }
 
   private toCard(template: LightingTemplate, isEnglish: boolean): LightingCard {

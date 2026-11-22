@@ -29,7 +29,7 @@ import { LibraryService } from '@modules/library/services';
 import { ServerUrlPipe } from '@pipes/server-url.pipe';
 import { UiIcon } from '@shared/components/ui-icon/ui-icon.component';
 import { LightingSelectComponent } from '@shared/components/lighting/lighting-select.component';
-import { lightingPrompt } from '@shared/components/lighting/lighting-templates';
+import { LookIntensity } from '@shared/components/lighting/lighting-templates';
 
 import {
   LOCATION_DEFAULT_RATIO,
@@ -115,6 +115,7 @@ export class LocationComponent implements OnInit {
   protected readonly selectedModel = signal('');
   /** Esquema de iluminación / dirección de arte de la locación. */
   protected readonly lighting = signal<string | null>(null);
+  protected readonly lookIntensity = signal<LookIntensity>('medium');
   /** Modelo completo, para leer ratios y resoluciones soportadas. */
   protected readonly activeModel = signal<AiModel | null>(null);
 
@@ -308,6 +309,8 @@ export class LocationComponent implements OnInit {
           ratio: this.ratio(),
           resolution: this.resolution(),
           referenceIds: this.refs().map((r) => ({ id: r.id, name: r.filename })),
+          look: this.lighting(),
+          lookIntensity: this.lookIntensity(),
           eventId: anchor.project.id,
           pieceId: anchor.piece.id,
           pieceCode: LOCATION_PIECE_CODE,
@@ -433,8 +436,6 @@ export class LocationComponent implements OnInit {
     if (who) {
       parts.push(`Location: ${who}`);
     }
-    const light = lightingPrompt(this.lighting());
-    if (light) parts.push(light);
     return parts.filter(Boolean).join('\n\n');
   }
 }

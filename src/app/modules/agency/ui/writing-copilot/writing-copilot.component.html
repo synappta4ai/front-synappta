@@ -87,14 +87,17 @@
         </div>
 
         <div
-          class="grid grid-cols-[repeat(auto-fit,minmax(9rem,1fr))] items-stretch gap-2 [&>app-camera-movement-select]:min-w-0 [&>app-compact-number]:min-w-0 [&>app-compact-number>button]:w-full [&>app-compact-select]:min-w-0 [&>app-compact-select>button]:w-full [&>app-lighting-select]:min-w-0"
+          class="grid grid-cols-[repeat(auto-fit,minmax(9rem,1fr))] items-stretch gap-2 [&>app-camera-movement-select>button]:w-full [&>app-camera-movement-select]:min-w-0 [&>app-compact-number]:min-w-0 [&>app-compact-number>button]:w-full [&>app-compact-select]:min-w-0 [&>app-compact-select>button]:w-full [&>app-lighting-select]:min-w-0"
         >
           <app-lighting-select
             [pill]="true"
+            [intensityInline]="false"
             inputId="wcLighting"
             [value]="lighting()"
+            [intensity]="lookIntensity()"
             [configured]="lighting() !== null"
             (valueChange)="lighting.set($event)"
+            (intensityChange)="lookIntensity.set($event)"
           />
           <app-camera-movement-select
             [pill]="true"
@@ -527,7 +530,9 @@
                   [compact]="true"
                   [inputId]="'wcShotLight-' + shot.key"
                   [value]="shotLighting()[shot.key] ?? lighting()"
+                  [intensity]="lookIntensity()"
                   (valueChange)="setShotLighting(shot.key, $event)"
+                  (intensityChange)="lookIntensity.set($event)"
                 />
                 <app-camera-movement-select
                   class="block w-full"
