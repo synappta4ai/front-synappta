@@ -20,14 +20,16 @@ import { Button } from 'primeng/button';
 import { Message } from 'primeng/message';
 import { Tag } from 'primeng/tag';
 
-import { StatusOutput } from '@modules/agency/interfaces';
+import { AiModel, StatusOutput } from '@modules/agency/interfaces';
 import { ModelSelectComponent } from '@modules/agency/ui/model-select/model-select.component';
+import { ActiveProjectPickerComponent } from '@modules/projects/ui/active-project-picker/active-project-picker.component';
 import { FileAsset } from '@modules/library/interfaces';
 import { LibraryService } from '@modules/library/services';
 import { ServerUrlPipe } from '@pipes/server-url.pipe';
 import { UiIcon } from '@shared/components/ui-icon/ui-icon.component';
 import { LightingSelectComponent } from '@shared/components/lighting/lighting-select.component';
 import { lightingPrompt } from '@shared/components/lighting/lighting-templates';
+import { preferredImageResolution } from '@utils/image-resolution';
 
 import {
   POSE_SHEET_PIECE_CODE,
@@ -56,6 +58,7 @@ const PROGRESS_EXPECTED_MS = 75_000;
     Button,
     Message,
     ModelSelectComponent,
+    ActiveProjectPickerComponent,
     Tag,
     ServerUrlPipe,
     UiIcon,
@@ -93,6 +96,8 @@ export class PoseSheetComponent implements OnInit {
   /** Modelo elegido (nombre del catálogo); el desplegable lista todos los
    *  modelos de imagen disponibles, igual que el Studio. */
   protected readonly selectedModel = signal('');
+  /** Modelo completo, para leer su resolución máxima soportada. */
+  protected readonly activeModel = signal<AiModel | null>(null);
   /** Esquema de iluminación / dirección de arte de la hoja. */
   protected readonly lighting = signal<string | null>(null);
 
@@ -101,6 +106,10 @@ export class PoseSheetComponent implements OnInit {
   protected readonly editedPrompt = signal('');
   protected readonly loadingPrompt = signal(false);
   protected readonly promptDirty = computed(() => this.editedPrompt() !== this.defaultPrompt());
+  /** La hoja alimenta los videos: 2K o el máximo que soporte el modelo. */
+  protected readonly resolution = computed<string | null>(() =>
+    preferredImageResolution(this.activeModel()?.defaults?.resolutions),
+  );
 
   protected readonly characterName = signal('');
   protected readonly characterDesc = signal('');
@@ -115,6 +124,8 @@ export class PoseSheetComponent implements OnInit {
 
   private progressTimer: ReturnType<typeof setInterval> | null = null;
   private anchor: PoseSheetAnchor | null = null;
+  /** Tarea de la hoja generada: enlaza el recurso guardado con su log. */
+  private lastTaskId = '';
   protected readonly saving = signal(false);
   protected readonly savedName = signal<string | null>(null);
 
@@ -181,6 +192,7 @@ export class PoseSheetComponent implements OnInit {
           return this.toolsService.generatePoseSheet({
             model,
             prompt,
+            resolution: this.resolution() ?? undefined,
             referenceIds: this.refs().map((r) => ({ id: r.id, name: r.filename })),
             eventId: anchor.project.id,
             pieceId: anchor.piece.id,
@@ -188,6 +200,7 @@ export class PoseSheetComponent implements OnInit {
           });
         }),
         mergeMap((gen) => {
+          this.lastTaskId = gen.taskId;
           // El modelo de imagen es sincrónico: la respuesta del POST ya trae
           // el resultado, así que lo mostramos sin esperar al polling.
           this.applyOutputs(gen.outputs ?? []);
@@ -276,6 +289,7 @@ export class PoseSheetComponent implements OnInit {
         name: this.characterName().trim() || fallback,
         description: this.characterDesc().trim() || undefined,
         eventId: anchor.project.id,
+        taskId: this.lastTaskId || undefined,
       })
       .pipe(
         takeUntilDestroyed(this.destroyRef),

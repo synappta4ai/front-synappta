@@ -673,6 +673,10 @@
       "AVATAR_ALT": "Profile photo",
       "LOGO_ALT": "Synapta logo"
     },
+    "IMAGE_VIEWER": {
+      "ARIA": "Enlarged image view",
+      "CLOSE": "Close image"
+    },
     "FOOTER": {
       "CONTACT_ARIA": "Contact & social",
       "LANG_ARIA": "Change language",
@@ -997,7 +1001,10 @@
       "COL_ACTIONS": "Actions",
       "LOADING": "Loading tenants…",
       "ACTIVE": "Active",
-      "INACTIVE": "Inactive",
+    "INACTIVE": "Inactive",
+    "ACTIVE_PROJECT": "Working on",
+    "ACTIVE_PROJECT_NONE": "No project",
+    "SELECT_ACTIVE": "Set {{name}} as working project",
       "USERS": "Users",
       "STORAGE": "Bucket",
       "STORAGE_HINT": "Tenant's bucket credentials",
@@ -2300,6 +2307,26 @@
       "BUTTON": "Update Worker",
       "TOOLTIP": "Uploads the .zip to the back and orders the worker to download it, replace files and relaunch."
     },
+    "HARDWARE": {
+      "TITLE": "Your hardware",
+      "DETECTED": "{{gpu}} · {{vram}} of VRAM for generation",
+      "FIT_GOOD": "{{count}} run well",
+      "FIT_TIGHT": "{{count}} tight",
+      "FIT_NO": "{{count}} too big",
+      "NO_GPU_TITLE": "Is running models locally worth it?",
+      "NO_GPU_BODY": "Models run on your own NVIDIA GPU. The lightest of the {{models}} needs {{min}} GB of VRAM; {{recommended}} GB is comfortable and {{max}} GB runs them all.",
+      "NO_GPU_NOTE": "The worker itself is small: each model's weights download only when you pick it, and you can delete them to get disk back.",
+      "RECOMMENDED_TITLE": "Recommended for your GPU",
+      "RECOMMENDED_SUBTITLE": "Models that fit in {{gpu}} and are not downloaded yet.",
+      "RECOMMENDED_META": "Needs ~{{need}} GB of VRAM · your GPU has {{vram}}",
+      "LOW_DISK": "Only {{size}} of disk left on {{gpu}}: free space by deleting weights you no longer use before downloading another model."
+    },
+    "TOAST": {
+      "DOWNLOAD_DONE_TITLE": "Download complete",
+      "DOWNLOAD_DONE": "\"{{name}}\" is ready to generate.",
+      "DOWNLOAD_FAILED_TITLE": "Download failed",
+      "DOWNLOAD_FAILED": "\"{{name}}\": {{error}}"
+    },
     "ONLINE_COUNT": "{{count}} online",
     "REVOKE": "Disconnect",
     "REVOKE_TOOLTIP": "Removes this machine's permission. To reconnect it, repeat the pairing.",
@@ -2311,8 +2338,16 @@
       "EMPTY": "The worker is not reporting models yet. Connect a GPU or check its status.",
       "COL_MODEL": "Model",
       "COL_STATUS": "Status",
-      "COL_SIZE": "Weights / progress",
+      "COL_FIT": "On your GPU",
+      "SPEED_ETA": "{{speed}} · {{eta}}",
+      "COL_SIZE": "Weights",
       "COL_ACTIONS": "Actions",
+      "FIT": {
+        "GOOD": "Runs well",
+        "TIGHT": "Tight",
+        "NO": "Too big"
+      },
+      "FIT_TOOLTIP": "The model needs ~{{need}} GB of VRAM and this GPU has {{vram}}.",
       "READY": "Available",
       "NOT_AVAILABLE": "Unavailable",
       "DOWNLOADING": "Downloading",
@@ -2329,7 +2364,16 @@
       "BRIDGE_NOTICE": "Showing the catalog reported by your GPU ({{count}} models). Downloads are requested per machine and start in ~20 s.",
       "DOWNLOAD_REQUESTED": "Download of \"{{name}}\" requested on {{worker}}: starts in ~20 s, progress shows here.",
       "DOWNLOAD_BRIDGE_TOOLTIP": "Request the download on {{worker}} (starts on the next heartbeat).",
-      "VRAM_REQ": "Requires {{gb}} GB of VRAM",
+      "VRAM_REQ": "Requires ~{{gb}} GB of VRAM",
+      "WEIGHTS_REPO": "Hugging Face",
+      "WEIGHTS_ONLY_NOTICE": "{{count}} models use engines without downloadable weights (mock or V1 bridge): they cannot be downloaded or deleted from this panel.",
+      "UPDATE": {
+        "TITLE": "Update Worker",
+        "SUBTITLE": "Upload the new worker installer .zip and order the worker to update itself.",
+        "SELECT": "Select installer .zip",
+        "BUTTON": "Update Worker",
+        "TOOLTIP": "Uploads the .zip to the back and orders the worker to download it, replace files and relaunch."
+      },
       "ERRORS": {
         "LOAD": "Couldn't load worker models. Try again in a few seconds.",
         "OPERATION": "The model operation failed. Check worker status and try again."
@@ -2346,6 +2390,7 @@
     },
     "FIELDS": {
       "VRAM": "Memory",
+      "DISK": "Free disk",
       "OS": "OS",
       "VERSION": "Version",
       "MODELS": "Models",

@@ -13,6 +13,7 @@ import { Event as Project, Piece } from '@modules/events/interfaces';
 import { FileAsset, Ingredient } from '@modules/library/interfaces';
 import { LibraryService } from '@modules/library/services';
 import { StudioService } from '@modules/studio/services';
+import { ActiveProjectStore } from '@modules/projects/services';
 import { environment } from '@env/environment';
 
 import {
@@ -85,6 +86,7 @@ export class ToolsService {
   private readonly agencyService = inject(AgencyService);
   private readonly libraryService = inject(LibraryService);
   private readonly studioService = inject(StudioService);
+  private readonly activeProject = inject(ActiveProjectStore);
   private readonly apiOrigin = environment.API_URL.replace(/\/api\/v1\/?$/, '');
   /** El back valida generation_number como requerido (no acepta 0). */
   private sequence = 0;
@@ -97,12 +99,17 @@ export class ToolsService {
 
   /** Anchor proyecto/pieza para los logs (idempotente por piece code). */
   ensureAnchor(projectName: string): Observable<PoseSheetAnchor> {
-    return this.studioService.ensureTakeSlot(projectName, POSE_SHEET_PIECE_CODE);
+    return this.studioService.ensureTakeSlot(
+      projectName,
+      POSE_SHEET_PIECE_CODE,
+      this.activeProject.projectId() ?? undefined,
+    );
   }
 
   generatePoseSheet(request: {
     model: string;
     prompt: string;
+    resolution?: string;
     referenceIds: { id: string; name: string }[];
     eventId: string;
     pieceId: string;
@@ -120,6 +127,7 @@ export class ToolsService {
       model: request.model,
       content,
       ratio: POSE_SHEET_RATIO,
+      ...(request.resolution ? { resolution: request.resolution } : {}),
       event_id: request.eventId,
       piece_id: request.pieceId,
       piece_code: request.pieceCode,
@@ -138,7 +146,11 @@ export class ToolsService {
   }
 
   ensureStoryboardAnchor(projectName: string): Observable<PoseSheetAnchor> {
-    return this.studioService.ensureTakeSlot(projectName, STORYBOARD_PIECE_CODE);
+    return this.studioService.ensureTakeSlot(
+      projectName,
+      STORYBOARD_PIECE_CODE,
+      this.activeProject.projectId() ?? undefined,
+    );
   }
 
   generateStoryboard(request: {
@@ -177,7 +189,11 @@ export class ToolsService {
 
   /** Anchor proyecto/pieza para los logs del Estudio de imagen (idempotente). */
   ensureImageLabAnchor(projectName: string): Observable<PoseSheetAnchor> {
-    return this.studioService.ensureTakeSlot(projectName, IMAGE_LAB_PIECE_CODE);
+    return this.studioService.ensureTakeSlot(
+      projectName,
+      IMAGE_LAB_PIECE_CODE,
+      this.activeProject.projectId() ?? undefined,
+    );
   }
 
   generateImageLab(request: {
@@ -222,7 +238,11 @@ export class ToolsService {
 
   /** Anchor proyecto/pieza para los logs (idempotente por piece code). */
   ensureLocationAnchor(projectName: string): Observable<PoseSheetAnchor> {
-    return this.studioService.ensureTakeSlot(projectName, LOCATION_PIECE_CODE);
+    return this.studioService.ensureTakeSlot(
+      projectName,
+      LOCATION_PIECE_CODE,
+      this.activeProject.projectId() ?? undefined,
+    );
   }
 
   generateLocation(request: {
@@ -270,7 +290,7 @@ export class ToolsService {
     name: string;
     description?: string;
     eventId: string;
-    photos: readonly { outputUrl: string; viewLabel: string }[];
+    photos: readonly { outputUrl: string; viewLabel: string; taskId?: string }[];
   }): Observable<SaveLocationResult> {
     const failures: string[] = [];
     return from(request.photos).pipe(
@@ -278,7 +298,16 @@ export class ToolsService {
         from(
           this.fetchAsFile(photo.outputUrl, locationFileName(request.name, photo.viewLabel)),
         ).pipe(
-          mergeMap((file) => this.libraryService.uploadFile(file, 'images', request.eventId)),
+          mergeMap((file) =>
+            this.libraryService.uploadFile(
+              file,
+              'images',
+              request.eventId,
+              undefined,
+              undefined,
+              photo.taskId,
+            ),
+          ),
           catchError((err: unknown) => {
             failures.push(err instanceof Error ? err.message : String(err));
             return of(null);
@@ -324,9 +353,19 @@ export class ToolsService {
     name: string;
     description?: string;
     eventId: string;
+    taskId?: string;
   }): Observable<SaveCharacterResult> {
     return from(this.downloadOutput(request.outputUrl, request.name)).pipe(
-      mergeMap((file) => this.libraryService.uploadFile(file, 'images', request.eventId)),
+      mergeMap((file) =>
+        this.libraryService.uploadFile(
+          file,
+          'images',
+          request.eventId,
+          undefined,
+          undefined,
+          request.taskId,
+        ),
+      ),
       mergeMap((asset) =>
         this.libraryService
           .createIngredient({
@@ -354,8 +393,9 @@ export class ToolsService {
     outputUrl: string;
     name: string;
     eventId: string;
+    taskId?: string;
   }): Observable<Ingredient> {
-    return this.saveOutputAsProp(request.outputUrl, request.name, request.eventId);
+    return this.saveOutputAsProp(request.outputUrl, request.name, request.eventId, request.taskId);
   }
 
   /** Guarda una imagen del Estudio de imagen en Recursos como prop. */
@@ -363,17 +403,21 @@ export class ToolsService {
     outputUrl: string;
     name: string;
     eventId: string;
+    taskId?: string;
   }): Observable<Ingredient> {
-    return this.saveOutputAsProp(request.outputUrl, request.name, request.eventId);
+    return this.saveOutputAsProp(request.outputUrl, request.name, request.eventId, request.taskId);
   }
 
   private saveOutputAsProp(
     outputUrl: string,
     name: string,
     eventId: string,
+    taskId?: string,
   ): Observable<Ingredient> {
     return from(this.downloadOutput(outputUrl, name)).pipe(
-      mergeMap((file) => this.libraryService.uploadFile(file, 'images', eventId)),
+      mergeMap((file) =>
+        this.libraryService.uploadFile(file, 'images', eventId, undefined, undefined, taskId),
+      ),
       mergeMap((asset) =>
         this.libraryService
           .createIngredient({ type: 'prop', name })

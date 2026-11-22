@@ -23,6 +23,28 @@
   outline: none;
 }
 
+/* Movimientos elegidos por el usuario. */
+.camera-trigger.is-configured {
+  border-color: var(--color-accent);
+  box-shadow: inset 0 0 0 1px var(--color-accent);
+}
+
+.camera-trigger.is-configured .camera-pill-label,
+.camera-trigger.is-configured .camera-pill-value {
+  color: var(--color-accent);
+}
+
+/* Falta elegir el movimiento para continuar. */
+.camera-trigger.is-attention {
+  border-color: var(--color-danger);
+  box-shadow: 0 0 0 1px var(--color-danger);
+}
+
+.camera-trigger.is-attention .camera-pill-label,
+.camera-trigger.is-attention .camera-pill-value {
+  color: var(--color-danger);
+}
+
 .camera-trigger.compact {
   min-height: 2.25rem;
   gap: 0.4rem;
@@ -405,7 +427,7 @@
   }
 }
 
-/* Píldora compacta para barras de configuración. */
+/* Pï¿½ldora compacta para barras de configuraciï¿½n. */
 .camera-trigger.pill {
   width: auto;
   min-height: 3.4rem;

@@ -42,6 +42,7 @@ export class LibraryApiRepository {
     eventId?: string,
     tenantSlug?: string,
     storage?: 'persistent' | 'temp',
+    taskId?: string,
   ): Observable<ApiResponse<FileAsset>> {
     const form = new FormData();
     form.append('file', file);
@@ -53,6 +54,9 @@ export class LibraryApiRepository {
     }
     if (eventId) {
       form.append('event_id', eventId);
+    }
+    if (taskId) {
+      form.append('task_id', taskId);
     }
     return this.http.post<ApiResponse<FileAsset>>(
       `${this.apiUrl}/files/upload`,

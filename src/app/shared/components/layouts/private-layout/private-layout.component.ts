@@ -14,6 +14,7 @@ import { NavBarComponent } from '@shared/components/nav-bar/nav-bar.component';
 import { ConsentGateComponent } from '@shared/components/consent-gate/consent-gate.component';
 import { CookieBannerComponent } from '@shared/components/cookie-banner/cookie-banner.component';
 import { AssistantChatComponent } from '@shared/components/assistant-chat/assistant-chat.component';
+import { ImageLightboxComponent } from '@shared/components/image-lightbox/image-lightbox.component';
 
 const ROUTE_LOADER_TASK = 'private-route';
 
@@ -25,6 +26,7 @@ const ROUTE_LOADER_TASK = 'private-route';
     ConsentGateComponent,
     CookieBannerComponent,
     AssistantChatComponent,
+    ImageLightboxComponent,
     NgxUiLoaderModule,
   ],
   templateUrl: './private-layout.component.html',

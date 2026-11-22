@@ -67,7 +67,7 @@
               inputId="agencyProject"
               [attr.aria-label]="'AGENCY.STUDIO.P1_PROJECT_ARIA' | translate"
               [ngModel]="selectedProjectId()"
-              (ngModelChange)="selectedProjectId.set($event)"
+              (ngModelChange)="selectProject($event)"
               [ngModelOptions]="{ standalone: true }"
               [options]="projectOptions()"
               optionLabel="label"

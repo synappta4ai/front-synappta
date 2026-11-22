@@ -24,6 +24,28 @@
   outline: none;
 }
 
+/* Preset elegido por el usuario. */
+.lighting-trigger.is-configured {
+  border-color: var(--color-accent);
+  box-shadow: inset 0 0 0 1px var(--color-accent);
+}
+
+.lighting-trigger.is-configured .lighting-pill-label,
+.lighting-trigger.is-configured .lighting-pill-value {
+  color: var(--color-accent);
+}
+
+/* Falta elegir el preset para continuar. */
+.lighting-trigger.is-attention {
+  border-color: var(--color-danger);
+  box-shadow: 0 0 0 1px var(--color-danger);
+}
+
+.lighting-trigger.is-attention .lighting-pill-label,
+.lighting-trigger.is-attention .lighting-pill-value {
+  color: var(--color-danger);
+}
+
 .lighting-trigger.compact {
   min-height: 2.25rem;
   padding: 0.25rem 0.5rem;

@@ -28,6 +28,7 @@ import {
   FileListFilters,
 } from '@modules/library/interfaces';
 import { LibraryService } from '@modules/library/services';
+import { ActiveProjectStore } from '@modules/projects/services';
 import { SendToEditorButtonComponent } from '@modules/editor/ui/send-to-editor-button/send-to-editor-button.component';
 import { AssetEditDialogComponent } from '@shared/components/asset-edit-dialog/asset-edit-dialog';
 import { ImgFadeDirective } from '@shared/components/img-fade/img-fade.directive';
@@ -85,6 +86,7 @@ const INGREDIENTS_VISIBLE = 3;
 })
 export class ResourcesComponent {
   private readonly libraryService = inject(LibraryService);
+  private readonly activeProject = inject(ActiveProjectStore);
   private readonly destroyRef = inject(DestroyRef);
   private readonly serverUrl = inject(ServerUrlPipe);
   private readonly translate = inject(TranslateService);
@@ -349,7 +351,13 @@ export class ResourcesComponent {
           ? 'audio'
           : 'images';
       try {
-        await lastValueFrom(this.libraryService.uploadFile(file, category));
+        await lastValueFrom(
+          this.libraryService.uploadFile(
+            file,
+            category,
+            this.activeProject.projectId() ?? undefined,
+          ),
+        );
       } catch {
         this.error.set(this.translate.instant('LIBRARY.ERRORS.UPLOAD', { name: file.name }));
       }

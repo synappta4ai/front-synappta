@@ -18,6 +18,10 @@ export class CompactSelectComponent {
   readonly label = input('');
   readonly value = input<string | number>('');
   readonly options = input<readonly CompactOption[]>([]);
+  /** El usuario ya eligió algo distinto del valor por defecto. */
+  readonly configured = input(false);
+  /** Falta elegir este control para poder continuar. */
+  readonly attention = input(false);
   readonly valueChange = output<string | number>();
 
   protected readonly selectedLabel = computed(

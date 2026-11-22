@@ -40,6 +40,7 @@ import {
 } from '@modules/library/interfaces';
 import { EventsService } from '@modules/events/services';
 import { Event as Project } from '@modules/events/interfaces';
+import { ActiveProjectStore } from '@modules/projects/services';
 import { ServerUrlPipe } from '@core/pipes/server-url.pipe';
 import { GenerationEventsStore } from '@core/store/generation.events';
 import { UserSessionStore } from '@core/store/user.session';
@@ -131,6 +132,7 @@ export class StudioComponent {
   private readonly agencyService = inject(AgencyService);
   private readonly libraryService = inject(LibraryService);
   private readonly eventsService = inject(EventsService);
+  private readonly activeProject = inject(ActiveProjectStore);
   private readonly sessionStore = inject(UserSessionStore);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly translate = inject(TranslateService);
@@ -1072,6 +1074,12 @@ export class StudioComponent {
   }
 
   constructor() {
+    // Proyecto activo global: el Studio arranca en el proyecto elegido en
+    // Proyectos/Herramientas y todo lo que se genere queda asignado ahí.
+    const activeProject = this.activeProject.project();
+    if (activeProject) {
+      this.selectedProjectId.set(activeProject.id);
+    }
     inject(DestroyRef).onDestroy(() => {
       if (this.refErrorTimer) {
         clearTimeout(this.refErrorTimer);
@@ -1320,13 +1328,33 @@ export class StudioComponent {
         }),
         finalize(() => this.loadingProjects.set(false)),
       )
-      .subscribe((projects) => this.projects.set(projects));
+      .subscribe((projects) => {
+        this.projects.set(projects);
+        const current = this.selectedProjectId();
+        if (!current) {
+          return;
+        }
+        const found = projects.find((project) => project.id === current);
+        if (found) {
+          this.activeProject.select(found);
+          this.eventsStore.hydrateProject(found.id);
+        } else {
+          this.selectedProjectId.set(null);
+          this.activeProject.clear();
+        }
+      });
   }
 
   /** Cambio de proyecto: los recursos se filtran a los asignados a ese
       proyecto y el historial por día cede prioridad (se limpia la sesión). */
   protected onProjectChange(projectId: string | null): void {
     this.selectedProjectId.set(projectId);
+    if (projectId) {
+      const project = this.projects().find((item) => item.id === projectId) ?? null;
+      this.activeProject.select(project);
+    } else {
+      this.activeProject.clear();
+    }
     // Cambio manual de proyecto: se descarta cualquier reuso pendiente.
     this.pendingReuseRefs = null;
     // Cambiar de proyecto descarta las refs restauradas por un reuso previo.
@@ -1868,9 +1896,15 @@ export class StudioComponent {
     return {
       model: item.model,
       content: [
-        ...item.assets.filter((asset) => asset.kind === 'image').map((asset) => ({ type: 'image' as const, id: asset.id, name: asset.name })),
-        ...item.assets.filter((asset) => asset.kind === 'audio').map((asset) => ({ type: 'audio' as const, id: asset.id, name: asset.name })),
-        ...item.assets.filter((asset) => asset.kind === 'video').map((asset) => ({ type: 'video' as const, id: asset.id, name: asset.name })),
+        ...item.assets
+          .filter((asset) => asset.kind === 'image')
+          .map((asset) => ({ type: 'image' as const, id: asset.id, name: asset.name })),
+        ...item.assets
+          .filter((asset) => asset.kind === 'audio')
+          .map((asset) => ({ type: 'audio' as const, id: asset.id, name: asset.name })),
+        ...item.assets
+          .filter((asset) => asset.kind === 'video')
+          .map((asset) => ({ type: 'video' as const, id: asset.id, name: asset.name })),
         {
           type: 'text' as const,
           text: [item.prompt, lightingPrompt(this.lighting()), cameraMovementPrompt(this.camera())]
@@ -2022,6 +2056,11 @@ export class StudioComponent {
     return w > 0 && h > 0 ? (w / h).toFixed(4) : '1.7778';
   }
 
+  /** El artefacto de la toma es imagen (png/jpg/webp) y no video. */
+  protected isImageTake(take: StudioTake): boolean {
+    return /\.(png|jpe?g|webp|gif|avif)(?:[?#]|$)/i.test(take.videoUrl ?? '');
+  }
+
   /** Etiqueta de gasto del modal: "$0.094 · 1.5 cr" o "—". */
   protected takeCostLabel(take: StudioTake): string {
     const parts: string[] = [];
@@ -2141,15 +2180,13 @@ export class StudioComponent {
   /** Mensaje del back (escapado: el aviso renderiza HTML) o el genérico. */
   private startErrorMessage(err: unknown): string {
     const generic = this.translate.instant('STUDIO.ERR_START_GENERATION') as string;
-    const body = err instanceof HttpErrorResponse ? (err.error as { message?: string } | null) : null;
+    const body =
+      err instanceof HttpErrorResponse ? (err.error as { message?: string } | null) : null;
     const detail = body?.message?.trim();
     if (!detail) {
       return generic;
     }
-    const safe = detail
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
+    const safe = detail.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     return `${generic} ${safe}`;
   }
 

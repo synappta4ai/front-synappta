@@ -27,6 +27,8 @@ export interface GpuWorker {
   version: string;
   vram_total_mb: number;
   vram_free_mb: number;
+  /** Disco libre donde viven los pesos (ausente en workers viejos). */
+  disk_free_mb?: number;
   jobs_active: number;
   models: WorkerModel[];
   last_heartbeat: string;
@@ -40,6 +42,16 @@ export interface PairingCode {
   code: string;
   expires_at: string;
 }
+
+/**
+ * Qué tan bien entra un modelo en la VRAM de la GPU objetivo.
+ *
+ * `good`   — entra con margen para activaciones y caché (spec + 25 %).
+ * `tight`  — entra justo: puede funcionar, pero conviene cerrar otras apps.
+ * `insufficient` — pide más VRAM que la que tiene la GPU.
+ * `unknown` — falta el dato del catálogo o no hay GPU emparejada.
+ */
+export type ModelFit = 'good' | 'tight' | 'insufficient' | 'unknown';
 
 /** Estado en vivo de los pesos de un modelo (vista de gestión del worker). */
 export interface ManagedWorkerModelDownload {

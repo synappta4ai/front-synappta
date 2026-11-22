@@ -45,6 +45,10 @@ export class LightingSelectComponent {
   readonly compact = input(false);
   /** Formato píldora compacta para barras de configuración. */
   readonly pill = input(false);
+  /** El usuario ya eligió un preset (no está en Auto). */
+  readonly configured = input(false);
+  /** Falta elegir este preset para poder continuar. */
+  readonly attention = input(false);
   readonly valueChange = output<string | null>();
 
   protected readonly dialogOpen = signal(false);

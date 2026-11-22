@@ -20,6 +20,34 @@
   outline: none;
 }
 
+/* Ya configurado por el usuario: borde de acento + etiqueta resaltada. */
+.compact-chip.is-configured {
+  border-color: var(--color-accent);
+  box-shadow: inset 0 0 0 1px var(--color-accent);
+}
+
+.compact-chip.is-configured .compact-chip-label,
+.compact-chip.is-configured .compact-chip-chevron {
+  color: var(--color-accent);
+}
+
+/* Falta elegir/definir este control para poder continuar. */
+.compact-chip.is-attention {
+  border-color: var(--color-danger);
+  box-shadow: 0 0 0 1px var(--color-danger);
+}
+
+.compact-chip.is-attention .compact-chip-label,
+.compact-chip.is-attention .compact-chip-value,
+.compact-chip.is-attention .compact-chip-chevron {
+  color: var(--color-danger);
+}
+
+.compact-chip.is-configured:hover,
+.compact-chip.is-configured:focus-visible {
+  border-color: var(--color-accent-hover);
+}
+
 .compact-chip-label {
   font-size: 0.6rem;
   font-weight: 700;

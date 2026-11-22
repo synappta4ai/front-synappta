@@ -401,10 +401,13 @@
             type="button"
             class="foot-chip"
             [title]="'STUDIO.AUDIO_REFS_TOOLTIP' | translate: { count: reusedAudio().length }"
-            [attr.aria-label]="'STUDIO.AUDIO_REFS_TOOLTIP' | translate: { count: reusedAudio().length }"
+            [attr.aria-label]="
+              'STUDIO.AUDIO_REFS_TOOLTIP' | translate: { count: reusedAudio().length }
+            "
             (click)="clearReusedAudio()"
           >
-            <i class="md md-close"></i> {{ 'STUDIO.AUDIO_REFS' | translate: { count: reusedAudio().length } }}
+            <i class="md md-close"></i>
+            {{ 'STUDIO.AUDIO_REFS' | translate: { count: reusedAudio().length } }}
           </button>
         }
         <p-select
@@ -963,13 +966,24 @@
                 <div class="w-full">
                   <div class="flex w-full">
                     @if (take.status === 'succeeded' && take.videoUrl) {
-                      <video
-                        class="take-thumb"
-                        animate.enter="anim-item"
-                        [src]="take.videoUrl | serverUrl"
-                        preload="metadata"
-                        muted
-                      ></video>
+                      @if (isImageTake(take)) {
+                        <img
+                          class="take-thumb"
+                          animate.enter="anim-item"
+                          [src]="take.videoUrl | serverUrl"
+                          [alt]="take.prompt"
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      } @else {
+                        <video
+                          class="take-thumb"
+                          animate.enter="anim-item"
+                          [src]="take.videoUrl | serverUrl"
+                          preload="metadata"
+                          muted
+                        ></video>
+                      }
                     } @else {
                       <div class="take-thumb placeholder">
                         <i
@@ -1081,7 +1095,11 @@
                       @if (take.status === 'succeeded' && take.videoUrl) {
                         <app-send-to-editor-button
                           buttonClass="rating-redo"
-                          [clip]="{ kind: 'video', url: take.videoUrl, name: take.prompt.slice(0, 40) }"
+                          [clip]="{
+                            kind: 'video',
+                            url: take.videoUrl,
+                            name: take.prompt.slice(0, 40),
+                          }"
                         />
                       }
                     }
@@ -1141,7 +1159,12 @@
         <span><i class="md md-list"></i> {{ 'STUDIO.PENDING_TITLE' | translate }}</span>
         <span class="pending-head-actions">
           <p-tag [value]="queueItems().length + ''" severity="warn" />
-          <p-button size="small" [label]="'STUDIO.PENDING_GENERATE_ALL' | translate" icon="md md-play_arrow" (onClick)="generateAllFromQueue()" />
+          <p-button
+            size="small"
+            [label]="'STUDIO.PENDING_GENERATE_ALL' | translate"
+            icon="md md-play_arrow"
+            (onClick)="generateAllFromQueue()"
+          />
         </span>
       </div>
       <div class="queue-list">
@@ -1152,25 +1175,50 @@
               <span class="pending-head-actions">
                 <span class="small muted">{{ item.modelDisplayName }}</span>
                 <span (click)="$event.preventDefault(); $event.stopPropagation()">
-                  <p-button size="small" [label]="'STUDIO.PENDING_GENERATE' | translate" icon="md md-play_arrow" (onClick)="generateFromQueue(item)" />
+                  <p-button
+                    size="small"
+                    [label]="'STUDIO.PENDING_GENERATE' | translate"
+                    icon="md md-play_arrow"
+                    (onClick)="generateFromQueue(item)"
+                  />
                 </span>
               </span>
             </summary>
             <div class="pending-body">
-              <p class="small muted">{{ item.ratio }} · {{ item.duration || '' }} s · {{ item.resolution || 'auto' }}</p>
+              <p class="small muted">
+                {{ item.ratio }} · {{ item.duration || '' }} s · {{ item.resolution || 'auto' }}
+              </p>
               @if (item.assets.length) {
                 <div class="ref-strip">
                   @for (asset of item.assets.slice(0, 5); track asset.id) {
                     @if (asset.kind === 'image') {
-                      <img class="ref-thumb" [src]="refThumbUrl(asset.id)" [alt]="asset.name" [title]="asset.name" (error)="onThumbError($event)" />
+                      <img
+                        class="ref-thumb"
+                        [src]="refThumbUrl(asset.id)"
+                        [alt]="asset.name"
+                        [title]="asset.name"
+                        (error)="onThumbError($event)"
+                      />
                     }
                   }
                 </div>
               }
               <pre class="pending-prompt">{{ item.prompt }}</pre>
               <div class="pending-actions">
-                <p-button size="small" [label]="'STUDIO.PENDING_GENERATE' | translate" icon="md md-play_arrow" (onClick)="generateFromQueue(item)" />
-                <p-button size="small" severity="secondary" [text]="true" [label]="'STUDIO.PENDING_REMOVE' | translate" icon="md md-delete" (onClick)="removeFromQueue(item.id)" />
+                <p-button
+                  size="small"
+                  [label]="'STUDIO.PENDING_GENERATE' | translate"
+                  icon="md md-play_arrow"
+                  (onClick)="generateFromQueue(item)"
+                />
+                <p-button
+                  size="small"
+                  severity="secondary"
+                  [text]="true"
+                  [label]="'STUDIO.PENDING_REMOVE' | translate"
+                  icon="md md-delete"
+                  (onClick)="removeFromQueue(item.id)"
+                />
               </div>
             </div>
           </details>

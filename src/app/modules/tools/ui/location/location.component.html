@@ -5,6 +5,13 @@
       <i class="md md-place"></i> {{ 'TOOLS.LOCATION' | translate }}
     </p>
 
+    <div class="panel">
+      <div class="panel-head">
+        <span><i class="md md-work"></i> {{ 'PROJECTS.TITLE' | translate }}</span>
+      </div>
+      <app-active-project-picker />
+    </div>
+
     @if (error()) {
       <p-message severity="error" [text]="error()!" />
     }
