@@ -285,3 +285,12 @@ tenant_id: 1}` con credenciales de `.env.e2e`. El password contiene un
 - **Servidor MCP remoto**: `POST /api/v1/mcp` (Streamable HTTP stateless)
   expone el dominio a agentes externos con el mismo JWT del login. No
   duplicar esas tools en el front: son para clientes MCP (Claude/Codex).
+- **Miniaturas (regla permanente)**: toda imagen de contenido en las rutas
+  privadas (Agency, Studio, Proyectos, Recursos, Herramientas y futuras)
+  debe abrir el visor global al tocarla. El visor vive en
+  `shared/components/image-lightbox` (montado en el layout privado) y escucha
+  clicks a nivel documento; no hace falta cablear cada `<img>`. Las imágenes
+  que ya son controles (`button`, `label`, `a`, `[role="button"]`, etc.)
+  conservan su acción; para excluir una imagen concreta usar
+  `data-no-lightbox`, y para que el visor use la versión full-res en vez de
+  la miniatura, agregar `data-full-src`.
