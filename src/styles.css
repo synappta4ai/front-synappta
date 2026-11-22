@@ -2829,6 +2829,17 @@ main:has(> app-location) {
   padding: 8px;
 }
 
+/* Píldoras de look y cámara: mismo ancho y altura en el panel del Estudio. */
+.studio-shell app-lighting-select,
+.studio-shell app-camera-movement-select {
+  display: block;
+  width: 100%;
+}
+
+.studio-shell .camera-trigger.pill {
+  width: 100%;
+}
+
 .studio-shell .panel-head {
   display: flex;
   align-items: center;

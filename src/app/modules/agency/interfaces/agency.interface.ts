@@ -124,6 +124,10 @@ export interface GenerateRequest {
   resolution?: string;
   generate_audio?: boolean;
   image_mode?: string;
+  /** Id del look (esquema de luz/color) elegido en la UI. */
+  look?: string | null;
+  /** Intensidad del look: subtle | medium | strong (default medium). */
+  look_intensity?: 'subtle' | 'medium' | 'strong';
   event_name?: string;
   user_name?: string;
   event_id: string;

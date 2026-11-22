@@ -42,7 +42,7 @@ import { GenerationQueueService } from '@services/generation-queue.service';
 import { CameraMovementSelectComponent } from '@shared/components/camera/camera-movement-select.component';
 import { cameraMovementPrompt } from '@shared/components/camera/camera-movements';
 import { LightingSelectComponent } from '@shared/components/lighting/lighting-select.component';
-import { lightingPrompt } from '@shared/components/lighting/lighting-templates';
+import { LookIntensity } from '@shared/components/lighting/lighting-templates';
 import { FileAsset } from '@modules/library/interfaces';
 import { LibraryService } from '@modules/library/services';
 import { ModelSelectComponent } from '../model-select/model-select.component';
@@ -162,6 +162,7 @@ export class InfoproductComponent implements OnDestroy {
   protected readonly videoModel = signal<AiModel | null>(null);
   /** Esquema de iluminación / dirección de arte para los prompts y videos. */
   protected readonly lighting = signal<string | null>(null);
+  protected readonly lookIntensity = signal<LookIntensity>('medium');
   /** Luz propia de cada segmento (null = la global). */
   protected readonly segmentLighting = signal<Record<number, string | null>>({});
   /** Movimientos de cámara base del video. */
@@ -460,7 +461,8 @@ export class InfoproductComponent implements OnDestroy {
         aspect_ratio: this.analysis()?.meta.aspect_ratio,
         notes: this.notes().trim() || undefined,
         format_id: this.useFormat() ? (this.formatId() ?? undefined) : undefined,
-        lighting: lightingPrompt(this.lighting()) || undefined,
+        look: this.lighting() || undefined,
+        look_intensity: this.lookIntensity(),
         camera_movements: cameraMovementPrompt(this.camera()) || undefined,
       })
       .pipe(
@@ -544,11 +546,11 @@ export class InfoproductComponent implements OnDestroy {
     const payloads = indexes.map((index) => {
       const text = [
         promptForGeneration(this.segmentPrompts()[index] ?? ''),
-        lightingPrompt(this.segmentLightingId(index)),
         cameraMovementPrompt(this.segmentCameraIds(index)),
       ]
         .filter(Boolean)
         .join('\n\n');
+      const segmentLook = this.segmentLightingId(index);
       const content: GenerateRequest['content'] = [
         ...vp.ingredients.map((ing) => ({
           type: 'image' as const,
@@ -572,6 +574,7 @@ export class InfoproductComponent implements OnDestroy {
       const payload: GenerateRequest = {
         model: model.name,
         content,
+        ...(segmentLook ? { look: segmentLook, look_intensity: this.lookIntensity() } : {}),
         ratio: this.ratio(),
         duration: this.segmentDurations()[index] ?? vp.duration,
         resolution: this.resolution(),
@@ -615,7 +618,6 @@ export class InfoproductComponent implements OnDestroy {
         source: 'infoproduct',
         prompt: [
           prompt,
-          lightingPrompt(this.segmentLightingId(index)),
           cameraMovementPrompt(this.segmentCameraIds(index)),
         ]
           .filter(Boolean)

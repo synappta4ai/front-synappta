@@ -206,12 +206,17 @@
           </div>
         </div>
 
-        <div class="flex flex-wrap items-center gap-2">
+        <div
+          class="flex flex-wrap items-center gap-2 [&>app-camera-movement-select>button]:w-full [&>app-camera-movement-select]:min-w-0 [&>app-camera-movement-select]:flex-1 [&>app-lighting-select]:min-w-0 [&>app-lighting-select]:flex-1"
+        >
           <app-lighting-select
             [pill]="true"
+            [intensityInline]="false"
             inputId="agencyLighting"
             [value]="lighting()"
+            [intensity]="lookIntensity()"
             (valueChange)="lighting.set($event)"
+            (intensityChange)="lookIntensity.set($event)"
           />
           <app-camera-movement-select
             [pill]="true"
@@ -1436,12 +1441,17 @@
                   }
                 </small>
               </div>
-              <div class="flex w-full flex-wrap items-center gap-2">
+              <div
+                class="flex w-full flex-wrap items-center gap-2 [&>app-camera-movement-select>button]:w-full [&>app-camera-movement-select]:min-w-0 [&>app-camera-movement-select]:flex-1 [&>app-lighting-select]:min-w-0 [&>app-lighting-select]:flex-1"
+              >
                 <app-lighting-select
                   [pill]="true"
+                  [intensityInline]="false"
                   inputId="agencyVideoLighting"
                   [value]="lighting()"
+                  [intensity]="lookIntensity()"
                   (valueChange)="lighting.set($event)"
+                  (intensityChange)="lookIntensity.set($event)"
                 />
                 <app-camera-movement-select
                   [pill]="true"
@@ -1729,7 +1739,7 @@
                                     </span>
                                   }
                                 </div>
-                                <div class="flex flex-wrap items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2">
                                   <span class="text-xs text-ink-muted-on-dark">
                                     {{ 'AGENCY.STUDIO.C2_INSERT_HINT' | translate }}
                                   </span>
@@ -1801,7 +1811,9 @@
                                   [compact]="true"
                                   [inputId]="'lightingScene-' + scene.id + '-' + p"
                                   [value]="prompt.lighting ?? lighting()"
+                                  [intensity]="lookIntensity()"
                                   (valueChange)="setPromptLighting(scene.id, null, p, $event)"
+                                  (intensityChange)="lookIntensity.set($event)"
                                 />
                               </span>
                               <span class="flex items-center gap-1.5">
@@ -2163,7 +2175,9 @@
                                       [compact]="true"
                                       [inputId]="'lightingShot-' + scene.id + '-' + shot.id + '-' + p"
                                       [value]="prompt.lighting ?? lighting()"
+                                      [intensity]="lookIntensity()"
                                       (valueChange)="setPromptLighting(scene.id, shot.id, p, $event)"
+                                      (intensityChange)="lookIntensity.set($event)"
                                     />
                                   </span>
                                   <span class="flex items-center gap-1.5">

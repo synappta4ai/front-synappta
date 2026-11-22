@@ -111,7 +111,9 @@
         [pill]="true"
         inputId="locationLighting"
         [value]="lighting()"
+        [intensity]="lookIntensity()"
         (valueChange)="lighting.set($event)"
+        (intensityChange)="lookIntensity.set($event)"
       />
     </div>
 

@@ -28,7 +28,7 @@ import { LibraryService } from '@modules/library/services';
 import { ServerUrlPipe } from '@pipes/server-url.pipe';
 import { UiIcon } from '@shared/components/ui-icon/ui-icon.component';
 import { LightingSelectComponent } from '@shared/components/lighting/lighting-select.component';
-import { lightingPrompt } from '@shared/components/lighting/lighting-templates';
+import { LookIntensity } from '@shared/components/lighting/lighting-templates';
 import { preferredImageResolution } from '@utils/image-resolution';
 
 import {
@@ -100,6 +100,7 @@ export class PoseSheetComponent implements OnInit {
   protected readonly activeModel = signal<AiModel | null>(null);
   /** Esquema de iluminación / dirección de arte de la hoja. */
   protected readonly lighting = signal<string | null>(null);
+  protected readonly lookIntensity = signal<LookIntensity>('medium');
 
   protected readonly variant = signal<PoseSheetVariant>('body');
   protected readonly defaultPrompt = signal('');
@@ -194,6 +195,8 @@ export class PoseSheetComponent implements OnInit {
             prompt,
             resolution: this.resolution() ?? undefined,
             referenceIds: this.refs().map((r) => ({ id: r.id, name: r.filename })),
+            look: this.lighting(),
+            lookIntensity: this.lookIntensity(),
             eventId: anchor.project.id,
             pieceId: anchor.piece.id,
             pieceCode: POSE_SHEET_PIECE_CODE,
@@ -326,8 +329,6 @@ export class PoseSheetComponent implements OnInit {
     if (who) {
       parts.push(`Character: ${who}`);
     }
-    const light = lightingPrompt(this.lighting());
-    if (light) parts.push(light);
     return parts.filter(Boolean).join('\n\n');
   }
 }

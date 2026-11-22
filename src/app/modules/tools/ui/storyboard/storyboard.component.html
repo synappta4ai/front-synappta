@@ -209,7 +209,9 @@
         [pill]="true"
         inputId="storyboardLighting"
         [value]="lighting()"
+        [intensity]="lookIntensity()"
         (valueChange)="lighting.set($event)"
+        (intensityChange)="lookIntensity.set($event)"
       />
     </div>
 

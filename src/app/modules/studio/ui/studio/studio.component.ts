@@ -59,7 +59,7 @@ import { UiIcon } from '@shared/components/ui-icon/ui-icon.component';
 import { CameraMovementSelectComponent } from '@shared/components/camera/camera-movement-select.component';
 import { cameraMovementPrompt } from '@shared/components/camera/camera-movements';
 import { LightingSelectComponent } from '@shared/components/lighting/lighting-select.component';
-import { lightingPrompt } from '@shared/components/lighting/lighting-templates';
+import { LookIntensity } from '@shared/components/lighting/lighting-templates';
 
 interface RatioOption {
   label: string;
@@ -177,6 +177,8 @@ export class StudioComponent {
   protected readonly resolution = signal('720p');
   /** Esquema de iluminación / dirección de arte para la generación. */
   protected readonly lighting = signal<string | null>(null);
+  /** Intensidad del look elegida (default media). */
+  protected readonly lookIntensity = signal<LookIntensity>('medium');
   /** Movimientos de cámara para el clip. */
   protected readonly camera = signal<string[]>([]);
   protected readonly duration = signal(5);
@@ -1816,9 +1818,7 @@ export class StudioComponent {
           .replace(/\s{2,}/g, ' ')
           .trim()
       : rawText;
-    const finalText = [text, lightingPrompt(this.lighting()), cameraMovementPrompt(this.camera())]
-      .filter(Boolean)
-      .join('\n\n');
+    const finalText = [text, cameraMovementPrompt(this.camera())].filter(Boolean).join('\n\n');
 
     const ratio = this.ratio();
     const duration = this.mode() === 'video' ? this.duration() : 0;
@@ -1829,6 +1829,7 @@ export class StudioComponent {
         ...this.reusedAudio().map((a) => ({ type: 'audio' as const, id: a.id, name: a.name })),
         { type: 'text' as const, text: finalText },
       ],
+      ...(this.lighting() ? { look: this.lighting(), look_intensity: this.lookIntensity() } : {}),
       ratio,
       duration: duration || undefined,
       resolution: this.resolution(),
@@ -1907,11 +1908,10 @@ export class StudioComponent {
           .map((asset) => ({ type: 'video' as const, id: asset.id, name: asset.name })),
         {
           type: 'text' as const,
-          text: [item.prompt, lightingPrompt(this.lighting()), cameraMovementPrompt(this.camera())]
-            .filter(Boolean)
-            .join('\n\n'),
+          text: [item.prompt, cameraMovementPrompt(this.camera())].filter(Boolean).join('\n\n'),
         },
       ],
+      ...(this.lighting() ? { look: this.lighting(), look_intensity: this.lookIntensity() } : {}),
       ratio: item.ratio,
       duration: item.duration || undefined,
       resolution: item.resolution,
@@ -2229,6 +2229,12 @@ export class StudioComponent {
     this.resolution.set(req.resolution || '720p');
     this.duration.set(req.duration || 5);
     this.seed.set(req.seed ?? '');
+    this.lighting.set(req.look ?? null);
+    this.lookIntensity.set(
+      req.look_intensity === 'subtle' || req.look_intensity === 'strong'
+        ? req.look_intensity
+        : 'medium',
+    );
     this.reusedAudio.set(
       (req.content ?? [])
         .filter((c) => c.type === 'audio' && !!c.id)

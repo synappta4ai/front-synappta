@@ -16,6 +16,10 @@ export interface WritingCopilotParams {
   cuts_per_shot?: number;
   fps?: number;
   look?: string;
+  /** Id del look del catálogo elegido (el back ensambla el bloque). */
+  look_id?: string;
+  /** Intensidad del look elegido (default media). */
+  look_intensity?: 'subtle' | 'medium' | 'strong';
   audio_mode?: 'diegetic_only' | 'with_dialogue' | 'with_music_notes' | 'silent';
   target_model?: string;
   /** Guía de estructura del paso 1 (comercial o historia, corta o larga). */

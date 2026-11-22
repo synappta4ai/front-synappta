@@ -14,6 +14,7 @@ import { FileAsset, Ingredient } from '@modules/library/interfaces';
 import { LibraryService } from '@modules/library/services';
 import { StudioService } from '@modules/studio/services';
 import { ActiveProjectStore } from '@modules/projects/services';
+import { LookIntensity } from '@shared/components/lighting/lighting-templates';
 import { environment } from '@env/environment';
 
 import {
@@ -111,6 +112,8 @@ export class ToolsService {
     prompt: string;
     resolution?: string;
     referenceIds: { id: string; name: string }[];
+    look?: string | null;
+    lookIntensity?: LookIntensity;
     eventId: string;
     pieceId: string;
     pieceCode: string;
@@ -126,6 +129,7 @@ export class ToolsService {
     const payload: GenerateRequest = {
       model: request.model,
       content,
+      ...(request.look ? { look: request.look, look_intensity: request.lookIntensity } : {}),
       ratio: POSE_SHEET_RATIO,
       ...(request.resolution ? { resolution: request.resolution } : {}),
       event_id: request.eventId,
@@ -158,6 +162,8 @@ export class ToolsService {
     prompt: string;
     resolution?: string;
     referenceIds: { id: string; name: string }[];
+    look?: string | null;
+    lookIntensity?: LookIntensity;
     eventId: string;
     pieceId: string;
     pieceCode: string;
@@ -173,6 +179,7 @@ export class ToolsService {
     const payload: GenerateRequest = {
       model: request.model,
       content,
+      ...(request.look ? { look: request.look, look_intensity: request.lookIntensity } : {}),
       ratio: STORYBOARD_RATIO,
       ...(request.resolution ? { resolution: request.resolution } : {}),
       event_id: request.eventId,
@@ -202,6 +209,8 @@ export class ToolsService {
     ratio: string;
     resolution: string;
     referenceIds: { id: string; name: string }[];
+    look?: string | null;
+    lookIntensity?: LookIntensity;
     eventId: string;
     pieceId: string;
     pieceCode: string;
@@ -217,6 +226,7 @@ export class ToolsService {
     const payload: GenerateRequest = {
       model: request.model,
       content,
+      ...(request.look ? { look: request.look, look_intensity: request.lookIntensity } : {}),
       ratio: request.ratio,
       resolution: request.resolution,
       event_id: request.eventId,
@@ -251,6 +261,8 @@ export class ToolsService {
     ratio: string;
     resolution: string;
     referenceIds: { id: string; name: string }[];
+    look?: string | null;
+    lookIntensity?: LookIntensity;
     eventId: string;
     pieceId: string;
     pieceCode: string;
@@ -266,6 +278,7 @@ export class ToolsService {
     const payload: GenerateRequest = {
       model: request.model,
       content,
+      ...(request.look ? { look: request.look, look_intensity: request.lookIntensity } : {}),
       ratio: request.ratio,
       resolution: request.resolution,
       event_id: request.eventId,

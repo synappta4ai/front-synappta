@@ -35,7 +35,9 @@
         [pill]="true"
         inputId="poseLighting"
         [value]="lighting()"
+        [intensity]="lookIntensity()"
         (valueChange)="lighting.set($event)"
+        (intensityChange)="lookIntensity.set($event)"
       />
     </div>
 
