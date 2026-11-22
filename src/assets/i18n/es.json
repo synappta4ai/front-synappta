@@ -2307,6 +2307,26 @@
       "BUTTON": "Actualizar Worker",
       "TOOLTIP": "Sube el .zip al back y le ordena al worker que se descargue, reemplace archivos y se relance."
     },
+    "HARDWARE": {
+      "TITLE": "Tu hardware",
+      "DETECTED": "{{gpu}} · {{vram}} de VRAM para generar",
+      "FIT_GOOD": "{{count}} corren bien",
+      "FIT_TIGHT": "{{count}} justo",
+      "FIT_NO": "{{count}} no alcanzan",
+      "NO_GPU_TITLE": "¿Te conviene correr modelos en local?",
+      "NO_GPU_BODY": "Los modelos corren en una GPU NVIDIA propia. Con {{min}} GB de VRAM corre el más liviano de los {{models}}; con {{recommended}} GB estás cómodo y con {{max}} GB entran todos.",
+      "NO_GPU_NOTE": "El worker pesa poco: los pesos de cada modelo se descargan recién cuando lo elegís y podés borrarlos para recuperar disco.",
+      "RECOMMENDED_TITLE": "Recomendados para tu GPU",
+      "RECOMMENDED_SUBTITLE": "Modelos que entran en {{gpu}} y todavía no tenés descargados.",
+      "RECOMMENDED_META": "Pide ~{{need}} GB de VRAM · tu GPU tiene {{vram}}",
+      "LOW_DISK": "Quedan {{size}} de disco en {{gpu}}: liberá espacio borrando pesos que ya no uses antes de descargar otro modelo."
+    },
+    "TOAST": {
+      "DOWNLOAD_DONE_TITLE": "Descarga completa",
+      "DOWNLOAD_DONE": "\"{{name}}\" ya está listo para generar.",
+      "DOWNLOAD_FAILED_TITLE": "La descarga falló",
+      "DOWNLOAD_FAILED": "\"{{name}}\": {{error}}"
+    },
     "ONLINE_COUNT": "{{count}} en línea",
     "REVOKE": "Desconectar",
     "REVOKE_TOOLTIP": "Quita el permiso de esta máquina. Para volver a conectarla, repetí el emparejamiento.",
@@ -2318,8 +2338,16 @@
       "EMPTY": "El worker todavía no reporta modelos. Conectá una GPU o revisá su estado.",
       "COL_MODEL": "Modelo",
       "COL_STATUS": "Estado",
-      "COL_SIZE": "Peso / progreso",
+      "COL_FIT": "En tu GPU",
+      "SPEED_ETA": "{{speed}} · {{eta}}",
+      "COL_SIZE": "Pesos",
       "COL_ACTIONS": "Acciones",
+      "FIT": {
+        "GOOD": "Corre bien",
+        "TIGHT": "Justo",
+        "NO": "No alcanza"
+      },
+      "FIT_TOOLTIP": "El modelo pide ~{{need}} GB de VRAM y esta GPU tiene {{vram}}.",
       "READY": "Disponible",
       "NOT_AVAILABLE": "No disponible",
       "DOWNLOADING": "Descargando",
@@ -2336,7 +2364,16 @@
       "BRIDGE_NOTICE": "Mostrando el catálogo que reporta tu GPU ({{count}} modelos). La descarga se pide a cada máquina y tarda ~20 s en arrancar.",
       "DOWNLOAD_REQUESTED": "Descarga de \"{{name}}\" pedida a {{worker}}: arranca en ~20 s y verás el progreso acá.",
       "DOWNLOAD_BRIDGE_TOOLTIP": "Pide la descarga a {{worker}} (arranca en el próximo heartbeat).",
-      "VRAM_REQ": "Requiere {{gb}} GB de VRAM",
+      "VRAM_REQ": "Requiere ~{{gb}} GB de VRAM",
+      "WEIGHTS_REPO": "Hugging Face",
+      "WEIGHTS_ONLY_NOTICE": "{{count}} modelos usan motores sin pesos descargables (mock o bridge V1): no se descargan ni se borran desde este panel.",
+      "UPDATE": {
+        "TITLE": "Actualizar Worker",
+        "SUBTITLE": "Subí el instalador .zip nuevo y ordená al worker que se actualice solo.",
+        "SELECT": "Seleccionar instalador .zip",
+        "BUTTON": "Actualizar Worker",
+        "TOOLTIP": "Sube el .zip al back y le ordena al worker que se descargue, reemplace archivos y se relance."
+      },
       "ERRORS": {
         "LOAD": "No pude cargar los modelos del worker. Reintentá en unos segundos.",
         "OPERATION": "La operación sobre el modelo falló. Revisá el estado del worker y reintentá."
@@ -2353,6 +2390,7 @@
     },
     "FIELDS": {
       "VRAM": "Memoria",
+      "DISK": "Disco libre",
       "OS": "Sistema",
       "VERSION": "Versión",
       "MODELS": "Modelos",

@@ -11,7 +11,7 @@ import {
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { catchError, EMPTY, finalize } from 'rxjs';
 
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { Button } from 'primeng/button';
 import { Card } from 'primeng/card';
 import { ConfirmDialog } from 'primeng/confirmdialog';
@@ -26,7 +26,28 @@ import { Tooltip } from 'primeng/tooltip';
 import { formatBytesValue } from '@pipes/format-bytes.pipe';
 
 import { GpuService } from '../../services/gpu.service';
-import { GpuWorker, ManagedWorkerModel, PairingCode } from '../../interfaces/gpu.interface';
+import {
+  GpuWorker,
+  ManagedWorkerModel,
+  ModelFit,
+  PairingCode,
+} from '../../interfaces/gpu.interface';
+
+/**
+ * Margen sobre la VRAM del catálogo para decir "corre cómodo".
+ *
+ * `vram_gb` es el pico que necesita el pipeline; el resto (activaciones,
+ * contextos de CUDA, el escritorio) no está incluido, así que con el spec justo
+ * el modelo entra pero deja la GPU al límite. 25 % es el colchón con el que se
+ * midió Wan 2.1 en 8 GB (spec 6 GB, pico real 5,98 GB).
+ */
+const FIT_HEADROOM = 1.25;
+
+/** Menos de 5 GB libres en el disco del worker: aviso visible en el panel. */
+const LOW_DISK_WARN_MB = 5 * 1024;
+
+/** Menos de 1 GB: no entra ningún modelo, no se ofrecen más descargas. */
+const LOW_DISK_BLOCK_MB = 1024;
 
 /**
  * Panel "Tu GPU": el administrador del tenant empareja las máquinas con GPU
@@ -65,6 +86,7 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
   private readonly gpuService = inject(GpuService);
   private readonly translate = inject(TranslateService);
   private readonly confirmationService = inject(ConfirmationService);
+  private readonly messageService = inject(MessageService);
 
   protected readonly workers = signal<GpuWorker[]>([]);
   protected readonly loading = signal(false);
@@ -166,6 +188,7 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
         this.workerModels.set(models);
         this.bridgeSource.set(bridge);
         this.modelsError.set(null);
+        this.trackDownloads(models);
       });
   }
 
@@ -253,10 +276,151 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
     });
   });
 
+  /**
+   * Un modelo gestionable pesa en disco: se descarga de Hugging Face y se
+   * borra para liberar espacio. `mock` genera artefactos simulados sin pesos y
+   * `v1_bridge` carga checkpoints de un volumen montado: ninguno de los dos se
+   * puede descargar ni borrar desde este panel, así que no se listan acá (sí
+   * aparecen en los selectores de generación cuando están disponibles).
+   */
+  protected hasDownloadableWeights(model: ManagedWorkerModel): boolean {
+    const dl = model.downloaded;
+    if (!dl) return false;
+    if (dl.engine === 'mock' || dl.engine === 'v1_bridge') return false;
+    return !!dl.repo || dl.engine === 'diffusers';
+  }
+
+  /**
+   * Tabla de pesos: sólo modelos con pesos de HF. Por eso toda fila arranca
+   * "sin descargar", ofrece Descargar y, cuando los pesos están en disco,
+   * Borrar — nada llega pre-descargado por el solo hecho de estar en el
+   * catálogo.
+   */
+  protected readonly weightModels = computed(() =>
+    this.displayedModels().filter((model) => this.hasDownloadableWeights(model)),
+  );
+
+  /** Modelos del catálogo que no tienen pesos descargables (mock / bridge). */
+  protected readonly weightlessCount = computed(
+    () => this.displayedModels().length - this.weightModels().length,
+  );
+
+  /**
+   * GPU de referencia para las recomendaciones: la que más VRAM tiene entre
+   * las emparejadas (las online primero; si ninguna late, igual se muestra la
+   * última conocida). El catálogo se compara contra esta máquina porque es la
+   * que puede correr el modelo hoy.
+   */
+  protected readonly targetGpu = computed<GpuWorker | null>(() => {
+    const all = this.workers();
+    const online = all.filter((w) => w.online);
+    const pool = online.length > 0 ? online : all;
+    return [...pool].sort((a, b) => b.vram_total_mb - a.vram_total_mb)[0] ?? null;
+  });
+
+  /** VRAM total de la GPU objetivo en MB (0 si no hay ninguna). */
+  protected readonly hardwareVramMb = computed(() => this.targetGpu()?.vram_total_mb ?? 0);
+
+  /**
+   * ¿Este modelo entra en la GPU objetivo?
+   *
+   * Se compara el `vram_gb` del catálogo (spec del pipeline, el mismo dato que
+   * usa el worker para dimensionar la máquina) contra la VRAM total que la GPU
+   * reportó en su heartbeat. Sin GPU o sin spec no se inventa un veredicto.
+   */
+  protected modelFit(model: ManagedWorkerModel): ModelFit {
+    const needGb = model.downloaded?.vram_gb ?? 0;
+    const totalMb = this.hardwareVramMb();
+    if (needGb <= 0 || totalMb <= 0) return 'unknown';
+    const totalGb = totalMb / 1024;
+    if (totalGb >= needGb * FIT_HEADROOM) return 'good';
+    if (totalGb >= needGb) return 'tight';
+    return 'insufficient';
+  }
+
+  /** Cuántos modelos de la tabla entran cómodos, justos o no entran. */
+  protected readonly hardwareSummary = computed(() => {
+    const summary = { good: 0, tight: 0, insufficient: 0, unknown: 0, total: 0 };
+    for (const model of this.weightModels()) {
+      summary.total += 1;
+      summary[this.modelFit(model)] += 1;
+    }
+    return summary;
+  });
+
+  /**
+   * Modelos que conviene descargar en esta GPU: los que entran y todavía no
+   * están en disco. Primero los que corren cómodos y, dentro de cada grupo, de
+   * menor a mayor VRAM (el más liviano tarda menos y sirve para probar).
+   */
+  protected readonly recommendedModels = computed<ManagedWorkerModel[]>(() => {
+    const rank = (fit: ModelFit) => (fit === 'good' ? 0 : fit === 'tight' ? 1 : 2);
+    return this.weightModels()
+      .filter((model) => !model.downloaded?.available && !model.downloaded?.downloading)
+      .filter((model) => rank(this.modelFit(model)) < 2)
+      .sort(
+        (a, b) =>
+          rank(this.modelFit(a)) - rank(this.modelFit(b)) ||
+          (a.downloaded?.vram_gb ?? 0) - (b.downloaded?.vram_gb ?? 0),
+      )
+      .slice(0, 4);
+  });
+
+  /**
+   * Requisitos honestos para instalar el worker, derivados del catálogo real:
+   * el modelo más liviano marca el mínimo y el más pesado, el techo.
+   */
+  protected readonly workerRequirements = computed(() => {
+    const needs = this.weightModels()
+      .map((model) => model.downloaded?.vram_gb ?? 0)
+      .filter((gb) => gb > 0);
+    if (needs.length === 0) return { minGb: 0, recommendedGb: 0, maxGb: 0, models: 0 };
+    const minGb = Math.min(...needs);
+    return {
+      minGb,
+      recommendedGb: Math.ceil(minGb * FIT_HEADROOM),
+      maxGb: Math.max(...needs),
+      models: needs.length,
+    };
+  });
+
+  /** Disco libre en la GPU objetivo (0 si el worker todavía no lo reporta). */
+  protected readonly diskFreeMb = computed(() => this.targetGpu()?.disk_free_mb ?? 0);
+
+  /** Poco espacio: se avisa, pero las descargas chicas todavía pueden entrar. */
+  protected readonly lowDisk = computed(() => {
+    const free = this.diskFreeMb();
+    return free > 0 && free < LOW_DISK_WARN_MB;
+  });
+
+  /** Sin espacio para pesos: se bloquean las descargas en vez de fallar al final. */
+  protected readonly diskFull = computed(() => {
+    const free = this.diskFreeMb();
+    return free > 0 && free < LOW_DISK_BLOCK_MB;
+  });
+
+  /**
+   * Muestreo de las descargas en curso para estimar velocidad y ETA.
+   *
+   * El back solo manda porcentaje y bytes en disco; con dos muestras separadas
+   * por el refresco del panel (10 s) alcanza para derivar ambos sin tocar el
+   * worker. Se guarda por modelo porque puede haber una descarga por GPU.
+   */
+  private readonly downloadSamples = signal<
+    Record<string, { percent: number; bytes: number; at: number }>
+  >({});
+
+  /** Velocidad (bytes/s) y ETA (s) por modelo, cuando ya hay dos muestras. */
+  protected readonly downloadRates = signal<Record<string, { speed: number; eta: number }>>({});
+
+  protected downloadRate(model: ManagedWorkerModel): { speed: number; eta: number } | null {
+    return this.downloadRates()[model.name] ?? null;
+  }
+
   /** Modelos listos para generar (disponibles y sin descarga en curso). */
   protected readonly readyModelCount = computed(
     () =>
-      this.displayedModels().filter(
+      this.weightModels().filter(
         (model) => model.downloaded?.available && !model.downloaded.downloading,
       ).length,
   );
@@ -305,7 +469,7 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
 
   /** Desinstalar todo: borra todos los pesos del disco (libera GB). */
   protected deleteAllDownloads(): void {
-    if (this.bulkDeleting() || this.workerModels().length === 0) return;
+    if (this.bulkDeleting() || this.weightModels().length === 0) return;
     this.confirmationService.confirm({
       message: this.translate.instant('GPU.MODELS.DELETE_ALL_CONFIRM'),
       header: this.translate.instant('GPU.MODELS.DELETE_ALL'),
@@ -347,7 +511,18 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** El borrado libera disco: se confirma porque no se puede deshacer. */
+  /**
+   * El borrado libera disco: se confirma porque no se puede deshacer, y sólo
+   * tiene sentido si hay bytes en disco. No se exige `available`:
+   * una descarga a medias deja pesos incompletos que no se pueden usar y sí
+   * ocupan disco, así que también se tienen que poder borrar. Con una descarga
+   * en curso primero se cancela.
+   */
+  protected canDelete(model: ManagedWorkerModel): boolean {
+    const dl = model.downloaded;
+    return !!dl && !dl.downloading && dl.size_bytes > 0;
+  }
+
   protected deleteDownload(model: ManagedWorkerModel): void {
     this.confirmationService.confirm({
       message: this.translate.instant('GPU.MODELS.DELETE_CONFIRM', {
@@ -363,6 +538,74 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
       },
       accept: () => this.runModelOperation(model, 'delete'),
     });
+  }
+
+  /**
+   * Compara la lista nueva con la anterior: calcula velocidad/ETA de lo que
+   * sigue bajando y avisa cuando algo terminó (bien o mal) mientras el panel
+   * estaba abierto.
+   */
+  private trackDownloads(models: ManagedWorkerModel[]): void {
+    const now = Date.now();
+    const previous = this.downloadSamples();
+    const next: Record<string, { percent: number; bytes: number; at: number }> = {};
+    const rates: Record<string, { speed: number; eta: number }> = {};
+    for (const model of models) {
+      const download = model.downloaded;
+      if (!download) continue;
+      const percent = this.downloadProgress(model);
+      const bytes = download.size_bytes ?? 0;
+      if (download.downloading) {
+        const before = previous[model.name];
+        if (before) {
+          const seconds = (now - before.at) / 1000;
+          const gained = bytes - before.bytes;
+          const percentGained = percent - before.percent;
+          if (seconds > 0 && gained > 0) {
+            rates[model.name] = {
+              speed: gained / seconds,
+              eta: percentGained > 0 ? ((100 - percent) * seconds) / percentGained : 0,
+            };
+          }
+        }
+        next[model.name] = { percent, bytes, at: now };
+        continue;
+      }
+      // Dejó de descargar entre dos refrescos: terminó o falló.
+      if (!previous[model.name]) continue;
+      const name = model.display_name || model.name;
+      if (download.available) {
+        this.messageService.add({
+          severity: 'success',
+          summary: this.translate.instant('GPU.TOAST.DOWNLOAD_DONE_TITLE'),
+          detail: this.translate.instant('GPU.TOAST.DOWNLOAD_DONE', { name }),
+        });
+      } else if (download.download_error) {
+        this.messageService.add({
+          severity: 'error',
+          summary: this.translate.instant('GPU.TOAST.DOWNLOAD_FAILED_TITLE'),
+          detail: this.translate.instant('GPU.TOAST.DOWNLOAD_FAILED', {
+            name,
+            error: download.download_error,
+          }),
+        });
+      }
+    }
+    this.downloadSamples.set(next);
+    this.downloadRates.set(rates);
+  }
+
+  protected formatSpeed(bytesPerSecond: number): string {
+    return `${this.formatSize(Math.round(bytesPerSecond))}/s`;
+  }
+
+  /** ETA compacta: segundos, minutos u horas+minutos. Vacío si no se sabe. */
+  protected formatEta(seconds: number): string {
+    if (!Number.isFinite(seconds) || seconds <= 0) return '';
+    if (seconds < 60) return `${Math.round(seconds)} s`;
+    const minutes = Math.round(seconds / 60);
+    if (minutes < 60) return `${minutes} min`;
+    return `${Math.floor(minutes / 60)} h ${minutes % 60} min`;
   }
 
   private runModelOperation(
@@ -446,13 +689,9 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
     try {
       const url = await this.gpuService.uploadWorkerUpdatePayload(file);
       await this.gpuService.updateWorker(url);
-      this.updateWorkerMessage.set(
-        'Actualización enviada: el worker se reiniciará al terminar.',
-      );
+      this.updateWorkerMessage.set('Actualización enviada: el worker se reiniciará al terminar.');
       this.selectedUpdateFile.set(null);
-      const input = document.querySelector('input[type="file"]') as
-        | HTMLInputElement
-        | null;
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement | null;
       if (input) input.value = '';
     } catch (err) {
       this.updateWorkerMessage.set(
