@@ -1896,9 +1896,15 @@ export class StudioComponent {
     return {
       model: item.model,
       content: [
-        ...item.assets.filter((asset) => asset.kind === 'image').map((asset) => ({ type: 'image' as const, id: asset.id, name: asset.name })),
-        ...item.assets.filter((asset) => asset.kind === 'audio').map((asset) => ({ type: 'audio' as const, id: asset.id, name: asset.name })),
-        ...item.assets.filter((asset) => asset.kind === 'video').map((asset) => ({ type: 'video' as const, id: asset.id, name: asset.name })),
+        ...item.assets
+          .filter((asset) => asset.kind === 'image')
+          .map((asset) => ({ type: 'image' as const, id: asset.id, name: asset.name })),
+        ...item.assets
+          .filter((asset) => asset.kind === 'audio')
+          .map((asset) => ({ type: 'audio' as const, id: asset.id, name: asset.name })),
+        ...item.assets
+          .filter((asset) => asset.kind === 'video')
+          .map((asset) => ({ type: 'video' as const, id: asset.id, name: asset.name })),
         {
           type: 'text' as const,
           text: [item.prompt, lightingPrompt(this.lighting()), cameraMovementPrompt(this.camera())]
@@ -2050,6 +2056,11 @@ export class StudioComponent {
     return w > 0 && h > 0 ? (w / h).toFixed(4) : '1.7778';
   }
 
+  /** El artefacto de la toma es imagen (png/jpg/webp) y no video. */
+  protected isImageTake(take: StudioTake): boolean {
+    return /\.(png|jpe?g|webp|gif|avif)(?:[?#]|$)/i.test(take.videoUrl ?? '');
+  }
+
   /** Etiqueta de gasto del modal: "$0.094 · 1.5 cr" o "—". */
   protected takeCostLabel(take: StudioTake): string {
     const parts: string[] = [];
@@ -2169,15 +2180,13 @@ export class StudioComponent {
   /** Mensaje del back (escapado: el aviso renderiza HTML) o el genérico. */
   private startErrorMessage(err: unknown): string {
     const generic = this.translate.instant('STUDIO.ERR_START_GENERATION') as string;
-    const body = err instanceof HttpErrorResponse ? (err.error as { message?: string } | null) : null;
+    const body =
+      err instanceof HttpErrorResponse ? (err.error as { message?: string } | null) : null;
     const detail = body?.message?.trim();
     if (!detail) {
       return generic;
     }
-    const safe = detail
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
+    const safe = detail.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     return `${generic} ${safe}`;
   }
 
