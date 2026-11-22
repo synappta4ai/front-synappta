@@ -87,11 +87,6 @@ export class MyGenerationsComponent {
   protected readonly projectId = signal<string | null>(null);
   /** Día seleccionado del filtro (epoch medianoche local); null = todos. */
   protected readonly selectedDay = signal<number | null>(null);
-  /**
-   * Grupo expandido; null = auto (el más reciente), -1 = ninguno.
-   * Acordeón de un solo día abierto para no mostrar una lista interminable.
-   */
-  protected readonly openGroup = signal<number | null>(null);
 
   protected readonly typeOptions: TypeOption[] = [
     { value: 'all', labelKey: 'AGENCY.HISTORY.FILTER_ALL', icon: 'md md-grid_view' },
@@ -169,7 +164,6 @@ export class MyGenerationsComponent {
     this.typeFilter.set(value);
     this.cursorTo = null;
     this.selectedDay.set(null);
-    this.openGroup.set(null);
     this.load(true);
   }
 
@@ -177,25 +171,23 @@ export class MyGenerationsComponent {
     this.selectedDay.set(this.selectedDay() === ts ? null : ts);
   }
 
-  protected isGroupOpen(ts: number, firstTs: number | null): boolean {
-    const open = this.openGroup();
-    const effective = open === null ? firstTs : open === -1 ? null : open;
-    return effective === ts;
-  }
-
-  protected toggleGroup(ts: number, firstTs: number | null): void {
-    this.openGroup.set(this.isGroupOpen(ts, firstTs) ? -1 : ts);
-  }
-
   protected onSearch(value: string): void {
     this.search.set(value);
+  }
+
+  /** Proyecto que identifica la generación: el asignado al recurso o el original. */
+  protected projectLabel(log: GenerationLog): string {
+    return log.assigned_event_name || log.event_name || '';
+  }
+
+  protected projectRef(log: GenerationLog): string {
+    return log.assigned_event_id || log.event_id || '';
   }
 
   protected clearFilters(): void {
     this.search.set('');
     this.projectId.set(null);
     this.selectedDay.set(null);
-    this.openGroup.set(null);
     this.changeType('all');
   }
 
@@ -210,23 +202,11 @@ export class MyGenerationsComponent {
     };
   });
 
-  protected readonly filtered = computed(() => {
+  protected readonly baseFiltered = computed(() => {
     const query = this.search().trim().toLowerCase();
     const projectId = this.projectId();
-    const day = this.selectedDay();
     return this.logs().filter((log) => {
-      if (day !== null) {
-        const ts = new Date(log.created_at).getTime();
-        if (Number.isNaN(ts)) {
-          return false;
-        }
-        const start = new Date(ts);
-        const dayTs = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime();
-        if (dayTs !== day) {
-          return false;
-        }
-      }
-      if (projectId && log.event_id !== projectId) {
+      if (projectId && this.projectRef(log) !== projectId) {
         return false;
       }
       if (!query) {
@@ -234,7 +214,7 @@ export class MyGenerationsComponent {
       }
       return (
         (log.model_name ?? '').toLowerCase().includes(query) ||
-        (log.event_name ?? '').toLowerCase().includes(query) ||
+        this.projectLabel(log).toLowerCase().includes(query) ||
         (log.piece_code ?? '').toLowerCase().includes(query) ||
         (log.piece_name ?? '').toLowerCase().includes(query) ||
         (log.task_id ?? '').toLowerCase().includes(query) ||
@@ -243,10 +223,26 @@ export class MyGenerationsComponent {
     });
   });
 
-  /** Generaciones agrupadas por fecha (estilo historial). */
+  protected readonly filtered = computed(() => {
+    const day = this.selectedDay();
+    if (day === null) {
+      return this.baseFiltered();
+    }
+    return this.baseFiltered().filter((log) => {
+      const ts = new Date(log.created_at).getTime();
+      if (Number.isNaN(ts)) {
+        return false;
+      }
+      const start = new Date(ts);
+      const dayTs = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime();
+      return dayTs === day;
+    });
+  });
+
+  /** Fechas disponibles para las píldoras (sin aplicar el día elegido). */
   protected readonly dateGroups = computed<DateGroup[]>(() => {
     const groups = new Map<number, DateGroup>();
-    for (const log of this.filtered()) {
+    for (const log of this.baseFiltered()) {
       const date = new Date(log.created_at);
       if (Number.isNaN(date.getTime())) {
         continue;
@@ -262,15 +258,13 @@ export class MyGenerationsComponent {
     return [...groups.values()].sort((a, b) => b.ts - a.ts);
   });
 
-  /** Epoch del grupo más reciente (día auto-expandido del acordeón). */
-  protected readonly firstGroupTs = computed(() => this.dateGroups()[0]?.ts ?? null);
-
   protected readonly projectOptions = computed<{ label: string; value: string }[]>(() => {
     const noName = this.translate.instant('AGENCY.HISTORY.NO_NAME');
     const map = new Map<string, string>();
     for (const log of this.logs()) {
-      if (log.event_id) {
-        map.set(log.event_id, log.event_name || noName);
+      const id = this.projectRef(log);
+      if (id) {
+        map.set(id, this.projectLabel(log) || noName);
       }
     }
     return [...map.entries()]

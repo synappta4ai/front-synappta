@@ -222,6 +222,9 @@ export interface GenerationLog {
   event_name: string | null;
   piece_name: string | null;
   user_display_name: string | null;
+  /** Proyecto al que se asignó el recurso generado (si se guardó y asignó). */
+  assigned_event_id?: string | null;
+  assigned_event_name?: string | null;
   created_at: string;
   /** Fin de la generación (el back lo pone en NOW() al completar). Sirve para el tiempo transcurrido. */
   updated_at?: string | null;
