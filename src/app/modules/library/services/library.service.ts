@@ -33,8 +33,11 @@ export class LibraryService {
     eventId?: string,
     tenantSlug?: string,
     storage?: 'persistent' | 'temp',
+    taskId?: string,
   ): Observable<FileAsset> {
-    return unwrap(this.libraryApiRepository.uploadFile(file, category, eventId, tenantSlug, storage));
+    return unwrap(
+      this.libraryApiRepository.uploadFile(file, category, eventId, tenantSlug, storage, taskId),
+    );
   }
 
   /** Asigna un recurso a un proyecto (evento). Idempotente. */

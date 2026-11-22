@@ -57,6 +57,7 @@ import {
 import { EventsService } from '@modules/events/services';
 import { GenerationQueueService } from '@services/generation-queue.service';
 import { Event as Project, Piece } from '@modules/events/interfaces';
+import { ActiveProjectStore } from '@modules/projects/services';
 import { PageContainerComponent, ValidatorErrors } from '@shared/components/index';
 import { UiIcon } from '@shared/components/ui-icon/ui-icon.component';
 import { AssetEditDialogComponent } from '@shared/components/asset-edit-dialog/asset-edit-dialog';
@@ -72,6 +73,7 @@ import { ServerUrlPipe } from '@core/pipes';
 import { LibraryService } from '@modules/library/services';
 import { FileAsset } from '@modules/library/interfaces';
 import { environment } from '@env/environment';
+import { preferredImageResolution } from '@utils/image-resolution';
 import {
   addPhotoFiles,
   imageTag,
@@ -450,6 +452,7 @@ export class AgencyComponent {
   private readonly catalog = inject(ModelCatalogService);
   private readonly writingCopilot = inject(WritingCopilotService);
   private readonly eventsService = inject(EventsService);
+  private readonly activeProject = inject(ActiveProjectStore);
   private readonly generationQueue = inject(GenerationQueueService);
   private readonly formBuilder = inject(NonNullableFormBuilder);
   private readonly session = inject(UserSessionStore);
@@ -811,7 +814,21 @@ export class AgencyComponent {
     this.eventsService
       .listEvents()
       .pipe(catchError(() => EMPTY))
-      .subscribe((projects) => this.projects.set(projects));
+      .subscribe((projects) => {
+        this.projects.set(projects);
+        const active = this.activeProject.project();
+        if (!active) {
+          return;
+        }
+        const found = projects.find((project) => project.id === active.id);
+        if (found) {
+          if (!this.selectedProjectId()) {
+            this.selectedProjectId.set(found.id);
+          }
+        } else {
+          this.activeProject.clear();
+        }
+      });
 
     // Catálogo de modelos para la lógica de cada paso (ratios, payloads): la
     // misma fuente memoizada que alimenta los selectores compartidos.
@@ -1407,6 +1424,16 @@ export class AgencyComponent {
     this.toggleAngle(angleId);
   }
 
+  protected selectProject(projectId: string | null): void {
+    this.selectedProjectId.set(projectId);
+    if (!projectId) {
+      this.activeProject.clear();
+      return;
+    }
+    const project = this.projects().find((item) => item.id === projectId) ?? null;
+    this.activeProject.select(project);
+  }
+
   protected generateAngles(): void {
     this.submitted.update((v) => v + 1);
     if (!this.canProceedToAngles) {
@@ -1452,6 +1479,7 @@ export class AgencyComponent {
         mergeMap((project) => {
           // Proyecto creado/actualizado a cargo del workflow.
           this.selectedProjectId.set(project.id);
+          this.activeProject.select(project);
           this.projects.update((list) =>
             list.some((p) => p.id === project.id) ? list : [...list, project],
           );
@@ -2054,14 +2082,15 @@ export class AgencyComponent {
       this.error.set(this.translate.instant('AGENCY.STUDIO.ERRORS.BOARD_PROMPT'));
       return;
     }
-    const imageModels = this.models().filter((m) => m.modality === 'image');
-    const model = imageModels.find((m) => m.name === this.modelImage()) ?? imageModels[0];
+    const model = this.activeImageModel();
     if (!model) {
       this.error.set(this.translate.instant('AGENCY.STUDIO.ERRORS.NO_IMAGE_MODELS'));
       return;
     }
     const count = this.boardShotCount();
     const ratio = this.boardRatio();
+    // Las hojas alimentan los videos: se piden en 2K (o el máximo del modelo).
+    const resolution = preferredImageResolution(model.defaults?.resolutions);
     // Las fotos reales son la verdad visual de la constructora: la hoja las
     // recibe como input_references, no solo como texto en el prompt. El
     // texto lleva la directiva del motor (ADN visual, estilo, cuadrícula y
@@ -2113,6 +2142,7 @@ export class AgencyComponent {
             model: model.name,
             content,
             ...(ratio ? { ratio } : {}),
+            ...(resolution ? { resolution } : {}),
             event_id: project.id,
             piece_id: piece.id,
             piece_code: piece.piece_code ?? `SCENE-${scene.id.toUpperCase()}`,
@@ -4550,6 +4580,7 @@ export class AgencyComponent {
     this.currentPhase.set('input');
     this.form.reset();
     this.selectedProjectId.set(null);
+    this.activeProject.clear();
     this.projectDescription.set('');
     this.angles.update((angles) => angles.map((a) => ({ ...a, selected: false })));
     this.storyboard.set([]);

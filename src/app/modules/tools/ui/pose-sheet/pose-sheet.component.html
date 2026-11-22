@@ -5,6 +5,13 @@
       <i class="md md-auto_fix_high"></i> {{ 'TOOLS.POSE_SHEET' | translate }}
     </p>
 
+    <div class="panel">
+      <div class="panel-head">
+        <span><i class="md md-work"></i> {{ 'PROJECTS.TITLE' | translate }}</span>
+      </div>
+      <app-active-project-picker />
+    </div>
+
     @if (error()) {
       <p-message severity="error" [text]="error()!" />
     }
@@ -19,6 +26,7 @@
         [requiresReferences]="true"
         [ngModel]="selectedModel()"
         (ngModelChange)="selectedModel.set($event)"
+        (selectionChange)="activeModel.set($event)"
       />
     </div>
 

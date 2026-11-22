@@ -40,6 +40,7 @@ import {
 } from '@modules/library/interfaces';
 import { EventsService } from '@modules/events/services';
 import { Event as Project } from '@modules/events/interfaces';
+import { ActiveProjectStore } from '@modules/projects/services';
 import { ServerUrlPipe } from '@core/pipes/server-url.pipe';
 import { GenerationEventsStore } from '@core/store/generation.events';
 import { UserSessionStore } from '@core/store/user.session';
@@ -131,6 +132,7 @@ export class StudioComponent {
   private readonly agencyService = inject(AgencyService);
   private readonly libraryService = inject(LibraryService);
   private readonly eventsService = inject(EventsService);
+  private readonly activeProject = inject(ActiveProjectStore);
   private readonly sessionStore = inject(UserSessionStore);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly translate = inject(TranslateService);
@@ -1072,6 +1074,12 @@ export class StudioComponent {
   }
 
   constructor() {
+    // Proyecto activo global: el Studio arranca en el proyecto elegido en
+    // Proyectos/Herramientas y todo lo que se genere queda asignado ahí.
+    const activeProject = this.activeProject.project();
+    if (activeProject) {
+      this.selectedProjectId.set(activeProject.id);
+    }
     inject(DestroyRef).onDestroy(() => {
       if (this.refErrorTimer) {
         clearTimeout(this.refErrorTimer);
@@ -1320,13 +1328,33 @@ export class StudioComponent {
         }),
         finalize(() => this.loadingProjects.set(false)),
       )
-      .subscribe((projects) => this.projects.set(projects));
+      .subscribe((projects) => {
+        this.projects.set(projects);
+        const current = this.selectedProjectId();
+        if (!current) {
+          return;
+        }
+        const found = projects.find((project) => project.id === current);
+        if (found) {
+          this.activeProject.select(found);
+          this.eventsStore.hydrateProject(found.id);
+        } else {
+          this.selectedProjectId.set(null);
+          this.activeProject.clear();
+        }
+      });
   }
 
   /** Cambio de proyecto: los recursos se filtran a los asignados a ese
       proyecto y el historial por día cede prioridad (se limpia la sesión). */
   protected onProjectChange(projectId: string | null): void {
     this.selectedProjectId.set(projectId);
+    if (projectId) {
+      const project = this.projects().find((item) => item.id === projectId) ?? null;
+      this.activeProject.select(project);
+    } else {
+      this.activeProject.clear();
+    }
     // Cambio manual de proyecto: se descarta cualquier reuso pendiente.
     this.pendingReuseRefs = null;
     // Cambiar de proyecto descarta las refs restauradas por un reuso previo.

@@ -23,6 +23,7 @@ import { Tag } from 'primeng/tag';
 
 import { AiModel, StatusOutput } from '@modules/agency/interfaces';
 import { ModelSelectComponent } from '@modules/agency/ui/model-select/model-select.component';
+import { ActiveProjectPickerComponent } from '@modules/projects/ui/active-project-picker/active-project-picker.component';
 import { FileAsset } from '@modules/library/interfaces';
 import { LibraryService } from '@modules/library/services';
 import { ServerUrlPipe } from '@pipes/server-url.pipe';
@@ -56,6 +57,7 @@ const PROGRESS_EXPECTED_MS = 75_000;
 interface LocationViewResult {
   output: StatusOutput;
   viewLabel: string;
+  taskId: string;
 }
 
 /**
@@ -71,6 +73,7 @@ interface LocationViewResult {
     Button,
     Message,
     ModelSelectComponent,
+    ActiveProjectPickerComponent,
     Select,
     Tag,
     ServerUrlPipe,
@@ -310,7 +313,7 @@ export class LocationComponent implements OnInit {
           pieceCode: LOCATION_PIECE_CODE,
         })
         .pipe(
-          tap((gen) => this.applyOutput(gen.outputs ?? [], viewLabel)),
+          tap((gen) => this.applyOutput(gen.outputs ?? [], viewLabel, gen.taskId)),
           map(() => undefined),
           catchError((err: unknown) => {
             this.failedViews.update((n) => n + 1);
@@ -321,11 +324,14 @@ export class LocationComponent implements OnInit {
     });
   }
 
-  private applyOutput(outputs: readonly StatusOutput[], viewLabel: string): void {
+  private applyOutput(outputs: readonly StatusOutput[], viewLabel: string, taskId: string): void {
     if (outputs.length === 0) {
       return;
     }
-    this.results.update((list) => [...list, ...outputs.map((output) => ({ output, viewLabel }))]);
+    this.results.update((list) => [
+      ...list,
+      ...outputs.map((output) => ({ output, viewLabel, taskId })),
+    ]);
   }
 
   /**
@@ -381,7 +387,11 @@ export class LocationComponent implements OnInit {
         name: this.locationName().trim() || fallback,
         description: this.locationDesc().trim() || undefined,
         eventId: anchor.project.id,
-        photos: photos.map((p) => ({ outputUrl: p.output.url, viewLabel: p.viewLabel })),
+        photos: photos.map((p) => ({
+          outputUrl: p.output.url,
+          viewLabel: p.viewLabel,
+          taskId: p.taskId,
+        })),
       })
       .pipe(finalize(() => this.saving.set(false)))
       .subscribe({

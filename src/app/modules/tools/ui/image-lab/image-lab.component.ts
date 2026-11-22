@@ -23,6 +23,7 @@ import { Tag } from 'primeng/tag';
 
 import { AiModel, StatusOutput } from '@modules/agency/interfaces';
 import { ModelSelectComponent } from '@modules/agency/ui/model-select/model-select.component';
+import { ActiveProjectPickerComponent } from '@modules/projects/ui/active-project-picker/active-project-picker.component';
 import { FileAsset } from '@modules/library/interfaces';
 import { LibraryService } from '@modules/library/services';
 import { ServerUrlPipe } from '@pipes/server-url.pipe';
@@ -65,6 +66,7 @@ const PROGRESS_EXPECTED_MS = 75_000;
     Button,
     Message,
     ModelSelectComponent,
+    ActiveProjectPickerComponent,
     Select,
     Tag,
     ServerUrlPipe,
@@ -148,6 +150,8 @@ export class ImageLabComponent {
 
   private progressTimer: ReturnType<typeof setInterval> | null = null;
   private anchor: PoseSheetAnchor | null = null;
+  /** Tarea de la generación mostrada: enlaza el recurso guardado con su log. */
+  private lastTaskId = '';
 
   protected readonly canGenerate = computed(
     () => !!this.selectedModel() && this.prompt().trim().length > 0 && !this.generating(),
@@ -237,6 +241,7 @@ export class ImageLabComponent {
           });
         }),
         mergeMap((gen) => {
+          this.lastTaskId = gen.taskId;
           this.applyOutputs(gen.outputs ?? []);
           return this.toolsService.trackImageLab(gen.taskId);
         }),
@@ -284,7 +289,12 @@ export class ImageLabComponent {
     const prompt = this.prompt().trim();
     const name = prompt ? prompt.slice(0, 60) : 'Imagen de estudio';
     this.toolsService
-      .saveImageLabAsProp({ outputUrl: output.url, name, eventId: anchor.project.id })
+      .saveImageLabAsProp({
+        outputUrl: output.url,
+        name,
+        eventId: anchor.project.id,
+        taskId: this.lastTaskId || undefined,
+      })
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         finalize(() => this.saving.set(false)),

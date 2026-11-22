@@ -21,6 +21,7 @@ import { Tooltip } from 'primeng/tooltip';
 
 import { EventsService } from '@modules/events/services/events.service';
 import { Event } from '@modules/events/interfaces';
+import { ActiveProjectStore } from '@modules/projects/services';
 import { AgencyService } from '@modules/agency/services';
 import type { GenerationLog } from '@modules/agency/interfaces';
 import { LibraryService } from '@modules/library/services';
@@ -72,6 +73,7 @@ const SECTION_LABEL_KEYS: Record<AssetSectionKey, string> = {
 })
 export class ProjectsComponent {
   private readonly eventsService = inject(EventsService);
+  protected readonly activeProject = inject(ActiveProjectStore);
   private readonly agencyService = inject(AgencyService);
   private readonly libraryService = inject(LibraryService);
   private readonly confirmationService = inject(ConfirmationService);
@@ -167,6 +169,7 @@ export class ProjectsComponent {
       .subscribe((project) => {
         this.projectDialogVisible.set(false);
         this.flashSaved();
+        this.activeProject.refresh();
         this.loadProjects(project.id);
       });
   }
@@ -199,6 +202,10 @@ export class ProjectsComponent {
               this.generations.set([]);
               this.projectFiles.set([]);
             }
+            if (this.activeProject.projectId() === project.id) {
+              this.activeProject.clear();
+            }
+            this.activeProject.refresh();
             this.loadProjects();
           });
       },
@@ -206,6 +213,18 @@ export class ProjectsComponent {
   }
 
   // ─── Detail: programs + pieces ─────────────────────────────────
+  protected isActiveProject(project: Event): boolean {
+    return this.activeProject.projectId() === project.id;
+  }
+
+  protected setActiveProject(project: Event, active: boolean): void {
+    if (active) {
+      this.activeProject.select(project);
+    } else if (this.isActiveProject(project)) {
+      this.activeProject.clear();
+    }
+  }
+
   protected selectProject(project: Event): void {
     this.selectedProject.set(project);
     this.resourceFilter.set('all');

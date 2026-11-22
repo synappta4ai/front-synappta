@@ -23,6 +23,7 @@ import { Tag } from 'primeng/tag';
 
 import { AiModel, StatusOutput } from '@modules/agency/interfaces';
 import { ModelSelectComponent } from '@modules/agency/ui/model-select/model-select.component';
+import { ActiveProjectPickerComponent } from '@modules/projects/ui/active-project-picker/active-project-picker.component';
 import { FileAsset } from '@modules/library/interfaces';
 import { LibraryService } from '@modules/library/services';
 import { ServerUrlPipe } from '@pipes/server-url.pipe';
@@ -70,6 +71,7 @@ type RefPreviewStage = 'original' | 'failed';
     Button,
     Message,
     ModelSelectComponent,
+    ActiveProjectPickerComponent,
     ServerUrlPipe,
     Tag,
     UiIcon,
@@ -146,6 +148,8 @@ export class StoryboardComponent implements OnInit {
 
   private progressTimer: ReturnType<typeof setInterval> | null = null;
   private anchor: PoseSheetAnchor | null = null;
+  /** Tarea del storyboard generado: enlaza el recurso guardado con su log. */
+  private lastTaskId = '';
 
   protected readonly canGenerate = computed(
     () => !!this.selectedModel() && this.storyPrompt().trim().length > 0 && !this.generating(),
@@ -264,6 +268,7 @@ export class StoryboardComponent implements OnInit {
           });
         }),
         mergeMap((gen) => {
+          this.lastTaskId = gen.taskId;
           this.applyOutputs(gen.outputs ?? []);
           return this.toolsService.trackStoryboard(gen.taskId);
         }),
@@ -371,7 +376,12 @@ export class StoryboardComponent implements OnInit {
     const panels = this.generatedPanelCount() ?? this.panelCount();
     const name = `Storyboard ${panels} paneles`;
     this.toolsService
-      .saveStoryboardAsProp({ outputUrl: output.url, name, eventId: anchor.project.id })
+      .saveStoryboardAsProp({
+        outputUrl: output.url,
+        name,
+        eventId: anchor.project.id,
+        taskId: this.lastTaskId || undefined,
+      })
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         finalize(() => this.saving.set(false)),
