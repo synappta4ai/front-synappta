@@ -27,7 +27,11 @@
             </div>
           </div>
           <div class="flex w-full flex-col gap-1 sm:w-72">
-            <label for="wcVideoType" class="text-xs font-bold text-ink-on-dark">
+            <label
+              for="wcVideoType"
+              class="text-xs font-bold"
+              [class]="videoType() ? 'text-ink-on-dark' : 'text-danger'"
+            >
               {{ 'VIDEOMACHINE.WRITE_VIDEO_TYPE' | translate }}
             </label>
             <p-select
@@ -39,7 +43,8 @@
               (ngModelChange)="videoType.set($event)"
               [ngModelOptions]="{ standalone: true }"
               [placeholder]="'VIDEOMACHINE.WRITE_VIDEO_TYPE_PLACEHOLDER' | translate"
-              styleClass="w-full"
+              [styleClass]="videoType() ? 'w-full border-accent' : 'w-full border-2 border-danger'"
+              [attr.aria-invalid]="videoType() === null"
               appendTo="body"
             />
             <small class="text-ink-muted-on-dark">{{ 'VIDEOMACHINE.WRITE_VIDEO_TYPE_HINT' | translate }}</small>
@@ -81,54 +86,57 @@
           ></textarea>
         </div>
 
-        <div class="flex flex-wrap items-center gap-2">
+        <div
+          class="grid grid-cols-[repeat(auto-fit,minmax(9rem,1fr))] items-stretch gap-2 [&>app-camera-movement-select]:min-w-0 [&>app-compact-number]:min-w-0 [&>app-compact-number>button]:w-full [&>app-compact-select]:min-w-0 [&>app-compact-select>button]:w-full [&>app-lighting-select]:min-w-0"
+        >
           <app-lighting-select
             [pill]="true"
             inputId="wcLighting"
             [value]="lighting()"
+            [configured]="lighting() !== null"
             (valueChange)="lighting.set($event)"
           />
           <app-camera-movement-select
             [pill]="true"
             inputId="wcCamera"
             [value]="camera()"
+            [configured]="camera().length > 0"
             (valueChange)="camera.set($event)"
           />
-        </div>
-
-        <div class="flex flex-wrap items-center gap-2">
           <app-compact-select
             [label]="'VIDEOMACHINE.WRITE_LANGUAGE_SHORT' | translate"
             [options]="languageOptions()"
             [value]="outputLanguage()"
+            [configured]="outputLanguage() !== 'es'"
             (valueChange)="setLanguage($event)"
           />
           <app-compact-select
             [label]="'VIDEOMACHINE.WRITE_DELIVERY_SHORT' | translate"
             [options]="deliveryOptions()"
             [value]="delivery()"
+            [configured]="delivery() !== 'sequence'"
             (valueChange)="setDelivery($event)"
           />
           <app-compact-select
             [label]="'VIDEOMACHINE.WRITE_ASPECT_SHORT' | translate"
             [options]="aspectOptions"
             [value]="aspectRatio()"
+            [configured]="aspectRatio() !== '9:16'"
             (valueChange)="setAspect($event)"
           />
           <app-compact-select
             [label]="'VIDEOMACHINE.WRITE_AUDIO_SHORT' | translate"
             [options]="audioOptions()"
             [value]="audioMode()"
+            [configured]="audioMode() !== 'auto'"
             (valueChange)="setAudio($event)"
           />
-        </div>
-
-        <div class="flex flex-wrap items-center gap-2">
           <app-compact-number
             [label]="'VIDEOMACHINE.WRITE_TOTAL_SHORT' | translate"
             suffix=" s"
             [min]="1"
             [value]="totalDuration()"
+            [configured]="totalDuration() !== null"
             (valueChange)="totalDuration.set($event)"
           />
           <app-compact-number
@@ -136,6 +144,7 @@
             suffix=" s"
             [min]="1"
             [value]="maxClipS()"
+            [configured]="maxClipS() !== null"
             (valueChange)="maxClipS.set($event)"
           />
           <app-compact-number
@@ -143,6 +152,7 @@
             [min]="1"
             [max]="30"
             [value]="shotCount()"
+            [configured]="shotCount() !== null"
             (valueChange)="shotCount.set($event)"
           />
           <app-compact-number
@@ -151,6 +161,7 @@
             [min]="1"
             [max]="120"
             [value]="fps()"
+            [configured]="fps() !== null"
             (valueChange)="fps.set($event)"
           />
           <app-compact-number
@@ -158,6 +169,7 @@
             [min]="1"
             [max]="10"
             [value]="cutsPerShot()"
+            [configured]="cutsPerShot() !== null"
             (valueChange)="cutsPerShot.set($event)"
           />
         </div>
@@ -172,8 +184,12 @@
           </summary>
           <div class="mt-3 flex flex-col gap-4">
             <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <div class="flex flex-col gap-1 sm:col-span-2 lg:col-span-3">
-                <label for="wcBrain" class="text-xs font-bold text-ink-on-dark">
+              <div class="flex flex-col gap-1">
+                <label
+                  for="wcBrain"
+                  class="text-xs font-bold"
+                  [class]="brainModel() ? 'text-ink-on-dark' : 'text-danger'"
+                >
                   {{ 'VIDEOMACHINE.WRITE_BRAIN' | translate }}
                 </label>
                 <p-select
@@ -185,7 +201,8 @@
                   (ngModelChange)="brainModel.set($event)"
                   [ngModelOptions]="{ standalone: true }"
                   [placeholder]="'VIDEOMACHINE.WRITE_BRAIN_PLACEHOLDER' | translate"
-                  styleClass="w-full"
+                  [styleClass]="brainModel() ? 'w-full border-accent' : 'w-full border-2 border-danger'"
+                  [attr.aria-invalid]="brainModel() === ''"
                   appendTo="body"
                 />
                 <small class="text-ink-muted-on-dark">{{ 'VIDEOMACHINE.WRITE_BRAIN_HINT' | translate }}</small>
@@ -198,7 +215,7 @@
                 <input
                   pInputText
                   id="wcLook"
-                  class="w-full"
+                  [class]="look().trim() ? 'w-full border-accent' : 'w-full'"
                   [ngModel]="look()"
                   (ngModelChange)="look.set($event)"
                   [ngModelOptions]="{ standalone: true }"
@@ -206,8 +223,12 @@
                 />
               </div>
 
-              <div class="flex flex-col gap-1 sm:col-span-2">
-                <label for="wcVideoModel" class="text-xs font-bold text-ink-on-dark">
+              <div class="flex flex-col gap-1">
+                <label
+                  for="wcVideoModel"
+                  class="text-xs font-bold"
+                  [class]="videoModel() ? 'text-ink-on-dark' : 'text-danger'"
+                >
                   {{ 'VIDEOMACHINE.WRITE_VIDEO_MODEL' | translate }}
                 </label>
                 <p-select
@@ -219,7 +240,8 @@
                   (ngModelChange)="onVideoModelChange($event)"
                   [ngModelOptions]="{ standalone: true }"
                   [placeholder]="'VIDEOMACHINE.WRITE_VIDEO_MODEL_PLACEHOLDER' | translate"
-                  styleClass="w-full"
+                  [styleClass]="videoModel() ? 'w-full border-accent' : 'w-full border-2 border-danger'"
+                  [attr.aria-invalid]="videoModel() === null"
                   appendTo="body"
                 />
                 <small class="text-ink-muted-on-dark">{{ 'VIDEOMACHINE.WRITE_VIDEO_MODEL_HINT' | translate }}</small>

@@ -1,4 +1,11 @@
-<button type="button" class="compact-chip" aria-haspopup="listbox" (click)="pop.toggle($event)">
+<button
+  type="button"
+  class="compact-chip"
+  [class.is-configured]="configured()"
+  [class.is-attention]="attention()"
+  aria-haspopup="listbox"
+  (click)="pop.toggle($event)"
+>
   <span class="compact-chip-label">{{ label() }}</span>
   <span class="compact-chip-value">{{ selectedLabel() }}</span>
   <i class="md md-expand_more compact-chip-chevron" aria-hidden="true"></i>

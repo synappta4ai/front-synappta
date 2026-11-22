@@ -9,6 +9,8 @@
   class="lighting-trigger"
   [class.compact]="compact()"
   [class.pill]="pill()"
+  [class.is-configured]="configured()"
+  [class.is-attention]="attention()"
   aria-haspopup="dialog"
   [attr.aria-expanded]="dialogOpen()"
   (click)="openPicker()"

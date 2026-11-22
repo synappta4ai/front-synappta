@@ -27,6 +27,10 @@ export class CompactNumberComponent {
   readonly step = input(1);
   readonly suffix = input('');
   readonly placeholder = input('Auto');
+  /** El usuario ya definió un valor (no está en Auto). */
+  readonly configured = input(false);
+  /** Falta definir este control para poder continuar. */
+  readonly attention = input(false);
   readonly valueChange = output<number | null>();
 
   protected readonly display = computed(() => {
