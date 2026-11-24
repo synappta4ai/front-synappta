@@ -1632,6 +1632,10 @@
   "AGENCY": {
     "HISTORY": {
       "TITLE": "Mis generaciones",
+      "DISPATCH_BRIDGE": "Mi GPU",
+      "DISPATCH_BRIDGE_TITLE": "Salió por tu GPU emparejada (bridge)",
+      "DISPATCH_CENTRAL": "Central",
+      "DISPATCH_CENTRAL_TITLE": "Salió por el worker de inferencia central, no por tu GPU",
       "FILTER_ALL": "Todas",
       "FILTER_VIDEOS": "Videos",
       "FILTER_IMAGES": "Imágenes",
@@ -2123,6 +2127,10 @@
     "STATUS_SUCCEEDED": "Listo",
     "STATUS_FAILED": "Error",
     "STATUS_CANCELLED": "Cancelado",
+    "DISPATCH_BRIDGE": "Mi GPU",
+    "DISPATCH_BRIDGE_TITLE": "Corrió en tu GPU emparejada (bridge): el job salió de tu máquina",
+    "DISPATCH_CENTRAL": "Central",
+    "DISPATCH_CENTRAL_TITLE": "Corrió en el worker de inferencia central, no en tu GPU",
     "VIEWER_QUEUED": "En cola…",
     "VIEWER_GENERATING": "Generando…",
     "EMPTY_VIEWER_TITLE": "Tus tomas aparecen acá",

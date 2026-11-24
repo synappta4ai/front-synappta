@@ -16,8 +16,8 @@ import { Tag } from 'primeng/tag';
 
 import { ServerUrlPipe } from '@pipes/server-url.pipe';
 import { formatDurationValue } from '@pipes/format-duration.pipe';
-import { GenerateRequest, GenerationLog } from '@modules/agency/interfaces';
-import { AgencyService } from '@modules/agency/services';
+import { DispatchOrigin, GenerateRequest, GenerationLog } from '@modules/agency/interfaces';
+import { AgencyService, TaskDispatchService } from '@modules/agency/services';
 import { ImgFadeDirective } from '@shared/components/img-fade/img-fade.directive';
 import { PageContainerComponent } from '@shared/components/page-container/page-container.component';
 import { UiIcon } from '@shared/components/ui-icon/ui-icon.component';
@@ -69,6 +69,7 @@ interface DateGroup {
 })
 export class MyGenerationsComponent {
   private readonly agencyService = inject(AgencyService);
+  private readonly dispatchRegistry = inject(TaskDispatchService);
   private readonly router = inject(Router);
   private readonly serverUrl = inject(ServerUrlPipe);
   private readonly translate = inject(TranslateService);
@@ -416,6 +417,29 @@ export class MyGenerationsComponent {
       default:
         return status ?? '—';
     }
+  }
+
+  /**
+   * Por dónde salió cada generación. El listado viene de generation_logs, que
+   * no guardan el despacho: se resuelve con lo que el status ya respondió
+   * para ese task id (null = desconocido, p. ej. una toma de otro navegador).
+   */
+  protected dispatchOrigin(taskId: string | null): DispatchOrigin | null {
+    return this.dispatchRegistry.origin(taskId);
+  }
+
+  protected dispatchLabel(origin: DispatchOrigin): string {
+    return this.translate.instant(
+      origin === 'bridge' ? 'AGENCY.HISTORY.DISPATCH_BRIDGE' : 'AGENCY.HISTORY.DISPATCH_CENTRAL',
+    );
+  }
+
+  protected dispatchTitle(origin: DispatchOrigin): string {
+    return this.translate.instant(
+      origin === 'bridge'
+        ? 'AGENCY.HISTORY.DISPATCH_BRIDGE_TITLE'
+        : 'AGENCY.HISTORY.DISPATCH_CENTRAL_TITLE',
+    );
   }
 
   protected severity(status: string | null): StatusSeverity {

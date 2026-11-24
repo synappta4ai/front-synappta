@@ -1010,6 +1010,15 @@
                   </div>
 
                   <div class="take-foot">
+                    @if (take.dispatch; as dispatch) {
+                      <span [title]="takeDispatchTitle(dispatch)">
+                        <p-tag
+                          [value]="takeDispatchLabel(dispatch)"
+                          [severity]="dispatch === 'bridge' ? 'success' : 'secondary'"
+                          styleClass="text-xs"
+                        />
+                      </span>
+                    }
                     <p-tag
                       [value]="takeStatusLabel(take.status)"
                       [severity]="takeStatusSeverity(take.status)"

@@ -12,6 +12,11 @@ export type CredentialProvider =
 export type TaskStatus =
   'pending' | 'processing' | 'completed' | 'succeeded' | 'failed' | 'cancelled';
 
+/** Por dónde salió una generación de modelo descargado (back: dispatch).
+ *  bridge = la GPU propia del tenant; central = worker de inferencia central;
+ *  unknown = el back perdió el registro del job (p. ej. tras un reinicio). */
+export type DispatchOrigin = 'bridge' | 'central' | 'unknown';
+
 export interface AiModel {
   name: string;
   display_name: string | null;
@@ -172,6 +177,9 @@ export interface StatusResponse {
   progress?: unknown;
   /** Estimated progress percent (0-100) computed by the server; 100 on success. */
   progress_percent?: number;
+  /** Por dónde salió la generación (bridge = mi GPU, central = worker
+   *  central). Ausente en los modelos de API, que no pasan por el worker. */
+  dispatch?: DispatchOrigin;
 }
 
 export interface PreviewPayloadResponse {

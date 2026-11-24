@@ -2310,6 +2310,19 @@ export class StudioComponent {
     }
   }
 
+  /** Por dónde salió la toma: "Mi GPU" (bridge) o worker central. */
+  protected takeDispatchLabel(dispatch: NonNullable<StudioTake['dispatch']>): string {
+    return this.translate.instant(
+      dispatch === 'central' ? 'STUDIO.DISPATCH_CENTRAL' : 'STUDIO.DISPATCH_BRIDGE',
+    );
+  }
+
+  protected takeDispatchTitle(dispatch: NonNullable<StudioTake['dispatch']>): string {
+    return this.translate.instant(
+      dispatch === 'central' ? 'STUDIO.DISPATCH_CENTRAL_TITLE' : 'STUDIO.DISPATCH_BRIDGE_TITLE',
+    );
+  }
+
   protected takeStatusLabel(status: StudioTake['status']): string {
     const labels: Record<StudioTake['status'], string> = {
       queued: this.translate.instant('STUDIO.STATUS_QUEUED'),

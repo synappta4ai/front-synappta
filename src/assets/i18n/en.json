@@ -1632,6 +1632,10 @@
   "AGENCY": {
     "HISTORY": {
       "TITLE": "My generations",
+      "DISPATCH_BRIDGE": "My GPU",
+      "DISPATCH_BRIDGE_TITLE": "Served by your paired GPU (bridge)",
+      "DISPATCH_CENTRAL": "Central",
+      "DISPATCH_CENTRAL_TITLE": "Served by the central inference worker, not your GPU",
       "FILTER_ALL": "All",
       "FILTER_VIDEOS": "Videos",
       "FILTER_IMAGES": "Images",
@@ -2123,6 +2127,10 @@
     "STATUS_SUCCEEDED": "Ready",
     "STATUS_FAILED": "Error",
     "STATUS_CANCELLED": "Cancelled",
+    "DISPATCH_BRIDGE": "My GPU",
+    "DISPATCH_BRIDGE_TITLE": "Ran on your paired GPU (bridge): the job ran on your machine",
+    "DISPATCH_CENTRAL": "Central",
+    "DISPATCH_CENTRAL_TITLE": "Ran on the central inference worker, not on your GPU",
     "VIEWER_QUEUED": "Queued…",
     "VIEWER_GENERATING": "Generating…",
     "EMPTY_VIEWER_TITLE": "Your takes appear here",

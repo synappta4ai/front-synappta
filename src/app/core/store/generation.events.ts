@@ -2,7 +2,7 @@ import { computed, inject, Injectable, signal } from '@angular/core';
 import { Subscription, timer } from 'rxjs';
 import { catchError, EMPTY } from 'rxjs';
 
-import { AgencyService } from '@modules/agency/services';
+import { AgencyService, TaskDispatchService, toOrigin } from '@modules/agency/services';
 
 import type { GenerateRequest, GenerationLog } from '@modules/agency/interfaces';
 import type { StudioTake, StudioTakeRef } from '@modules/studio/interfaces';
@@ -44,6 +44,7 @@ const RECENT_FINISHED_MS = 30 * 60 * 1000;
 @Injectable({ providedIn: 'root' })
 export class GenerationEventsStore {
   private readonly agencyService = inject(AgencyService);
+  private readonly dispatchRegistry = inject(TaskDispatchService);
 
   private readonly _events = signal<StudioTake[]>([]);
   /** Ids of takes that finished (ok/failed) while tracked and not seen yet. */
@@ -374,9 +375,15 @@ export class GenerationEventsStore {
           const terminal = ['succeeded', 'completed', 'failed', 'cancelled'].includes(backend);
           const progress = status.progress_percent ?? 0;
           const mapped = this.mapStatus(backend);
+          // Por dónde salió: lo informa el status y se guarda en el registro
+          // para que el historial también lo muestre.
+          const origin = toOrigin(status.dispatch);
+          const dispatch = origin === 'unknown' ? null : origin;
+          this.dispatchRegistry.record(id, dispatch);
           this.patch(id, {
             status: mapped,
             progress,
+            dispatch,
             videoUrl: out?.localUrl ?? out?.url ?? null,
             error: status.error ?? null,
           });
