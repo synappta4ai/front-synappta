@@ -101,6 +101,21 @@ export class GpuApiRepository {
   }
 
   /**
+   * Cancela la descarga en una GPU emparejada (modo bridge): el back saca el
+   * pedido de la cola si todavía no arrancó y encola la cancelación; el agente
+   * aborta la transferencia en el próximo heartbeat (back: workerbridge).
+   */
+  requestBridgeDownloadCancel(
+    workerId: string,
+    key: string,
+  ): Observable<ApiResponse<{ worker_id: string; model_key: string }>> {
+    const encoded = encodeURIComponent(key);
+    return this.http.delete<ApiResponse<{ worker_id: string; model_key: string }>>(
+      `${this.apiUrl}/gpu/workers/${workerId}/models/${encoded}/download`,
+    );
+  }
+
+  /**
    * Borrado en una GPU emparejada (modo bridge): el back lo encola y el agente
    * borra los pesos en el próximo heartbeat (back: workerbridge).
    */

@@ -460,6 +460,37 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Cancelar una descarga en modo bridge: el back saca el pedido de la cola si
+   * todavía no arrancó y encola la cancelación. El agente aborta la
+   * transferencia en el próximo heartbeat (~20 s) y descarta los bytes
+   * parciales, así que el modelo vuelve a quedar "sin descargar".
+   */
+  protected bridgeCancelDownload(model: ManagedWorkerModel): void {
+    if (this.modelBusy() || !model.worker_id) return;
+    this.modelBusy.set(`cancel:${model.name}`);
+    this.modelsError.set(null);
+    this.modelsNotice.set(null);
+    this.gpuService
+      .requestBridgeDownloadCancel(model.worker_id, model.name)
+      .pipe(
+        catchError(() => {
+          this.modelsError.set(this.translate.instant('GPU.MODELS.ERRORS.OPERATION'));
+          return EMPTY;
+        }),
+        finalize(() => this.modelBusy.set(null)),
+      )
+      .subscribe(() => {
+        this.modelsNotice.set(
+          this.translate.instant('GPU.MODELS.CANCEL_REQUESTED', {
+            name: model.display_name || model.name,
+            worker: model.worker_name || '',
+          }),
+        );
+        this.load(true);
+      });
+  }
+
+  /**
    * Borrado en modo bridge: encola el pedido en la GPU que reportó el modelo.
    * El agente lo ejecuta en el próximo heartbeat (~20 s), libera el disco de esa
    * máquina y lo confirma; el snapshot siguiente ya lo muestra sin pesos.

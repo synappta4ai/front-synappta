@@ -111,6 +111,7 @@ interface PanelInternals {
   weightlessCount: () => number;
   workerModels: { set: (value: ManagedWorkerModel[]) => void };
   bridgeDownload: (model: ManagedWorkerModel) => void;
+  bridgeCancelDownload: (model: ManagedWorkerModel) => void;
   bridgeDelete: (model: ManagedWorkerModel) => void;
   canDelete: (model: ManagedWorkerModel) => boolean;
 }
@@ -251,6 +252,75 @@ describe('GpuPanelComponent en modo bridge', () => {
           { headers: { 'X-Worker-Source': 'bridge' } },
         ),
       );
+  });
+
+  it('pide cancelar la descarga a la GPU emparejada', async () => {
+    await loadBridgeCatalog();
+    const model = panel().displayedModels().find((m) => m.name === 'SD-1.5')!;
+
+    panel().bridgeCancelDownload(model);
+
+    // DELETE sobre el mismo recurso de descarga: el back saca el pedido de la
+    // cola y encola la cancelación para el agente.
+    const req = http.expectOne(`${base}/gpu/workers/w-1/models/SD-1.5/download`);
+    expect(req.request.method).toBe('DELETE');
+    req.flush({
+      success: true,
+      message: 'success',
+      data: { worker_id: 'w-1', model_key: 'SD-1.5' },
+    });
+
+    http
+      .match(`${base}/gpu/workers`)
+      .forEach((r) => r.flush({ success: true, message: 'success', data: [worker] }));
+    http
+      .match(`${base}/worker/models`)
+      .forEach((r) =>
+        r.flush(
+          { success: true, message: 'success', data: bridgeModels },
+          { headers: { 'X-Worker-Source': 'bridge' } },
+        ),
+      );
+  });
+
+  it('muestra «Cancelar» en la fila mientras la GPU descarga', async () => {
+    fixture.detectChanges();
+    http
+      .expectOne(`${base}/gpu/workers`)
+      .flush({ success: true, message: 'success', data: [worker] });
+    const downloading: ManagedWorkerModel[] = [
+      {
+        name: 'SD-1.5',
+        display_name: 'Stable Diffusion 1.5',
+        modality: 'image',
+        type: 'downloaded',
+        downloaded: {
+          mode: 'image',
+          engine: 'diffusers',
+          pipeline: 'sd15',
+          repo: 'stable-diffusion-v1-5/stable-diffusion-v1-5',
+          vram_gb: 4,
+          available: false,
+          downloading: true,
+          download_percent: 40,
+          size_bytes: 1_000_000,
+        },
+      },
+    ];
+    http
+      .expectOne(`${base}/worker/models`)
+      .flush(
+        { success: true, message: 'success', data: downloading },
+        { headers: { 'X-Worker-Source': 'bridge' } },
+      );
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const table = (fixture.nativeElement as HTMLElement).querySelector('p-table') as HTMLElement;
+    const buttons = Array.from(table.querySelectorAll('button')) as HTMLButtonElement[];
+    // Sin salida para pararla, pedir el modelo equivocado obligaba a esperar
+    // la descarga entera.
+    expect(buttons.some((b) => (b.textContent ?? '').includes('GPU.MODELS.CANCEL'))).toBe(true);
   });
 
   it('lista sólo modelos con pesos descargables: nada llega descargado de fábrica', () => {

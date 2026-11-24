@@ -2383,6 +2383,8 @@
       "BRIDGE_NOTICE": "Mostrando el catálogo que reporta tu GPU ({{count}} modelos). La descarga se pide a cada máquina y tarda ~20 s en arrancar.",
       "DOWNLOAD_REQUESTED": "Descarga de \"{{name}}\" pedida a {{worker}}: arranca en ~20 s y verás el progreso acá.",
       "DOWNLOAD_BRIDGE_TOOLTIP": "Pide la descarga a {{worker}} (arranca en el próximo heartbeat).",
+      "CANCEL_REQUESTED": "Cancelación de \"{{name}}\" pedida a {{worker}}: la descarga se frena en ~20 s y el modelo queda sin descargar.",
+      "CANCEL_BRIDGE_TOOLTIP": "Frena la descarga en {{worker}} y descarta los bytes parciales (se ejecuta en el próximo heartbeat).",
       "DELETE_REQUESTED": "Borrado de \"{{name}}\" pedido a {{worker}}: libera el disco en ~20 s y el modelo quedará sin descargar acá.",
       "DELETE_BRIDGE_TOOLTIP": "Borra los pesos en {{worker}} y libera el disco de esa máquina (se ejecuta en el próximo heartbeat).",
       "VRAM_REQ": "Requiere ~{{gb}} GB de VRAM",

@@ -465,9 +465,21 @@
               @if (bridgeMode()) {
                 <div class="flex flex-wrap justify-end gap-2">
                   @if (model.downloaded?.downloading) {
-                    <span class="text-sm text-ink-muted-on-dark">
-                      {{ 'GPU.MODELS.DOWNLOADING' | translate }}…
-                    </span>
+                    <!-- Cancelar frena la descarga en la otra máquina: el back
+                         saca el pedido de la cola y el agente aborta en el
+                         próximo heartbeat. -->
+                    <p-button
+                      size="small"
+                      severity="secondary"
+                      icon="md md-cancel"
+                      [label]="'GPU.MODELS.CANCEL' | translate"
+                      [loading]="isModelBusy(model, 'cancel')"
+                      [disabled]="modelBusy() !== null"
+                      (onClick)="bridgeCancelDownload(model)"
+                      pTooltip="{{
+                        'GPU.MODELS.CANCEL_BRIDGE_TOOLTIP' | translate: { worker: model.worker_name }
+                      }}"
+                    />
                   } @else {
                     @if (!model.downloaded?.available && model.worker_id) {
                       <p-button
