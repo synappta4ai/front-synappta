@@ -33,6 +33,13 @@ export interface GpuWorker {
   models: WorkerModel[];
   last_heartbeat: string;
   created_at: string;
+  /** Etiqueta libre que pone el admin en el panel («Sala 2»). */
+  label?: string;
+  /**
+   * En pausa (drenaje): termina el job en curso y no reclama nuevos hasta
+   * reanudarla. Sigue emparejada y latiendo.
+   */
+  paused?: boolean;
   /** Derivado del último heartbeat en el back (no se persiste). */
   online: boolean;
   /**

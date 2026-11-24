@@ -131,6 +131,21 @@ export class GpuApiRepository {
   }
 
   /**
+   * Administra una GPU emparejada sin desemparejarla: nombre y etiqueta
+   * editables y pausa (drenaje). El back aplica sólo los campos presentes
+   * (back: workerbridge).
+   */
+  updateBridgeWorker(
+    workerId: string,
+    patch: { name?: string; label?: string; paused?: boolean },
+  ): Observable<ApiResponse<{ worker_id: string }>> {
+    return this.http.patch<ApiResponse<{ worker_id: string }>>(
+      `${this.apiUrl}/gpu/workers/${workerId}`,
+      patch,
+    );
+  }
+
+  /**
    * Borrado en una GPU emparejada (modo bridge): el back lo encola y el agente
    * borra los pesos en el próximo heartbeat (back: workerbridge).
    */

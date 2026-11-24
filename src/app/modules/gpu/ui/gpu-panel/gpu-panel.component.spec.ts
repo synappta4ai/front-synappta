@@ -116,6 +116,11 @@ interface PanelInternals {
   bridgeUpdate: (worker: GpuWorker) => void;
   updateState: (worker: GpuWorker) => 'idle' | 'pending' | 'failed';
   updateFailureReason: (worker: GpuWorker) => string;
+  togglePause: (worker: GpuWorker) => void;
+  openEdit: (worker: GpuWorker) => void;
+  saveEdit: () => void;
+  editName: { (): string; set: (value: string) => void };
+  editLabel: { (): string; set: (value: string) => void };
   canDelete: (model: ManagedWorkerModel) => boolean;
 }
 
@@ -336,6 +341,91 @@ describe('GpuPanelComponent en modo bridge', () => {
       message: 'success',
       data: { worker_id: 'w-1', status: 'queued' },
     });
+
+    http
+      .match(`${base}/gpu/workers`)
+      .forEach((r) => r.flush({ success: true, message: 'success', data: [worker] }));
+    http
+      .match(`${base}/worker/models`)
+      .forEach((r) =>
+        r.flush(
+          { success: true, message: 'success', data: bridgeModels },
+          { headers: { 'X-Worker-Source': 'bridge' } },
+        ),
+      );
+  });
+
+  it('pausa la GPU sin desemparejarla', async () => {
+    await loadBridgeCatalog();
+    const confirmation = (
+      fixture.componentInstance as unknown as {
+        confirmationService: { confirm: (opts: { accept: () => void }) => void };
+      }
+    ).confirmationService;
+    vi.spyOn(confirmation, 'confirm').mockImplementation((opts: { accept: () => void }) =>
+      opts.accept(),
+    );
+
+    panel().togglePause(worker);
+
+    const req = http.expectOne(`${base}/gpu/workers/w-1`);
+    expect(req.request.method).toBe('PATCH');
+    // Sólo la pausa: el back aplica lo que viene y deja el resto igual.
+    expect(req.request.body).toEqual({ paused: true });
+    req.flush({ success: true, message: 'success', data: { worker_id: 'w-1' } });
+
+    http
+      .match(`${base}/gpu/workers`)
+      .forEach((r) => r.flush({ success: true, message: 'success', data: [worker] }));
+    http
+      .match(`${base}/worker/models`)
+      .forEach((r) =>
+        r.flush(
+          { success: true, message: 'success', data: bridgeModels },
+          { headers: { 'X-Worker-Source': 'bridge' } },
+        ),
+      );
+  });
+
+  it('reanuda una GPU en pausa sin pedir confirmación', async () => {
+    await loadBridgeCatalog();
+    const paused: GpuWorker = { ...worker, paused: true };
+
+    panel().togglePause(paused);
+
+    const req = http.expectOne(`${base}/gpu/workers/w-1`);
+    expect(req.request.method).toBe('PATCH');
+    expect(req.request.body).toEqual({ paused: false });
+    req.flush({ success: true, message: 'success', data: { worker_id: 'w-1' } });
+
+    http
+      .match(`${base}/gpu/workers`)
+      .forEach((r) => r.flush({ success: true, message: 'success', data: [worker] }));
+    http
+      .match(`${base}/worker/models`)
+      .forEach((r) =>
+        r.flush(
+          { success: true, message: 'success', data: bridgeModels },
+          { headers: { 'X-Worker-Source': 'bridge' } },
+        ),
+      );
+  });
+
+  it('edita el nombre y la etiqueta de la GPU', async () => {
+    await loadBridgeCatalog();
+
+    panel().openEdit(worker);
+    // Arranca con lo que ya tiene la GPU, así el admin sólo corrige lo que sobra.
+    expect(panel().editName()).toBe('PC-Casa');
+
+    panel().editName.set('PC de Ana');
+    panel().editLabel.set('Sala 2');
+    panel().saveEdit();
+
+    const req = http.expectOne(`${base}/gpu/workers/w-1`);
+    expect(req.request.method).toBe('PATCH');
+    expect(req.request.body).toEqual({ name: 'PC de Ana', label: 'Sala 2' });
+    req.flush({ success: true, message: 'success', data: { worker_id: 'w-1' } });
 
     http
       .match(`${base}/gpu/workers`)

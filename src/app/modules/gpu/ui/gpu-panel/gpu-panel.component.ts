@@ -106,6 +106,13 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
   protected readonly bulkDeleting = signal(false);
   /** Worker cuya actualización remota se está encolando. */
   protected readonly updateBusy = signal<string | null>(null);
+  /** GPU cuya pausa/reanudación está en vuelo. */
+  protected readonly pauseBusy = signal<string | null>(null);
+  /** GPU que se está editando (nombre/etiqueta) en el diálogo. */
+  protected readonly editingWorker = signal<GpuWorker | null>(null);
+  protected readonly editName = signal('');
+  protected readonly editLabel = signal('');
+  protected readonly editSaving = signal(false);
 
   /** Actualización del worker: estado y mensaje al usuario. */
   protected readonly updateWorkerLoading = signal(false);
@@ -635,6 +642,88 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
       });
     }
     return this.translate.instant('GPU.ERRORS.UPDATE');
+  }
+
+  /**
+   * Pausa (drenaje) o reanuda la GPU. En pausa termina el job en curso y no
+   * reclama nuevos, sin desemparejarla: la máquina sigue latiendo y el panel la
+   * sigue viendo en línea. Reanudar no pide confirmación (es reversible).
+   */
+  protected togglePause(worker: GpuWorker): void {
+    if (this.pauseBusy()) return;
+    if (worker.paused) {
+      this.setPaused(worker, false);
+      return;
+    }
+    this.confirmationService.confirm({
+      message: this.translate.instant('GPU.PAUSE_CONFIRM', { name: worker.name }),
+      header: this.translate.instant('GPU.PAUSE'),
+      icon: 'md md-pause_circle',
+      acceptButtonProps: { label: this.translate.instant('GPU.PAUSE'), severity: 'primary' },
+      rejectButtonProps: {
+        label: this.translate.instant('GPU.REVOKE_CANCEL'),
+        severity: 'secondary',
+        outlined: true,
+      },
+      accept: () => this.setPaused(worker, true),
+    });
+  }
+
+  private setPaused(worker: GpuWorker, paused: boolean): void {
+    this.pauseBusy.set(worker.id);
+    this.error.set(null);
+    this.gpuService
+      .updateBridgeWorker(worker.id, { paused })
+      .pipe(
+        catchError(() => {
+          this.error.set(this.translate.instant('GPU.ERRORS.SETTINGS'));
+          return EMPTY;
+        }),
+        finalize(() => this.pauseBusy.set(null)),
+      )
+      .subscribe(() => {
+        this.messageService.add({
+          severity: 'success',
+          summary: this.translate.instant(paused ? 'GPU.PAUSED_TITLE' : 'GPU.RESUMED_TITLE'),
+          detail: this.translate.instant(paused ? 'GPU.PAUSED_TOAST' : 'GPU.RESUMED_TOAST', {
+            name: worker.name,
+          }),
+        });
+        this.load(true);
+      });
+  }
+
+  /** Abre el diálogo de nombre/etiqueta con los valores actuales de la GPU. */
+  protected openEdit(worker: GpuWorker): void {
+    this.editingWorker.set(worker);
+    this.editName.set(worker.name);
+    this.editLabel.set(worker.label ?? '');
+  }
+
+  protected closeEdit(): void {
+    this.editingWorker.set(null);
+    this.editSaving.set(false);
+  }
+
+  protected saveEdit(): void {
+    const worker = this.editingWorker();
+    if (!worker || this.editSaving()) return;
+    const name = this.editName().trim();
+    if (!name) return;
+    this.editSaving.set(true);
+    this.gpuService
+      .updateBridgeWorker(worker.id, { name, label: this.editLabel().trim() })
+      .pipe(
+        catchError(() => {
+          this.error.set(this.translate.instant('GPU.ERRORS.SETTINGS'));
+          return EMPTY;
+        }),
+        finalize(() => this.editSaving.set(false)),
+      )
+      .subscribe(() => {
+        this.closeEdit();
+        this.load(true);
+      });
   }
 
   protected startDownload(model: ManagedWorkerModel): void {

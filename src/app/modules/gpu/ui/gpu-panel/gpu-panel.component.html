@@ -579,6 +579,17 @@
               <div>
                 <h2 class="flex flex-wrap items-center gap-2 font-medium">
                   {{ worker.name }}
+                  @if (worker.label) {
+                    <span class="text-xs font-normal text-ink-muted-on-dark">{{ worker.label }}</span>
+                  }
+                  @if (worker.paused) {
+                    <p-tag
+                      [value]="'GPU.PAUSED' | translate"
+                      severity="warn"
+                      icon="md md-pause_circle"
+                      pTooltip="{{ 'GPU.PAUSED_TOOLTIP' | translate }}"
+                    />
+                  }
                   @if (worker.version) {
                     <p-tag [value]="'v' + worker.version" severity="info" />
                   }
@@ -624,6 +635,25 @@
             }
 
             <div class="mt-auto flex flex-wrap items-center justify-end gap-2">
+              <p-button
+                size="small"
+                [outlined]="true"
+                [text]="true"
+                icon="md md-edit"
+                [label]="'GPU.EDIT' | translate"
+                pTooltip="{{ 'GPU.EDIT_TOOLTIP' | translate }}"
+                (onClick)="openEdit(worker)"
+              />
+              <p-button
+                size="small"
+                [outlined]="true"
+                [label]="(worker.paused ? 'GPU.RESUME' : 'GPU.PAUSE') | translate"
+                [icon]="worker.paused ? 'md md-play_arrow' : 'md md-pause'"
+                [loading]="pauseBusy() === worker.id"
+                [disabled]="pauseBusy() !== null && pauseBusy() !== worker.id"
+                pTooltip="{{ (worker.paused ? 'GPU.RESUME_TOOLTIP' : 'GPU.PAUSE_TOOLTIP') | translate }}"
+                (onClick)="togglePause(worker)"
+              />
               @if (updateState(worker) === 'failed') {
                 <p-tag
                   [value]="'GPU.UPDATE_FAILED' | translate"
@@ -672,6 +702,52 @@
     </section>
   }
 </div>
+
+<!-- ─── Diálogo de nombre y etiqueta ──────────────────────── -->
+<p-dialog
+  [visible]="!!editingWorker()"
+  [header]="'GPU.EDIT_TITLE' | translate"
+  [modal]="true"
+  [closable]="true"
+  (onHide)="closeEdit()"
+  [style]="{ width: 'min(420px, 92vw)' }"
+>
+  <div class="flex flex-col gap-3">
+    <label class="flex flex-col gap-1 text-sm">
+      <span>{{ 'GPU.EDIT_NAME' | translate }}</span>
+      <input
+        class="rounded-md border border-surface-300 bg-surface-0 px-3 py-2 text-sm text-surface-900 outline-none focus:border-primary dark:border-surface-700 dark:bg-surface-900 dark:text-surface-0"
+        [value]="editName()"
+        (input)="editName.set($any($event.target).value)"
+        maxlength="127"
+      />
+    </label>
+    <label class="flex flex-col gap-1 text-sm">
+      <span>{{ 'GPU.EDIT_LABEL' | translate }}</span>
+      <input
+        class="rounded-md border border-surface-300 bg-surface-0 px-3 py-2 text-sm text-surface-900 outline-none focus:border-primary dark:border-surface-700 dark:bg-surface-900 dark:text-surface-0"
+        [value]="editLabel()"
+        (input)="editLabel.set($any($event.target).value)"
+        maxlength="63"
+      />
+    </label>
+    <p class="text-xs text-ink-muted-on-dark">{{ 'GPU.EDIT_HINT' | translate }}</p>
+  </div>
+  <div class="mt-4 flex justify-end gap-2">
+    <p-button
+      [outlined]="true"
+      severity="secondary"
+      [label]="'GPU.REVOKE_CANCEL' | translate"
+      (onClick)="closeEdit()"
+    />
+    <p-button
+      [label]="'GPU.SAVE' | translate"
+      [loading]="editSaving()"
+      [disabled]="!editName().trim()"
+      (onClick)="saveEdit()"
+    />
+  </div>
+</p-dialog>
 
 <!-- ─── Diálogo de emparejamiento ──────────────────────────── -->
 <p-dialog

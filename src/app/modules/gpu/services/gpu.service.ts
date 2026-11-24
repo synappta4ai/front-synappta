@@ -100,6 +100,14 @@ export class GpuService {
     return unwrap(this.repository.requestWorkerUpdate(workerId, url));
   }
 
+  /** Edita nombre/etiqueta o pausa (drenaje) una GPU emparejada. */
+  updateBridgeWorker(
+    workerId: string,
+    patch: { name?: string; label?: string; paused?: boolean },
+  ): Observable<{ worker_id: string }> {
+    return unwrap(this.repository.updateBridgeWorker(workerId, patch));
+  }
+
   /** Encola el borrado de pesos en una GPU emparejada (modo bridge). */
   requestBridgeDeletion(workerId: string, key: string): Observable<{ worker_id: string; model_key: string }> {
     return unwrap(this.repository.requestBridgeDeletion(workerId, key));
