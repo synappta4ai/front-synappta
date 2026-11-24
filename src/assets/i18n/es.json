@@ -2355,6 +2355,10 @@
     "UPDATE_CONFIRM": "¿Actualizar el worker de \"{{name}}\" (v{{version}})? Se descarga la última versión, el worker se reinicia y vuelve solo en ~1-2 min. Los modelos descargados no se tocan.",
     "UPDATE_REQUESTED_TITLE": "Actualización pedida",
     "UPDATE_REQUESTED": "El worker de {{name}} se reinicia para aplicar la versión nueva; el tag de versión se actualiza cuando vuelva.",
+    "UPDATE_FAILED": "La actualización falló",
+    "UPDATE_FAILED_TOOLTIP": "El worker no confirmó la actualización en 5 minutos. Reintentá: el pedido anterior se reemplaza por uno nuevo.",
+    "UPDATE_RETRY": "Reintentar",
+    "UPDATE_RETRY_TOOLTIP": "Vuelve a encolar la actualización; reemplaza el pedido que no se aplicó.",
     "UNKNOWN": "GPU no especificada",
     "MODELS": {
       "TITLE": "Modelos del worker",

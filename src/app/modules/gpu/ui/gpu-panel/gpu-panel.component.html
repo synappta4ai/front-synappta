@@ -618,7 +618,14 @@
             </dl>
 
             <div class="mt-auto flex flex-wrap items-center justify-end gap-2">
-              @if (worker.requested_update) {
+              @if (updateState(worker) === 'failed') {
+                <p-tag
+                  [value]="'GPU.UPDATE_FAILED' | translate"
+                  severity="danger"
+                  icon="md md-error"
+                  pTooltip="{{ 'GPU.UPDATE_FAILED_TOOLTIP' | translate }}"
+                />
+              } @else if (updateState(worker) === 'pending') {
                 <p-tag
                   [value]="'GPU.UPDATING' | translate"
                   severity="warn"
@@ -628,10 +635,19 @@
               <p-button
                 size="small"
                 [outlined]="true"
-                [label]="'GPU.UPDATE' | translate"
+                [label]="(updateState(worker) === 'failed' ? 'GPU.UPDATE_RETRY' : 'GPU.UPDATE') | translate"
                 icon="md md-system_update"
-                [disabled]="!worker.online || !!worker.requested_update || updateBusy() === worker.id"
-                pTooltip="{{ 'GPU.UPDATE_TOOLTIP' | translate }}"
+                [disabled]="
+                  updateState(worker) === 'pending' ||
+                  updateBusy() === worker.id ||
+                  (updateState(worker) === 'idle' && !worker.online)
+                "
+                pTooltip="{{
+                  (updateState(worker) === 'failed'
+                    ? 'GPU.UPDATE_RETRY_TOOLTIP'
+                    : 'GPU.UPDATE_TOOLTIP'
+                  ) | translate
+                }}"
                 (onClick)="bridgeUpdate(worker)"
               />
               <p-button

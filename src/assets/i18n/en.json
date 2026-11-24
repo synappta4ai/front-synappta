@@ -2355,6 +2355,10 @@
     "UPDATE_CONFIRM": "Update the worker on \"{{name}}\" (v{{version}})? It downloads the latest version, restarts and comes back by itself in ~1-2 min. Downloaded models are untouched.",
     "UPDATE_REQUESTED_TITLE": "Update requested",
     "UPDATE_REQUESTED": "The worker on {{name}} is restarting to apply the new version; the version tag updates when it's back.",
+    "UPDATE_FAILED": "Update failed",
+    "UPDATE_FAILED_TOOLTIP": "The worker didn't confirm the update within 5 minutes. Retry: the previous request is replaced by a new one.",
+    "UPDATE_RETRY": "Retry",
+    "UPDATE_RETRY_TOOLTIP": "Queues the update again; replaces the request that never applied.",
     "UNKNOWN": "Unspecified GPU",
     "MODELS": {
       "TITLE": "Worker models",

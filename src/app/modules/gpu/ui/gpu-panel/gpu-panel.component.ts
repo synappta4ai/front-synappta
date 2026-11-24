@@ -50,6 +50,14 @@ const LOW_DISK_WARN_MB = 5 * 1024;
 const LOW_DISK_BLOCK_MB = 1024;
 
 /**
+ * Cuánto se espera la confirmación de una actualización remota antes de darla
+ * por fallida: el worker baja el payload, se reinicia y confirma desde la
+ * versión nueva (~1-2 min). Pasado eso el panel ofrece reintentar en vez de
+ * dejar «Actualizando…» y el botón muerto para siempre.
+ */
+const UPDATE_STALE_AFTER_MS = 5 * 60_000;
+
+/**
  * Panel "Tu GPU": el administrador del tenant empareja las máquinas con GPU
  * de su equipo. Flujo pensado para usuarios sin conocimiento técnico:
  *
@@ -541,13 +549,37 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Estado de la actualización remota de esa GPU:
+   *
+   *  - `idle`    — sin pedido: el botón ofrece actualizar.
+   *  - `pending` — el agente la está aplicando: «Actualizando…» y botón bloqueado
+   *                (reemplazar el pedido en vuelo perdería la confirmación).
+   *  - `failed`  — venció sin confirmación (el worker no volvió, el updater
+   *                falló, o la máquina es vieja y la ignora): se ofrece
+   *                reintentar, y el back reemplaza el pedido viejo.
+   */
+  protected updateState(worker: GpuWorker): 'idle' | 'pending' | 'failed' {
+    const requested = worker.requested_update;
+    if (!requested) return 'idle';
+    const requestedAt = requested.requested_at ? Date.parse(requested.requested_at) : NaN;
+    // Sin fecha legible no se puede esperar para siempre: se da por vencida.
+    if (!Number.isFinite(requestedAt)) return 'failed';
+    return Date.now() - requestedAt > UPDATE_STALE_AFTER_MS ? 'failed' : 'pending';
+  }
+
+  /**
    * Actualización remota en modo bridge: encola el pedido con el .zip que sirve
    * este front. El agente lo baja, se reinicia y vuelve solo, así que el tag de
    * versión se actualiza recién con el heartbeat nuevo; mientras tanto el
-   * pedido sigue pendiente y la tarjeta muestra «Actualizando…».
+   * pedido sigue pendiente y la tarjeta muestra «Actualizando…». Si no vuelve
+   * (o el worker la ignora), el pedido vence y la tarjeta ofrece reintentar.
    */
   protected bridgeUpdate(worker: GpuWorker): void {
-    if (this.updateBusy() || !worker.online || worker.requested_update) return;
+    const state = this.updateState(worker);
+    // Con el pedido vigente no se re-encola; si falló, reintentar sí (el back
+    // reemplaza el anterior). A una GPU offline se le puede re-encolar: se
+    // aplica cuando vuelva; arrancar una actualización nueva, no.
+    if (this.updateBusy() || state === 'pending' || (state === 'idle' && !worker.online)) return;
     this.confirmationService.confirm({
       message: this.translate.instant('GPU.UPDATE_CONFIRM', {
         name: worker.name,
