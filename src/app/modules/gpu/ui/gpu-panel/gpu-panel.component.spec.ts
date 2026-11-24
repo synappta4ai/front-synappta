@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideTranslateService } from '@ngx-translate/core';
 import { MessageService } from 'primeng/api';
+import { vi } from 'vitest';
 
 import { environment } from '@env/environment';
 
@@ -110,6 +111,7 @@ interface PanelInternals {
   weightlessCount: () => number;
   workerModels: { set: (value: ManagedWorkerModel[]) => void };
   bridgeDownload: (model: ManagedWorkerModel) => void;
+  bridgeDelete: (model: ManagedWorkerModel) => void;
   canDelete: (model: ManagedWorkerModel) => boolean;
 }
 
@@ -210,6 +212,45 @@ describe('GpuPanelComponent en modo bridge', () => {
     ).toBe(false);
     // Worker viejo sin estado de pesos.
     expect(panel.canDelete(model())).toBe(false);
+  });
+
+  it('pide el borrado de los pesos a la GPU emparejada', async () => {
+    await loadBridgeCatalog();
+    const model = panel().displayedModels().find((m) => m.name === 'SD-Tiny-Test')!;
+    expect(panel().canDelete(model)).toBe(true);
+
+    // El confirm acepta directo: lo que importa es a qué endpoint se pide.
+    const confirmation = (
+      fixture.componentInstance as unknown as {
+        confirmationService: { confirm: (opts: { accept: () => void }) => void };
+      }
+    ).confirmationService;
+    vi.spyOn(confirmation, 'confirm').mockImplementation((opts: { accept: () => void }) =>
+      opts.accept(),
+    );
+
+    panel().bridgeDelete(model);
+
+    const req = http.expectOne(`${base}/gpu/workers/w-1/models/SD-Tiny-Test`);
+    expect(req.request.method).toBe('DELETE');
+    req.flush({
+      success: true,
+      message: 'success',
+      data: { worker_id: 'w-1', model_key: 'SD-Tiny-Test' },
+    });
+
+    // El notice dispara el refresco del panel (lista + catálogo).
+    http
+      .match(`${base}/gpu/workers`)
+      .forEach((r) => r.flush({ success: true, message: 'success', data: [worker] }));
+    http
+      .match(`${base}/worker/models`)
+      .forEach((r) =>
+        r.flush(
+          { success: true, message: 'success', data: bridgeModels },
+          { headers: { 'X-Worker-Source': 'bridge' } },
+        ),
+      );
   });
 
   it('lista sólo modelos con pesos descargables: nada llega descargado de fábrica', () => {

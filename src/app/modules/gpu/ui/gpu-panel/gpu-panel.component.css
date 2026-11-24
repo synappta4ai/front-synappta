@@ -1,9 +1,24 @@
 /* Panel "Tu GPU": estilos locales del onboarding y el código de emparejamiento. */
 
+/* Dentro de la consola de admin el host tiene alto fijo y el padre recorta
+   (overflow: hidden): el scroll tiene que vivir acá o la tabla de modelos queda
+   cortada y sin forma de llegar a las últimas filas. Fuera de la consola el
+   alto es automático y el scroll lo sigue haciendo la página. */
+:host {
+  display: block;
+  height: 100%;
+  min-height: 0;
+}
+
 .gpu-panel {
   padding: 1.5rem;
+  /* Aire abajo para que el último botón no quede debajo del asistente flotante. */
+  padding-bottom: 5rem;
   max-width: 1200px;
   margin: 0 auto;
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 /* Numeros de paso del onboarding: círculo con el acento del tema. */

@@ -459,6 +459,54 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
       });
   }
 
+  /**
+   * Borrado en modo bridge: encola el pedido en la GPU que reportó el modelo.
+   * El agente lo ejecuta en el próximo heartbeat (~20 s), libera el disco de esa
+   * máquina y lo confirma; el snapshot siguiente ya lo muestra sin pesos.
+   */
+  protected bridgeDelete(model: ManagedWorkerModel): void {
+    if (this.modelBusy() || !model.worker_id) return;
+    this.confirmationService.confirm({
+      message: this.translate.instant('GPU.MODELS.DELETE_CONFIRM', {
+        name: model.display_name || model.name,
+      }),
+      header: this.translate.instant('GPU.MODELS.DELETE'),
+      icon: 'md md-warning',
+      acceptButtonProps: {
+        label: this.translate.instant('GPU.MODELS.DELETE'),
+        severity: 'danger',
+      },
+      rejectButtonProps: {
+        label: this.translate.instant('GPU.REVOKE_CANCEL'),
+        severity: 'secondary',
+        outlined: true,
+      },
+      accept: () => {
+        this.modelBusy.set(`delete:${model.name}`);
+        this.modelsError.set(null);
+        this.modelsNotice.set(null);
+        this.gpuService
+          .requestBridgeDeletion(model.worker_id!, model.name)
+          .pipe(
+            catchError(() => {
+              this.modelsError.set(this.translate.instant('GPU.MODELS.ERRORS.OPERATION'));
+              return EMPTY;
+            }),
+            finalize(() => this.modelBusy.set(null)),
+          )
+          .subscribe(() => {
+            this.modelsNotice.set(
+              this.translate.instant('GPU.MODELS.DELETE_REQUESTED', {
+                name: model.display_name || model.name,
+                worker: model.worker_name || '',
+              }),
+            );
+            this.load(true);
+          });
+      },
+    });
+  }
+
   protected startDownload(model: ManagedWorkerModel): void {
     this.runModelOperation(model, 'download');
   }

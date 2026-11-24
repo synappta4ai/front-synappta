@@ -2383,6 +2383,8 @@
       "BRIDGE_NOTICE": "Showing the catalog reported by your GPU ({{count}} models). Downloads are requested per machine and start in ~20 s.",
       "DOWNLOAD_REQUESTED": "Download of \"{{name}}\" requested on {{worker}}: starts in ~20 s, progress shows here.",
       "DOWNLOAD_BRIDGE_TOOLTIP": "Request the download on {{worker}} (starts on the next heartbeat).",
+      "DELETE_REQUESTED": "Deletion of \"{{name}}\" requested on {{worker}}: frees disk in ~20 s and the model will show as not downloaded here.",
+      "DELETE_BRIDGE_TOOLTIP": "Delete the weights on {{worker}} and free that machine's disk (runs on the next heartbeat).",
       "VRAM_REQ": "Requires ~{{gb}} GB of VRAM",
       "WEIGHTS_REPO": "Hugging Face",
       "WEIGHTS_ONLY_NOTICE": "{{count}} models use engines without downloadable weights (mock or V1 bridge): they cannot be downloaded or deleted from this panel.",

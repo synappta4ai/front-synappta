@@ -343,7 +343,6 @@
         [tableStyle]="{ 'min-width': '52rem' }"
         [rowHover]="true"
         [scrollable]="true"
-        scrollHeight="flex"
         styleClass="p-datatable-sm mt-4"
       >
         <ng-template #header>
@@ -469,21 +468,42 @@
                     <span class="text-sm text-ink-muted-on-dark">
                       {{ 'GPU.MODELS.DOWNLOADING' | translate }}…
                     </span>
-                  } @else if (!model.downloaded?.available && model.worker_id) {
-                    <p-button
-                      size="small"
-                      icon="md md-download"
-                      [label]="'GPU.MODELS.DOWNLOAD' | translate"
-                      [loading]="isModelBusy(model, 'download')"
-                      [disabled]="modelBusy() !== null || diskFull()"
-                      (onClick)="bridgeDownload(model)"
-                      pTooltip="{{
-                        'GPU.MODELS.DOWNLOAD_BRIDGE_TOOLTIP'
-                          | translate: { worker: model.worker_name }
-                      }}"
-                    />
                   } @else {
-                    <span class="text-sm text-ink-muted-on-dark">—</span>
+                    @if (!model.downloaded?.available && model.worker_id) {
+                      <p-button
+                        size="small"
+                        icon="md md-download"
+                        [label]="'GPU.MODELS.DOWNLOAD' | translate"
+                        [loading]="isModelBusy(model, 'download')"
+                        [disabled]="modelBusy() !== null || diskFull()"
+                        (onClick)="bridgeDownload(model)"
+                        pTooltip="{{
+                          'GPU.MODELS.DOWNLOAD_BRIDGE_TOOLTIP'
+                            | translate: { worker: model.worker_name }
+                        }}"
+                      />
+                    }
+                    <!-- Borrar libera disco en la máquina emparejada: el back
+                         encola el pedido y el agente lo ejecuta en el heartbeat. -->
+                    @if (canDelete(model) && model.worker_id) {
+                      <p-button
+                        size="small"
+                        severity="danger"
+                        [outlined]="true"
+                        icon="md md-delete"
+                        [label]="'GPU.MODELS.DELETE' | translate"
+                        [loading]="isModelBusy(model, 'delete')"
+                        [disabled]="modelBusy() !== null"
+                        (onClick)="bridgeDelete(model)"
+                        pTooltip="{{
+                          'GPU.MODELS.DELETE_BRIDGE_TOOLTIP'
+                            | translate: { worker: model.worker_name }
+                        }}"
+                      />
+                    }
+                    @if (!(!model.downloaded?.available && model.worker_id) && !canDelete(model)) {
+                      <span class="text-sm text-ink-muted-on-dark">—</span>
+                    }
                   }
                 </div>
               } @else {

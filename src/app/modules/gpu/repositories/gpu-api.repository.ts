@@ -99,4 +99,15 @@ export class GpuApiRepository {
       {},
     );
   }
+
+  /**
+   * Borrado en una GPU emparejada (modo bridge): el back lo encola y el agente
+   * borra los pesos en el próximo heartbeat (back: workerbridge).
+   */
+  requestBridgeDeletion(workerId: string, key: string): Observable<ApiResponse<{ worker_id: string; model_key: string }>> {
+    const encoded = encodeURIComponent(key);
+    return this.http.delete<ApiResponse<{ worker_id: string; model_key: string }>>(
+      `${this.apiUrl}/gpu/workers/${workerId}/models/${encoded}`,
+    );
+  }
 }

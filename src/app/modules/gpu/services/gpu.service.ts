@@ -83,4 +83,9 @@ export class GpuService {
   requestBridgeDownload(workerId: string, key: string): Observable<{ worker_id: string; model_key: string }> {
     return unwrap(this.repository.requestBridgeDownload(workerId, key));
   }
+
+  /** Encola el borrado de pesos en una GPU emparejada (modo bridge). */
+  requestBridgeDeletion(workerId: string, key: string): Observable<{ worker_id: string; model_key: string }> {
+    return unwrap(this.repository.requestBridgeDeletion(workerId, key));
+  }
 }
