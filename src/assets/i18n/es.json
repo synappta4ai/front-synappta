@@ -2361,6 +2361,8 @@
     "UPDATE_FAILED_NO_REASON": "sin motivo reportado",
     "UPDATE_RETRY": "Reintentar",
     "UPDATE_RETRY_TOOLTIP": "Vuelve a encolar la actualización; reemplaza el pedido que no se aplicó.",
+    "MANUAL_UPDATE": "Sólo instalador",
+    "MANUAL_UPDATE_TOOLTIP": "Esta GPU corre v{{version}}, que ignora la actualización remota: ejecutá el instalador una vez en esa máquina y desde ahí se actualiza sola.",
     "PAUSE": "Pausar",
     "PAUSED": "En pausa",
     "PAUSED_TOOLTIP": "En pausa: termina el trabajo en curso y no toma nuevos hasta que la reanudes.",
@@ -2438,7 +2440,8 @@
       "PAIRING": "No pude generar el código de emparejamiento. Reintentá.",
       "UPDATE": "No pude pedir la actualización del worker. Reintentá en unos segundos.",
       "UPDATE_NEEDS_INSTALLER": "El worker de {{name}} (v{{version}}) no puede actualizarse solo: ejecutá el instalador una vez en esa máquina y desde ahí se actualiza sola.",
-      "SETTINGS": "No pude guardar los cambios de esa GPU. Reintentá en unos segundos."
+      "SETTINGS": "No pude guardar los cambios de esa GPU. Reintentá en unos segundos.",
+      "UPDATE_NO_HASH": "No pude leer el hash del payload del worker. Recargá la página y reintentá."
     },
     "STATUS": {
       "ONLINE": "En línea",

@@ -593,6 +593,14 @@
                   @if (worker.version) {
                     <p-tag [value]="'v' + worker.version" severity="info" />
                   }
+                  @if (manualUpdateOnly(worker)) {
+                    <p-tag
+                      [value]="'GPU.MANUAL_UPDATE' | translate"
+                      severity="warn"
+                      icon="md md-build"
+                      pTooltip="{{ updateTooltip(worker) }}"
+                    />
+                  }
                 </h2>
                 <p class="text-sm text-ink-muted-on-dark">
                   {{ worker.gpu_name || 'GPU.UNKNOWN' | translate }}
@@ -676,14 +684,10 @@
                 [disabled]="
                   updateState(worker) === 'pending' ||
                   updateBusy() === worker.id ||
-                  (updateState(worker) === 'idle' && !worker.online)
+                  (updateState(worker) === 'idle' && !worker.online) ||
+                  manualUpdateOnly(worker)
                 "
-                pTooltip="{{
-                  (updateState(worker) === 'failed'
-                    ? 'GPU.UPDATE_RETRY_TOOLTIP'
-                    : 'GPU.UPDATE_TOOLTIP'
-                  ) | translate
-                }}"
+                pTooltip="{{ updateTooltip(worker) }}"
                 (onClick)="bridgeUpdate(worker)"
               />
               <p-button

@@ -43,6 +43,11 @@ export interface GpuWorker {
   /** Derivado del último heartbeat en el back (no se persiste). */
   online: boolean;
   /**
+   * Derivado de la versión por el back: false = esa GPU ignora el pedido de
+   * actualización remota (agente viejo) y sólo se actualiza con el instalador.
+   */
+  self_update?: boolean;
+  /**
    * Actualización encolada desde el panel y todavía no confirmada: el agente
    * baja el payload, se reinicia y la limpia al volver con la versión nueva.
    */
@@ -60,6 +65,8 @@ export interface WorkerUpdateRequest {
   id: string;
   /** Payload .zip que el agente tiene que descargar (vacío = el publicado). */
   url?: string;
+  /** SHA-256 del .zip: el agente lo verifica antes de detener el worker. */
+  sha256?: string;
   requested_at?: string;
 }
 

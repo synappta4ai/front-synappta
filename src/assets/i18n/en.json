@@ -2361,6 +2361,8 @@
     "UPDATE_FAILED_NO_REASON": "no reason reported",
     "UPDATE_RETRY": "Retry",
     "UPDATE_RETRY_TOOLTIP": "Queues the update again; replaces the request that never applied.",
+    "MANUAL_UPDATE": "Installer only",
+    "MANUAL_UPDATE_TOOLTIP": "This GPU runs v{{version}}, which ignores remote updates: run the installer once on that machine and it will self-update from then on.",
     "PAUSE": "Pause",
     "PAUSED": "Paused",
     "PAUSED_TOOLTIP": "Paused: finishes the current job and takes no new ones until you resume it.",
@@ -2438,7 +2440,8 @@
       "PAIRING": "Couldn't generate the pairing code. Try again.",
       "UPDATE": "Couldn't request the worker update. Try again in a few seconds.",
       "UPDATE_NEEDS_INSTALLER": "The worker on {{name}} (v{{version}}) can't update itself: run the installer once on that machine and it will self-update from then on.",
-      "SETTINGS": "Couldn't save the GPU settings. Try again in a few seconds."
+      "SETTINGS": "Couldn't save the GPU settings. Try again in a few seconds.",
+      "UPDATE_NO_HASH": "Couldn't read the worker payload hash. Reload the page and try again."
     },
     "STATUS": {
       "ONLINE": "Online",

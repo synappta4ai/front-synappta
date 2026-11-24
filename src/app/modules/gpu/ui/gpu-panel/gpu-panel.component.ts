@@ -570,6 +570,27 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
     return 'idle';
   }
 
+  /**
+   * true si esa GPU no puede autoactualizarse (agente anterior al corte del
+   * back): ignora el pedido remoto, así que la tarjeta sólo ofrece el instalador
+   * en vez de encolar algo que terminaría pareciendo un fallo.
+   */
+  protected manualUpdateOnly(worker: GpuWorker): boolean {
+    return worker.self_update === false;
+  }
+
+  /** Tooltip del botón de actualización según el estado real de esa GPU. */
+  protected updateTooltip(worker: GpuWorker): string {
+    if (this.manualUpdateOnly(worker)) {
+      return this.translate.instant('GPU.MANUAL_UPDATE_TOOLTIP', {
+        version: worker.version || '—',
+      });
+    }
+    return this.translate.instant(
+      this.updateState(worker) === 'failed' ? 'GPU.UPDATE_RETRY_TOOLTIP' : 'GPU.UPDATE_TOOLTIP',
+    );
+  }
+
   /** Motivo del fallo reportado por el worker (lo escribe el updater). */
   protected updateFailureReason(worker: GpuWorker): string {
     const reason = worker.update_failure?.error?.trim();
@@ -588,7 +609,14 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
     // Con el pedido vigente no se re-encola; si falló, reintentar sí (el back
     // reemplaza el anterior). A una GPU offline se le puede re-encolar: se
     // aplica cuando vuelva; arrancar una actualización nueva, no.
-    if (this.updateBusy() || state === 'pending' || (state === 'idle' && !worker.online)) return;
+    if (
+      this.updateBusy() ||
+      state === 'pending' ||
+      (state === 'idle' && !worker.online) ||
+      this.manualUpdateOnly(worker)
+    ) {
+      return;
+    }
     this.confirmationService.confirm({
       message: this.translate.instant('GPU.UPDATE_CONFIRM', {
         name: worker.name,
@@ -602,14 +630,26 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
         severity: 'secondary',
         outlined: true,
       },
-      accept: () => {
-        this.updateBusy.set(worker.id);
-        this.error.set(null);
-        // Mismo .zip que ofrece la tarjeta: el front que ve el admin es el que
-        // sirve el payload, sin depender de una URL fija de dev en el agente.
-        const url = new URL(this.zipDownloadUrl, document.baseURI).toString();
+      accept: () => this.queueBridgeUpdate(worker),
+    });
+  }
+
+  /**
+   * Encola la actualización con la URL y el SHA-256 del payload de este front,
+   * que es el mismo .zip que ofrece la tarjeta: el panel que ve el admin es el
+   * que sirve el payload, sin depender de una URL fija de dev en el agente. Sin
+   * hash no se encola: verificarlo es justamente lo que evita que un .zip
+   * truncado deje la máquina sin worker.
+   */
+  private queueBridgeUpdate(worker: GpuWorker): void {
+    this.updateBusy.set(worker.id);
+    this.error.set(null);
+    const url = new URL(this.zipDownloadUrl, document.baseURI).toString();
+    this.gpuService
+      .payloadSha256()
+      .then((sha256) => {
         this.gpuService
-          .requestBridgeUpdate(worker.id, url)
+          .requestBridgeUpdate(worker.id, url, sha256)
           .pipe(
             catchError((err: unknown) => {
               this.error.set(this.updateErrorMessage(err, worker));
@@ -625,8 +665,11 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
             });
             this.load(true);
           });
-      },
-    });
+      })
+      .catch(() => {
+        this.error.set(this.translate.instant('GPU.ERRORS.UPDATE_NO_HASH'));
+        this.updateBusy.set(null);
+      });
   }
 
   /**

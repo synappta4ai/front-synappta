@@ -123,11 +123,21 @@ export class GpuApiRepository {
   requestWorkerUpdate(
     workerId: string,
     url?: string,
+    sha256?: string,
   ): Observable<ApiResponse<{ worker_id: string; status: string }>> {
     return this.http.post<ApiResponse<{ worker_id: string; status: string }>>(
       `${this.apiUrl}/gpu/workers/${workerId}/update`,
-      { url: url ?? '' },
+      { url: url ?? '', sha256: sha256 ?? '' },
     );
+  }
+
+  /**
+   * SHA-256 del payload del worker que sirve este front. Lo escribe
+   * `inference-worker/scripts/build_installer.py` junto al .zip, así el hash y
+   * el archivo siempre salen del mismo build.
+   */
+  workerPayloadSha256(): Observable<string> {
+    return this.http.get('assets/worker/synapta-worker.sha256', { responseType: 'text' });
   }
 
   /**

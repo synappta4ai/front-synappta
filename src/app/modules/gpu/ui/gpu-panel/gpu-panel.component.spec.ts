@@ -68,6 +68,9 @@ const worker: GpuWorker = {
   ],
 };
 
+/** SHA-256 del payload que el panel manda con el pedido de actualización. */
+const payloadHash = 'a'.repeat(64);
+
 const bridgeModels: ManagedWorkerModel[] = [
   {
     name: 'SD-1.5',
@@ -115,6 +118,7 @@ interface PanelInternals {
   bridgeDelete: (model: ManagedWorkerModel) => void;
   bridgeUpdate: (worker: GpuWorker) => void;
   updateState: (worker: GpuWorker) => 'idle' | 'pending' | 'failed';
+  manualUpdateOnly: (worker: GpuWorker) => boolean;
   updateFailureReason: (worker: GpuWorker) => string;
   togglePause: (worker: GpuWorker) => void;
   openEdit: (worker: GpuWorker) => void;
@@ -275,10 +279,18 @@ describe('GpuPanelComponent en modo bridge', () => {
 
     panel().bridgeUpdate(worker);
 
+    // Primero el hash del payload que sirve este front...
+    const manifest = http.expectOne('assets/worker/synapta-worker.sha256');
+    expect(manifest.request.method).toBe('GET');
+    manifest.flush(`${payloadHash}\n`);
+    await fixture.whenStable();
+
+    // ...y el pedido con URL + hash, que es lo que el agente verifica.
     const req = http.expectOne(`${base}/gpu/workers/w-1/update`);
     expect(req.request.method).toBe('POST');
     // La URL sale del propio front: el panel de producción no manda a dev.
     expect(req.request.body.url).toContain('assets/worker/synapta-worker.zip');
+    expect(req.request.body.sha256).toBe(payloadHash);
     req.flush({
       success: true,
       message: 'success',
@@ -296,6 +308,39 @@ describe('GpuPanelComponent en modo bridge', () => {
           { headers: { 'X-Worker-Source': 'bridge' } },
         ),
       );
+  });
+
+  it('no encola la actualización si no puede leer el hash del payload', async () => {
+    await loadBridgeCatalog();
+    const confirmation = (
+      fixture.componentInstance as unknown as {
+        confirmationService: { confirm: (opts: { accept: () => void }) => void };
+      }
+    ).confirmationService;
+    vi.spyOn(confirmation, 'confirm').mockImplementation((opts: { accept: () => void }) =>
+      opts.accept(),
+    );
+
+    panel().bridgeUpdate(worker);
+    http
+      .expectOne('assets/worker/synapta-worker.sha256')
+      .flush('', { status: 404, statusText: 'Not Found' });
+    await fixture.whenStable();
+
+    // Sin hash no hay verificación posible: mejor no detener el worker.
+    http.expectNone(`${base}/gpu/workers/w-1/update`);
+  });
+
+  it('no encola la actualización de una GPU que sólo se actualiza con el instalador', async () => {
+    await loadBridgeCatalog();
+    const vieja: GpuWorker = { ...worker, version: '0.2.9', self_update: false };
+
+    expect(panel().manualUpdateOnly(vieja)).toBe(true);
+    panel().bridgeUpdate(vieja);
+
+    // Ni hash ni pedido: esa máquina ignora la actualización remota.
+    http.expectNone('assets/worker/synapta-worker.sha256');
+    http.expectNone(`${base}/gpu/workers/w-1/update`);
   });
 
   it('muestra el fallo reportado por el worker y deja reintentar', async () => {
@@ -333,6 +378,8 @@ describe('GpuPanelComponent en modo bridge', () => {
     // Con el fallo reportado, actualizar vuelve a encolarlo: el back reemplaza
     // el anterior en vez de quedarse con el botón deshabilitado.
     panel().bridgeUpdate(failed);
+    http.expectOne('assets/worker/synapta-worker.sha256').flush(`${payloadHash}\n`);
+    await fixture.whenStable();
 
     const req = http.expectOne(`${base}/gpu/workers/w-1/update`);
     expect(req.request.method).toBe('POST');
