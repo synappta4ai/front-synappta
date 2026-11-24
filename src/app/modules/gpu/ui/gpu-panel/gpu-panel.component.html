@@ -617,7 +617,23 @@
               <dd>{{ worker.last_heartbeat | date: 'shortTime' }}</dd>
             </dl>
 
-            <div class="mt-auto flex justify-end">
+            <div class="mt-auto flex flex-wrap items-center justify-end gap-2">
+              @if (worker.requested_update) {
+                <p-tag
+                  [value]="'GPU.UPDATING' | translate"
+                  severity="warn"
+                  icon="md md-sync"
+                />
+              }
+              <p-button
+                size="small"
+                [outlined]="true"
+                [label]="'GPU.UPDATE' | translate"
+                icon="md md-system_update"
+                [disabled]="!worker.online || !!worker.requested_update || updateBusy() === worker.id"
+                pTooltip="{{ 'GPU.UPDATE_TOOLTIP' | translate }}"
+                (onClick)="bridgeUpdate(worker)"
+              />
               <p-button
                 size="small"
                 severity="danger"

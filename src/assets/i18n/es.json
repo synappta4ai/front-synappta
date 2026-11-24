@@ -2349,6 +2349,12 @@
     "ONLINE_COUNT": "{{count}} en línea",
     "REVOKE": "Desconectar",
     "REVOKE_TOOLTIP": "Quita el permiso de esta máquina. Para volver a conectarla, repetí el emparejamiento.",
+    "UPDATE": "Actualizar",
+    "UPDATING": "Actualizando…",
+    "UPDATE_TOOLTIP": "Baja la última versión en esa máquina, se reinicia y vuelve sola (~1-2 min). No toca los pesos descargados.",
+    "UPDATE_CONFIRM": "¿Actualizar el worker de \"{{name}}\" (v{{version}})? Se descarga la última versión, el worker se reinicia y vuelve solo en ~1-2 min. Los modelos descargados no se tocan.",
+    "UPDATE_REQUESTED_TITLE": "Actualización pedida",
+    "UPDATE_REQUESTED": "El worker de {{name}} se reinicia para aplicar la versión nueva; el tag de versión se actualiza cuando vuelva.",
     "UNKNOWN": "GPU no especificada",
     "MODELS": {
       "TITLE": "Modelos del worker",
@@ -2405,7 +2411,8 @@
     "ERRORS": {
       "LAST_TRACK": "Cada tipo necesita al menos una pista.",
       "LOAD": "No pude cargar las GPUs. Reintentá en unos segundos.",
-      "PAIRING": "No pude generar el código de emparejamiento. Reintentá."
+      "PAIRING": "No pude generar el código de emparejamiento. Reintentá.",
+      "UPDATE": "No pude pedir la actualización del worker. Reintentá en unos segundos."
     },
     "STATUS": {
       "ONLINE": "En línea",

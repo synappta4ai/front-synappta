@@ -92,6 +92,14 @@ export class GpuService {
     return unwrap(this.repository.requestBridgeDownloadCancel(workerId, key));
   }
 
+  /** Encola la actualización del worker de una GPU emparejada (modo bridge). */
+  requestBridgeUpdate(
+    workerId: string,
+    url?: string,
+  ): Observable<{ worker_id: string; status: string }> {
+    return unwrap(this.repository.requestWorkerUpdate(workerId, url));
+  }
+
   /** Encola el borrado de pesos en una GPU emparejada (modo bridge). */
   requestBridgeDeletion(workerId: string, key: string): Observable<{ worker_id: string; model_key: string }> {
     return unwrap(this.repository.requestBridgeDeletion(workerId, key));

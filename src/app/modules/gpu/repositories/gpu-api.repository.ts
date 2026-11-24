@@ -116,6 +116,21 @@ export class GpuApiRepository {
   }
 
   /**
+   * Actualización de una GPU emparejada: el back encola el pedido con el .zip
+   * y el agente lo baja, se reinicia y vuelve con la versión nueva (back:
+   * workerbridge).
+   */
+  requestWorkerUpdate(
+    workerId: string,
+    url?: string,
+  ): Observable<ApiResponse<{ worker_id: string; status: string }>> {
+    return this.http.post<ApiResponse<{ worker_id: string; status: string }>>(
+      `${this.apiUrl}/gpu/workers/${workerId}/update`,
+      { url: url ?? '' },
+    );
+  }
+
+  /**
    * Borrado en una GPU emparejada (modo bridge): el back lo encola y el agente
    * borra los pesos en el próximo heartbeat (back: workerbridge).
    */

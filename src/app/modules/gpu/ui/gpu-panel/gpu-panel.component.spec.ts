@@ -113,6 +113,7 @@ interface PanelInternals {
   bridgeDownload: (model: ManagedWorkerModel) => void;
   bridgeCancelDownload: (model: ManagedWorkerModel) => void;
   bridgeDelete: (model: ManagedWorkerModel) => void;
+  bridgeUpdate: (worker: GpuWorker) => void;
   canDelete: (model: ManagedWorkerModel) => boolean;
 }
 
@@ -241,6 +242,42 @@ describe('GpuPanelComponent en modo bridge', () => {
     });
 
     // El notice dispara el refresco del panel (lista + catálogo).
+    http
+      .match(`${base}/gpu/workers`)
+      .forEach((r) => r.flush({ success: true, message: 'success', data: [worker] }));
+    http
+      .match(`${base}/worker/models`)
+      .forEach((r) =>
+        r.flush(
+          { success: true, message: 'success', data: bridgeModels },
+          { headers: { 'X-Worker-Source': 'bridge' } },
+        ),
+      );
+  });
+
+  it('pide la actualización del worker con el payload que sirve el front', async () => {
+    await loadBridgeCatalog();
+    const confirmation = (
+      fixture.componentInstance as unknown as {
+        confirmationService: { confirm: (opts: { accept: () => void }) => void };
+      }
+    ).confirmationService;
+    vi.spyOn(confirmation, 'confirm').mockImplementation((opts: { accept: () => void }) =>
+      opts.accept(),
+    );
+
+    panel().bridgeUpdate(worker);
+
+    const req = http.expectOne(`${base}/gpu/workers/w-1/update`);
+    expect(req.request.method).toBe('POST');
+    // La URL sale del propio front: el panel de producción no manda a dev.
+    expect(req.request.body.url).toContain('assets/worker/synapta-worker.zip');
+    req.flush({
+      success: true,
+      message: 'success',
+      data: { worker_id: 'w-1', status: 'queued' },
+    });
+
     http
       .match(`${base}/gpu/workers`)
       .forEach((r) => r.flush({ success: true, message: 'success', data: [worker] }));

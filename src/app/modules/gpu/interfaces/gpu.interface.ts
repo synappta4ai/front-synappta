@@ -35,6 +35,19 @@ export interface GpuWorker {
   created_at: string;
   /** Derivado del último heartbeat en el back (no se persiste). */
   online: boolean;
+  /**
+   * Actualización encolada desde el panel y todavía no confirmada: el agente
+   * baja el payload, se reinicia y la limpia al volver con la versión nueva.
+   */
+  requested_update?: WorkerUpdateRequest | null;
+}
+
+/** Actualización remota pedida a una GPU emparejada. */
+export interface WorkerUpdateRequest {
+  id: string;
+  /** Payload .zip que el agente tiene que descargar (vacío = el publicado). */
+  url?: string;
+  requested_at?: string;
 }
 
 /** Código de emparejamiento de 6 dígitos con TTL corto. */

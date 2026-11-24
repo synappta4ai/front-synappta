@@ -2349,6 +2349,12 @@
     "ONLINE_COUNT": "{{count}} online",
     "REVOKE": "Disconnect",
     "REVOKE_TOOLTIP": "Removes this machine's permission. To reconnect it, repeat the pairing.",
+    "UPDATE": "Update",
+    "UPDATING": "Updating…",
+    "UPDATE_TOOLTIP": "Downloads the latest version on that machine, restarts it and comes back by itself (~1-2 min). Downloaded weights are untouched.",
+    "UPDATE_CONFIRM": "Update the worker on \"{{name}}\" (v{{version}})? It downloads the latest version, restarts and comes back by itself in ~1-2 min. Downloaded models are untouched.",
+    "UPDATE_REQUESTED_TITLE": "Update requested",
+    "UPDATE_REQUESTED": "The worker on {{name}} is restarting to apply the new version; the version tag updates when it's back.",
     "UNKNOWN": "Unspecified GPU",
     "MODELS": {
       "TITLE": "Worker models",
@@ -2405,7 +2411,8 @@
     "ERRORS": {
       "LAST_TRACK": "Each kind needs at least one track.",
       "LOAD": "Couldn't load the GPUs. Try again in a few seconds.",
-      "PAIRING": "Couldn't generate the pairing code. Try again."
+      "PAIRING": "Couldn't generate the pairing code. Try again.",
+      "UPDATE": "Couldn't request the worker update. Try again in a few seconds."
     },
     "STATUS": {
       "ONLINE": "Online",

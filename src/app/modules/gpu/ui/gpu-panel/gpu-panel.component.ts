@@ -97,6 +97,8 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
   protected readonly modelsNotice = signal<string | null>(null);
   protected readonly modelBusy = signal<string | null>(null);
   protected readonly bulkDeleting = signal(false);
+  /** Worker cuya actualización remota se está encolando. */
+  protected readonly updateBusy = signal<string | null>(null);
 
   /** Actualización del worker: estado y mensaje al usuario. */
   protected readonly updateWorkerLoading = signal(false);
@@ -532,6 +534,54 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
                 worker: model.worker_name || '',
               }),
             );
+            this.load(true);
+          });
+      },
+    });
+  }
+
+  /**
+   * Actualización remota en modo bridge: encola el pedido con el .zip que sirve
+   * este front. El agente lo baja, se reinicia y vuelve solo, así que el tag de
+   * versión se actualiza recién con el heartbeat nuevo; mientras tanto el
+   * pedido sigue pendiente y la tarjeta muestra «Actualizando…».
+   */
+  protected bridgeUpdate(worker: GpuWorker): void {
+    if (this.updateBusy() || !worker.online || worker.requested_update) return;
+    this.confirmationService.confirm({
+      message: this.translate.instant('GPU.UPDATE_CONFIRM', {
+        name: worker.name,
+        version: worker.version || '—',
+      }),
+      header: this.translate.instant('GPU.UPDATE'),
+      icon: 'md md-system_update',
+      acceptButtonProps: { label: this.translate.instant('GPU.UPDATE'), severity: 'primary' },
+      rejectButtonProps: {
+        label: this.translate.instant('GPU.REVOKE_CANCEL'),
+        severity: 'secondary',
+        outlined: true,
+      },
+      accept: () => {
+        this.updateBusy.set(worker.id);
+        this.error.set(null);
+        // Mismo .zip que ofrece la tarjeta: el front que ve el admin es el que
+        // sirve el payload, sin depender de una URL fija de dev en el agente.
+        const url = new URL(this.zipDownloadUrl, document.baseURI).toString();
+        this.gpuService
+          .requestBridgeUpdate(worker.id, url)
+          .pipe(
+            catchError(() => {
+              this.error.set(this.translate.instant('GPU.ERRORS.UPDATE'));
+              return EMPTY;
+            }),
+            finalize(() => this.updateBusy.set(null)),
+          )
+          .subscribe(() => {
+            this.messageService.add({
+              severity: 'success',
+              summary: this.translate.instant('GPU.UPDATE_REQUESTED_TITLE'),
+              detail: this.translate.instant('GPU.UPDATE_REQUESTED', { name: worker.name }),
+            });
             this.load(true);
           });
       },
