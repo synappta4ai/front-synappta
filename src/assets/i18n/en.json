@@ -2356,7 +2356,9 @@
     "UPDATE_REQUESTED_TITLE": "Update requested",
     "UPDATE_REQUESTED": "The worker on {{name}} is restarting to apply the new version; the version tag updates when it's back.",
     "UPDATE_FAILED": "Update failed",
-    "UPDATE_FAILED_TOOLTIP": "The worker didn't confirm the update within 5 minutes. Retry: the previous request is replaced by a new one.",
+    "UPDATE_FAILED_TOOLTIP": "The update didn't apply. Reason: {{error}}.",
+    "UPDATE_FAILED_REASON": "Reason: {{error}}",
+    "UPDATE_FAILED_NO_REASON": "no reason reported",
     "UPDATE_RETRY": "Retry",
     "UPDATE_RETRY_TOOLTIP": "Queues the update again; replaces the request that never applied.",
     "UNKNOWN": "Unspecified GPU",
@@ -2416,7 +2418,8 @@
       "LAST_TRACK": "Each kind needs at least one track.",
       "LOAD": "Couldn't load the GPUs. Try again in a few seconds.",
       "PAIRING": "Couldn't generate the pairing code. Try again.",
-      "UPDATE": "Couldn't request the worker update. Try again in a few seconds."
+      "UPDATE": "Couldn't request the worker update. Try again in a few seconds.",
+      "UPDATE_NEEDS_INSTALLER": "The worker on {{name}} (v{{version}}) can't update itself: run the installer once on that machine and it will self-update from then on."
     },
     "STATUS": {
       "ONLINE": "Online",

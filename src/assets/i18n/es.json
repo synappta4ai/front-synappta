@@ -2356,7 +2356,9 @@
     "UPDATE_REQUESTED_TITLE": "Actualización pedida",
     "UPDATE_REQUESTED": "El worker de {{name}} se reinicia para aplicar la versión nueva; el tag de versión se actualiza cuando vuelva.",
     "UPDATE_FAILED": "La actualización falló",
-    "UPDATE_FAILED_TOOLTIP": "El worker no confirmó la actualización en 5 minutos. Reintentá: el pedido anterior se reemplaza por uno nuevo.",
+    "UPDATE_FAILED_TOOLTIP": "La actualización no se aplicó. Motivo: {{error}}.",
+    "UPDATE_FAILED_REASON": "Motivo: {{error}}",
+    "UPDATE_FAILED_NO_REASON": "sin motivo reportado",
     "UPDATE_RETRY": "Reintentar",
     "UPDATE_RETRY_TOOLTIP": "Vuelve a encolar la actualización; reemplaza el pedido que no se aplicó.",
     "UNKNOWN": "GPU no especificada",
@@ -2416,7 +2418,8 @@
       "LAST_TRACK": "Cada tipo necesita al menos una pista.",
       "LOAD": "No pude cargar las GPUs. Reintentá en unos segundos.",
       "PAIRING": "No pude generar el código de emparejamiento. Reintentá.",
-      "UPDATE": "No pude pedir la actualización del worker. Reintentá en unos segundos."
+      "UPDATE": "No pude pedir la actualización del worker. Reintentá en unos segundos.",
+      "UPDATE_NEEDS_INSTALLER": "El worker de {{name}} (v{{version}}) no puede actualizarse solo: ejecutá el instalador una vez en esa máquina y desde ahí se actualiza sola."
     },
     "STATUS": {
       "ONLINE": "En línea",

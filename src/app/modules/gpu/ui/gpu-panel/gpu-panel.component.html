@@ -617,13 +617,19 @@
               <dd>{{ worker.last_heartbeat | date: 'shortTime' }}</dd>
             </dl>
 
+            @if (updateState(worker) === 'failed') {
+              <p class="mt-2 text-xs text-red-600 dark:text-red-400">
+                {{ 'GPU.UPDATE_FAILED_REASON' | translate: { error: updateFailureReason(worker) } }}
+              </p>
+            }
+
             <div class="mt-auto flex flex-wrap items-center justify-end gap-2">
               @if (updateState(worker) === 'failed') {
                 <p-tag
                   [value]="'GPU.UPDATE_FAILED' | translate"
                   severity="danger"
                   icon="md md-error"
-                  pTooltip="{{ 'GPU.UPDATE_FAILED_TOOLTIP' | translate }}"
+                  pTooltip="{{ 'GPU.UPDATE_FAILED_TOOLTIP' | translate: { error: updateFailureReason(worker) } }}"
                 />
               } @else if (updateState(worker) === 'pending') {
                 <p-tag

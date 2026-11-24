@@ -115,6 +115,7 @@ interface PanelInternals {
   bridgeDelete: (model: ManagedWorkerModel) => void;
   bridgeUpdate: (worker: GpuWorker) => void;
   updateState: (worker: GpuWorker) => 'idle' | 'pending' | 'failed';
+  updateFailureReason: (worker: GpuWorker) => string;
   canDelete: (model: ManagedWorkerModel) => boolean;
 }
 
@@ -292,20 +293,28 @@ describe('GpuPanelComponent en modo bridge', () => {
       );
   });
 
-  it('da por fallida la actualización vencida y deja reintentar', async () => {
+  it('muestra el fallo reportado por el worker y deja reintentar', async () => {
     await loadBridgeCatalog();
-    const now = Date.now();
     const withUpdate = (ageMs: number): GpuWorker => ({
       ...worker,
-      requested_update: { id: 'u-1', requested_at: new Date(now - ageMs).toISOString() },
+      requested_update: {
+        id: 'u-1',
+        requested_at: new Date(Date.now() - ageMs).toISOString(),
+      },
     });
+    const failed: GpuWorker = {
+      ...worker,
+      requested_update: null,
+      update_failure: { id: 'u-1', error: 'descarga falló: timeout' },
+    };
 
     expect(panel().updateState(worker)).toBe('idle');
     expect(panel().updateState(withUpdate(30_000))).toBe('pending');
-    // Pasados los 5 min sin confirmación el pedido vence: «falló» + reintentar.
-    expect(panel().updateState(withUpdate(10 * 60_000))).toBe('failed');
-    // Sin fecha legible tampoco queda «Actualizando…» para siempre.
-    expect(panel().updateState({ ...worker, requested_update: { id: 'u-1' } })).toBe('failed');
+    // El estado sale del reporte del worker, no del reloj: un pedido que espera
+    // a un job largo sigue «Actualizando…» por viejo que sea.
+    expect(panel().updateState(withUpdate(60 * 60_000))).toBe('pending');
+    expect(panel().updateState(failed)).toBe('failed');
+    expect(panel().updateFailureReason(failed)).toContain('descarga falló');
 
     const confirmation = (
       fixture.componentInstance as unknown as {
@@ -316,9 +325,9 @@ describe('GpuPanelComponent en modo bridge', () => {
       opts.accept(),
     );
 
-    // Con el pedido vencido, actualizar vuelve a encolarlo: el back reemplaza
+    // Con el fallo reportado, actualizar vuelve a encolarlo: el back reemplaza
     // el anterior en vez de quedarse con el botón deshabilitado.
-    panel().bridgeUpdate(withUpdate(10 * 60_000));
+    panel().bridgeUpdate(failed);
 
     const req = http.expectOne(`${base}/gpu/workers/w-1/update`);
     expect(req.request.method).toBe('POST');

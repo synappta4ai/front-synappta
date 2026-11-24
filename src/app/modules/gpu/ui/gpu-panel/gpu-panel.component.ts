@@ -50,12 +50,11 @@ const LOW_DISK_WARN_MB = 5 * 1024;
 const LOW_DISK_BLOCK_MB = 1024;
 
 /**
- * Cuánto se espera la confirmación de una actualización remota antes de darla
- * por fallida: el worker baja el payload, se reinicia y confirma desde la
- * versión nueva (~1-2 min). Pasado eso el panel ofrece reintentar en vez de
- * dejar «Actualizando…» y el botón muerto para siempre.
+ * El estado de la actualización remota no se deduce de un reloj: lo reporta el
+ * agente (`failed_update` con el motivo real) o, si el worker no vuelve del
+ * reinicio, el watchdog del back. Antes los 5 minutos desde el pedido marcaban
+ * «falló» mientras el worker esperaba legítimamente a que terminara un job.
  */
-const UPDATE_STALE_AFTER_MS = 5 * 60_000;
 
 /**
  * Panel "Tu GPU": el administrador del tenant empareja las máquinas con GPU
@@ -554,17 +553,20 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
    *  - `idle`    — sin pedido: el botón ofrece actualizar.
    *  - `pending` — el agente la está aplicando: «Actualizando…» y botón bloqueado
    *                (reemplazar el pedido en vuelo perdería la confirmación).
-   *  - `failed`  — venció sin confirmación (el worker no volvió, el updater
-   *                falló, o la máquina es vieja y la ignora): se ofrece
-   *                reintentar, y el back reemplaza el pedido viejo.
+   *  - `failed`  — el worker reportó que no se aplicó (o el back la dio por
+   *                fallida porque no volvió del reinicio): se muestra el motivo
+   *                y se ofrece reintentar, que reemplaza el pedido viejo.
    */
   protected updateState(worker: GpuWorker): 'idle' | 'pending' | 'failed' {
-    const requested = worker.requested_update;
-    if (!requested) return 'idle';
-    const requestedAt = requested.requested_at ? Date.parse(requested.requested_at) : NaN;
-    // Sin fecha legible no se puede esperar para siempre: se da por vencida.
-    if (!Number.isFinite(requestedAt)) return 'failed';
-    return Date.now() - requestedAt > UPDATE_STALE_AFTER_MS ? 'failed' : 'pending';
+    if (worker.requested_update) return 'pending';
+    if (worker.update_failure) return 'failed';
+    return 'idle';
+  }
+
+  /** Motivo del fallo reportado por el worker (lo escribe el updater). */
+  protected updateFailureReason(worker: GpuWorker): string {
+    const reason = worker.update_failure?.error?.trim();
+    return reason || this.translate.instant('GPU.UPDATE_FAILED_NO_REASON');
   }
 
   /**
@@ -602,8 +604,8 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
         this.gpuService
           .requestBridgeUpdate(worker.id, url)
           .pipe(
-            catchError(() => {
-              this.error.set(this.translate.instant('GPU.ERRORS.UPDATE'));
+            catchError((err: unknown) => {
+              this.error.set(this.updateErrorMessage(err, worker));
               return EMPTY;
             }),
             finalize(() => this.updateBusy.set(null)),
@@ -618,6 +620,21 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
           });
       },
     });
+  }
+
+  /**
+   * Mensaje de error al encolar la actualización. Un 409 es el back diciendo que
+   * esa máquina no puede aplicarla sola (versión vieja que ignora el pedido):
+   * la salida es el instalador, no reintentar.
+   */
+  private updateErrorMessage(err: unknown, worker: GpuWorker): string {
+    if ((err as { status?: number })?.status === 409) {
+      return this.translate.instant('GPU.ERRORS.UPDATE_NEEDS_INSTALLER', {
+        name: worker.name,
+        version: worker.version || '—',
+      });
+    }
+    return this.translate.instant('GPU.ERRORS.UPDATE');
   }
 
   protected startDownload(model: ManagedWorkerModel): void {

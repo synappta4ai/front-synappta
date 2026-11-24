@@ -40,6 +40,12 @@ export interface GpuWorker {
    * baja el payload, se reinicia y la limpia al volver con la versión nueva.
    */
   requested_update?: WorkerUpdateRequest | null;
+  /**
+   * Último intento de actualización que falló, con el motivo que reportó el
+   * propio worker (o el watchdog del back si no volvió del reinicio). Ausente
+   * = no hay fallo conocido.
+   */
+  update_failure?: WorkerUpdateFailure | null;
 }
 
 /** Actualización remota pedida a una GPU emparejada. */
@@ -48,6 +54,14 @@ export interface WorkerUpdateRequest {
   /** Payload .zip que el agente tiene que descargar (vacío = el publicado). */
   url?: string;
   requested_at?: string;
+}
+
+/** Resultado fallido de una actualización remota, reportado por el worker. */
+export interface WorkerUpdateFailure {
+  id: string;
+  /** Motivo del fallo tal como lo reportó el agente (descarga, hash, deps...). */
+  error: string;
+  at?: string;
 }
 
 /** Código de emparejamiento de 6 dígitos con TTL corto. */
