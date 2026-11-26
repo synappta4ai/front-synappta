@@ -1,12 +1,18 @@
 .compact-chip {
-  display: inline-flex;
+  position: relative;
+  display: flex;
+  width: 100%;
+  min-height: 3rem;
+  flex-direction: column;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.35rem 0.55rem;
+  justify-content: center;
+  gap: 0.1rem;
+  padding: 0.35rem 1.65rem;
   border: 1px solid var(--color-surface-border);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-lg);
   background: var(--color-surface-2);
   color: var(--color-ink-on-dark);
+  text-align: center;
   cursor: pointer;
   transition:
     border-color 0.15s var(--ease-app),
@@ -49,22 +55,37 @@
 }
 
 .compact-chip-label {
+  max-width: 100%;
+  overflow: hidden;
   font-size: 0.6rem;
   font-weight: 700;
   letter-spacing: 0.06em;
+  line-height: 1.1;
+  white-space: nowrap;
+  text-align: center;
+  text-overflow: ellipsis;
   text-transform: uppercase;
   color: var(--color-ink-muted-on-dark);
 }
 
 .compact-chip-value {
+  max-width: 100%;
+  overflow: hidden;
   font-size: 0.75rem;
   font-weight: 700;
+  line-height: 1.1;
   white-space: nowrap;
+  text-align: center;
+  text-overflow: ellipsis;
 }
 
 .compact-chip-chevron {
+  position: absolute;
+  top: 50%;
+  right: 0.55rem;
   font-size: 16px;
   color: var(--color-ink-muted-on-dark);
+  transform: translateY(-50%);
 }
 
 .compact-list {

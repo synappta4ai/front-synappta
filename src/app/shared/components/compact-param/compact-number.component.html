@@ -4,6 +4,7 @@
   [class.is-configured]="configured()"
   [class.is-attention]="attention()"
   aria-haspopup="dialog"
+  [attr.data-hint]="hint() || ('SHARED.COMPACT.NUMBER_HINT' | translate)"
   (click)="pop.toggle($event)"
 >
   <span class="compact-chip-label">{{ label() }}</span>
@@ -15,7 +16,15 @@
   <div class="compact-number">
     <label class="compact-number-label" for="compactNumberInput">{{ label() }}</label>
     <div class="compact-number-row">
-      <button type="button" class="compact-step" (click)="bump(-1)" aria-label="-">−</button>
+      <button
+        type="button"
+        class="compact-step"
+        [attr.data-hint]="'SHARED.COMPACT.DECREMENT' | translate: { step: step() }"
+        [attr.aria-label]="'SHARED.COMPACT.DECREMENT' | translate: { step: step() }"
+        (click)="bump(-1)"
+      >
+        −
+      </button>
       <input
         #numberInput
         id="compactNumberInput"
@@ -29,7 +38,15 @@
         (input)="onInput($event)"
         (keydown.enter)="pop.hide()"
       />
-      <button type="button" class="compact-step" (click)="bump(1)" aria-label="+">+</button>
+      <button
+        type="button"
+        class="compact-step"
+        [attr.data-hint]="'SHARED.COMPACT.INCREMENT' | translate: { step: step() }"
+        [attr.aria-label]="'SHARED.COMPACT.INCREMENT' | translate: { step: step() }"
+        (click)="bump(1)"
+      >
+        +
+      </button>
     </div>
     @if (suffix()) {
       <span class="compact-number-suffix">{{ suffix() }}</span>

@@ -33,8 +33,49 @@ export interface GpuWorker {
   models: WorkerModel[];
   last_heartbeat: string;
   created_at: string;
+  /** Etiqueta libre que pone el admin en el panel («Sala 2»). */
+  label?: string;
+  /**
+   * En pausa (drenaje): termina el job en curso y no reclama nuevos hasta
+   * reanudarla. Sigue emparejada y latiendo.
+   */
+  paused?: boolean;
   /** Derivado del último heartbeat en el back (no se persiste). */
   online: boolean;
+  /**
+   * Derivado de la versión por el back: false = esa GPU ignora el pedido de
+   * actualización remota (agente viejo) y sólo se actualiza con el instalador.
+   */
+  self_update?: boolean;
+  /**
+   * Actualización encolada desde el panel y todavía no confirmada: el agente
+   * baja el payload, se reinicia y la limpia al volver con la versión nueva.
+   */
+  requested_update?: WorkerUpdateRequest | null;
+  /**
+   * Último intento de actualización que falló, con el motivo que reportó el
+   * propio worker (o el watchdog del back si no volvió del reinicio). Ausente
+   * = no hay fallo conocido.
+   */
+  update_failure?: WorkerUpdateFailure | null;
+}
+
+/** Actualización remota pedida a una GPU emparejada. */
+export interface WorkerUpdateRequest {
+  id: string;
+  /** Payload .zip que el agente tiene que descargar (vacío = el publicado). */
+  url?: string;
+  /** SHA-256 del .zip: el agente lo verifica antes de detener el worker. */
+  sha256?: string;
+  requested_at?: string;
+}
+
+/** Resultado fallido de una actualización remota, reportado por el worker. */
+export interface WorkerUpdateFailure {
+  id: string;
+  /** Motivo del fallo tal como lo reportó el agente (descarga, hash, deps...). */
+  error: string;
+  at?: string;
 }
 
 /** Código de emparejamiento de 6 dígitos con TTL corto. */

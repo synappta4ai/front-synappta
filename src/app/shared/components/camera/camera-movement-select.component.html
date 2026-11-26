@@ -13,6 +13,7 @@
   [class.is-attention]="attention()"
   aria-haspopup="dialog"
   [attr.aria-expanded]="dialogOpen()"
+  [attr.data-hint]="'CAMERA.TRIGGER_HINT' | translate"
   (click)="openPicker()"
 >
   <span class="camera-trigger-icon" aria-hidden="true"><i class="md md-movie"></i></span>
@@ -20,7 +21,9 @@
     @if (pill()) {
       <span class="camera-pill-label">{{ 'CAMERA.TITLE' | translate }}</span>
       <span class="camera-pill-value">
-        {{ selectedNames().length ? selectedNames().join(' → ') : ('CAMERA.AUTO_SHORT' | translate) }}
+        {{
+          selectedNames().length ? selectedNames().join(' → ') : ('CAMERA.AUTO_SHORT' | translate)
+        }}
       </span>
     } @else if (selectedNames().length === 0) {
       <span class="camera-trigger-name">{{ 'CAMERA.NONE' | translate }}</span>
@@ -190,5 +193,4 @@
       </section>
     </div>
   </div>
-
 </p-dialog>

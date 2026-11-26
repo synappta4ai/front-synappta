@@ -1,4 +1,9 @@
-import { AiModel, GenerateRequest, StatusResponse } from '@modules/agency/interfaces';
+import {
+  AiModel,
+  DispatchOrigin,
+  GenerateRequest,
+  StatusResponse,
+} from '@modules/agency/interfaces';
 
 /** Model type reported by the backend catalog: api (external provider) or
  * downloaded (weights on the inference worker). */
@@ -37,6 +42,10 @@ export interface StudioTake {
   duration: number;
   status: 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled';
   progress: number;
+  /** Por dónde salió la toma (lo informa el status): GPU propia del tenant
+   *  o worker central. null = todavía no hubo status / modelo de API; el
+   *  "unknown" del back no se representa (no hay nada útil que mostrar). */
+  dispatch?: Exclude<DispatchOrigin, 'unknown'> | null;
   videoUrl: string | null;
   error: string | null;
   createdAt: number;

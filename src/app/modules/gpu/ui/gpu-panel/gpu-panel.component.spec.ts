@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideTranslateService } from '@ngx-translate/core';
 import { MessageService } from 'primeng/api';
+import { vi } from 'vitest';
 
 import { environment } from '@env/environment';
 
@@ -67,6 +68,9 @@ const worker: GpuWorker = {
   ],
 };
 
+/** SHA-256 del payload que el panel manda con el pedido de actualización. */
+const payloadHash = 'a'.repeat(64);
+
 const bridgeModels: ManagedWorkerModel[] = [
   {
     name: 'SD-1.5',
@@ -110,6 +114,17 @@ interface PanelInternals {
   weightlessCount: () => number;
   workerModels: { set: (value: ManagedWorkerModel[]) => void };
   bridgeDownload: (model: ManagedWorkerModel) => void;
+  bridgeCancelDownload: (model: ManagedWorkerModel) => void;
+  bridgeDelete: (model: ManagedWorkerModel) => void;
+  bridgeUpdate: (worker: GpuWorker) => void;
+  updateState: (worker: GpuWorker) => 'idle' | 'pending' | 'failed';
+  manualUpdateOnly: (worker: GpuWorker) => boolean;
+  updateFailureReason: (worker: GpuWorker) => string;
+  togglePause: (worker: GpuWorker) => void;
+  openEdit: (worker: GpuWorker) => void;
+  saveEdit: () => void;
+  editName: { (): string; set: (value: string) => void };
+  editLabel: { (): string; set: (value: string) => void };
   canDelete: (model: ManagedWorkerModel) => boolean;
 }
 
@@ -210,6 +225,335 @@ describe('GpuPanelComponent en modo bridge', () => {
     ).toBe(false);
     // Worker viejo sin estado de pesos.
     expect(panel.canDelete(model())).toBe(false);
+  });
+
+  it('pide el borrado de los pesos a la GPU emparejada', async () => {
+    await loadBridgeCatalog();
+    const model = panel().displayedModels().find((m) => m.name === 'SD-Tiny-Test')!;
+    expect(panel().canDelete(model)).toBe(true);
+
+    // El confirm acepta directo: lo que importa es a qué endpoint se pide.
+    const confirmation = (
+      fixture.componentInstance as unknown as {
+        confirmationService: { confirm: (opts: { accept: () => void }) => void };
+      }
+    ).confirmationService;
+    vi.spyOn(confirmation, 'confirm').mockImplementation((opts: { accept: () => void }) =>
+      opts.accept(),
+    );
+
+    panel().bridgeDelete(model);
+
+    const req = http.expectOne(`${base}/gpu/workers/w-1/models/SD-Tiny-Test`);
+    expect(req.request.method).toBe('DELETE');
+    req.flush({
+      success: true,
+      message: 'success',
+      data: { worker_id: 'w-1', model_key: 'SD-Tiny-Test' },
+    });
+
+    // El notice dispara el refresco del panel (lista + catálogo).
+    http
+      .match(`${base}/gpu/workers`)
+      .forEach((r) => r.flush({ success: true, message: 'success', data: [worker] }));
+    http
+      .match(`${base}/worker/models`)
+      .forEach((r) =>
+        r.flush(
+          { success: true, message: 'success', data: bridgeModels },
+          { headers: { 'X-Worker-Source': 'bridge' } },
+        ),
+      );
+  });
+
+  it('pide la actualización del worker con el payload que sirve el front', async () => {
+    await loadBridgeCatalog();
+    const confirmation = (
+      fixture.componentInstance as unknown as {
+        confirmationService: { confirm: (opts: { accept: () => void }) => void };
+      }
+    ).confirmationService;
+    vi.spyOn(confirmation, 'confirm').mockImplementation((opts: { accept: () => void }) =>
+      opts.accept(),
+    );
+
+    panel().bridgeUpdate(worker);
+
+    // Primero el hash del payload que sirve este front...
+    const manifest = http.expectOne('assets/worker/synapta-worker.sha256');
+    expect(manifest.request.method).toBe('GET');
+    manifest.flush(`${payloadHash}\n`);
+    await fixture.whenStable();
+
+    // ...y el pedido con URL + hash, que es lo que el agente verifica.
+    const req = http.expectOne(`${base}/gpu/workers/w-1/update`);
+    expect(req.request.method).toBe('POST');
+    // La URL sale del propio front: el panel de producción no manda a dev.
+    expect(req.request.body.url).toContain('assets/worker/synapta-worker.zip');
+    expect(req.request.body.sha256).toBe(payloadHash);
+    req.flush({
+      success: true,
+      message: 'success',
+      data: { worker_id: 'w-1', status: 'queued' },
+    });
+
+    http
+      .match(`${base}/gpu/workers`)
+      .forEach((r) => r.flush({ success: true, message: 'success', data: [worker] }));
+    http
+      .match(`${base}/worker/models`)
+      .forEach((r) =>
+        r.flush(
+          { success: true, message: 'success', data: bridgeModels },
+          { headers: { 'X-Worker-Source': 'bridge' } },
+        ),
+      );
+  });
+
+  it('no encola la actualización si no puede leer el hash del payload', async () => {
+    await loadBridgeCatalog();
+    const confirmation = (
+      fixture.componentInstance as unknown as {
+        confirmationService: { confirm: (opts: { accept: () => void }) => void };
+      }
+    ).confirmationService;
+    vi.spyOn(confirmation, 'confirm').mockImplementation((opts: { accept: () => void }) =>
+      opts.accept(),
+    );
+
+    panel().bridgeUpdate(worker);
+    http
+      .expectOne('assets/worker/synapta-worker.sha256')
+      .flush('', { status: 404, statusText: 'Not Found' });
+    await fixture.whenStable();
+
+    // Sin hash no hay verificación posible: mejor no detener el worker.
+    http.expectNone(`${base}/gpu/workers/w-1/update`);
+  });
+
+  it('no encola la actualización de una GPU que sólo se actualiza con el instalador', async () => {
+    await loadBridgeCatalog();
+    const vieja: GpuWorker = { ...worker, version: '0.2.9', self_update: false };
+
+    expect(panel().manualUpdateOnly(vieja)).toBe(true);
+    panel().bridgeUpdate(vieja);
+
+    // Ni hash ni pedido: esa máquina ignora la actualización remota.
+    http.expectNone('assets/worker/synapta-worker.sha256');
+    http.expectNone(`${base}/gpu/workers/w-1/update`);
+  });
+
+  it('muestra el fallo reportado por el worker y deja reintentar', async () => {
+    await loadBridgeCatalog();
+    const withUpdate = (ageMs: number): GpuWorker => ({
+      ...worker,
+      requested_update: {
+        id: 'u-1',
+        requested_at: new Date(Date.now() - ageMs).toISOString(),
+      },
+    });
+    const failed: GpuWorker = {
+      ...worker,
+      requested_update: null,
+      update_failure: { id: 'u-1', error: 'descarga falló: timeout' },
+    };
+
+    expect(panel().updateState(worker)).toBe('idle');
+    expect(panel().updateState(withUpdate(30_000))).toBe('pending');
+    // El estado sale del reporte del worker, no del reloj: un pedido que espera
+    // a un job largo sigue «Actualizando…» por viejo que sea.
+    expect(panel().updateState(withUpdate(60 * 60_000))).toBe('pending');
+    expect(panel().updateState(failed)).toBe('failed');
+    expect(panel().updateFailureReason(failed)).toContain('descarga falló');
+
+    const confirmation = (
+      fixture.componentInstance as unknown as {
+        confirmationService: { confirm: (opts: { accept: () => void }) => void };
+      }
+    ).confirmationService;
+    vi.spyOn(confirmation, 'confirm').mockImplementation((opts: { accept: () => void }) =>
+      opts.accept(),
+    );
+
+    // Con el fallo reportado, actualizar vuelve a encolarlo: el back reemplaza
+    // el anterior en vez de quedarse con el botón deshabilitado.
+    panel().bridgeUpdate(failed);
+    http.expectOne('assets/worker/synapta-worker.sha256').flush(`${payloadHash}\n`);
+    await fixture.whenStable();
+
+    const req = http.expectOne(`${base}/gpu/workers/w-1/update`);
+    expect(req.request.method).toBe('POST');
+    req.flush({
+      success: true,
+      message: 'success',
+      data: { worker_id: 'w-1', status: 'queued' },
+    });
+
+    http
+      .match(`${base}/gpu/workers`)
+      .forEach((r) => r.flush({ success: true, message: 'success', data: [worker] }));
+    http
+      .match(`${base}/worker/models`)
+      .forEach((r) =>
+        r.flush(
+          { success: true, message: 'success', data: bridgeModels },
+          { headers: { 'X-Worker-Source': 'bridge' } },
+        ),
+      );
+  });
+
+  it('pausa la GPU sin desemparejarla', async () => {
+    await loadBridgeCatalog();
+    const confirmation = (
+      fixture.componentInstance as unknown as {
+        confirmationService: { confirm: (opts: { accept: () => void }) => void };
+      }
+    ).confirmationService;
+    vi.spyOn(confirmation, 'confirm').mockImplementation((opts: { accept: () => void }) =>
+      opts.accept(),
+    );
+
+    panel().togglePause(worker);
+
+    const req = http.expectOne(`${base}/gpu/workers/w-1`);
+    expect(req.request.method).toBe('PATCH');
+    // Sólo la pausa: el back aplica lo que viene y deja el resto igual.
+    expect(req.request.body).toEqual({ paused: true });
+    req.flush({ success: true, message: 'success', data: { worker_id: 'w-1' } });
+
+    http
+      .match(`${base}/gpu/workers`)
+      .forEach((r) => r.flush({ success: true, message: 'success', data: [worker] }));
+    http
+      .match(`${base}/worker/models`)
+      .forEach((r) =>
+        r.flush(
+          { success: true, message: 'success', data: bridgeModels },
+          { headers: { 'X-Worker-Source': 'bridge' } },
+        ),
+      );
+  });
+
+  it('reanuda una GPU en pausa sin pedir confirmación', async () => {
+    await loadBridgeCatalog();
+    const paused: GpuWorker = { ...worker, paused: true };
+
+    panel().togglePause(paused);
+
+    const req = http.expectOne(`${base}/gpu/workers/w-1`);
+    expect(req.request.method).toBe('PATCH');
+    expect(req.request.body).toEqual({ paused: false });
+    req.flush({ success: true, message: 'success', data: { worker_id: 'w-1' } });
+
+    http
+      .match(`${base}/gpu/workers`)
+      .forEach((r) => r.flush({ success: true, message: 'success', data: [worker] }));
+    http
+      .match(`${base}/worker/models`)
+      .forEach((r) =>
+        r.flush(
+          { success: true, message: 'success', data: bridgeModels },
+          { headers: { 'X-Worker-Source': 'bridge' } },
+        ),
+      );
+  });
+
+  it('edita el nombre y la etiqueta de la GPU', async () => {
+    await loadBridgeCatalog();
+
+    panel().openEdit(worker);
+    // Arranca con lo que ya tiene la GPU, así el admin sólo corrige lo que sobra.
+    expect(panel().editName()).toBe('PC-Casa');
+
+    panel().editName.set('PC de Ana');
+    panel().editLabel.set('Sala 2');
+    panel().saveEdit();
+
+    const req = http.expectOne(`${base}/gpu/workers/w-1`);
+    expect(req.request.method).toBe('PATCH');
+    expect(req.request.body).toEqual({ name: 'PC de Ana', label: 'Sala 2' });
+    req.flush({ success: true, message: 'success', data: { worker_id: 'w-1' } });
+
+    http
+      .match(`${base}/gpu/workers`)
+      .forEach((r) => r.flush({ success: true, message: 'success', data: [worker] }));
+    http
+      .match(`${base}/worker/models`)
+      .forEach((r) =>
+        r.flush(
+          { success: true, message: 'success', data: bridgeModels },
+          { headers: { 'X-Worker-Source': 'bridge' } },
+        ),
+      );
+  });
+
+  it('pide cancelar la descarga a la GPU emparejada', async () => {
+    await loadBridgeCatalog();
+    const model = panel().displayedModels().find((m) => m.name === 'SD-1.5')!;
+
+    panel().bridgeCancelDownload(model);
+
+    // DELETE sobre el mismo recurso de descarga: el back saca el pedido de la
+    // cola y encola la cancelación para el agente.
+    const req = http.expectOne(`${base}/gpu/workers/w-1/models/SD-1.5/download`);
+    expect(req.request.method).toBe('DELETE');
+    req.flush({
+      success: true,
+      message: 'success',
+      data: { worker_id: 'w-1', model_key: 'SD-1.5' },
+    });
+
+    http
+      .match(`${base}/gpu/workers`)
+      .forEach((r) => r.flush({ success: true, message: 'success', data: [worker] }));
+    http
+      .match(`${base}/worker/models`)
+      .forEach((r) =>
+        r.flush(
+          { success: true, message: 'success', data: bridgeModels },
+          { headers: { 'X-Worker-Source': 'bridge' } },
+        ),
+      );
+  });
+
+  it('muestra «Cancelar» en la fila mientras la GPU descarga', async () => {
+    fixture.detectChanges();
+    http
+      .expectOne(`${base}/gpu/workers`)
+      .flush({ success: true, message: 'success', data: [worker] });
+    const downloading: ManagedWorkerModel[] = [
+      {
+        name: 'SD-1.5',
+        display_name: 'Stable Diffusion 1.5',
+        modality: 'image',
+        type: 'downloaded',
+        downloaded: {
+          mode: 'image',
+          engine: 'diffusers',
+          pipeline: 'sd15',
+          repo: 'stable-diffusion-v1-5/stable-diffusion-v1-5',
+          vram_gb: 4,
+          available: false,
+          downloading: true,
+          download_percent: 40,
+          size_bytes: 1_000_000,
+        },
+      },
+    ];
+    http
+      .expectOne(`${base}/worker/models`)
+      .flush(
+        { success: true, message: 'success', data: downloading },
+        { headers: { 'X-Worker-Source': 'bridge' } },
+      );
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const table = (fixture.nativeElement as HTMLElement).querySelector('p-table') as HTMLElement;
+    const buttons = Array.from(table.querySelectorAll('button')) as HTMLButtonElement[];
+    // Sin salida para pararla, pedir el modelo equivocado obligaba a esperar
+    // la descarga entera.
+    expect(buttons.some((b) => (b.textContent ?? '').includes('GPU.MODELS.CANCEL'))).toBe(true);
   });
 
   it('lista sólo modelos con pesos descargables: nada llega descargado de fábrica', () => {

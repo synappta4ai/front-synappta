@@ -181,6 +181,14 @@
                   [severity]="severity(log.status)"
                   styleClass="gen-card__status"
                 />
+                @if (dispatchOrigin(log.task_id); as origin) {
+                  <span class="gen-card__dispatch" [title]="dispatchTitle(origin)">
+                    <p-tag
+                      [value]="dispatchLabel(origin)"
+                      [severity]="origin === 'bridge' ? 'success' : 'secondary'"
+                    />
+                  </span>
+                }
               </div>
 
               <!-- Metadata -->

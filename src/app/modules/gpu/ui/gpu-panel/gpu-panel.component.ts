@@ -50,6 +50,13 @@ const LOW_DISK_WARN_MB = 5 * 1024;
 const LOW_DISK_BLOCK_MB = 1024;
 
 /**
+ * El estado de la actualización remota no se deduce de un reloj: lo reporta el
+ * agente (`failed_update` con el motivo real) o, si el worker no vuelve del
+ * reinicio, el watchdog del back. Antes los 5 minutos desde el pedido marcaban
+ * «falló» mientras el worker esperaba legítimamente a que terminara un job.
+ */
+
+/**
  * Panel "Tu GPU": el administrador del tenant empareja las máquinas con GPU
  * de su equipo. Flujo pensado para usuarios sin conocimiento técnico:
  *
@@ -97,6 +104,15 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
   protected readonly modelsNotice = signal<string | null>(null);
   protected readonly modelBusy = signal<string | null>(null);
   protected readonly bulkDeleting = signal(false);
+  /** Worker cuya actualización remota se está encolando. */
+  protected readonly updateBusy = signal<string | null>(null);
+  /** GPU cuya pausa/reanudación está en vuelo. */
+  protected readonly pauseBusy = signal<string | null>(null);
+  /** GPU que se está editando (nombre/etiqueta) en el diálogo. */
+  protected readonly editingWorker = signal<GpuWorker | null>(null);
+  protected readonly editName = signal('');
+  protected readonly editLabel = signal('');
+  protected readonly editSaving = signal(false);
 
   /** Actualización del worker: estado y mensaje al usuario. */
   protected readonly updateWorkerLoading = signal(false);
@@ -455,6 +471,303 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
             worker: model.worker_name || '',
           }),
         );
+        this.load(true);
+      });
+  }
+
+  /**
+   * Cancelar una descarga en modo bridge: el back saca el pedido de la cola si
+   * todavía no arrancó y encola la cancelación. El agente aborta la
+   * transferencia en el próximo heartbeat (~20 s) y descarta los bytes
+   * parciales, así que el modelo vuelve a quedar "sin descargar".
+   */
+  protected bridgeCancelDownload(model: ManagedWorkerModel): void {
+    if (this.modelBusy() || !model.worker_id) return;
+    this.modelBusy.set(`cancel:${model.name}`);
+    this.modelsError.set(null);
+    this.modelsNotice.set(null);
+    this.gpuService
+      .requestBridgeDownloadCancel(model.worker_id, model.name)
+      .pipe(
+        catchError(() => {
+          this.modelsError.set(this.translate.instant('GPU.MODELS.ERRORS.OPERATION'));
+          return EMPTY;
+        }),
+        finalize(() => this.modelBusy.set(null)),
+      )
+      .subscribe(() => {
+        this.modelsNotice.set(
+          this.translate.instant('GPU.MODELS.CANCEL_REQUESTED', {
+            name: model.display_name || model.name,
+            worker: model.worker_name || '',
+          }),
+        );
+        this.load(true);
+      });
+  }
+
+  /**
+   * Borrado en modo bridge: encola el pedido en la GPU que reportó el modelo.
+   * El agente lo ejecuta en el próximo heartbeat (~20 s), libera el disco de esa
+   * máquina y lo confirma; el snapshot siguiente ya lo muestra sin pesos.
+   */
+  protected bridgeDelete(model: ManagedWorkerModel): void {
+    if (this.modelBusy() || !model.worker_id) return;
+    this.confirmationService.confirm({
+      message: this.translate.instant('GPU.MODELS.DELETE_CONFIRM', {
+        name: model.display_name || model.name,
+      }),
+      header: this.translate.instant('GPU.MODELS.DELETE'),
+      icon: 'md md-warning',
+      acceptButtonProps: {
+        label: this.translate.instant('GPU.MODELS.DELETE'),
+        severity: 'danger',
+      },
+      rejectButtonProps: {
+        label: this.translate.instant('GPU.REVOKE_CANCEL'),
+        severity: 'secondary',
+        outlined: true,
+      },
+      accept: () => {
+        this.modelBusy.set(`delete:${model.name}`);
+        this.modelsError.set(null);
+        this.modelsNotice.set(null);
+        this.gpuService
+          .requestBridgeDeletion(model.worker_id!, model.name)
+          .pipe(
+            catchError(() => {
+              this.modelsError.set(this.translate.instant('GPU.MODELS.ERRORS.OPERATION'));
+              return EMPTY;
+            }),
+            finalize(() => this.modelBusy.set(null)),
+          )
+          .subscribe(() => {
+            this.modelsNotice.set(
+              this.translate.instant('GPU.MODELS.DELETE_REQUESTED', {
+                name: model.display_name || model.name,
+                worker: model.worker_name || '',
+              }),
+            );
+            this.load(true);
+          });
+      },
+    });
+  }
+
+  /**
+   * Estado de la actualización remota de esa GPU:
+   *
+   *  - `idle`    — sin pedido: el botón ofrece actualizar.
+   *  - `pending` — el agente la está aplicando: «Actualizando…» y botón bloqueado
+   *                (reemplazar el pedido en vuelo perdería la confirmación).
+   *  - `failed`  — el worker reportó que no se aplicó (o el back la dio por
+   *                fallida porque no volvió del reinicio): se muestra el motivo
+   *                y se ofrece reintentar, que reemplaza el pedido viejo.
+   */
+  protected updateState(worker: GpuWorker): 'idle' | 'pending' | 'failed' {
+    if (worker.requested_update) return 'pending';
+    if (worker.update_failure) return 'failed';
+    return 'idle';
+  }
+
+  /**
+   * true si esa GPU no puede autoactualizarse (agente anterior al corte del
+   * back): ignora el pedido remoto, así que la tarjeta sólo ofrece el instalador
+   * en vez de encolar algo que terminaría pareciendo un fallo.
+   */
+  protected manualUpdateOnly(worker: GpuWorker): boolean {
+    return worker.self_update === false;
+  }
+
+  /** Tooltip del botón de actualización según el estado real de esa GPU. */
+  protected updateTooltip(worker: GpuWorker): string {
+    if (this.manualUpdateOnly(worker)) {
+      return this.translate.instant('GPU.MANUAL_UPDATE_TOOLTIP', {
+        version: worker.version || '—',
+      });
+    }
+    return this.translate.instant(
+      this.updateState(worker) === 'failed' ? 'GPU.UPDATE_RETRY_TOOLTIP' : 'GPU.UPDATE_TOOLTIP',
+    );
+  }
+
+  /** Motivo del fallo reportado por el worker (lo escribe el updater). */
+  protected updateFailureReason(worker: GpuWorker): string {
+    const reason = worker.update_failure?.error?.trim();
+    return reason || this.translate.instant('GPU.UPDATE_FAILED_NO_REASON');
+  }
+
+  /**
+   * Actualización remota en modo bridge: encola el pedido con el .zip que sirve
+   * este front. El agente lo baja, se reinicia y vuelve solo, así que el tag de
+   * versión se actualiza recién con el heartbeat nuevo; mientras tanto el
+   * pedido sigue pendiente y la tarjeta muestra «Actualizando…». Si no vuelve
+   * (o el worker la ignora), el pedido vence y la tarjeta ofrece reintentar.
+   */
+  protected bridgeUpdate(worker: GpuWorker): void {
+    const state = this.updateState(worker);
+    // Con el pedido vigente no se re-encola; si falló, reintentar sí (el back
+    // reemplaza el anterior). A una GPU offline se le puede re-encolar: se
+    // aplica cuando vuelva; arrancar una actualización nueva, no.
+    if (
+      this.updateBusy() ||
+      state === 'pending' ||
+      (state === 'idle' && !worker.online) ||
+      this.manualUpdateOnly(worker)
+    ) {
+      return;
+    }
+    this.confirmationService.confirm({
+      message: this.translate.instant('GPU.UPDATE_CONFIRM', {
+        name: worker.name,
+        version: worker.version || '—',
+      }),
+      header: this.translate.instant('GPU.UPDATE_ACTION'),
+      icon: 'md md-system_update',
+      acceptButtonProps: {
+        label: this.translate.instant('GPU.UPDATE_ACTION'),
+        severity: 'primary',
+      },
+      rejectButtonProps: {
+        label: this.translate.instant('GPU.REVOKE_CANCEL'),
+        severity: 'secondary',
+        outlined: true,
+      },
+      accept: () => this.queueBridgeUpdate(worker),
+    });
+  }
+
+  /**
+   * Encola la actualización con la URL y el SHA-256 del payload de este front,
+   * que es el mismo .zip que ofrece la tarjeta: el panel que ve el admin es el
+   * que sirve el payload, sin depender de una URL fija de dev en el agente. Sin
+   * hash no se encola: verificarlo es justamente lo que evita que un .zip
+   * truncado deje la máquina sin worker.
+   */
+  private queueBridgeUpdate(worker: GpuWorker): void {
+    this.updateBusy.set(worker.id);
+    this.error.set(null);
+    const url = new URL(this.zipDownloadUrl, document.baseURI).toString();
+    this.gpuService
+      .payloadSha256()
+      .then((sha256) => {
+        this.gpuService
+          .requestBridgeUpdate(worker.id, url, sha256)
+          .pipe(
+            catchError((err: unknown) => {
+              this.error.set(this.updateErrorMessage(err, worker));
+              return EMPTY;
+            }),
+            finalize(() => this.updateBusy.set(null)),
+          )
+          .subscribe(() => {
+            this.messageService.add({
+              severity: 'success',
+              summary: this.translate.instant('GPU.UPDATE_REQUESTED_TITLE'),
+              detail: this.translate.instant('GPU.UPDATE_REQUESTED', { name: worker.name }),
+            });
+            this.load(true);
+          });
+      })
+      .catch(() => {
+        this.error.set(this.translate.instant('GPU.ERRORS.UPDATE_NO_HASH'));
+        this.updateBusy.set(null);
+      });
+  }
+
+  /**
+   * Mensaje de error al encolar la actualización. Un 409 es el back diciendo que
+   * esa máquina no puede aplicarla sola (versión vieja que ignora el pedido):
+   * la salida es el instalador, no reintentar.
+   */
+  private updateErrorMessage(err: unknown, worker: GpuWorker): string {
+    if ((err as { status?: number })?.status === 409) {
+      return this.translate.instant('GPU.ERRORS.UPDATE_NEEDS_INSTALLER', {
+        name: worker.name,
+        version: worker.version || '—',
+      });
+    }
+    return this.translate.instant('GPU.ERRORS.UPDATE');
+  }
+
+  /**
+   * Pausa (drenaje) o reanuda la GPU. En pausa termina el job en curso y no
+   * reclama nuevos, sin desemparejarla: la máquina sigue latiendo y el panel la
+   * sigue viendo en línea. Reanudar no pide confirmación (es reversible).
+   */
+  protected togglePause(worker: GpuWorker): void {
+    if (this.pauseBusy()) return;
+    if (worker.paused) {
+      this.setPaused(worker, false);
+      return;
+    }
+    this.confirmationService.confirm({
+      message: this.translate.instant('GPU.PAUSE_CONFIRM', { name: worker.name }),
+      header: this.translate.instant('GPU.PAUSE'),
+      icon: 'md md-pause_circle',
+      acceptButtonProps: { label: this.translate.instant('GPU.PAUSE'), severity: 'primary' },
+      rejectButtonProps: {
+        label: this.translate.instant('GPU.REVOKE_CANCEL'),
+        severity: 'secondary',
+        outlined: true,
+      },
+      accept: () => this.setPaused(worker, true),
+    });
+  }
+
+  private setPaused(worker: GpuWorker, paused: boolean): void {
+    this.pauseBusy.set(worker.id);
+    this.error.set(null);
+    this.gpuService
+      .updateBridgeWorker(worker.id, { paused })
+      .pipe(
+        catchError(() => {
+          this.error.set(this.translate.instant('GPU.ERRORS.SETTINGS'));
+          return EMPTY;
+        }),
+        finalize(() => this.pauseBusy.set(null)),
+      )
+      .subscribe(() => {
+        this.messageService.add({
+          severity: 'success',
+          summary: this.translate.instant(paused ? 'GPU.PAUSED_TITLE' : 'GPU.RESUMED_TITLE'),
+          detail: this.translate.instant(paused ? 'GPU.PAUSED_TOAST' : 'GPU.RESUMED_TOAST', {
+            name: worker.name,
+          }),
+        });
+        this.load(true);
+      });
+  }
+
+  /** Abre el diálogo de nombre/etiqueta con los valores actuales de la GPU. */
+  protected openEdit(worker: GpuWorker): void {
+    this.editingWorker.set(worker);
+    this.editName.set(worker.name);
+    this.editLabel.set(worker.label ?? '');
+  }
+
+  protected closeEdit(): void {
+    this.editingWorker.set(null);
+    this.editSaving.set(false);
+  }
+
+  protected saveEdit(): void {
+    const worker = this.editingWorker();
+    if (!worker || this.editSaving()) return;
+    const name = this.editName().trim();
+    if (!name) return;
+    this.editSaving.set(true);
+    this.gpuService
+      .updateBridgeWorker(worker.id, { name, label: this.editLabel().trim() })
+      .pipe(
+        catchError(() => {
+          this.error.set(this.translate.instant('GPU.ERRORS.SETTINGS'));
+          return EMPTY;
+        }),
+        finalize(() => this.editSaving.set(false)),
+      )
+      .subscribe(() => {
+        this.closeEdit();
         this.load(true);
       });
   }

@@ -1,8 +1,17 @@
-import { buildReferences, promptKinds, splitFences, tagAssets } from './writing-copilot-helpers';
+import {
+  buildReferences,
+  parsePromptHeader,
+  promptKinds,
+  splitFences,
+  splitPromptText,
+  tagAssets,
+} from './writing-copilot-helpers';
 
 describe('writing copilot helpers', () => {
   it('separa prosa y bloques de codigo en orden', () => {
-    const segments = splitFences('Intro\n\n```\nPROMPT 1\n```\n\nmedio\n\n```txt\nPROMPT 2\n```\nfin');
+    const segments = splitFences(
+      'Intro\n\n```\nPROMPT 1\n```\n\nmedio\n\n```txt\nPROMPT 2\n```\nfin',
+    );
     expect(segments.map((s) => s.code)).toEqual([false, true, false, true, false]);
     expect(segments[0].content).toBe('Intro');
     expect(segments[1].content).toBe('PROMPT 1');
@@ -72,5 +81,48 @@ describe('writing copilot assets', () => {
     expect(kinds.get('@bar.jpg')).toBe('location');
     expect(kinds.get('@calle.mp4')).toBe('video');
     expect(kinds.get('@track.mp3')).toBe('audio');
+  });
+
+  it('usa la actuaci\u00f3n como t\u00edtulo del prompt', () => {
+    const block = [
+      'PROMPT 01 de 10 | 4 s | MEDIUM SHOT TO CLOSE-UP',
+      'BLOQUE DE CONTINUIDAD: porche de la casa.',
+      'Actuaci\u00f3n: Objetivo: encender la vela. @Mam\u00e1 sostiene la llama con la mano.',
+    ].join('\n');
+    const header = parsePromptHeader(block, 1);
+    expect(header.number).toBe(1);
+    expect(header.title).toBe('ENCENDER LA VELA');
+  });
+
+  it('traduce la actuaci\u00f3n en ingl\u00e9s', () => {
+    const block = [
+      'PROMPT 02 de 10 | 4 s | MACRO INSERT',
+      'Acting: Objective: to shelter the flame. @Pap\u00e1 shields the candle.',
+    ].join('\n');
+    expect(parsePromptHeader(block, 2).title).toBe('TO SHELTER THE FLAME');
+  });
+
+  it('prioriza la l\u00ednea T\u00cdTULO del skill', () => {
+    const block = [
+      'PROMPT 03 de 10 | 4 s | MACRO INSERT',
+      'T\u00cdTULO: La ni\u00f1a enciende la vela',
+      'Actuaci\u00f3n: enciende la vela.',
+    ].join('\n');
+    expect(parsePromptHeader(block, 3).title).toBe('LA NI\u00d1A ENCIENDE LA VELA');
+  });
+
+  it('parte el prompt final por encabezados PROMPT', () => {
+    const text = [
+      'PROMPT 01 de 02 | 4 s | MEDIUM SHOT',
+      'Actuaci\u00f3n: enciende la vela.',
+      '',
+      'PROMPT 02 de 02 | 4 s | MACRO INSERT',
+      'Acting: to blow the candle.',
+    ].join('\n');
+    const blocks = splitPromptText(text);
+    expect(blocks).toHaveLength(2);
+    expect(blocks[0].number).toBe(1);
+    expect(blocks[0].title).toBe('ENCIENDE LA VELA');
+    expect(blocks[1].title).toBe('TO BLOW THE CANDLE');
   });
 });

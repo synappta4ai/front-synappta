@@ -267,7 +267,14 @@ let-option>`.
   aunque el archivo esté bien: matar el listener (:4200) y relanzar.
 - **Tooltips**: PrimeNG `Tooltip` importado como `Tooltip` desde
   `primeng/tooltip`; el fade-in usa rAF (en el panel preview puede quedarse
-  en opacity 0 — artefacto del entorno, no un bug).
+  en opacity 0 — artefacto del entorno, no un bug). Además existe un tooltip
+  global de botones (`ButtonHintService`, montado en `App`): al hover/focus
+  muestra `data-hint` del botón (o de un ancestro) y, si no hay, cae a
+  `aria-label`/`title`/texto visible. No lo inicialices por componente: se
+  instancia una sola vez en el root. Para una explicación propia usá
+  `[attr.data-hint]="'MODULO.CLAVE' | translate"`; se omite solo si el
+  elemento ya muestra un `pTooltip` de PrimeNG. `data-no-hint` desactiva el
+  tooltip en un subárbol.
 - **Login E2E**: `POST /api/v1/auth/login-tenant` `{username, password,
 tenant_id: 1}` con credenciales de `.env.e2e`. El password contiene un
   en-dash U+2013: curl desde terminal lo rompe — usar Node/fetch (en

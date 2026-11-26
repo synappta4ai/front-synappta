@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject, OnDestroy, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnDestroy,
+  signal,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -23,7 +30,11 @@ import {
   WritingCopilotTurn,
   WritingCopilotVideoType,
 } from '@modules/agency/interfaces';
-import { AgencyService, ModelCatalogService, WritingCopilotService } from '@modules/agency/services';
+import {
+  AgencyService,
+  ModelCatalogService,
+  WritingCopilotService,
+} from '@modules/agency/services';
 import { GenerationQueueService } from '@services/generation-queue.service';
 import { LibraryService } from '@modules/library/services';
 import { CameraMovementSelectComponent } from '@shared/components/camera/camera-movement-select.component';
@@ -39,8 +50,11 @@ import {
   CopilotAsset,
   CopilotAssetRole,
   FINAL_PROMPT_INSTRUCTION,
+  parsePromptHeader,
+  PromptHeader,
   promptKinds,
   splitFences,
+  splitPromptText,
   tagAssets,
   WritingSegment,
 } from './writing-copilot-helpers';
@@ -55,6 +69,7 @@ const PREFERRED_BRAIN = 'google/gemini-3.8-flash';
 interface CopilotShot {
   key: string;
   index: number;
+  title: string;
   excerpt: string;
   text: string;
 }
@@ -83,9 +98,9 @@ function excerptOf(text: string): string {
 }
 
 /**
- * VideoMachine Â· agente "Writing Copilot": convierte una idea, un guion o una
- * historia corta en prompts cinematogrÃ¡ficos (planos, cÃ¡mara, lentes, luz,
- * actuaciÃ³n, diÃ¡logo) y entrega el prompt final en inglÃ©s con los insumos
+ * VideoMachine Ã‚Â· agente "Writing Copilot": convierte una idea, un guion o una
+ * historia corta en prompts cinematogrÃƒÂ¡ficos (planos, cÃƒÂ¡mara, lentes, luz,
+ * actuaciÃƒÂ³n, diÃƒÂ¡logo) y entrega el prompt final en inglÃƒÂ©s con los insumos
  * tagueados con el sistema de colores de la app.
  */
 @Component({
@@ -129,56 +144,69 @@ export class WritingCopilotComponent implements OnDestroy {
   protected readonly copied = signal<string | null>(null);
   /** Luz elegida por toma (clave = key de CopilotShot). */
   protected readonly shotLighting = signal<Record<string, string | null>>({});
-  /** Movimientos de cámara base del video. */
+  /** Movimientos de cÃ¡mara base del video. */
   protected readonly camera = signal<string[]>([]);
-  /** Movimientos de cámara por toma (clave = key de CopilotShot). */
+  /** Movimientos de cÃ¡mara por toma (clave = key de CopilotShot). */
   protected readonly shotCamera = signal<Record<string, string[]>>({});
   private timer: ReturnType<typeof setInterval> | null = null;
 
-  // â”€â”€ Paso 1: idea + parÃ¡metros â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Paso 1: idea + parÃƒÂ¡metros Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
   protected readonly idea = signal('');
-  /** Tipo de video: define la guía de estructura que sigue el cerebro. */
+  /** Tipo de video: define la guÃ­a de estructura que sigue el cerebro. */
   protected readonly videoType = signal<WritingCopilotVideoType | null>(null);
   protected readonly brainModel = signal('');
   protected readonly outputLanguage = signal<'es' | 'en' | 'bilingual'>('es');
   protected readonly delivery = signal<Delivery>('sequence');
   protected readonly aspectRatio = signal('9:16');
   protected readonly totalDuration = signal<number | null>(null);
-  protected readonly maxClipS = signal<number | null>(null);
   protected readonly shotCount = signal<number | null>(null);
   protected readonly cutsPerShot = signal<number | null>(null);
   protected readonly fps = signal<number | null>(null);
   protected readonly look = signal('');
   protected readonly audioMode = signal<AudioMode>('auto');
   protected readonly videoModel = signal<AiModel | null>(null);
-  /** Esquema de iluminación / dirección de arte para todos los prompts. */
+  /** Esquema de iluminaciÃ³n / direcciÃ³n de arte para todos los prompts. */
   protected readonly lighting = signal<string | null>(null);
   protected readonly lookIntensity = signal<LookIntensity>('medium');
 
-  // â”€â”€ Paso 2: conversaciÃ³n + insumos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Paso 2: conversaciÃƒÂ³n + insumos Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
   protected readonly followUp = signal('');
   protected readonly assets = signal<readonly CopilotAsset[]>([]);
   protected readonly uploading = signal(false);
   /** Extrayendo el texto de un documento (PDF/DOCX/TXT/MD). */
   protected readonly extractingDoc = signal(false);
 
-  // â”€â”€ Paso 3: prompt final â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Paso 3: prompt final Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
   protected readonly finalPrompt = signal<string | null>(null);
+  /** El prompt final se estÃ¡ editando a mano. */
+  protected readonly editingFinal = signal(false);
   /** El clip ya viajo a la cola de generacion. */
   protected readonly queued = signal(false);
 
-  private readonly textModels = toSignal(this.catalog.byModality('text').pipe(catchError(() => of([] as AiModel[]))), {
-    initialValue: [] as AiModel[],
-  });
-  private readonly videoModels = toSignal(this.catalog.byModality('video').pipe(catchError(() => of([] as AiModel[]))), {
-    initialValue: [] as AiModel[],
-  });
+  private readonly textModels = toSignal(
+    this.catalog.byModality('text').pipe(catchError(() => of([] as AiModel[]))),
+    {
+      initialValue: [] as AiModel[],
+    },
+  );
+  private readonly videoModels = toSignal(
+    this.catalog.byModality('video').pipe(catchError(() => of([] as AiModel[]))),
+    {
+      initialValue: [] as AiModel[],
+    },
+  );
 
   protected readonly brainOptions = computed(() =>
-    this.textModels().map((model) => ({ label: model.display_name || model.name, value: model.name })),
+    this.textModels().map((model) => ({
+      label: model.display_name || model.name,
+      value: model.name,
+    })),
   );
   protected readonly videoOptions = computed(() =>
-    this.videoModels().map((model) => ({ label: model.display_name || model.name, value: model.name })),
+    this.videoModels().map((model) => ({
+      label: model.display_name || model.name,
+      value: model.name,
+    })),
   );
 
   protected readonly taggedAssets = computed(() => tagAssets(this.assets()));
@@ -198,7 +226,7 @@ export class WritingCopilotComponent implements OnDestroy {
     return steps.map(([labelKey, hintKey]) => {
       const hint = this.translate.instant(hintKey);
       return {
-        label: `${this.translate.instant(labelKey)}<span class="sr-only"> — ${hint}</span><span class="vm-step-tip" aria-hidden="true">${hint}</span>`,
+        label: `${this.translate.instant(labelKey)}<span class="sr-only"> â€” ${hint}</span><span class="vm-step-tip" aria-hidden="true">${hint}</span>`,
         escape: false,
       };
     });
@@ -216,9 +244,11 @@ export class WritingCopilotComponent implements OnDestroy {
     const shots: CopilotShot[] = [];
     blocks.forEach((block, blockIndex) => {
       for (const [shotIndex, part] of splitShotBlocks(block).entries()) {
+        const header = parsePromptHeader(part, shots.length + 1);
         shots.push({
           key: `${blockIndex}-${shotIndex}`,
           index: shots.length + 1,
+          title: header.title,
           excerpt: excerptOf(part),
           text: part,
         });
@@ -227,17 +257,89 @@ export class WritingCopilotComponent implements OnDestroy {
     return shots;
   });
 
-  protected readonly canSend = computed(() => !this.sending() && this.videoType() !== null && this.idea().trim().length > 0);
-  protected readonly canFollowUp = computed(() => !this.sending() && this.followUp().trim().length > 0);
+  /** Encabezado (nÃºmero + tÃ­tulo) de cada bloque de prompt del paso 2. */
+  protected readonly promptHeaders = computed<ReadonlyMap<string, PromptHeader>>(() => {
+    const headers = new Map<string, PromptHeader>();
+    let counter = 0;
+    this.turns().forEach((turn, turnIndex) => {
+      if (turn.role !== 'assistant') return;
+      splitFences(turn.content).forEach((segment, segmentIndex) => {
+        if (!segment.code) return;
+        counter += 1;
+        headers.set(`${turnIndex}-${segmentIndex}`, parsePromptHeader(segment.content, counter));
+      });
+    });
+    return headers;
+  });
+
+  /** Encabezado del prompt final, solo cuando el texto trae un nÃºmero explÃ­cito. */
+  /** Bloques del prompt final (cuando trae varios PROMPT) con su encabezado. */
+  protected readonly finalBlocks = computed(() => {
+    const text = this.finalPrompt();
+    if (!text) return [];
+    return splitPromptText(text).map((block) => ({
+      ...block,
+      segments: highlightPrompt(block.text, [], promptKinds(this.taggedAssets())),
+    }));
+  });
+
+  protected readonly finalHeader = computed<PromptHeader | null>(() => {
+    const text = this.finalPrompt();
+    if (!text) return null;
+    const header = parsePromptHeader(text, 1);
+    return header.explicit ? header : null;
+  });
+
+  protected readonly canSend = computed(
+    () => !this.sending() && this.videoType() !== null && this.idea().trim().length > 0,
+  );
+  protected readonly canFollowUp = computed(
+    () => !this.sending() && this.followUp().trim().length > 0,
+  );
   protected readonly canTranslate = computed(() => !this.sending() && this.turns().length > 0);
 
-  /** Resumen de tiempos: tomas × duración por toma × total. */
+  /** Resumen de tiempos: tomas Ã— duraciÃ³n por toma Ã— total. */
+  protected readonly perShotS = computed(() => {
+    const total = this.totalDuration();
+    const shots = this.shotCount();
+    if (!total || !shots || shots <= 0) return null;
+    return Math.round((total / shots) * 10) / 10;
+  });
+
+  protected readonly cutIntervalS = computed(() => {
+    const perShot = this.perShotS();
+    const cuts = this.cutsPerShot();
+    if (!perShot || !cuts || cuts <= 0) return null;
+    return Math.round((perShot / cuts) * 10) / 10;
+  });
+
+  protected readonly timingWarning = computed(() => {
+    this.translate.currentLang();
+    const perShot = this.perShotS();
+    if (perShot === null) return '';
+    if (perShot < 4) {
+      return this.translate.instant('VIDEOMACHINE.WRITE_TIMING_TOO_SHORT', { seconds: perShot });
+    }
+    if (perShot > 30) {
+      return this.translate.instant('VIDEOMACHINE.WRITE_TIMING_TOO_LONG', { seconds: perShot });
+    }
+    return '';
+  });
+
+  protected readonly cutsSummary = computed(() => {
+    this.translate.currentLang();
+    const cuts = this.cutsPerShot();
+    const interval = this.cutIntervalS();
+    if (!cuts || !interval) return '';
+    return this.translate.instant('VIDEOMACHINE.WRITE_CUTS_SUMMARY', { cuts, interval });
+  });
+
   protected readonly timingSummary = computed(() => {
     this.translate.currentLang();
     const total = this.totalDuration();
     const shots = this.shotCount();
-    if (!total || !shots || shots <= 0) return '';
-    const perShot = Math.round((total / shots) * 10) / 10;
+    const perShot = this.perShotS();
+    if (!total || !shots || !perShot) return '';
     return this.translate.instant('VIDEOMACHINE.WRITE_TIMING_SUMMARY', { shots, perShot, total });
   });
 
@@ -268,42 +370,79 @@ export class WritingCopilotComponent implements OnDestroy {
     return [
       { label: this.translate.instant('VIDEOMACHINE.WRITE_LANGUAGE_ES'), value: 'es' as const },
       { label: this.translate.instant('VIDEOMACHINE.WRITE_LANGUAGE_EN'), value: 'en' as const },
-      { label: this.translate.instant('VIDEOMACHINE.WRITE_LANGUAGE_BILINGUAL'), value: 'bilingual' as const },
+      {
+        label: this.translate.instant('VIDEOMACHINE.WRITE_LANGUAGE_BILINGUAL'),
+        value: 'bilingual' as const,
+      },
     ];
   });
 
   protected readonly deliveryOptions = computed(() => {
     this.translate.currentLang();
     return [
-      { label: this.translate.instant('VIDEOMACHINE.WRITE_DELIVERY_SEQUENCE'), value: 'sequence' as Delivery },
-      { label: this.translate.instant('VIDEOMACHINE.WRITE_DELIVERY_SHOTS'), value: 'shot_pack' as Delivery },
-      { label: this.translate.instant('VIDEOMACHINE.WRITE_DELIVERY_AUTO'), value: 'auto' as Delivery },
+      {
+        label: this.translate.instant('VIDEOMACHINE.WRITE_DELIVERY_SEQUENCE'),
+        value: 'sequence' as Delivery,
+      },
+      {
+        label: this.translate.instant('VIDEOMACHINE.WRITE_DELIVERY_SHOTS'),
+        value: 'shot_pack' as Delivery,
+      },
+      {
+        label: this.translate.instant('VIDEOMACHINE.WRITE_DELIVERY_AUTO'),
+        value: 'auto' as Delivery,
+      },
     ];
   });
 
   protected readonly audioOptions = computed(() => {
     this.translate.currentLang();
     return [
-      { label: this.translate.instant('VIDEOMACHINE.WRITE_AUDIO_AUTO'), value: 'auto' as AudioMode },
-      { label: this.translate.instant('VIDEOMACHINE.WRITE_AUDIO_DIALOGUE'), value: 'with_dialogue' as AudioMode },
-      { label: this.translate.instant('VIDEOMACHINE.WRITE_AUDIO_DIEGETIC'), value: 'diegetic_only' as AudioMode },
-      { label: this.translate.instant('VIDEOMACHINE.WRITE_AUDIO_MUSIC'), value: 'with_music_notes' as AudioMode },
-      { label: this.translate.instant('VIDEOMACHINE.WRITE_AUDIO_SILENT'), value: 'silent' as AudioMode },
+      {
+        label: this.translate.instant('VIDEOMACHINE.WRITE_AUDIO_AUTO'),
+        value: 'auto' as AudioMode,
+      },
+      {
+        label: this.translate.instant('VIDEOMACHINE.WRITE_AUDIO_DIALOGUE'),
+        value: 'with_dialogue' as AudioMode,
+      },
+      {
+        label: this.translate.instant('VIDEOMACHINE.WRITE_AUDIO_DIEGETIC'),
+        value: 'diegetic_only' as AudioMode,
+      },
+      {
+        label: this.translate.instant('VIDEOMACHINE.WRITE_AUDIO_MUSIC'),
+        value: 'with_music_notes' as AudioMode,
+      },
+      {
+        label: this.translate.instant('VIDEOMACHINE.WRITE_AUDIO_SILENT'),
+        value: 'silent' as AudioMode,
+      },
     ];
   });
 
   protected readonly roleOptions = computed(() => {
     this.translate.currentLang();
     return [
-      { label: this.translate.instant('VIDEOMACHINE.WRITE_ROLE_PERSON'), value: 'person' as CopilotAssetRole },
-      { label: this.translate.instant('VIDEOMACHINE.WRITE_ROLE_PRODUCT'), value: 'product' as CopilotAssetRole },
-      { label: this.translate.instant('VIDEOMACHINE.WRITE_ROLE_ENVIRONMENT'), value: 'environment' as CopilotAssetRole },
+      {
+        label: this.translate.instant('VIDEOMACHINE.WRITE_ROLE_PERSON'),
+        value: 'person' as CopilotAssetRole,
+      },
+      {
+        label: this.translate.instant('VIDEOMACHINE.WRITE_ROLE_PRODUCT'),
+        value: 'product' as CopilotAssetRole,
+      },
+      {
+        label: this.translate.instant('VIDEOMACHINE.WRITE_ROLE_ENVIRONMENT'),
+        value: 'environment' as CopilotAssetRole,
+      },
     ];
   });
 
-  protected readonly aspectOptions = ['1:1', '3:4', '9:16', '4:3', '16:9', '21:9', '4:5'].map(
-    (ratio) => ({ label: ratio, value: ratio }),
-  );
+  protected readonly aspectOptions = ['9:16', '16:9', '4:3', '1:1', '3:4', '21:9'].map((ratio) => ({
+    label: ratio,
+    value: ratio,
+  }));
 
   protected readonly quickActions = computed(() => {
     this.translate.currentLang();
@@ -324,8 +463,8 @@ export class WritingCopilotComponent implements OnDestroy {
   });
 
   constructor() {
-    // Modelo por defecto: el mejor cerebro de texto del catÃ¡logo para este
-    // trabajo; si no estÃ¡, se deja el default del back.
+    // Modelo por defecto: el mejor cerebro de texto del catÃƒÂ¡logo para este
+    // trabajo; si no estÃƒÂ¡, se deja el default del back.
     this.catalog
       .byModality('text')
       .pipe(catchError(() => of([] as AiModel[])))
@@ -416,8 +555,8 @@ export class WritingCopilotComponent implements OnDestroy {
           { role: 'user', content: message },
           { role: 'assistant', content: response.text },
         ]);
-        this.idea.set('');
         this.finalPrompt.set(null);
+        this.editingFinal.set(false);
         this.shotLighting.set({});
         this.shotCamera.set({});
         this.step.set(2);
@@ -445,16 +584,21 @@ export class WritingCopilotComponent implements OnDestroy {
         finalize(() => this.finish()),
       )
       .subscribe((response) => {
-        this.turns.update((list) => [...list, { role: 'user', content: text }, { role: 'assistant', content: response.text }]);
+        this.turns.update((list) => [
+          ...list,
+          { role: 'user', content: text },
+          { role: 'assistant', content: response.text },
+        ]);
         this.followUp.set('');
         this.finalPrompt.set(null);
+        this.editingFinal.set(false);
         this.shotLighting.set({});
         this.shotCamera.set({});
         this.copied.set(null);
       });
   }
 
-  /** Paso 3: dirección de arte por toma. */
+  /** Paso 3: direcciÃ³n de arte por toma. */
   protected goToArtDirection(): void {
     if (this.turns().length === 0) return;
     const currentLighting = { ...this.shotLighting() };
@@ -482,13 +626,13 @@ export class WritingCopilotComponent implements OnDestroy {
       .map((shot) => {
         const id = this.shotLighting()[shot.key] ?? this.lighting();
         const template = id ? LIGHTING_TEMPLATES.find((item) => item.id === id) : undefined;
-        return template ? `Toma ${shot.index} — ${template.name}\n${template.prompt}` : '';
+        return template ? `Toma ${shot.index} â€” ${template.name}\n${template.prompt}` : '';
       })
       .filter(Boolean)
       .join('\n\n');
   }
 
-  /** Bloque de movimientos de cámara por toma, en el orden elegido. */
+  /** Bloque de movimientos de cÃ¡mara por toma, en el orden elegido. */
   private cameraPerShot(): string {
     return this.shots()
       .map((shot) => {
@@ -499,7 +643,7 @@ export class WritingCopilotComponent implements OnDestroy {
       .join('\n\n');
   }
 
-  /** Paso 4: prompt final en inglés con los insumos y la luz de cada toma. */
+  /** Paso 4: prompt final en inglÃ©s con los insumos y la luz de cada toma. */
   protected toFinalPrompt(): void {
     if (!this.canTranslate()) return;
     this.error.set(null);
@@ -510,11 +654,9 @@ export class WritingCopilotComponent implements OnDestroy {
       output_language: 'en',
       response_mode: 'prompt_only',
     };
-    const perShot = [this.lightingPerShot(), this.cameraPerShot()]
-      .filter(Boolean)
-      .join('\n\n');
+    const perShot = [this.lightingPerShot(), this.cameraPerShot()].filter(Boolean).join('\n\n');
     const message = perShot
-      ? `${FINAL_PROMPT_INSTRUCTION}\n\nDIRECCIÓN POR TOMA (aplicá la luz y los movimientos a cada plano; no uses una sola luz para todo el video):\n${perShot}`
+      ? `${FINAL_PROMPT_INSTRUCTION}\n\nDIRECCIÃ“N POR TOMA (aplicÃ¡ la luz y los movimientos a cada plano; no uses una sola luz para todo el video):\n${perShot}`
       : FINAL_PROMPT_INSTRUCTION;
     const references = buildReferences(this.taggedAssets());
     this.copilot
@@ -535,6 +677,7 @@ export class WritingCopilotComponent implements OnDestroy {
       )
       .subscribe((response) => {
         this.finalPrompt.set(response.text.trim());
+        this.editingFinal.set(false);
         this.queued.set(false);
         this.copied.set(null);
         this.step.set(4);
@@ -548,6 +691,7 @@ export class WritingCopilotComponent implements OnDestroy {
     this.followUp.set('');
     this.assets.set([]);
     this.finalPrompt.set(null);
+    this.editingFinal.set(false);
     this.shotLighting.set({});
     this.shotCamera.set({});
     this.camera.set([]);
@@ -561,8 +705,41 @@ export class WritingCopilotComponent implements OnDestroy {
     this.step.set(step);
   }
 
+  /** NavegaciÃ³n por el indicador de pasos: solo deja ir a pasos ya generados. */
+  protected onStepSelect(index: number): void {
+    this.goToStep((index + 1) as Step);
+  }
+
   protected segments(content: string): readonly WritingSegment[] {
     return splitFences(content);
+  }
+
+  /**
+   * Edita un segmento de una respuesta sin volver a generar: se reescribe el
+   * turno con los bloques delimitados y las tomas derivadas se recalculan.
+   */
+  protected updateSegment(turnIndex: number, segmentIndex: number, value: string): void {
+    this.turns.update((turns) =>
+      turns.map((turn, index) => {
+        if (index !== turnIndex) return turn;
+        const rebuilt = splitFences(turn.content)
+          .map((segment, position) =>
+            position === segmentIndex ? { code: segment.code, content: value } : segment,
+          )
+          .filter((segment) => segment.content.trim() !== '')
+          .map((segment) => (segment.code ? '```\n' + segment.content + '\n```' : segment.content))
+          .join('\n\n');
+        return { ...turn, content: rebuilt };
+      }),
+    );
+  }
+
+  protected updateFinalPrompt(value: string): void {
+    this.finalPrompt.set(value);
+  }
+
+  protected toggleFinalEdit(): void {
+    this.editingFinal.update((editing) => !editing);
   }
 
   protected copy(text: string, key: string): void {
@@ -575,7 +752,7 @@ export class WritingCopilotComponent implements OnDestroy {
     });
   }
 
-  // â”€â”€ Insumos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Insumos Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
   protected async onAssetsPicked(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
@@ -620,17 +797,19 @@ export class WritingCopilotComponent implements OnDestroy {
   }
 
   protected setAssetRole(id: string, role: CopilotAssetRole): void {
-    this.assets.update((list) => list.map((asset) => (asset.id === id ? { ...asset, role } : asset)));
+    this.assets.update((list) =>
+      list.map((asset) => (asset.id === id ? { ...asset, role } : asset)),
+    );
     const asset = this.assets().find((item) => item.id === id);
     if (asset) void this.archiveInLibrary(asset);
   }
 
   /**
-   * Scroll de la página al abrir el selector de categoría. PrimeNG enfoca el
+   * Scroll de la pÃ¡gina al abrir el selector de categorÃ­a. PrimeNG enfoca el
    * input del p-select sin `preventScroll` al cerrar el overlay, y el navegador
-   * arrastra la página al principio: con varios insumos obligaba a bajar otra
-   * vez después de elegir cada categoría. Guardamos el scroll al abrir y lo
-   * devolvemos al cerrar, sólo si el cierre vino de elegir una opción.
+   * arrastra la pÃ¡gina al principio: con varios insumos obligaba a bajar otra
+   * vez despuÃ©s de elegir cada categorÃ­a. Guardamos el scroll al abrir y lo
+   * devolvemos al cerrar, sÃ³lo si el cierre vino de elegir una opciÃ³n.
    */
   private scrollYBeforeRoleSelect: number | null = null;
   private roleSelected = false;
@@ -668,13 +847,14 @@ export class WritingCopilotComponent implements OnDestroy {
   }
 
   /**
-   * Archiva la imagen en la biblioteca bajo la categoría elegida (personaje,
-   * locación o prop) para que aparezca en Recursos y el Estudio la mencione
+   * Archiva la imagen en la biblioteca bajo la categorÃ­a elegida (personaje,
+   * locaciÃ³n o prop) para que aparezca en Recursos y el Estudio la mencione
    * por su nombre de archivo.
    */
   private async archiveInLibrary(asset: CopilotAsset): Promise<void> {
     if (asset.kind !== 'image') return;
-    const type = asset.role === 'person' ? 'character' : asset.role === 'environment' ? 'location' : 'prop';
+    const type =
+      asset.role === 'person' ? 'character' : asset.role === 'environment' ? 'location' : 'prop';
     const stem = asset.name.replace(/\.[^.]+$/, '') || asset.name;
     try {
       if (asset.ingredientId) {
@@ -685,7 +865,9 @@ export class WritingCopilotComponent implements OnDestroy {
       if (!ingredient?.id) return;
       await firstValueFrom(this.library.addIngredientFile(ingredient.id, { file_id: asset.id }));
       this.assets.update((list) =>
-        list.map((item) => (item.id === asset.id ? { ...item, ingredientId: ingredient.id } : item)),
+        list.map((item) =>
+          item.id === asset.id ? { ...item, ingredientId: ingredient.id } : item,
+        ),
       );
     } catch {
       // La imagen ya quedo en la biblioteca; el ingrediente es una mejora.
@@ -704,7 +886,11 @@ export class WritingCopilotComponent implements OnDestroy {
   protected assetTone(asset: CopilotAsset): string {
     if (asset.kind === 'video') return 'video';
     if (asset.kind === 'audio') return 'audio';
-    return asset.role === 'person' ? 'character' : asset.role === 'environment' ? 'location' : 'product';
+    return asset.role === 'person'
+      ? 'character'
+      : asset.role === 'environment'
+        ? 'location'
+        : 'product';
   }
 
   protected assetKindLabel(kind: CopilotAsset['kind']): string {
@@ -740,10 +926,16 @@ export class WritingCopilotComponent implements OnDestroy {
     if (!payload || !model) return;
     this.queue.add([
       {
-        label: this.translate.instant('VIDEOMACHINE.WRITE_QUEUE_LABEL', { model: model.display_name || model.name }),
+        label: this.translate.instant('VIDEOMACHINE.WRITE_QUEUE_LABEL', {
+          model: model.display_name || model.name,
+        }),
         source: 'writing_copilot',
         prompt: payload.prompt,
-        assets: this.taggedAssets().map((asset) => ({ id: asset.id, name: asset.name, kind: asset.kind })),
+        assets: this.taggedAssets().map((asset) => ({
+          id: asset.id,
+          name: asset.name,
+          kind: asset.kind,
+        })),
         model: model.name,
         modelDisplayName: model.display_name || model.name,
         ratio: payload.ratio,
@@ -755,15 +947,29 @@ export class WritingCopilotComponent implements OnDestroy {
     this.queued.set(true);
   }
 
-  private studioPayload(): { prompt: string; model: string; ratio: string; duration?: number; resolution: string; generateAudio: boolean; content: unknown[] } | null {
+  private studioPayload(): {
+    prompt: string;
+    model: string;
+    ratio: string;
+    duration?: number;
+    resolution: string;
+    generateAudio: boolean;
+    content: unknown[];
+  } | null {
     const prompt = this.finalPrompt();
     const model = this.videoModel();
     if (!prompt || !model) return null;
     const assets = this.taggedAssets();
     const content = [
-      ...assets.filter((a) => a.kind === 'image').map((a) => ({ type: 'image' as const, id: a.id, name: a.name })),
-      ...assets.filter((a) => a.kind === 'audio').map((a) => ({ type: 'audio' as const, id: a.id, name: a.name })),
-      ...assets.filter((a) => a.kind === 'video').map((a) => ({ type: 'video' as const, id: a.id, name: a.name })),
+      ...assets
+        .filter((a) => a.kind === 'image')
+        .map((a) => ({ type: 'image' as const, id: a.id, name: a.name })),
+      ...assets
+        .filter((a) => a.kind === 'audio')
+        .map((a) => ({ type: 'audio' as const, id: a.id, name: a.name })),
+      ...assets
+        .filter((a) => a.kind === 'video')
+        .map((a) => ({ type: 'video' as const, id: a.id, name: a.name })),
       { type: 'text' as const, text: prompt },
     ];
     return {
@@ -777,19 +983,19 @@ export class WritingCopilotComponent implements OnDestroy {
     };
   }
 
-  // â”€â”€ Internos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Internos Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
   private history(): WritingCopilotHistoryMessage[] {
     return this.turns().map((turn) => ({ role: turn.role, content: turn.content }));
   }
 
-  /** La guía de estructura viaja en cada turno para que el cerebro no la pierda. */
+  /** La guÃ­a de estructura viaja en cada turno para que el cerebro no la pierda. */
   private videoTypeParams(): WritingCopilotParams | undefined {
     const videoType = this.videoType();
     return videoType ? { video_type: videoType } : undefined;
   }
 
-  /** Solo envÃ­a los parÃ¡metros que el usuario informÃ³ (nombres del skill). */
+  /** Solo envÃƒÂ­a los parÃƒÂ¡metros que el usuario informÃƒÂ³ (nombres del skill). */
   private buildParams(): WritingCopilotParams {
     const params: WritingCopilotParams = {};
     const videoType = this.videoType();
@@ -806,7 +1012,7 @@ export class WritingCopilotComponent implements OnDestroy {
     if (this.aspectRatio()) params.aspect_ratio = this.aspectRatio();
     const total = this.totalDuration();
     if (typeof total === 'number' && total > 0) params.total_duration_s = total;
-    const clip = this.maxClipS();
+    const clip = this.perShotS();
     if (typeof clip === 'number' && clip > 0) params.max_clip_s = clip;
     const shots = this.shotCount();
     if (typeof shots === 'number' && shots > 0) params.shot_count = shots;

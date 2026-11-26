@@ -107,16 +107,19 @@ export class LightingSelectComponent {
       {
         label: this.translate.instant('LIGHTING.INTENSITY_SUBTLE'),
         short: this.translate.instant('LIGHTING.INTENSITY_SUBTLE_SHORT'),
+        hint: this.translate.instant('LIGHTING.INTENSITY_SUBTLE_HINT'),
         value: 'subtle' as LookIntensity,
       },
       {
         label: this.translate.instant('LIGHTING.INTENSITY_MEDIUM'),
         short: this.translate.instant('LIGHTING.INTENSITY_MEDIUM_SHORT'),
+        hint: this.translate.instant('LIGHTING.INTENSITY_MEDIUM_HINT'),
         value: 'medium' as LookIntensity,
       },
       {
         label: this.translate.instant('LIGHTING.INTENSITY_STRONG'),
         short: this.translate.instant('LIGHTING.INTENSITY_STRONG_SHORT'),
+        hint: this.translate.instant('LIGHTING.INTENSITY_STRONG_HINT'),
         value: 'strong' as LookIntensity,
       },
     ];

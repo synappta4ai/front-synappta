@@ -99,4 +99,70 @@ export class GpuApiRepository {
       {},
     );
   }
+
+  /**
+   * Cancela la descarga en una GPU emparejada (modo bridge): el back saca el
+   * pedido de la cola si todavía no arrancó y encola la cancelación; el agente
+   * aborta la transferencia en el próximo heartbeat (back: workerbridge).
+   */
+  requestBridgeDownloadCancel(
+    workerId: string,
+    key: string,
+  ): Observable<ApiResponse<{ worker_id: string; model_key: string }>> {
+    const encoded = encodeURIComponent(key);
+    return this.http.delete<ApiResponse<{ worker_id: string; model_key: string }>>(
+      `${this.apiUrl}/gpu/workers/${workerId}/models/${encoded}/download`,
+    );
+  }
+
+  /**
+   * Actualización de una GPU emparejada: el back encola el pedido con el .zip
+   * y el agente lo baja, se reinicia y vuelve con la versión nueva (back:
+   * workerbridge).
+   */
+  requestWorkerUpdate(
+    workerId: string,
+    url?: string,
+    sha256?: string,
+  ): Observable<ApiResponse<{ worker_id: string; status: string }>> {
+    return this.http.post<ApiResponse<{ worker_id: string; status: string }>>(
+      `${this.apiUrl}/gpu/workers/${workerId}/update`,
+      { url: url ?? '', sha256: sha256 ?? '' },
+    );
+  }
+
+  /**
+   * SHA-256 del payload del worker que sirve este front. Lo escribe
+   * `inference-worker/scripts/build_installer.py` junto al .zip, así el hash y
+   * el archivo siempre salen del mismo build.
+   */
+  workerPayloadSha256(): Observable<string> {
+    return this.http.get('assets/worker/synapta-worker.sha256', { responseType: 'text' });
+  }
+
+  /**
+   * Administra una GPU emparejada sin desemparejarla: nombre y etiqueta
+   * editables y pausa (drenaje). El back aplica sólo los campos presentes
+   * (back: workerbridge).
+   */
+  updateBridgeWorker(
+    workerId: string,
+    patch: { name?: string; label?: string; paused?: boolean },
+  ): Observable<ApiResponse<{ worker_id: string }>> {
+    return this.http.patch<ApiResponse<{ worker_id: string }>>(
+      `${this.apiUrl}/gpu/workers/${workerId}`,
+      patch,
+    );
+  }
+
+  /**
+   * Borrado en una GPU emparejada (modo bridge): el back lo encola y el agente
+   * borra los pesos en el próximo heartbeat (back: workerbridge).
+   */
+  requestBridgeDeletion(workerId: string, key: string): Observable<ApiResponse<{ worker_id: string; model_key: string }>> {
+    const encoded = encodeURIComponent(key);
+    return this.http.delete<ApiResponse<{ worker_id: string; model_key: string }>>(
+      `${this.apiUrl}/gpu/workers/${workerId}/models/${encoded}`,
+    );
+  }
 }

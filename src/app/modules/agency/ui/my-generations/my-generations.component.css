@@ -375,6 +375,14 @@
   top: 8px;
 }
 
+/* Por dónde salió la generación: debajo del estado, sin tapar la miniatura. */
+.gen-card__dispatch {
+  position: absolute;
+  left: 8px;
+  top: 34px;
+  cursor: help;
+}
+
 .gen-card__placeholder {
   display: flex;
   flex-direction: column;

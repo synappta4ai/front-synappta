@@ -343,7 +343,6 @@
         [tableStyle]="{ 'min-width': '52rem' }"
         [rowHover]="true"
         [scrollable]="true"
-        scrollHeight="flex"
         styleClass="p-datatable-sm mt-4"
       >
         <ng-template #header>
@@ -466,24 +465,58 @@
               @if (bridgeMode()) {
                 <div class="flex flex-wrap justify-end gap-2">
                   @if (model.downloaded?.downloading) {
-                    <span class="text-sm text-ink-muted-on-dark">
-                      {{ 'GPU.MODELS.DOWNLOADING' | translate }}…
-                    </span>
-                  } @else if (!model.downloaded?.available && model.worker_id) {
+                    <!-- Cancelar frena la descarga en la otra máquina: el back
+                         saca el pedido de la cola y el agente aborta en el
+                         próximo heartbeat. -->
                     <p-button
                       size="small"
-                      icon="md md-download"
-                      [label]="'GPU.MODELS.DOWNLOAD' | translate"
-                      [loading]="isModelBusy(model, 'download')"
-                      [disabled]="modelBusy() !== null || diskFull()"
-                      (onClick)="bridgeDownload(model)"
+                      severity="secondary"
+                      icon="md md-cancel"
+                      [label]="'GPU.MODELS.CANCEL' | translate"
+                      [loading]="isModelBusy(model, 'cancel')"
+                      [disabled]="modelBusy() !== null"
+                      (onClick)="bridgeCancelDownload(model)"
                       pTooltip="{{
-                        'GPU.MODELS.DOWNLOAD_BRIDGE_TOOLTIP'
+                        'GPU.MODELS.CANCEL_BRIDGE_TOOLTIP'
                           | translate: { worker: model.worker_name }
                       }}"
                     />
                   } @else {
-                    <span class="text-sm text-ink-muted-on-dark">—</span>
+                    @if (!model.downloaded?.available && model.worker_id) {
+                      <p-button
+                        size="small"
+                        icon="md md-download"
+                        [label]="'GPU.MODELS.DOWNLOAD' | translate"
+                        [loading]="isModelBusy(model, 'download')"
+                        [disabled]="modelBusy() !== null || diskFull()"
+                        (onClick)="bridgeDownload(model)"
+                        pTooltip="{{
+                          'GPU.MODELS.DOWNLOAD_BRIDGE_TOOLTIP'
+                            | translate: { worker: model.worker_name }
+                        }}"
+                      />
+                    }
+                    <!-- Borrar libera disco en la máquina emparejada: el back
+                         encola el pedido y el agente lo ejecuta en el heartbeat. -->
+                    @if (canDelete(model) && model.worker_id) {
+                      <p-button
+                        size="small"
+                        severity="danger"
+                        [outlined]="true"
+                        icon="md md-delete"
+                        [label]="'GPU.MODELS.DELETE' | translate"
+                        [loading]="isModelBusy(model, 'delete')"
+                        [disabled]="modelBusy() !== null"
+                        (onClick)="bridgeDelete(model)"
+                        pTooltip="{{
+                          'GPU.MODELS.DELETE_BRIDGE_TOOLTIP'
+                            | translate: { worker: model.worker_name }
+                        }}"
+                      />
+                    }
+                    @if (!(!model.downloaded?.available && model.worker_id) && !canDelete(model)) {
+                      <span class="text-sm text-ink-muted-on-dark">—</span>
+                    }
                   }
                 </div>
               } @else {
@@ -547,8 +580,29 @@
               <div>
                 <h2 class="flex flex-wrap items-center gap-2 font-medium">
                   {{ worker.name }}
+                  @if (worker.label) {
+                    <span class="text-xs font-normal text-ink-muted-on-dark">{{
+                      worker.label
+                    }}</span>
+                  }
+                  @if (worker.paused) {
+                    <p-tag
+                      [value]="'GPU.PAUSED' | translate"
+                      severity="warn"
+                      icon="md md-pause_circle"
+                      pTooltip="{{ 'GPU.PAUSED_TOOLTIP' | translate }}"
+                    />
+                  }
                   @if (worker.version) {
                     <p-tag [value]="'v' + worker.version" severity="info" />
+                  }
+                  @if (manualUpdateOnly(worker)) {
+                    <p-tag
+                      [value]="'GPU.MANUAL_UPDATE' | translate"
+                      severity="warn"
+                      icon="md md-build"
+                      pTooltip="{{ updateTooltip(worker) }}"
+                    />
                   }
                 </h2>
                 <p class="text-sm text-ink-muted-on-dark">
@@ -585,7 +639,63 @@
               <dd>{{ worker.last_heartbeat | date: 'shortTime' }}</dd>
             </dl>
 
-            <div class="mt-auto flex justify-end">
+            @if (updateState(worker) === 'failed') {
+              <p class="mt-2 text-xs text-red-600 dark:text-red-400">
+                {{ 'GPU.UPDATE_FAILED_REASON' | translate: { error: updateFailureReason(worker) } }}
+              </p>
+            }
+
+            <div class="mt-auto flex flex-wrap items-center justify-end gap-2">
+              <p-button
+                size="small"
+                [outlined]="true"
+                [text]="true"
+                icon="md md-edit"
+                [label]="'GPU.EDIT' | translate"
+                pTooltip="{{ 'GPU.EDIT_TOOLTIP' | translate }}"
+                (onClick)="openEdit(worker)"
+              />
+              <p-button
+                size="small"
+                [outlined]="true"
+                [label]="(worker.paused ? 'GPU.RESUME' : 'GPU.PAUSE') | translate"
+                [icon]="worker.paused ? 'md md-play_arrow' : 'md md-pause'"
+                [loading]="pauseBusy() === worker.id"
+                [disabled]="pauseBusy() !== null && pauseBusy() !== worker.id"
+                pTooltip="{{
+                  (worker.paused ? 'GPU.RESUME_TOOLTIP' : 'GPU.PAUSE_TOOLTIP') | translate
+                }}"
+                (onClick)="togglePause(worker)"
+              />
+              @if (updateState(worker) === 'failed') {
+                <p-tag
+                  [value]="'GPU.UPDATE_FAILED' | translate"
+                  severity="danger"
+                  icon="md md-error"
+                  pTooltip="{{
+                    'GPU.UPDATE_FAILED_TOOLTIP' | translate: { error: updateFailureReason(worker) }
+                  }}"
+                />
+              } @else if (updateState(worker) === 'pending') {
+                <p-tag [value]="'GPU.UPDATING' | translate" severity="warn" icon="md md-sync" />
+              }
+              <p-button
+                size="small"
+                [outlined]="true"
+                [label]="
+                  (updateState(worker) === 'failed' ? 'GPU.UPDATE_RETRY' : 'GPU.UPDATE_ACTION')
+                    | translate
+                "
+                icon="md md-system_update"
+                [disabled]="
+                  updateState(worker) === 'pending' ||
+                  updateBusy() === worker.id ||
+                  (updateState(worker) === 'idle' && !worker.online) ||
+                  manualUpdateOnly(worker)
+                "
+                pTooltip="{{ updateTooltip(worker) }}"
+                (onClick)="bridgeUpdate(worker)"
+              />
               <p-button
                 size="small"
                 severity="danger"
@@ -602,6 +712,52 @@
     </section>
   }
 </div>
+
+<!-- ─── Diálogo de nombre y etiqueta ──────────────────────── -->
+<p-dialog
+  [visible]="!!editingWorker()"
+  [header]="'GPU.EDIT_TITLE' | translate"
+  [modal]="true"
+  [closable]="true"
+  (onHide)="closeEdit()"
+  [style]="{ width: 'min(420px, 92vw)' }"
+>
+  <div class="flex flex-col gap-3">
+    <label class="flex flex-col gap-1 text-sm">
+      <span>{{ 'GPU.EDIT_NAME' | translate }}</span>
+      <input
+        class="rounded-md border border-surface-300 bg-surface-0 px-3 py-2 text-sm text-surface-900 outline-none focus:border-primary dark:border-surface-700 dark:bg-surface-900 dark:text-surface-0"
+        [value]="editName()"
+        (input)="editName.set($any($event.target).value)"
+        maxlength="127"
+      />
+    </label>
+    <label class="flex flex-col gap-1 text-sm">
+      <span>{{ 'GPU.EDIT_LABEL' | translate }}</span>
+      <input
+        class="rounded-md border border-surface-300 bg-surface-0 px-3 py-2 text-sm text-surface-900 outline-none focus:border-primary dark:border-surface-700 dark:bg-surface-900 dark:text-surface-0"
+        [value]="editLabel()"
+        (input)="editLabel.set($any($event.target).value)"
+        maxlength="63"
+      />
+    </label>
+    <p class="text-xs text-ink-muted-on-dark">{{ 'GPU.EDIT_HINT' | translate }}</p>
+  </div>
+  <div class="mt-4 flex justify-end gap-2">
+    <p-button
+      [outlined]="true"
+      severity="secondary"
+      [label]="'GPU.REVOKE_CANCEL' | translate"
+      (onClick)="closeEdit()"
+    />
+    <p-button
+      [label]="'GPU.SAVE' | translate"
+      [loading]="editSaving()"
+      [disabled]="!editName().trim()"
+      (onClick)="saveEdit()"
+    />
+  </div>
+</p-dialog>
 
 <!-- ─── Diálogo de emparejamiento ──────────────────────────── -->
 <p-dialog

@@ -83,4 +83,48 @@ export class GpuService {
   requestBridgeDownload(workerId: string, key: string): Observable<{ worker_id: string; model_key: string }> {
     return unwrap(this.repository.requestBridgeDownload(workerId, key));
   }
+
+  /** Pide cancelar la descarga en una GPU emparejada (modo bridge). */
+  requestBridgeDownloadCancel(
+    workerId: string,
+    key: string,
+  ): Observable<{ worker_id: string; model_key: string }> {
+    return unwrap(this.repository.requestBridgeDownloadCancel(workerId, key));
+  }
+
+  /** Encola la actualización del worker de una GPU emparejada (modo bridge). */
+  requestBridgeUpdate(
+    workerId: string,
+    url?: string,
+    sha256?: string,
+  ): Observable<{ worker_id: string; status: string }> {
+    return unwrap(this.repository.requestWorkerUpdate(workerId, url, sha256));
+  }
+
+  /**
+   * SHA-256 del .zip del worker que sirve este front. Sin este hash no se encola
+   * una actualización: el agente verifica lo que baja contra él antes de
+   * detenerse, que es justamente lo que evita quedarse sin worker.
+   */
+  async payloadSha256(): Promise<string> {
+    const raw = await firstValueFrom(this.repository.workerPayloadSha256());
+    const sha = (raw ?? '').trim().toLowerCase();
+    if (!/^[a-f0-9]{64}$/.test(sha)) {
+      throw new Error('payload sha256 unavailable');
+    }
+    return sha;
+  }
+
+  /** Edita nombre/etiqueta o pausa (drenaje) una GPU emparejada. */
+  updateBridgeWorker(
+    workerId: string,
+    patch: { name?: string; label?: string; paused?: boolean },
+  ): Observable<{ worker_id: string }> {
+    return unwrap(this.repository.updateBridgeWorker(workerId, patch));
+  }
+
+  /** Encola el borrado de pesos en una GPU emparejada (modo bridge). */
+  requestBridgeDeletion(workerId: string, key: string): Observable<{ worker_id: string; model_key: string }> {
+    return unwrap(this.repository.requestBridgeDeletion(workerId, key));
+  }
 }

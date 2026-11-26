@@ -6,15 +6,25 @@
   }
 
   <div class="mb-8">
-    <p-steps [model]="stepItems()" [activeIndex]="step() - 1" [readonly]="false" styleClass="custom-steps" />
+    <p-steps
+      [model]="stepItems()"
+      [activeIndex]="step() - 1"
+      [readonly]="false"
+      (activeIndexChange)="onStepSelect($event)"
+      styleClass="custom-steps"
+    />
   </div>
 
   @if (step() === 1) {
     <p-card styleClass="phase-card">
       <ng-template #header>
-        <div class="flex flex-wrap items-start justify-between gap-4 border-b border-surface-border px-6 py-4">
+        <div
+          class="flex flex-wrap items-start justify-between gap-4 border-b border-surface-border px-6 py-4"
+        >
           <div class="flex items-center gap-3">
-            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-2">
+            <div
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-2"
+            >
               <i class="md md-edit_note text-lg text-accent"></i>
             </div>
             <div>
@@ -47,7 +57,9 @@
               [attr.aria-invalid]="videoType() === null"
               appendTo="body"
             />
-            <small class="text-ink-muted-on-dark">{{ 'VIDEOMACHINE.WRITE_VIDEO_TYPE_HINT' | translate }}</small>
+            <small class="text-ink-muted-on-dark">{{
+              'VIDEOMACHINE.WRITE_VIDEO_TYPE_HINT' | translate
+            }}</small>
           </div>
         </div>
       </ng-template>
@@ -63,7 +75,10 @@
               class="inline-flex w-fit cursor-pointer items-center gap-2 rounded-xl border border-surface-border bg-surface-2 px-3 py-2 text-xs font-bold text-ink-on-dark transition-colors hover:border-accent active:scale-[0.98]"
             >
               <i class="md md-attach_file text-accent"></i>
-              {{ (extractingDoc() ? 'VIDEOMACHINE.UPLOADING' : 'VIDEOMACHINE.WRITE_DOC_UPLOAD') | translate }}
+              {{
+                (extractingDoc() ? 'VIDEOMACHINE.UPLOADING' : 'VIDEOMACHINE.WRITE_DOC_UPLOAD')
+                  | translate
+              }}
             </label>
             <input
               id="wcDoc"
@@ -87,7 +102,7 @@
         </div>
 
         <div
-          class="grid grid-cols-[repeat(auto-fit,minmax(9rem,1fr))] items-stretch gap-2 [&>app-camera-movement-select>button]:w-full [&>app-camera-movement-select]:min-w-0 [&>app-compact-number]:min-w-0 [&>app-compact-number>button]:w-full [&>app-compact-select]:min-w-0 [&>app-compact-select>button]:w-full [&>app-lighting-select]:min-w-0"
+          class="grid auto-rows-fr grid-cols-[repeat(auto-fit,minmax(9rem,1fr))] items-stretch gap-2 [&>app-camera-movement-select>button]:w-full [&>app-camera-movement-select]:min-w-0 [&>app-compact-number]:min-w-0 [&>app-compact-number>button]:w-full [&>app-compact-select]:min-w-0 [&>app-compact-select>button]:w-full [&>app-lighting-select]:min-w-0 [&>app-lighting-select>button]:w-full"
         >
           <app-lighting-select
             [pill]="true"
@@ -106,60 +121,60 @@
             [configured]="camera().length > 0"
             (valueChange)="camera.set($event)"
           />
-          <app-compact-select
-            [label]="'VIDEOMACHINE.WRITE_LANGUAGE_SHORT' | translate"
-            [options]="languageOptions()"
-            [value]="outputLanguage()"
-            [configured]="outputLanguage() !== 'es'"
-            (valueChange)="setLanguage($event)"
-          />
-          <app-compact-select
-            [label]="'VIDEOMACHINE.WRITE_DELIVERY_SHORT' | translate"
-            [options]="deliveryOptions()"
-            [value]="delivery()"
-            [configured]="delivery() !== 'sequence'"
-            (valueChange)="setDelivery($event)"
-          />
-          <app-compact-select
-            [label]="'VIDEOMACHINE.WRITE_ASPECT_SHORT' | translate"
-            [options]="aspectOptions"
-            [value]="aspectRatio()"
-            [configured]="aspectRatio() !== '9:16'"
-            (valueChange)="setAspect($event)"
-          />
-          <app-compact-select
-            [label]="'VIDEOMACHINE.WRITE_AUDIO_SHORT' | translate"
-            [options]="audioOptions()"
-            [value]="audioMode()"
-            [configured]="audioMode() !== 'auto'"
-            (valueChange)="setAudio($event)"
-          />
           <app-compact-number
             [label]="'VIDEOMACHINE.WRITE_TOTAL_SHORT' | translate"
+            [hint]="'VIDEOMACHINE.WRITE_TOTAL_HINT' | translate"
             suffix=" s"
             [min]="1"
             [value]="totalDuration()"
             [configured]="totalDuration() !== null"
             (valueChange)="totalDuration.set($event)"
           />
-          <app-compact-number
-            [label]="'VIDEOMACHINE.WRITE_CLIP_SHORT' | translate"
-            suffix=" s"
-            [min]="1"
-            [value]="maxClipS()"
-            [configured]="maxClipS() !== null"
-            (valueChange)="maxClipS.set($event)"
+          <app-compact-select
+            [label]="'VIDEOMACHINE.WRITE_ASPECT_SHORT' | translate"
+            [hint]="'VIDEOMACHINE.WRITE_ASPECT_HINT' | translate"
+            [options]="aspectOptions"
+            [value]="aspectRatio()"
+            [configured]="aspectRatio() !== '9:16'"
+            (valueChange)="setAspect($event)"
+          />
+          <app-compact-select
+            [label]="'VIDEOMACHINE.WRITE_DELIVERY_SHORT' | translate"
+            [hint]="'VIDEOMACHINE.WRITE_DELIVERY_HINT' | translate"
+            [options]="deliveryOptions()"
+            [value]="delivery()"
+            [configured]="delivery() !== 'sequence'"
+            (valueChange)="setDelivery($event)"
           />
           <app-compact-number
             [label]="'VIDEOMACHINE.WRITE_SHOTS_SHORT' | translate"
+            [hint]="'VIDEOMACHINE.WRITE_SHOTS_HINT' | translate"
             [min]="1"
-            [max]="30"
+            [max]="15"
             [value]="shotCount()"
             [configured]="shotCount() !== null"
             (valueChange)="shotCount.set($event)"
           />
           <app-compact-number
+            [label]="'VIDEOMACHINE.WRITE_CUTS_SHORT' | translate"
+            [hint]="'VIDEOMACHINE.WRITE_CUTS_PER_SHOT_HINT' | translate"
+            [min]="1"
+            [max]="10"
+            [value]="cutsPerShot()"
+            [configured]="cutsPerShot() !== null"
+            (valueChange)="cutsPerShot.set($event)"
+          />
+          <app-compact-select
+            [label]="'VIDEOMACHINE.WRITE_AUDIO_SHORT' | translate"
+            [hint]="'VIDEOMACHINE.WRITE_AUDIO_HINT' | translate"
+            [options]="audioOptions()"
+            [value]="audioMode()"
+            [configured]="audioMode() !== 'auto'"
+            (valueChange)="setAudio($event)"
+          />
+          <app-compact-number
             [label]="'VIDEOMACHINE.WRITE_FPS_SHORT' | translate"
+            [hint]="'VIDEOMACHINE.WRITE_FPS_HINT' | translate"
             suffix=" fps"
             [min]="1"
             [max]="120"
@@ -167,18 +182,26 @@
             [configured]="fps() !== null"
             (valueChange)="fps.set($event)"
           />
-          <app-compact-number
-            [label]="'VIDEOMACHINE.WRITE_CUTS_SHORT' | translate"
-            [min]="1"
-            [max]="10"
-            [value]="cutsPerShot()"
-            [configured]="cutsPerShot() !== null"
-            (valueChange)="cutsPerShot.set($event)"
+          <app-compact-select
+            [label]="'VIDEOMACHINE.WRITE_LANGUAGE_SHORT' | translate"
+            [hint]="'VIDEOMACHINE.WRITE_LANGUAGE_HINT' | translate"
+            [options]="languageOptions()"
+            [value]="outputLanguage()"
+            [configured]="outputLanguage() !== 'es'"
+            (valueChange)="setLanguage($event)"
           />
         </div>
 
         @if (timingSummary(); as summary) {
-          <p class="text-xs text-ink-muted-on-dark">{{ summary }}</p>
+          <p class="text-xs text-ink-muted-on-dark">
+            {{ summary }}
+            @if (cutsSummary(); as cuts) {
+              <span> · {{ cuts }}</span>
+            }
+          </p>
+        }
+        @if (timingWarning(); as warning) {
+          <p class="text-xs font-bold text-amber-400">{{ warning }}</p>
         }
 
         <details class="rounded-xl border border-surface-border bg-surface-2 px-4 py-3">
@@ -204,11 +227,15 @@
                   (ngModelChange)="brainModel.set($event)"
                   [ngModelOptions]="{ standalone: true }"
                   [placeholder]="'VIDEOMACHINE.WRITE_BRAIN_PLACEHOLDER' | translate"
-                  [styleClass]="brainModel() ? 'w-full border-accent' : 'w-full border-2 border-danger'"
+                  [styleClass]="
+                    brainModel() ? 'w-full border-accent' : 'w-full border-2 border-danger'
+                  "
                   [attr.aria-invalid]="brainModel() === ''"
                   appendTo="body"
                 />
-                <small class="text-ink-muted-on-dark">{{ 'VIDEOMACHINE.WRITE_BRAIN_HINT' | translate }}</small>
+                <small class="text-ink-muted-on-dark">{{
+                  'VIDEOMACHINE.WRITE_BRAIN_HINT' | translate
+                }}</small>
               </div>
 
               <div class="flex flex-col gap-1">
@@ -243,17 +270,21 @@
                   (ngModelChange)="onVideoModelChange($event)"
                   [ngModelOptions]="{ standalone: true }"
                   [placeholder]="'VIDEOMACHINE.WRITE_VIDEO_MODEL_PLACEHOLDER' | translate"
-                  [styleClass]="videoModel() ? 'w-full border-accent' : 'w-full border-2 border-danger'"
+                  [styleClass]="
+                    videoModel() ? 'w-full border-accent' : 'w-full border-2 border-danger'
+                  "
                   [attr.aria-invalid]="videoModel() === null"
                   appendTo="body"
                 />
-                <small class="text-ink-muted-on-dark">{{ 'VIDEOMACHINE.WRITE_VIDEO_MODEL_HINT' | translate }}</small>
+                <small class="text-ink-muted-on-dark">{{
+                  'VIDEOMACHINE.WRITE_VIDEO_MODEL_HINT' | translate
+                }}</small>
               </div>
             </div>
           </div>
         </details>
 
-<div class="flex flex-col gap-3 border-t border-surface-border pt-5">
+        <div class="flex flex-col gap-3 border-t border-surface-border pt-5">
           <div class="flex flex-wrap items-center justify-between gap-3">
             <span class="text-xs font-bold text-ink-on-dark">
               {{ 'VIDEOMACHINE.WRITE_ASSETS' | translate }}
@@ -263,7 +294,9 @@
               class="inline-flex w-fit cursor-pointer items-center gap-2 rounded-xl border border-surface-border bg-surface-2 px-4 py-2.5 text-xs font-bold text-ink-on-dark transition-colors hover:border-accent active:scale-[0.98]"
             >
               <i class="md md-attach_file text-accent"></i>
-              {{ (uploading() ? 'VIDEOMACHINE.UPLOADING' : 'VIDEOMACHINE.WRITE_ATTACH') | translate }}
+              {{
+                (uploading() ? 'VIDEOMACHINE.UPLOADING' : 'VIDEOMACHINE.WRITE_ATTACH') | translate
+              }}
             </label>
             <input
               id="wcAssets"
@@ -275,24 +308,40 @@
               (change)="onAssetsPicked($event)"
             />
           </div>
-          <small class="text-ink-muted-on-dark">{{ 'VIDEOMACHINE.WRITE_ASSETS_HINT' | translate }}</small>
+          <small class="text-ink-muted-on-dark">{{
+            'VIDEOMACHINE.WRITE_ASSETS_HINT' | translate
+          }}</small>
 
           @if (taggedAssets().length) {
             <ul class="grid grid-cols-4 gap-2 sm:grid-cols-6">
               @for (asset of taggedAssets(); track asset.id) {
-                <li class="relative flex flex-col gap-1 rounded-xl border border-surface-border bg-surface-2 p-2">
+                <li
+                  class="relative flex flex-col gap-1 rounded-xl border border-surface-border bg-surface-2 p-2"
+                >
                   @if (asset.kind === 'image') {
-                    <img [src]="asset.url" [alt]="asset.name" class="aspect-video w-full rounded-lg object-cover" />
+                    <img
+                      [src]="asset.url"
+                      [alt]="asset.name"
+                      class="aspect-video w-full rounded-lg object-cover"
+                    />
                   } @else {
-                    <div class="flex aspect-video w-full items-center justify-center rounded-lg bg-surface text-xs font-bold text-ink-on-dark">
+                    <div
+                      class="flex aspect-video w-full items-center justify-center rounded-lg bg-surface text-xs font-bold text-ink-on-dark"
+                    >
                       @if (asset.kind === 'video') {
                         <i class="md md-movie mr-1 text-accent"></i>
                       }
                       {{ assetKindLabel(asset.kind) }}
                     </div>
                   }
-                  <span class="truncate text-xs font-bold" [class]="'prompt-tone-' + assetTone(asset)">{{ asset.tag }}</span>
-                  <span class="truncate text-xs text-ink-muted-on-dark" [title]="asset.name">{{ asset.name }}</span>
+                  <span
+                    class="truncate text-xs font-bold"
+                    [class]="'prompt-tone-' + assetTone(asset)"
+                    >{{ asset.tag }}</span
+                  >
+                  <span class="truncate text-xs text-ink-muted-on-dark" [title]="asset.name">{{
+                    asset.name
+                  }}</span>
                   @if (asset.kind === 'image') {
                     <p-select
                       [options]="roleOptions()"
@@ -320,12 +369,13 @@
               }
             </ul>
           }
-
         </div>
 
         <div class="flex flex-wrap items-center gap-3 border-t border-surface-border pt-5">
           <p-button
-            [label]="(sending() ? 'VIDEOMACHINE.WRITE_SENDING' : 'VIDEOMACHINE.WRITE_GENERATE') | translate"
+            [label]="
+              (sending() ? 'VIDEOMACHINE.WRITE_SENDING' : 'VIDEOMACHINE.WRITE_GENERATE') | translate
+            "
             icon="md md-play_arrow"
             styleClass="cta-spend"
             [loading]="sending()"
@@ -373,32 +423,64 @@
       </ng-template>
 
       <div class="flex flex-col gap-4">
+        <p class="text-xs text-ink-muted-on-dark">
+          {{ 'VIDEOMACHINE.WRITE_EDIT_HINT' | translate }}
+        </p>
         @for (turn of turns(); track $index; let ti = $index) {
           @if (turn.role === 'user') {
-            <div class="self-end rounded-xl border border-surface-border bg-surface-2 px-4 py-3 text-sm text-ink-on-dark">
-              <span class="block text-xs font-bold text-ink-muted-on-dark">{{ 'VIDEOMACHINE.WRITE_YOU' | translate }}</span>
+            <div
+              class="self-end rounded-xl border border-surface-border bg-surface-2 px-4 py-3 text-sm text-ink-on-dark"
+            >
+              <span class="block text-xs font-bold text-ink-muted-on-dark">{{
+                'VIDEOMACHINE.WRITE_YOU' | translate
+              }}</span>
               <p class="mt-1 whitespace-pre-wrap">{{ turn.content }}</p>
             </div>
           } @else {
-            <div class="rounded-xl border border-surface-border bg-surface px-4 py-3 text-sm text-ink-on-dark">
+            <div
+              class="rounded-xl border border-surface-border bg-surface px-4 py-3 text-sm text-ink-on-dark"
+            >
               @for (segment of segments(turn.content); track $index; let si = $index) {
-                @if (segment.code) {
-                  <div class="mt-2 rounded-lg border border-surface-border bg-surface-2 p-3">
-                    <pre class="max-h-96 overflow-auto whitespace-pre-wrap font-mono text-xs text-ink-on-dark">{{ segment.content }}</pre>
-                    <div class="mt-2 flex justify-end">
-                      <p-button
-                        size="small"
-                        severity="secondary"
-                        [text]="true"
-                        [label]="(copied() === 'block-' + ti + '-' + si ? 'VIDEOMACHINE.WRITE_COPIED' : 'VIDEOMACHINE.WRITE_COPY') | translate"
-                        icon="md md-content_copy"
-                        (onClick)="copy(segment.content, 'block-' + ti + '-' + si)"
-                      />
+                <div class="mt-2 rounded-lg border border-surface-border bg-surface-2 p-3">
+                  @if (promptHeaders().get(ti + '-' + si); as header) {
+                    <div class="mb-2 flex items-center gap-3">
+                      <span
+                        class="flex h-10 min-w-10 items-center justify-center rounded-lg border border-accent bg-surface px-2 text-xl font-black text-accent"
+                        [attr.aria-label]="
+                          'VIDEOMACHINE.WRITE_PROMPT_NUMBER' | translate: { n: header.number }
+                        "
+                        >{{ header.number }}</span
+                      >
+                      <span class="text-sm font-bold leading-snug text-ink-on-dark">{{
+                        header.title
+                      }}</span>
                     </div>
+                  }
+                  <textarea
+                    class="max-h-96 w-full resize-y whitespace-pre-wrap bg-transparent font-mono text-xs leading-relaxed text-ink-on-dark outline-none"
+                    [class.font-sans]="!segment.code"
+                    [class.text-sm]="!segment.code"
+                    [rows]="segment.code ? 10 : 3"
+                    [value]="segment.content"
+                    [attr.aria-label]="'VIDEOMACHINE.WRITE_EDIT_SEGMENT' | translate"
+                    (change)="updateSegment(ti, si, $any($event.target).value)"
+                  ></textarea>
+                  <div class="mt-2 flex justify-end">
+                    <p-button
+                      size="small"
+                      severity="secondary"
+                      [text]="true"
+                      [label]="
+                        (copied() === 'block-' + ti + '-' + si
+                          ? 'VIDEOMACHINE.WRITE_COPIED'
+                          : 'VIDEOMACHINE.WRITE_COPY'
+                        ) | translate
+                      "
+                      icon="md md-content_copy"
+                      (onClick)="copy(segment.content, 'block-' + ti + '-' + si)"
+                    />
                   </div>
-                } @else {
-                  <p class="whitespace-pre-wrap">{{ segment.content }}</p>
-                }
+                </div>
               }
             </div>
           }
@@ -476,7 +558,7 @@
           </div>
         </div>
 
-                @if (sending()) {
+        @if (sending()) {
           <div>
             <p-progressbar
               [value]="progress()"
@@ -513,15 +595,26 @@
 
       <div class="flex flex-col gap-4">
         @if (shots().length === 0) {
-          <p class="text-sm text-ink-muted-on-dark">{{ 'VIDEOMACHINE.WRITE_ART_EMPTY' | translate }}</p>
+          <p class="text-sm text-ink-muted-on-dark">
+            {{ 'VIDEOMACHINE.WRITE_ART_EMPTY' | translate }}
+          </p>
         } @else {
-          <p class="text-xs text-ink-muted-on-dark">{{ 'VIDEOMACHINE.WRITE_ART_INTRO' | translate }}</p>
+          <p class="text-xs text-ink-muted-on-dark">
+            {{ 'VIDEOMACHINE.WRITE_ART_INTRO' | translate }}
+          </p>
           @for (shot of shots(); track shot.key) {
-            <div class="flex flex-col gap-2 rounded-xl border border-surface-border bg-surface-2 p-3 sm:flex-row sm:items-center">
+            <div
+              class="flex flex-col gap-2 rounded-xl border border-surface-border bg-surface-2 p-3 sm:flex-row sm:items-center"
+            >
               <div class="flex min-w-0 flex-1 flex-col gap-1">
                 <span class="text-xs font-bold text-ink-on-dark">
                   {{ 'VIDEOMACHINE.WRITE_ART_SHOT' | translate: { n: shot.index } }}
                 </span>
+                @if (shot.title) {
+                  <span class="text-sm font-bold leading-snug text-ink-on-dark">{{
+                    shot.title
+                  }}</span>
+                }
                 <span class="text-xs text-ink-muted-on-dark">{{ shot.excerpt }}</span>
               </div>
               <div class="flex w-full flex-col gap-2 sm:w-80">
@@ -542,7 +635,6 @@
                   (valueChange)="setShotCamera(shot.key, $event)"
                 />
               </div>
-
             </div>
           }
         }
@@ -612,25 +704,101 @@
 
       <div class="flex flex-col gap-4">
         @if (finalPrompt(); as prompt) {
-          <pre class="max-h-[60vh] overflow-auto whitespace-pre-wrap rounded-xl border border-surface-border bg-surface-2 p-4 text-sm text-ink-on-dark">@for (segment of finalSegments(); track $index) {<span [class]="'prompt-tone-' + segment.tone">{{ segment.text }}</span>}</pre>
+          @if (editingFinal()) {
+            <textarea
+              class="max-h-[60vh] min-h-64 w-full resize-y whitespace-pre-wrap rounded-xl border border-surface-border bg-surface-2 p-4 font-mono text-sm leading-relaxed text-ink-on-dark outline-none"
+              [value]="prompt"
+              [attr.aria-label]="'VIDEOMACHINE.WRITE_EDIT_SEGMENT' | translate"
+              (input)="updateFinalPrompt($any($event.target).value)"
+            ></textarea>
+          } @else if (finalBlocks().length > 1) {
+            <div class="flex flex-col gap-3">
+              @for (block of finalBlocks(); track $index) {
+                <div class="rounded-xl border border-surface-border bg-surface-2 p-4">
+                  <div class="mb-2 flex items-center gap-3">
+                    <span
+                      class="flex h-10 min-w-10 items-center justify-center rounded-lg border border-accent bg-surface px-2 text-xl font-black text-accent"
+                      [attr.aria-label]="
+                        'VIDEOMACHINE.WRITE_PROMPT_NUMBER' | translate: { n: block.number }
+                      "
+                      >{{ block.number }}</span
+                    >
+                    <span class="text-sm font-bold leading-snug text-ink-on-dark">{{
+                      block.title
+                    }}</span>
+                  </div>
+                  <pre
+                    class="max-h-[45vh] overflow-auto whitespace-pre-wrap font-mono text-sm text-ink-on-dark"
+                  >@for (segment of block.segments; track $index) {<span [class]="'prompt-tone-' + segment.tone">{{ segment.text }}</span>}</pre>
+                </div>
+              }
+            </div>
+          } @else {
+            @if (finalHeader(); as header) {
+              <div class="flex items-center gap-3">
+                <span
+                  class="flex h-10 min-w-10 items-center justify-center rounded-lg border border-accent bg-surface px-2 text-xl font-black text-accent"
+                  [attr.aria-label]="
+                    'VIDEOMACHINE.WRITE_PROMPT_NUMBER' | translate: { n: header.number }
+                  "
+                  >{{ header.number }}</span
+                >
+                <span class="text-sm font-bold leading-snug text-ink-on-dark">{{
+                  header.title
+                }}</span>
+              </div>
+            }
+            <pre
+              class="max-h-[60vh] overflow-auto whitespace-pre-wrap rounded-xl border border-surface-border bg-surface-2 p-4 text-sm text-ink-on-dark"
+            >@for (segment of finalSegments(); track $index) {<span [class]="'prompt-tone-' + segment.tone">{{ segment.text }}</span>}</pre>
+          }
 
           <div class="flex flex-wrap items-center gap-3">
-            <span class="text-xs text-ink-muted-on-dark">{{ 'VIDEOMACHINE.WRITE_LEGEND' | translate }}</span>
-            <span class="prompt-tone-character text-xs">{{ 'VIDEOMACHINE.WRITE_ROLE_PERSON' | translate }}</span>
-            <span class="prompt-tone-product text-xs">{{ 'VIDEOMACHINE.WRITE_ROLE_PRODUCT' | translate }}</span>
-            <span class="prompt-tone-location text-xs">{{ 'VIDEOMACHINE.WRITE_ROLE_ENVIRONMENT' | translate }}</span>
-            <span class="prompt-tone-video text-xs">{{ 'VIDEOMACHINE.WRITE_KIND_VIDEO' | translate }}</span>
-            <span class="prompt-tone-audio text-xs">{{ 'VIDEOMACHINE.WRITE_KIND_AUDIO' | translate }}</span>
+            <span class="text-xs text-ink-muted-on-dark">{{
+              'VIDEOMACHINE.WRITE_LEGEND' | translate
+            }}</span>
+            <span class="prompt-tone-character text-xs">{{
+              'VIDEOMACHINE.WRITE_ROLE_PERSON' | translate
+            }}</span>
+            <span class="prompt-tone-product text-xs">{{
+              'VIDEOMACHINE.WRITE_ROLE_PRODUCT' | translate
+            }}</span>
+            <span class="prompt-tone-location text-xs">{{
+              'VIDEOMACHINE.WRITE_ROLE_ENVIRONMENT' | translate
+            }}</span>
+            <span class="prompt-tone-video text-xs">{{
+              'VIDEOMACHINE.WRITE_KIND_VIDEO' | translate
+            }}</span>
+            <span class="prompt-tone-audio text-xs">{{
+              'VIDEOMACHINE.WRITE_KIND_AUDIO' | translate
+            }}</span>
           </div>
 
           <div class="flex flex-wrap items-center gap-3 border-t border-surface-border pt-5">
             <p-button
-              [label]="(copied() === 'final' ? 'VIDEOMACHINE.WRITE_COPIED' : 'VIDEOMACHINE.WRITE_COPY_FINAL') | translate"
+              [label]="
+                (editingFinal() ? 'VIDEOMACHINE.WRITE_EDIT_DONE' : 'VIDEOMACHINE.WRITE_EDIT')
+                  | translate
+              "
+              severity="secondary"
+              [outlined]="true"
+              icon="md md-edit_note"
+              (onClick)="toggleFinalEdit()"
+            />
+            <p-button
+              [label]="
+                (copied() === 'final'
+                  ? 'VIDEOMACHINE.WRITE_COPIED'
+                  : 'VIDEOMACHINE.WRITE_COPY_FINAL'
+                ) | translate
+              "
               icon="md md-content_copy"
               (onClick)="copy(prompt, 'final')"
             />
             <p-button
-              [label]="(queued() ? 'VIDEOMACHINE.WRITE_QUEUED' : 'VIDEOMACHINE.WRITE_QUEUE') | translate"
+              [label]="
+                (queued() ? 'VIDEOMACHINE.WRITE_QUEUED' : 'VIDEOMACHINE.WRITE_QUEUE') | translate
+              "
               severity="secondary"
               [disabled]="!videoModel()"
               [text]="true"
