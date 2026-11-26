@@ -477,7 +477,8 @@
                       [disabled]="modelBusy() !== null"
                       (onClick)="bridgeCancelDownload(model)"
                       pTooltip="{{
-                        'GPU.MODELS.CANCEL_BRIDGE_TOOLTIP' | translate: { worker: model.worker_name }
+                        'GPU.MODELS.CANCEL_BRIDGE_TOOLTIP'
+                          | translate: { worker: model.worker_name }
                       }}"
                     />
                   } @else {
@@ -580,7 +581,9 @@
                 <h2 class="flex flex-wrap items-center gap-2 font-medium">
                   {{ worker.name }}
                   @if (worker.label) {
-                    <span class="text-xs font-normal text-ink-muted-on-dark">{{ worker.label }}</span>
+                    <span class="text-xs font-normal text-ink-muted-on-dark">{{
+                      worker.label
+                    }}</span>
                   }
                   @if (worker.paused) {
                     <p-tag
@@ -659,7 +662,9 @@
                 [icon]="worker.paused ? 'md md-play_arrow' : 'md md-pause'"
                 [loading]="pauseBusy() === worker.id"
                 [disabled]="pauseBusy() !== null && pauseBusy() !== worker.id"
-                pTooltip="{{ (worker.paused ? 'GPU.RESUME_TOOLTIP' : 'GPU.PAUSE_TOOLTIP') | translate }}"
+                pTooltip="{{
+                  (worker.paused ? 'GPU.RESUME_TOOLTIP' : 'GPU.PAUSE_TOOLTIP') | translate
+                }}"
                 (onClick)="togglePause(worker)"
               />
               @if (updateState(worker) === 'failed') {
@@ -667,19 +672,20 @@
                   [value]="'GPU.UPDATE_FAILED' | translate"
                   severity="danger"
                   icon="md md-error"
-                  pTooltip="{{ 'GPU.UPDATE_FAILED_TOOLTIP' | translate: { error: updateFailureReason(worker) } }}"
+                  pTooltip="{{
+                    'GPU.UPDATE_FAILED_TOOLTIP' | translate: { error: updateFailureReason(worker) }
+                  }}"
                 />
               } @else if (updateState(worker) === 'pending') {
-                <p-tag
-                  [value]="'GPU.UPDATING' | translate"
-                  severity="warn"
-                  icon="md md-sync"
-                />
+                <p-tag [value]="'GPU.UPDATING' | translate" severity="warn" icon="md md-sync" />
               }
               <p-button
                 size="small"
                 [outlined]="true"
-                [label]="(updateState(worker) === 'failed' ? 'GPU.UPDATE_RETRY' : 'GPU.UPDATE') | translate"
+                [label]="
+                  (updateState(worker) === 'failed' ? 'GPU.UPDATE_RETRY' : 'GPU.UPDATE_ACTION')
+                    | translate
+                "
                 icon="md md-system_update"
                 [disabled]="
                   updateState(worker) === 'pending' ||

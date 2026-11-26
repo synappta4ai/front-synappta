@@ -622,9 +622,12 @@ export class GpuPanelComponent implements OnInit, OnDestroy {
         name: worker.name,
         version: worker.version || '—',
       }),
-      header: this.translate.instant('GPU.UPDATE'),
+      header: this.translate.instant('GPU.UPDATE_ACTION'),
       icon: 'md md-system_update',
-      acceptButtonProps: { label: this.translate.instant('GPU.UPDATE'), severity: 'primary' },
+      acceptButtonProps: {
+        label: this.translate.instant('GPU.UPDATE_ACTION'),
+        severity: 'primary',
+      },
       rejectButtonProps: {
         label: this.translate.instant('GPU.REVOKE_CANCEL'),
         severity: 'secondary',
