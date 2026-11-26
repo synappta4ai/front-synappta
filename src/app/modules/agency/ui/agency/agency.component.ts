@@ -479,7 +479,11 @@ export class AgencyComponent {
   /** Disponibilidad del agente Writing Copilot (flag + skill ok en el back). */
   protected readonly writingCopilotAvailable = signal(false);
   protected readonly agentChoice = computed<AgentChoice>(() =>
-    this.infoproductMode() ? INFOPRODUCT_AGENT : this.writingCopilotMode() ? WRITING_COPILOT_AGENT : this.agent(),
+    this.infoproductMode()
+      ? INFOPRODUCT_AGENT
+      : this.writingCopilotMode()
+        ? WRITING_COPILOT_AGENT
+        : this.agent(),
   );
   protected readonly agentOptions = computed(() => {
     this.translate.currentLang();
@@ -645,7 +649,9 @@ export class AgencyComponent {
    *  van como opciones extra del selector de texto, después del catálogo. */
   protected readonly extraTextModels = computed<AiModel[]>(() => {
     const known = new Set(
-      this.models().filter((m) => m.modality === 'text').map((m) => m.name),
+      this.models()
+        .filter((m) => m.modality === 'text')
+        .map((m) => m.name),
     );
     const extras: AiModel[] = [];
     for (const cred of this.credentials()) {
@@ -851,10 +857,8 @@ export class AgencyComponent {
       .pipe(catchError(() => of(false)))
       .subscribe((enabled) => this.writingCopilotAvailable.set(enabled));
 
-    // Al elegir un proyecto existente: se cargan sus datos en el formulario
-    // (nombre, ciudad/venue, descripción) y los campos con dato quedan
-    // bloqueados — así no se crea otro proyecto, pero los vacíos siguen
-    // editables para completar lo que falte (campos obligatorios).
+    // Al elegir un proyecto existente se cargan sus datos en el formulario.
+    // Los campos quedan editables: al generar se actualiza ese mismo proyecto.
     effect(() => {
       const id = this.selectedProjectId();
       const project = id ? (this.projects().find((p) => p.id === id) ?? null) : null;
@@ -871,13 +875,8 @@ export class AgencyComponent {
         // Sin proyecto elegido el formulario vuelve a vacío para crear uno nuevo.
         this.form.reset(undefined, { emitEvent: false });
       }
-      const raw = this.form.getRawValue() as Record<string, unknown>;
       for (const key of ['propertyName', 'location', 'description'] as const) {
-        const control = this.form.get(key);
-        if (!control) continue;
-        const hasValue = String(raw[key] ?? '').trim() !== '';
-        const disable = !!project && hasValue;
-        disable ? control.disable({ emitEvent: false }) : control.enable({ emitEvent: false });
+        this.form.get(key)?.enable({ emitEvent: false });
       }
       // Recupera el avance guardado del proyecto (fase, modelos, ángulos,
       // storyboard) para no reprocesar lo que ya está hecho.
@@ -1269,7 +1268,12 @@ export class AgencyComponent {
   }
 
   /** `referencias_subidas` del contrato del paso 1: archivo + función. */
-  private referenciasSubidas(): { archivo: string; tag: string; descripcion: string; funcion: string }[] {
+  private referenciasSubidas(): {
+    archivo: string;
+    tag: string;
+    descripcion: string;
+    funcion: string;
+  }[] {
     const rows = new Map<
       string,
       { archivo: string; tag: string; descripcion: string; funcion: string }
@@ -1287,7 +1291,10 @@ export class AgencyComponent {
         if (rows.has(file.id)) continue;
         rows.set(file.id, {
           archivo: file.filename,
-          tag: tagFromFilename(file.filename, [...rows.values()].map((row) => row.tag)),
+          tag: tagFromFilename(
+            file.filename,
+            [...rows.values()].map((row) => row.tag),
+          ),
           descripcion: photo.description,
           funcion: photoKindFromSuggestion(photo.type) ?? photo.type,
         });
@@ -1958,7 +1965,11 @@ export class AgencyComponent {
         ...(scene.angleTitle ? { angulo: scene.angleTitle } : {}),
       },
       escena: {
-        numero: Math.max(this.storyboard().findIndex((s) => s.id === scene.id), 0) + 1,
+        numero:
+          Math.max(
+            this.storyboard().findIndex((s) => s.id === scene.id),
+            0,
+          ) + 1,
         titulo: scene.title,
       },
       vinetas,
@@ -2381,7 +2392,10 @@ export class AgencyComponent {
 
   /** Compara nombres con y sin el prefijo del catálogo ("openrouter/"). */
   private normalizedModelName(name: string): string {
-    return name.trim().toLowerCase().replace(/^openrouter\//, '');
+    return name
+      .trim()
+      .toLowerCase()
+      .replace(/^openrouter\//, '');
   }
 
   /** El proveedor solo conoce su id nativo: quita el prefijo del catálogo. */
@@ -2395,14 +2409,18 @@ export class AgencyComponent {
   /** Un modelo configurado en admin solo puede entrar al Cerebro si no es un
    *  generador de imagen/video del catálogo. */
   private isMediaModel(name: string): boolean {
-    const target = name.trim().toLowerCase().replace(/^openrouter\//, '');
+    const target = name
+      .trim()
+      .toLowerCase()
+      .replace(/^openrouter\//, '');
     if (!target) return false;
     return this.models().some((m) => {
       if (m.modality === 'text') return false;
-      const catalog = m.name.trim().toLowerCase().replace(/^openrouter\//, '');
-      return (
-        catalog === target || catalog.endsWith(`/${target}`) || target.endsWith(`/${catalog}`)
-      );
+      const catalog = m.name
+        .trim()
+        .toLowerCase()
+        .replace(/^openrouter\//, '');
+      return catalog === target || catalog.endsWith(`/${target}`) || target.endsWith(`/${catalog}`);
     });
   }
 
@@ -2527,7 +2545,11 @@ export class AgencyComponent {
       ...(agent === 'real_estate' ? { cantidad_angulos: count } : {}),
       ...(agent === 'commercial' ? { cantidad_prompts: count } : {}),
       ...(agent === 'commercial' ? { referencias_subidas: this.referenciasSubidas() } : {}),
-      ...(agent === 'cinema' ? { registro: 'cine' } : agent === 'commercial' ? { registro: 'comercial' } : {}),
+      ...(agent === 'cinema'
+        ? { registro: 'cine' }
+        : agent === 'commercial'
+          ? { registro: 'comercial' }
+          : {}),
       ...(this.lighting() ? { look: this.lighting(), look_intensity: this.lookIntensity() } : {}),
       ...(this.camera().length ? { movimiento_camara: cameraMovementPrompt(this.camera()) } : {}),
     };
@@ -2814,7 +2836,9 @@ export class AgencyComponent {
     this.modelText.set(models.text ?? '');
     this.modelImage.set(models.image ?? '');
     this.modelVideo.set(models.video ?? '');
-    this.lighting.set(typeof agency['lighting'] === 'string' ? (agency['lighting'] as string) : null);
+    this.lighting.set(
+      typeof agency['lighting'] === 'string' ? (agency['lighting'] as string) : null,
+    );
     this.lookIntensity.set(
       agency['lookIntensity'] === 'subtle' || agency['lookIntensity'] === 'strong'
         ? agency['lookIntensity']
@@ -2960,7 +2984,8 @@ export class AgencyComponent {
       if (typeof row.id !== 'string' || !row.id) return [];
       const filename = typeof row.filename === 'string' ? row.filename : '';
       const tag = typeof row.tag === 'string' && row.tag ? row.tag : tagFromFilename(filename);
-      const kind = typeof row.kind === 'string' && kinds.has(row.kind) ? (row.kind as PhotoKind) : null;
+      const kind =
+        typeof row.kind === 'string' && kinds.has(row.kind) ? (row.kind as PhotoKind) : null;
       return [
         {
           id: row.id,
@@ -3343,11 +3368,13 @@ export class AgencyComponent {
         const hasBoard = !!scene.boardFileId;
         const refs = this.referencesOfScene(scene.id).filter((ref) => ref.id !== scene.boardFileId);
         return composeSceneClipPrompt({
-          sceneNumber: Math.max(this.storyboard().findIndex((s) => s.id === scene.id), 0) + 1,
+          sceneNumber:
+            Math.max(
+              this.storyboard().findIndex((s) => s.id === scene.id),
+              0,
+            ) + 1,
           duration: this.segmentDuration(index),
-          board: hasBoard
-            ? { tag: imageTag(0), filename: `storyboard-${scene.id}.png` }
-            : null,
+          board: hasBoard ? { tag: imageTag(0), filename: `storyboard-${scene.id}.png` } : null,
           references: refs.map((ref, i) => ({
             tag: imageTag(i + (hasBoard ? 1 : 0)),
             filename: ref.filename,
@@ -3765,11 +3792,7 @@ export class AgencyComponent {
     el: HTMLTextAreaElement;
   } | null = null;
 
-  protected rememberPromptField(
-    sceneId: string,
-    index: number,
-    el: HTMLTextAreaElement,
-  ): void {
+  protected rememberPromptField(sceneId: string, index: number, el: HTMLTextAreaElement): void {
     this.activePromptField = { sceneId, index, el };
   }
 
@@ -3797,7 +3820,9 @@ export class AgencyComponent {
     const scene = this.storyboard().find((s) => s.id === sceneId);
     const text = prompt.text;
     const field =
-      this.activePromptField && this.activePromptField.sceneId === sceneId && this.activePromptField.index === index
+      this.activePromptField &&
+      this.activePromptField.sceneId === sceneId &&
+      this.activePromptField.index === index
         ? this.activePromptField
         : null;
     const caret = field ? (field.el.selectionStart ?? text.length) : text.length;
@@ -4152,7 +4177,11 @@ export class AgencyComponent {
     const takeModel = this.models().find((m) => m.name === payload.model) ?? model;
     const assets = payload.content
       .filter((item) => item.type === 'image' || item.type === 'video' || item.type === 'audio')
-      .map((item) => ({ id: item.id ?? '', name: item.name ?? '', kind: item.type as 'image' | 'video' | 'audio' }))
+      .map((item) => ({
+        id: item.id ?? '',
+        name: item.name ?? '',
+        kind: item.type as 'image' | 'video' | 'audio',
+      }))
       .filter((asset) => asset.id.length > 0);
     this.generationQueue.add([
       {
@@ -4168,7 +4197,9 @@ export class AgencyComponent {
         generateAudio: payload.generate_audio ?? false,
       },
     ]);
-    this.queuedPrompts.update((keys) => new Set([...keys, this.promptResourcesKey(sceneId, shotId, index)]));
+    this.queuedPrompts.update(
+      (keys) => new Set([...keys, this.promptResourcesKey(sceneId, shotId, index)]),
+    );
   }
   /** Lleva el prompt al Studio con su proyecto cargado: si la generación está
    *  en el reel reutiliza su payload original; si no, lo arma con la config
