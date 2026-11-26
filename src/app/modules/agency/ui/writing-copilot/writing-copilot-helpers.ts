@@ -139,6 +139,15 @@ export interface PromptHeader {
 const PROMPT_HEADER = /^\s*PROMPT\s+(\d+)\s*(?:de\s+(\d+))?\s*(?:\|[^|\n]*)?\|\s*(.+)$/i;
 const SHOT_HEADER = /^\s*(?:PLANO|TOMA|ESCENA|SHOT)\s+(\d+)\s*[-\u2014\u2013|:]\s*(.+)$/i;
 const ACTION_LINE = /^\s*(?:actuaci[o\u00f3]n|acting)\s*:\s*(.+)$/im;
+const TITLE_LINE = /^\s*(?:t[i\u00ed]tulo|title)\s*:\s*(.+)$/im;
+
+/** Explicit title line written by the skill (TÍTULO: / TITLE:). */
+function explicitTitle(block: string): string | null {
+  const match = TITLE_LINE.exec(block);
+  if (!match) return null;
+  const text = match[1].replace(/\s+/g, ' ').trim();
+  return text ? text.toUpperCase() : null;
+}
 
 /** Non-empty lines without code fences. */
 function promptLines(block: string): string[] {
@@ -194,7 +203,7 @@ export function parsePromptHeader(block: string, fallbackNumber: number): Prompt
   const headerTitle = head ? (head[3] ?? '').trim() : shot ? (shot[2] ?? '').trim() : '';
   return {
     number,
-    title: actionTitle(block) ?? (headerTitle || fallbackTitle(lines)),
+    title: explicitTitle(block) ?? actionTitle(block) ?? (headerTitle || fallbackTitle(lines)),
     explicit: Boolean(head || shot),
   };
 }

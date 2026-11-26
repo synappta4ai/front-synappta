@@ -102,6 +102,15 @@ describe('writing copilot assets', () => {
     expect(parsePromptHeader(block, 2).title).toBe('TO SHELTER THE FLAME');
   });
 
+  it('prioriza la l\u00ednea T\u00cdTULO del skill', () => {
+    const block = [
+      'PROMPT 03 de 10 | 4 s | MACRO INSERT',
+      'T\u00cdTULO: La ni\u00f1a enciende la vela',
+      'Actuaci\u00f3n: enciende la vela.',
+    ].join('\n');
+    expect(parsePromptHeader(block, 3).title).toBe('LA NI\u00d1A ENCIENDE LA VELA');
+  });
+
   it('parte el prompt final por encabezados PROMPT', () => {
     const text = [
       'PROMPT 01 de 02 | 4 s | MEDIUM SHOT',
