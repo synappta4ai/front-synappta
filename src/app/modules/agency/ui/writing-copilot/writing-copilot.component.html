@@ -445,7 +445,7 @@
                   @if (promptHeaders().get(ti + '-' + si); as header) {
                     <div class="mb-2 flex items-center gap-3">
                       <span
-                        class="flex h-10 min-w-10 items-center justify-center rounded-lg bg-accent px-2 text-xl font-black text-black"
+                        class="flex h-10 min-w-10 items-center justify-center rounded-lg border border-accent bg-surface px-2 text-xl font-black text-accent"
                         [attr.aria-label]="
                           'VIDEOMACHINE.WRITE_PROMPT_NUMBER' | translate: { n: header.number }
                         "
@@ -704,20 +704,6 @@
 
       <div class="flex flex-col gap-4">
         @if (finalPrompt(); as prompt) {
-          @if (finalHeader(); as header) {
-            <div class="flex items-center gap-3">
-              <span
-                class="flex h-10 min-w-10 items-center justify-center rounded-lg bg-accent px-2 text-xl font-black text-black"
-                [attr.aria-label]="
-                  'VIDEOMACHINE.WRITE_PROMPT_NUMBER' | translate: { n: header.number }
-                "
-                >{{ header.number }}</span
-              >
-              <span class="text-sm font-bold leading-snug text-ink-on-dark">{{
-                header.title
-              }}</span>
-            </div>
-          }
           @if (editingFinal()) {
             <textarea
               class="max-h-[60vh] min-h-64 w-full resize-y whitespace-pre-wrap rounded-xl border border-surface-border bg-surface-2 p-4 font-mono text-sm leading-relaxed text-ink-on-dark outline-none"
@@ -725,7 +711,43 @@
               [attr.aria-label]="'VIDEOMACHINE.WRITE_EDIT_SEGMENT' | translate"
               (input)="updateFinalPrompt($any($event.target).value)"
             ></textarea>
+          } @else if (finalBlocks().length > 1) {
+            <div class="flex flex-col gap-3">
+              @for (block of finalBlocks(); track $index) {
+                <div class="rounded-xl border border-surface-border bg-surface-2 p-4">
+                  <div class="mb-2 flex items-center gap-3">
+                    <span
+                      class="flex h-10 min-w-10 items-center justify-center rounded-lg border border-accent bg-surface px-2 text-xl font-black text-accent"
+                      [attr.aria-label]="
+                        'VIDEOMACHINE.WRITE_PROMPT_NUMBER' | translate: { n: block.number }
+                      "
+                      >{{ block.number }}</span
+                    >
+                    <span class="text-sm font-bold leading-snug text-ink-on-dark">{{
+                      block.title
+                    }}</span>
+                  </div>
+                  <pre
+                    class="max-h-[45vh] overflow-auto whitespace-pre-wrap font-mono text-sm text-ink-on-dark"
+                  >@for (segment of block.segments; track $index) {<span [class]="'prompt-tone-' + segment.tone">{{ segment.text }}</span>}</pre>
+                </div>
+              }
+            </div>
           } @else {
+            @if (finalHeader(); as header) {
+              <div class="flex items-center gap-3">
+                <span
+                  class="flex h-10 min-w-10 items-center justify-center rounded-lg border border-accent bg-surface px-2 text-xl font-black text-accent"
+                  [attr.aria-label]="
+                    'VIDEOMACHINE.WRITE_PROMPT_NUMBER' | translate: { n: header.number }
+                  "
+                  >{{ header.number }}</span
+                >
+                <span class="text-sm font-bold leading-snug text-ink-on-dark">{{
+                  header.title
+                }}</span>
+              </div>
+            }
             <pre
               class="max-h-[60vh] overflow-auto whitespace-pre-wrap rounded-xl border border-surface-border bg-surface-2 p-4 text-sm text-ink-on-dark"
             >@for (segment of finalSegments(); track $index) {<span [class]="'prompt-tone-' + segment.tone">{{ segment.text }}</span>}</pre>

@@ -50,8 +50,11 @@ import {
   CopilotAsset,
   CopilotAssetRole,
   FINAL_PROMPT_INSTRUCTION,
+  parsePromptHeader,
+  PromptHeader,
   promptKinds,
   splitFences,
+  splitPromptText,
   tagAssets,
   WritingSegment,
 } from './writing-copilot-helpers';
@@ -69,60 +72,6 @@ interface CopilotShot {
   title: string;
   excerpt: string;
   text: string;
-}
-
-/** NÃºmero y tÃ­tulo visibles de cada bloque de prompt. */
-interface PromptHeader {
-  number: number;
-  title: string;
-  explicit: boolean;
-}
-
-const PROMPT_HEADER = /^\s*PROMPT\s+(\d+)\s*(?:de\s+(\d+))?\s*(?:\|[^|\n]*)?\|\s*(.+)$/i;
-const SHOT_HEADER = /^\s*(?:PLANO|TOMA|ESCENA|SHOT)\s+(\d+)\s*[-â€”â€“|:]\s*(.+)$/i;
-
-/** Primeras lÃ­neas Ãºtiles del bloque (sin vallas de cÃ³digo ni lÃ­neas vacÃ­as). */
-function promptLines(block: string): string[] {
-  return block
-    .split('\n')
-    .map((line) => line.trim())
-    .filter((line) => line !== '' && !line.startsWith('```'));
-}
-
-/** TÃ­tulo de respaldo: la primera lÃ­nea si es corta; si no, el inicio del texto. */
-function fallbackTitle(lines: readonly string[]): string {
-  const first = (lines[0] ?? '')
-    .replace(/^#+\s*/, '')
-    .replace(/^\*+|\*+$/g, '')
-    .trim();
-  const isField = /^(BLOQUE|CONTINUITY|REFERENCIAS|REFERENCES|Aspecto|Continuidad|Formato)\b/i.test(
-    first,
-  );
-  if (first && first.length <= 90 && !isField) return first;
-  const text = lines.join(' ').replace(/\s+/g, ' ').trim();
-  return text.length > 90 ? `${text.slice(0, 87).trimEnd()}â€¦` : text;
-}
-
-/** Extrae nÃºmero y tÃ­tulo de un prompt; `fallbackNumber` es su posiciÃ³n global. */
-function parsePromptHeader(block: string, fallbackNumber: number): PromptHeader {
-  const lines = promptLines(block);
-  const head = PROMPT_HEADER.exec(lines[0] ?? '');
-  if (head) {
-    return {
-      number: Number(head[1]) || fallbackNumber,
-      title: (head[3] ?? '').trim(),
-      explicit: true,
-    };
-  }
-  const shot = SHOT_HEADER.exec(lines[0] ?? '');
-  if (shot) {
-    return {
-      number: Number(shot[1]) || fallbackNumber,
-      title: (shot[2] ?? '').trim(),
-      explicit: true,
-    };
-  }
-  return { number: fallbackNumber, title: fallbackTitle(lines), explicit: false };
 }
 
 const SHOT_MARKER = /^\s*(?:shot|plano|toma|escena)\s*\d+\b/i;
@@ -145,7 +94,7 @@ function splitShotBlocks(block: string): string[] {
 
 function excerptOf(text: string): string {
   const clean = text.replace(/\s+/g, ' ').trim();
-  return clean.length > 130 ? `${clean.slice(0, 130)}â€¦` : clean;
+  return clean.length > 130 ? `${clean.slice(0, 130)}…` : clean;
 }
 
 /**
@@ -324,6 +273,16 @@ export class WritingCopilotComponent implements OnDestroy {
   });
 
   /** Encabezado del prompt final, solo cuando el texto trae un nÃºmero explÃ­cito. */
+  /** Bloques del prompt final (cuando trae varios PROMPT) con su encabezado. */
+  protected readonly finalBlocks = computed(() => {
+    const text = this.finalPrompt();
+    if (!text) return [];
+    return splitPromptText(text).map((block) => ({
+      ...block,
+      segments: highlightPrompt(block.text, [], promptKinds(this.taggedAssets())),
+    }));
+  });
+
   protected readonly finalHeader = computed<PromptHeader | null>(() => {
     const text = this.finalPrompt();
     if (!text) return null;
