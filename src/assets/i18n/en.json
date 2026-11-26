@@ -190,6 +190,7 @@
     "WRITE_TIMING_TOO_LONG": "Each shot lasts {{seconds}} s and the maximum per clip is 30 s. Lower the total duration or raise the shots.",
     "WRITE_EDIT_HINT": "You can edit any block before continuing: changes are used in art direction and in the final prompt.",
     "WRITE_EDIT_SEGMENT": "Edit text",
+    "WRITE_PROMPT_NUMBER": "Prompt {{n}}",
     "WRITE_EDIT": "Edit prompt",
     "WRITE_EDIT_DONE": "Done",
     "WRITE_LANGUAGE_SHORT": "Language",

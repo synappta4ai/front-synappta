@@ -191,6 +191,7 @@
     "WRITE_TIMING_TOO_LONG": "Cada toma dura {{seconds}} s y el máximo por clip es 30 s. Bajá la duración total o subí las tomas.",
     "WRITE_EDIT_HINT": "Podés editar cualquier bloque antes de seguir: los cambios se usan en la dirección de arte y en el prompt final.",
     "WRITE_EDIT_SEGMENT": "Editar texto",
+    "WRITE_PROMPT_NUMBER": "Prompt {{n}}",
     "WRITE_EDIT": "Editar prompt",
     "WRITE_EDIT_DONE": "Listo",
     "WRITE_LANGUAGE_SHORT": "Idioma",

@@ -10,6 +10,7 @@
       [model]="stepItems()"
       [activeIndex]="step() - 1"
       [readonly]="false"
+      (activeIndexChange)="onStepSelect($event)"
       styleClass="custom-steps"
     />
   </div>
@@ -441,6 +442,20 @@
             >
               @for (segment of segments(turn.content); track $index; let si = $index) {
                 <div class="mt-2 rounded-lg border border-surface-border bg-surface-2 p-3">
+                  @if (promptHeaders().get(ti + '-' + si); as header) {
+                    <div class="mb-2 flex items-center gap-3">
+                      <span
+                        class="flex h-10 min-w-10 items-center justify-center rounded-lg bg-accent px-2 text-xl font-black text-black"
+                        [attr.aria-label]="
+                          'VIDEOMACHINE.WRITE_PROMPT_NUMBER' | translate: { n: header.number }
+                        "
+                        >{{ header.number }}</span
+                      >
+                      <span class="text-sm font-bold leading-snug text-ink-on-dark">{{
+                        header.title
+                      }}</span>
+                    </div>
+                  }
                   <textarea
                     class="max-h-96 w-full resize-y whitespace-pre-wrap bg-transparent font-mono text-xs leading-relaxed text-ink-on-dark outline-none"
                     [class.font-sans]="!segment.code"
@@ -595,6 +610,11 @@
                 <span class="text-xs font-bold text-ink-on-dark">
                   {{ 'VIDEOMACHINE.WRITE_ART_SHOT' | translate: { n: shot.index } }}
                 </span>
+                @if (shot.title) {
+                  <span class="text-sm font-bold leading-snug text-ink-on-dark">{{
+                    shot.title
+                  }}</span>
+                }
                 <span class="text-xs text-ink-muted-on-dark">{{ shot.excerpt }}</span>
               </div>
               <div class="flex w-full flex-col gap-2 sm:w-80">
@@ -684,6 +704,20 @@
 
       <div class="flex flex-col gap-4">
         @if (finalPrompt(); as prompt) {
+          @if (finalHeader(); as header) {
+            <div class="flex items-center gap-3">
+              <span
+                class="flex h-10 min-w-10 items-center justify-center rounded-lg bg-accent px-2 text-xl font-black text-black"
+                [attr.aria-label]="
+                  'VIDEOMACHINE.WRITE_PROMPT_NUMBER' | translate: { n: header.number }
+                "
+                >{{ header.number }}</span
+              >
+              <span class="text-sm font-bold leading-snug text-ink-on-dark">{{
+                header.title
+              }}</span>
+            </div>
+          }
           @if (editingFinal()) {
             <textarea
               class="max-h-[60vh] min-h-64 w-full resize-y whitespace-pre-wrap rounded-xl border border-surface-border bg-surface-2 p-4 font-mono text-sm leading-relaxed text-ink-on-dark outline-none"

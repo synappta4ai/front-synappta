@@ -66,8 +66,63 @@ const PREFERRED_BRAIN = 'google/gemini-3.8-flash';
 interface CopilotShot {
   key: string;
   index: number;
+  title: string;
   excerpt: string;
   text: string;
+}
+
+/** NÃºmero y tÃ­tulo visibles de cada bloque de prompt. */
+interface PromptHeader {
+  number: number;
+  title: string;
+  explicit: boolean;
+}
+
+const PROMPT_HEADER = /^\s*PROMPT\s+(\d+)\s*(?:de\s+(\d+))?\s*(?:\|[^|\n]*)?\|\s*(.+)$/i;
+const SHOT_HEADER = /^\s*(?:PLANO|TOMA|ESCENA|SHOT)\s+(\d+)\s*[-â€”â€“|:]\s*(.+)$/i;
+
+/** Primeras lÃ­neas Ãºtiles del bloque (sin vallas de cÃ³digo ni lÃ­neas vacÃ­as). */
+function promptLines(block: string): string[] {
+  return block
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line !== '' && !line.startsWith('```'));
+}
+
+/** TÃ­tulo de respaldo: la primera lÃ­nea si es corta; si no, el inicio del texto. */
+function fallbackTitle(lines: readonly string[]): string {
+  const first = (lines[0] ?? '')
+    .replace(/^#+\s*/, '')
+    .replace(/^\*+|\*+$/g, '')
+    .trim();
+  const isField = /^(BLOQUE|CONTINUITY|REFERENCIAS|REFERENCES|Aspecto|Continuidad|Formato)\b/i.test(
+    first,
+  );
+  if (first && first.length <= 90 && !isField) return first;
+  const text = lines.join(' ').replace(/\s+/g, ' ').trim();
+  return text.length > 90 ? `${text.slice(0, 87).trimEnd()}â€¦` : text;
+}
+
+/** Extrae nÃºmero y tÃ­tulo de un prompt; `fallbackNumber` es su posiciÃ³n global. */
+function parsePromptHeader(block: string, fallbackNumber: number): PromptHeader {
+  const lines = promptLines(block);
+  const head = PROMPT_HEADER.exec(lines[0] ?? '');
+  if (head) {
+    return {
+      number: Number(head[1]) || fallbackNumber,
+      title: (head[3] ?? '').trim(),
+      explicit: true,
+    };
+  }
+  const shot = SHOT_HEADER.exec(lines[0] ?? '');
+  if (shot) {
+    return {
+      number: Number(shot[1]) || fallbackNumber,
+      title: (shot[2] ?? '').trim(),
+      explicit: true,
+    };
+  }
+  return { number: fallbackNumber, title: fallbackTitle(lines), explicit: false };
 }
 
 const SHOT_MARKER = /^\s*(?:shot|plano|toma|escena)\s*\d+\b/i;
@@ -90,13 +145,13 @@ function splitShotBlocks(block: string): string[] {
 
 function excerptOf(text: string): string {
   const clean = text.replace(/\s+/g, ' ').trim();
-  return clean.length > 130 ? `${clean.slice(0, 130)}…` : clean;
+  return clean.length > 130 ? `${clean.slice(0, 130)}â€¦` : clean;
 }
 
 /**
- * VideoMachine Â· agente "Writing Copilot": convierte una idea, un guion o una
- * historia corta en prompts cinematogrÃ¡ficos (planos, cÃ¡mara, lentes, luz,
- * actuaciÃ³n, diÃ¡logo) y entrega el prompt final en inglÃ©s con los insumos
+ * VideoMachine Ã‚Â· agente "Writing Copilot": convierte una idea, un guion o una
+ * historia corta en prompts cinematogrÃƒÂ¡ficos (planos, cÃƒÂ¡mara, lentes, luz,
+ * actuaciÃƒÂ³n, diÃƒÂ¡logo) y entrega el prompt final en inglÃƒÂ©s con los insumos
  * tagueados con el sistema de colores de la app.
  */
 @Component({
@@ -140,15 +195,15 @@ export class WritingCopilotComponent implements OnDestroy {
   protected readonly copied = signal<string | null>(null);
   /** Luz elegida por toma (clave = key de CopilotShot). */
   protected readonly shotLighting = signal<Record<string, string | null>>({});
-  /** Movimientos de cámara base del video. */
+  /** Movimientos de cÃ¡mara base del video. */
   protected readonly camera = signal<string[]>([]);
-  /** Movimientos de cámara por toma (clave = key de CopilotShot). */
+  /** Movimientos de cÃ¡mara por toma (clave = key de CopilotShot). */
   protected readonly shotCamera = signal<Record<string, string[]>>({});
   private timer: ReturnType<typeof setInterval> | null = null;
 
-  // â”€â”€ Paso 1: idea + parÃ¡metros â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Paso 1: idea + parÃƒÂ¡metros Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
   protected readonly idea = signal('');
-  /** Tipo de video: define la guía de estructura que sigue el cerebro. */
+  /** Tipo de video: define la guÃ­a de estructura que sigue el cerebro. */
   protected readonly videoType = signal<WritingCopilotVideoType | null>(null);
   protected readonly brainModel = signal('');
   protected readonly outputLanguage = signal<'es' | 'en' | 'bilingual'>('es');
@@ -161,20 +216,20 @@ export class WritingCopilotComponent implements OnDestroy {
   protected readonly look = signal('');
   protected readonly audioMode = signal<AudioMode>('auto');
   protected readonly videoModel = signal<AiModel | null>(null);
-  /** Esquema de iluminación / dirección de arte para todos los prompts. */
+  /** Esquema de iluminaciÃ³n / direcciÃ³n de arte para todos los prompts. */
   protected readonly lighting = signal<string | null>(null);
   protected readonly lookIntensity = signal<LookIntensity>('medium');
 
-  // â”€â”€ Paso 2: conversaciÃ³n + insumos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Paso 2: conversaciÃƒÂ³n + insumos Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
   protected readonly followUp = signal('');
   protected readonly assets = signal<readonly CopilotAsset[]>([]);
   protected readonly uploading = signal(false);
   /** Extrayendo el texto de un documento (PDF/DOCX/TXT/MD). */
   protected readonly extractingDoc = signal(false);
 
-  // â”€â”€ Paso 3: prompt final â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Paso 3: prompt final Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
   protected readonly finalPrompt = signal<string | null>(null);
-  /** El prompt final se está editando a mano. */
+  /** El prompt final se estÃ¡ editando a mano. */
   protected readonly editingFinal = signal(false);
   /** El clip ya viajo a la cola de generacion. */
   protected readonly queued = signal(false);
@@ -222,7 +277,7 @@ export class WritingCopilotComponent implements OnDestroy {
     return steps.map(([labelKey, hintKey]) => {
       const hint = this.translate.instant(hintKey);
       return {
-        label: `${this.translate.instant(labelKey)}<span class="sr-only"> — ${hint}</span><span class="vm-step-tip" aria-hidden="true">${hint}</span>`,
+        label: `${this.translate.instant(labelKey)}<span class="sr-only"> â€” ${hint}</span><span class="vm-step-tip" aria-hidden="true">${hint}</span>`,
         escape: false,
       };
     });
@@ -240,15 +295,40 @@ export class WritingCopilotComponent implements OnDestroy {
     const shots: CopilotShot[] = [];
     blocks.forEach((block, blockIndex) => {
       for (const [shotIndex, part] of splitShotBlocks(block).entries()) {
+        const header = parsePromptHeader(part, shots.length + 1);
         shots.push({
           key: `${blockIndex}-${shotIndex}`,
           index: shots.length + 1,
+          title: header.title,
           excerpt: excerptOf(part),
           text: part,
         });
       }
     });
     return shots;
+  });
+
+  /** Encabezado (nÃºmero + tÃ­tulo) de cada bloque de prompt del paso 2. */
+  protected readonly promptHeaders = computed<ReadonlyMap<string, PromptHeader>>(() => {
+    const headers = new Map<string, PromptHeader>();
+    let counter = 0;
+    this.turns().forEach((turn, turnIndex) => {
+      if (turn.role !== 'assistant') return;
+      splitFences(turn.content).forEach((segment, segmentIndex) => {
+        if (!segment.code) return;
+        counter += 1;
+        headers.set(`${turnIndex}-${segmentIndex}`, parsePromptHeader(segment.content, counter));
+      });
+    });
+    return headers;
+  });
+
+  /** Encabezado del prompt final, solo cuando el texto trae un nÃºmero explÃ­cito. */
+  protected readonly finalHeader = computed<PromptHeader | null>(() => {
+    const text = this.finalPrompt();
+    if (!text) return null;
+    const header = parsePromptHeader(text, 1);
+    return header.explicit ? header : null;
   });
 
   protected readonly canSend = computed(
@@ -259,7 +339,7 @@ export class WritingCopilotComponent implements OnDestroy {
   );
   protected readonly canTranslate = computed(() => !this.sending() && this.turns().length > 0);
 
-  /** Resumen de tiempos: tomas × duración por toma × total. */
+  /** Resumen de tiempos: tomas Ã— duraciÃ³n por toma Ã— total. */
   protected readonly perShotS = computed(() => {
     const total = this.totalDuration();
     const shots = this.shotCount();
@@ -424,8 +504,8 @@ export class WritingCopilotComponent implements OnDestroy {
   });
 
   constructor() {
-    // Modelo por defecto: el mejor cerebro de texto del catÃ¡logo para este
-    // trabajo; si no estÃ¡, se deja el default del back.
+    // Modelo por defecto: el mejor cerebro de texto del catÃƒÂ¡logo para este
+    // trabajo; si no estÃƒÂ¡, se deja el default del back.
     this.catalog
       .byModality('text')
       .pipe(catchError(() => of([] as AiModel[])))
@@ -516,7 +596,6 @@ export class WritingCopilotComponent implements OnDestroy {
           { role: 'user', content: message },
           { role: 'assistant', content: response.text },
         ]);
-        this.idea.set('');
         this.finalPrompt.set(null);
         this.editingFinal.set(false);
         this.shotLighting.set({});
@@ -560,7 +639,7 @@ export class WritingCopilotComponent implements OnDestroy {
       });
   }
 
-  /** Paso 3: dirección de arte por toma. */
+  /** Paso 3: direcciÃ³n de arte por toma. */
   protected goToArtDirection(): void {
     if (this.turns().length === 0) return;
     const currentLighting = { ...this.shotLighting() };
@@ -588,13 +667,13 @@ export class WritingCopilotComponent implements OnDestroy {
       .map((shot) => {
         const id = this.shotLighting()[shot.key] ?? this.lighting();
         const template = id ? LIGHTING_TEMPLATES.find((item) => item.id === id) : undefined;
-        return template ? `Toma ${shot.index} — ${template.name}\n${template.prompt}` : '';
+        return template ? `Toma ${shot.index} â€” ${template.name}\n${template.prompt}` : '';
       })
       .filter(Boolean)
       .join('\n\n');
   }
 
-  /** Bloque de movimientos de cámara por toma, en el orden elegido. */
+  /** Bloque de movimientos de cÃ¡mara por toma, en el orden elegido. */
   private cameraPerShot(): string {
     return this.shots()
       .map((shot) => {
@@ -605,7 +684,7 @@ export class WritingCopilotComponent implements OnDestroy {
       .join('\n\n');
   }
 
-  /** Paso 4: prompt final en inglés con los insumos y la luz de cada toma. */
+  /** Paso 4: prompt final en inglÃ©s con los insumos y la luz de cada toma. */
   protected toFinalPrompt(): void {
     if (!this.canTranslate()) return;
     this.error.set(null);
@@ -618,7 +697,7 @@ export class WritingCopilotComponent implements OnDestroy {
     };
     const perShot = [this.lightingPerShot(), this.cameraPerShot()].filter(Boolean).join('\n\n');
     const message = perShot
-      ? `${FINAL_PROMPT_INSTRUCTION}\n\nDIRECCIÓN POR TOMA (aplicá la luz y los movimientos a cada plano; no uses una sola luz para todo el video):\n${perShot}`
+      ? `${FINAL_PROMPT_INSTRUCTION}\n\nDIRECCIÃ“N POR TOMA (aplicÃ¡ la luz y los movimientos a cada plano; no uses una sola luz para todo el video):\n${perShot}`
       : FINAL_PROMPT_INSTRUCTION;
     const references = buildReferences(this.taggedAssets());
     this.copilot
@@ -667,6 +746,11 @@ export class WritingCopilotComponent implements OnDestroy {
     this.step.set(step);
   }
 
+  /** NavegaciÃ³n por el indicador de pasos: solo deja ir a pasos ya generados. */
+  protected onStepSelect(index: number): void {
+    this.goToStep((index + 1) as Step);
+  }
+
   protected segments(content: string): readonly WritingSegment[] {
     return splitFences(content);
   }
@@ -709,7 +793,7 @@ export class WritingCopilotComponent implements OnDestroy {
     });
   }
 
-  // â”€â”€ Insumos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Insumos Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
   protected async onAssetsPicked(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
@@ -762,11 +846,11 @@ export class WritingCopilotComponent implements OnDestroy {
   }
 
   /**
-   * Scroll de la página al abrir el selector de categoría. PrimeNG enfoca el
+   * Scroll de la pÃ¡gina al abrir el selector de categorÃ­a. PrimeNG enfoca el
    * input del p-select sin `preventScroll` al cerrar el overlay, y el navegador
-   * arrastra la página al principio: con varios insumos obligaba a bajar otra
-   * vez después de elegir cada categoría. Guardamos el scroll al abrir y lo
-   * devolvemos al cerrar, sólo si el cierre vino de elegir una opción.
+   * arrastra la pÃ¡gina al principio: con varios insumos obligaba a bajar otra
+   * vez despuÃ©s de elegir cada categorÃ­a. Guardamos el scroll al abrir y lo
+   * devolvemos al cerrar, sÃ³lo si el cierre vino de elegir una opciÃ³n.
    */
   private scrollYBeforeRoleSelect: number | null = null;
   private roleSelected = false;
@@ -804,8 +888,8 @@ export class WritingCopilotComponent implements OnDestroy {
   }
 
   /**
-   * Archiva la imagen en la biblioteca bajo la categoría elegida (personaje,
-   * locación o prop) para que aparezca en Recursos y el Estudio la mencione
+   * Archiva la imagen en la biblioteca bajo la categorÃ­a elegida (personaje,
+   * locaciÃ³n o prop) para que aparezca en Recursos y el Estudio la mencione
    * por su nombre de archivo.
    */
   private async archiveInLibrary(asset: CopilotAsset): Promise<void> {
@@ -940,19 +1024,19 @@ export class WritingCopilotComponent implements OnDestroy {
     };
   }
 
-  // â”€â”€ Internos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Internos Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
   private history(): WritingCopilotHistoryMessage[] {
     return this.turns().map((turn) => ({ role: turn.role, content: turn.content }));
   }
 
-  /** La guía de estructura viaja en cada turno para que el cerebro no la pierda. */
+  /** La guÃ­a de estructura viaja en cada turno para que el cerebro no la pierda. */
   private videoTypeParams(): WritingCopilotParams | undefined {
     const videoType = this.videoType();
     return videoType ? { video_type: videoType } : undefined;
   }
 
-  /** Solo envÃ­a los parÃ¡metros que el usuario informÃ³ (nombres del skill). */
+  /** Solo envÃƒÂ­a los parÃƒÂ¡metros que el usuario informÃƒÂ³ (nombres del skill). */
   private buildParams(): WritingCopilotParams {
     const params: WritingCopilotParams = {};
     const videoType = this.videoType();
