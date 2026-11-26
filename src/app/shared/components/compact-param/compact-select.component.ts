@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { Popover } from 'primeng/popover';
 
 export interface CompactOption {
@@ -9,7 +10,7 @@ export interface CompactOption {
 /** Chip compacto que abre un popover de opciones (sin campos largos). */
 @Component({
   selector: 'app-compact-select',
-  imports: [Popover],
+  imports: [Popover, TranslatePipe],
   templateUrl: './compact-select.component.html',
   styleUrl: './compact-param.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -18,6 +19,8 @@ export class CompactSelectComponent {
   readonly label = input('');
   readonly value = input<string | number>('');
   readonly options = input<readonly CompactOption[]>([]);
+  /** Texto del tooltip; si no viene se usa una explicación genérica. */
+  readonly hint = input('');
   /** El usuario ya eligió algo distinto del valor por defecto. */
   readonly configured = input(false);
   /** Falta elegir este control para poder continuar. */

@@ -7,12 +7,13 @@ import {
   output,
   viewChild,
 } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { Popover } from 'primeng/popover';
 
 /** Chip compacto con un input numérico dentro del popover. */
 @Component({
   selector: 'app-compact-number',
-  imports: [Popover],
+  imports: [Popover, TranslatePipe],
   templateUrl: './compact-number.component.html',
   styleUrl: './compact-param.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -27,6 +28,8 @@ export class CompactNumberComponent {
   readonly step = input(1);
   readonly suffix = input('');
   readonly placeholder = input('Auto');
+  /** Texto del tooltip; si no viene se usa una explicación genérica. */
+  readonly hint = input('');
   /** El usuario ya definió un valor (no está en Auto). */
   readonly configured = input(false);
   /** Falta definir este control para poder continuar. */

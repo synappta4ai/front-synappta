@@ -4,6 +4,7 @@
   [class.is-configured]="configured()"
   [class.is-attention]="attention()"
   aria-haspopup="listbox"
+  [attr.data-hint]="hint() || ('SHARED.COMPACT.SELECT_HINT' | translate)"
   (click)="pop.toggle($event)"
 >
   <span class="compact-chip-label">{{ label() }}</span>

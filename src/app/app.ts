@@ -4,6 +4,7 @@ import { Toast } from 'primeng/toast';
 
 import { SelectScrollGuardService } from '@services/select-scroll-guard.service';
 import { TooltipViewportGuardService } from '@services/tooltip-viewport-guard.service';
+import { ButtonHintService } from '@services/button-hint.service';
 
 @Component({
   selector: 'app-root',
@@ -18,5 +19,6 @@ export class App {
     // Guards globales de UI: se instancian una sola vez en el root.
     inject(SelectScrollGuardService);
     inject(TooltipViewportGuardService);
+    inject(ButtonHintService);
   }
 }

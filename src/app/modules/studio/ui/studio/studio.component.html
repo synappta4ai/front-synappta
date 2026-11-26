@@ -20,6 +20,7 @@
         type="button"
         class="mode-btn seg-btn"
         [class.active]="mode() === 'video'"
+        [attr.data-hint]="'STUDIO.MODE_VIDEO_HINT' | translate"
         (click)="setMode('video')"
       >
         <i class="md md-videocam"></i> {{ 'STUDIO.MODE_VIDEO' | translate }}
@@ -28,6 +29,7 @@
         type="button"
         class="mode-btn seg-btn"
         [class.active]="mode() === 'image'"
+        [attr.data-hint]="'STUDIO.MODE_IMAGE_HINT' | translate"
         (click)="setMode('image')"
       >
         <i class="md md-image"></i> {{ 'STUDIO.MODE_IMAGE' | translate }}
@@ -61,6 +63,7 @@
       <button
         type="button"
         class="panel-head as-btn"
+        [attr.data-hint]="'STUDIO.REFS_TOGGLE_HINT' | translate"
         (click)="showAssetGallery.set(!showAssetGallery())"
       >
         <span><i class="md md-photo_library"></i> {{ 'STUDIO.REFS_TITLE' | translate }}</span>
@@ -894,6 +897,7 @@
             class="day-chip"
             [class.active]="!sessionDate()"
             [attr.aria-pressed]="!sessionDate()"
+            [attr.data-hint]="'STUDIO.DAY_LIVE_HINT' | translate"
             (click)="pickDay(null)"
           >
             <span>{{ 'STUDIO.REEL_LIVE' | translate }}</span>
@@ -905,6 +909,7 @@
               [class.active]="sessionDate() === d.key"
               [attr.aria-pressed]="sessionDate() === d.key"
               [title]="d.label"
+              [attr.data-hint]="'STUDIO.DAY_CHIP_HINT' | translate: { day: d.label }"
               (click)="pickDay(d.key)"
             >
               <span>{{ d.label }}</span>
@@ -941,6 +946,7 @@
             (click)="toggleDayGroup(group.key, firstGroupKey())"
             [attr.aria-expanded]="isDayOpen(group.key, firstGroupKey())"
             [attr.aria-label]="group.label"
+            [attr.data-hint]="'STUDIO.DAY_GROUP_HINT' | translate"
           >
             <span>{{ group.label }}</span>
             <span class="reel-day-meta">
@@ -962,6 +968,7 @@
                 animate.enter="anim-item"
                 [style.animation-delay.ms]="reelIdx < 8 ? reelIdx * 35 : 280"
                 [class.selected]="take.id === selectedTakeId()"
+                [attr.data-hint]="'STUDIO.OPEN_TAKE_HINT' | translate"
                 (click)="openTakeDetail(take)"
                 (keydown.enter)="openTakeDetail(take)"
               >
