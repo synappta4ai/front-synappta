@@ -47,6 +47,9 @@ export interface StudioTake {
    *  "unknown" del back no se representa (no hay nada útil que mostrar). */
   dispatch?: Exclude<DispatchOrigin, 'unknown'> | null;
   videoUrl: string | null;
+  /** Derivados de display para salidas de imagen (el original sigue en videoUrl). */
+  thumbnailUrl?: string | null;
+  previewUrl?: string | null;
   error: string | null;
   createdAt: number;
   /** Two-check rating: "Buena toma" (aprobada) / "Elegida final". */

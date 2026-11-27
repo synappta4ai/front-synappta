@@ -381,6 +381,26 @@ export class MyGenerationsComponent {
     return out?.localUrl || out?.url || '';
   }
 
+  /** Derivado liviano para grillas; si el back aún no lo generó, usa el original. */
+  protected outputThumb(log: GenerationLog): string {
+    const outputs = log.outputs ?? [];
+    const out =
+      outputs.find((output) => output.type === 'image') ??
+      outputs.find((output) => output.type === 'video') ??
+      outputs[0];
+    return out?.thumbnailUrl || out?.localUrl || out?.url || '';
+  }
+
+  /** Versión intermedia para el visor; el original queda para descargar. */
+  protected outputPreview(log: GenerationLog): string {
+    const outputs = log.outputs ?? [];
+    const out =
+      outputs.find((output) => output.type === 'image') ??
+      outputs.find((output) => output.type === 'video') ??
+      outputs[0];
+    return out?.previewUrl || out?.thumbnailUrl || out?.localUrl || out?.url || '';
+  }
+
   protected hasOutput(log: GenerationLog): boolean {
     return !!this.outputUrl(log);
   }

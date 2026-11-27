@@ -695,7 +695,7 @@
                 ></video>
               } @else {
                 <img
-                  [src]="take.videoUrl | serverUrl"
+                  [src]="take.previewUrl || take.videoUrl | serverUrl"
                   [alt]="take.prompt"
                   class="viewer-media"
                   width="1280"
@@ -979,7 +979,7 @@
                         <img
                           class="take-thumb"
                           animate.enter="anim-item"
-                          [src]="take.videoUrl | serverUrl"
+                          [src]="take.thumbnailUrl || take.videoUrl | serverUrl"
                           [alt]="take.prompt"
                           loading="lazy"
                           decoding="async"

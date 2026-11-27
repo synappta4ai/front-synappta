@@ -161,7 +161,11 @@ export class GenerationEventsStore {
   /** Merges backend logs into the reel (newest first) and resumes polling. */
   private mergeLogs(logs: GenerationLog[]): void {
     for (const log of logs) {
-      if (!log.task_id || log.task_id === '<no-task>' || this._events().some((e) => e.id === log.task_id)) {
+      if (
+        !log.task_id ||
+        log.task_id === '<no-task>' ||
+        this._events().some((e) => e.id === log.task_id)
+      ) {
         continue;
       }
       const take = this.takeFromLog(log);
@@ -188,7 +192,12 @@ export class GenerationEventsStore {
     const from = new Date(`${dateISO}T00:00:00`);
     const to = new Date(from.getTime() + 24 * 60 * 60 * 1000);
     this.agencyService
-      .taskHistory({ from: from.toISOString(), to: to.toISOString(), resource_type: 'video', limit: 200 })
+      .taskHistory({
+        from: from.toISOString(),
+        to: to.toISOString(),
+        resource_type: 'video',
+        limit: 200,
+      })
       .pipe(catchError(() => EMPTY))
       .subscribe((logs) => {
         for (const log of logs ?? []) {
@@ -275,7 +284,7 @@ export class GenerationEventsStore {
       request = req;
       refImages = (req.content ?? [])
         .filter((c) => c.type === 'image' && !!c.id)
-        .map((c) => ({ id: c.id as string, name: c.name ?? c.id as string }));
+        .map((c) => ({ id: c.id as string, name: c.name ?? (c.id as string) }));
     } catch {
       prompt = '';
     }
@@ -292,6 +301,8 @@ export class GenerationEventsStore {
       status: this.mapStatus(log.status),
       progress: log.progress ?? 0,
       videoUrl: out?.localUrl ?? out?.url ?? null,
+      thumbnailUrl: out?.thumbnailUrl ?? null,
+      previewUrl: out?.previewUrl ?? null,
       error: log.error_message || null,
       createdAt: new Date(log.created_at).getTime(),
       ratingGood: !!log.rating_good,
@@ -385,6 +396,8 @@ export class GenerationEventsStore {
             progress,
             dispatch,
             videoUrl: out?.localUrl ?? out?.url ?? null,
+            thumbnailUrl: out?.thumbnailUrl ?? null,
+            previewUrl: out?.previewUrl ?? null,
             error: status.error ?? null,
           });
           if (terminal) {

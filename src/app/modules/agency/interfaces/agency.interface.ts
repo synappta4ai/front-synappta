@@ -150,6 +150,9 @@ export interface OutputResource {
   url: string;
   localUrl?: string;
   type: ContentItemType;
+  /** Derivados solo para mostrar (grilla/visor); el original sigue en url/localUrl. */
+  thumbnailUrl?: string;
+  previewUrl?: string;
 }
 
 export interface GenerateResponse {
@@ -168,6 +171,9 @@ export interface StatusOutput {
   url: string;
   localUrl?: string;
   type: string;
+  /** Derivados de display (ver OutputResource). */
+  thumbnailUrl?: string;
+  previewUrl?: string;
 }
 
 export interface StatusResponse {

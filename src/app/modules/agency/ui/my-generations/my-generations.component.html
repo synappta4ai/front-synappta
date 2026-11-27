@@ -116,229 +116,213 @@
   } @else {
     <div class="gen-grid">
       @for (log of filtered(); track log.task_id; let i = $index) {
-            <article
-              class="gen-card"
-              animate.enter="anim-item"
-              [style.animation-delay.ms]="i < 8 ? i * 35 : 280"
-            >
-              <!-- Preview + click abre detalle -->
-              <div
-                class="gen-card__media"
-                role="button"
-                tabindex="0"
-                [attr.aria-label]="'AGENCY.HISTORY.VIEW_DETAIL_ARIA' | translate"
-                (click)="open(log)"
-                (keydown.enter)="open(log)"
-                (keydown.space)="$event.preventDefault(); open(log)"
-              >
-                @if (hasOutput(log)) {
-                  @if (isVideo(log)) {
-                    <video
-                      [src]="absoluteUrl(outputUrl(log))"
-                      preload="metadata"
-                      tabindex="-1"
-                      aria-hidden="true"
-                    ></video>
-                    <span class="gen-card__play" aria-hidden="true"
-                      ><i class="md md-play_arrow"></i
-                    ></span>
-                  } @else {
-                    <img
-                      appImgFade
-                      [src]="absoluteUrl(outputUrl(log))"
-                      [alt]="
-                        log.piece_name ||
-                        log.model_name ||
-                        ('AGENCY.HISTORY.GENERATION' | translate)
-                      "
-                      width="640"
-                      height="360"
-                      loading="lazy"
-                      decoding="async"
-                    />
-                  }
-                  <span
-                    class="gen-card__duration"
-                    [title]="'AGENCY.HISTORY.DURATION' | translate"
-                    >{{ duration(log.video_duration) }}</span
-                  >
-                } @else {
-                  <div class="gen-card__placeholder">
-                    @if (log.status === 'failed') {
-                      <i class="md md-error"></i>
-                      <span>{{ 'AGENCY.HISTORY.NO_PREVIEW' | translate }}</span>
-                    } @else {
-                      <i
-                        class="md md-hourglass_empty"
-                        [class.md-spin]="log.status === 'running'"
-                      ></i>
-                      <span>{{ 'AGENCY.HISTORY.PROCESSING' | translate }}</span>
-                    }
-                  </div>
-                }
-                <p-tag
-                  [value]="statusKey(log.status) | translate"
-                  [severity]="severity(log.status)"
-                  styleClass="gen-card__status"
+        <article
+          class="gen-card"
+          animate.enter="anim-item"
+          [style.animation-delay.ms]="i < 8 ? i * 35 : 280"
+        >
+          <!-- Preview + click abre detalle -->
+          <div
+            class="gen-card__media"
+            role="button"
+            tabindex="0"
+            [attr.aria-label]="'AGENCY.HISTORY.VIEW_DETAIL_ARIA' | translate"
+            (click)="open(log)"
+            (keydown.enter)="open(log)"
+            (keydown.space)="$event.preventDefault(); open(log)"
+          >
+            @if (hasOutput(log)) {
+              @if (isVideo(log)) {
+                <video
+                  [src]="absoluteUrl(outputUrl(log))"
+                  preload="metadata"
+                  tabindex="-1"
+                  aria-hidden="true"
+                ></video>
+                <span class="gen-card__play" aria-hidden="true"
+                  ><i class="md md-play_arrow"></i
+                ></span>
+              } @else {
+                <img
+                  appImgFade
+                  [src]="absoluteUrl(outputThumb(log))"
+                  [alt]="
+                    log.piece_name || log.model_name || ('AGENCY.HISTORY.GENERATION' | translate)
+                  "
+                  width="640"
+                  height="360"
+                  loading="lazy"
+                  decoding="async"
                 />
-                @if (dispatchOrigin(log.task_id); as origin) {
-                  <span class="gen-card__dispatch" [title]="dispatchTitle(origin)">
-                    <p-tag
-                      [value]="dispatchLabel(origin)"
-                      [severity]="origin === 'bridge' ? 'success' : 'secondary'"
-                    />
-                  </span>
+              }
+              <span class="gen-card__duration" [title]="'AGENCY.HISTORY.DURATION' | translate">{{
+                duration(log.video_duration)
+              }}</span>
+            } @else {
+              <div class="gen-card__placeholder">
+                @if (log.status === 'failed') {
+                  <i class="md md-error"></i>
+                  <span>{{ 'AGENCY.HISTORY.NO_PREVIEW' | translate }}</span>
+                } @else {
+                  <i class="md md-hourglass_empty" [class.md-spin]="log.status === 'running'"></i>
+                  <span>{{ 'AGENCY.HISTORY.PROCESSING' | translate }}</span>
                 }
               </div>
+            }
+            <p-tag
+              [value]="statusKey(log.status) | translate"
+              [severity]="severity(log.status)"
+              styleClass="gen-card__status"
+            />
+            @if (dispatchOrigin(log.task_id); as origin) {
+              <span class="gen-card__dispatch" [title]="dispatchTitle(origin)">
+                <p-tag
+                  [value]="dispatchLabel(origin)"
+                  [severity]="origin === 'bridge' ? 'success' : 'secondary'"
+                />
+              </span>
+            }
+          </div>
 
-              <!-- Metadata -->
-              <div class="gen-card__body">
-                <div class="gen-card__head">
-                  <p class="gen-card__model" [title]="log.model_name">
-                    {{ log.model_name || ('AGENCY.HISTORY.MODEL_UNKNOWN' | translate) }}
-                  </p>
-                  @if (log.video_fps && log.video_fps > 0) {
-                    <span class="chip-mini">{{ log.video_fps }} fps</span>
+          <!-- Metadata -->
+          <div class="gen-card__body">
+            <div class="gen-card__head">
+              <p class="gen-card__model" [title]="log.model_name">
+                {{ log.model_name || ('AGENCY.HISTORY.MODEL_UNKNOWN' | translate) }}
+              </p>
+              @if (log.video_fps && log.video_fps > 0) {
+                <span class="chip-mini">{{ log.video_fps }} fps</span>
+              }
+            </div>
+
+            <p class="gen-card__project" [title]="projectLabel(log)">
+              <i class="md md-work"></i>
+              <span class="truncate">{{
+                projectLabel(log) || ('AGENCY.HISTORY.NO_PROJECT' | translate)
+              }}</span>
+              @if (log.piece_code || log.piece_name) {
+                <span class="gen-card__piece" [title]="log.piece_name || log.piece_code"
+                  >· {{ log.piece_code || log.piece_name }}</span
+                >
+              }
+            </p>
+
+            <dl class="gen-card__meta">
+              <div>
+                <dt [title]="'AGENCY.HISTORY.USER' | translate">
+                  <i class="md md-person"></i>{{ 'AGENCY.HISTORY.USER' | translate }}
+                </dt>
+                <dd>{{ log.user_display_name || ('AGENCY.HISTORY.YOU' | translate) }}</dd>
+              </div>
+              <div>
+                <dt [title]="'AGENCY.HISTORY.DATE' | translate">
+                  <i class="md md-schedule"></i>{{ 'AGENCY.HISTORY.DATE' | translate }}
+                </dt>
+                <dd>{{ log.created_at | date: 'short' }}</dd>
+              </div>
+              <div>
+                <dt [title]="'AGENCY.HISTORY.COST' | translate">
+                  <i class="md md-bolt"></i>{{ 'AGENCY.HISTORY.COST' | translate }}
+                </dt>
+                <dd>{{ cost(log) | currency: 'USD' : 'symbol' : '1.2-4' }}</dd>
+              </div>
+              <div>
+                <dt [title]="'AGENCY.HISTORY.ELAPSED' | translate">
+                  <i class="md md-timer"></i>{{ 'AGENCY.HISTORY.ELAPSED' | translate }}
+                </dt>
+                <dd>{{ elapsedLabel(log) }}</dd>
+              </div>
+              <div>
+                <dt [title]="'AGENCY.HISTORY.RESOLUTION' | translate">
+                  <i class="md md-desktop_windows"></i>{{ 'AGENCY.HISTORY.RESOLUTION' | translate }}
+                </dt>
+                <dd>
+                  {{ log.video_resolution || '—' }}
+                  @if (log.video_duration && log.video_duration > 0) {
+                    · {{ duration(log.video_duration) }}
                   }
-                </div>
+                </dd>
+              </div>
+            </dl>
 
-                <p class="gen-card__project" [title]="projectLabel(log)">
-                  <i class="md md-work"></i>
-                  <span class="truncate">{{
-                    projectLabel(log) || ('AGENCY.HISTORY.NO_PROJECT' | translate)
-                  }}</span>
-                  @if (log.piece_code || log.piece_name) {
-                    <span class="gen-card__piece" [title]="log.piece_name || log.piece_code"
-                      >· {{ log.piece_code || log.piece_name }}</span
-                    >
-                  }
-                </p>
+            <!-- Acciones -->
+            <div class="gen-card__actions">
+              <button
+                type="button"
+                class="log-reuse"
+                [title]="'AGENCY.HISTORY.REUSE_TITLE' | translate"
+                [disabled]="!log.request"
+                (click)="reuse(log)"
+              >
+                <i class="md md-refresh"></i
+                ><span>{{ 'AGENCY.HISTORY.REUSE_SHORT' | translate }}</span>
+              </button>
 
-                <dl class="gen-card__meta">
-                  <div>
-                    <dt [title]="'AGENCY.HISTORY.USER' | translate">
-                      <i class="md md-person"></i>{{ 'AGENCY.HISTORY.USER' | translate }}
-                    </dt>
-                    <dd>{{ log.user_display_name || ('AGENCY.HISTORY.YOU' | translate) }}</dd>
-                  </div>
-                  <div>
-                    <dt [title]="'AGENCY.HISTORY.DATE' | translate">
-                      <i class="md md-schedule"></i>{{ 'AGENCY.HISTORY.DATE' | translate }}
-                    </dt>
-                    <dd>{{ log.created_at | date: 'short' }}</dd>
-                  </div>
-                  <div>
-                    <dt [title]="'AGENCY.HISTORY.COST' | translate">
-                      <i class="md md-bolt"></i>{{ 'AGENCY.HISTORY.COST' | translate }}
-                    </dt>
-                    <dd>{{ cost(log) | currency: 'USD' : 'symbol' : '1.2-4' }}</dd>
-                  </div>
-                  <div>
-                    <dt [title]="'AGENCY.HISTORY.ELAPSED' | translate">
-                      <i class="md md-timer"></i>{{ 'AGENCY.HISTORY.ELAPSED' | translate }}
-                    </dt>
-                    <dd>{{ elapsedLabel(log) }}</dd>
-                  </div>
-                  <div>
-                    <dt [title]="'AGENCY.HISTORY.RESOLUTION' | translate">
-                      <i class="md md-desktop_windows"></i
-                      >{{ 'AGENCY.HISTORY.RESOLUTION' | translate }}
-                    </dt>
-                    <dd>
-                      {{ log.video_resolution || '—' }}
-                      @if (log.video_duration && log.video_duration > 0) {
-                        · {{ duration(log.video_duration) }}
-                      }
-                    </dd>
-                  </div>
-                </dl>
+              <p-button
+                icon="md md-download"
+                [label]="'AGENCY.HISTORY.DOWNLOAD' | translate"
+                size="small"
+                severity="secondary"
+                [outlined]="true"
+                [disabled]="!hasOutput(log)"
+                (onClick)="downloadOutput(log, absoluteUrl(outputUrl(log)))"
+              />
 
-                <!-- Acciones -->
-                <div class="gen-card__actions">
+              <div
+                class="log-rating-group"
+                role="group"
+                [attr.aria-label]="'AGENCY.HISTORY.RATING_GROUP_ARIA' | translate"
+              >
+                <button
+                  type="button"
+                  class="log-rating-check"
+                  [class.active]="log.rating_good"
+                  [title]="
+                    (log.rating_good ? 'AGENCY.HISTORY.RATE_UNLIKE' : 'AGENCY.HISTORY.RATE_LIKE')
+                      | translate
+                  "
+                  [attr.aria-label]="
+                    (log.rating_good ? 'AGENCY.HISTORY.RATE_UNLIKE' : 'AGENCY.HISTORY.RATE_LIKE')
+                      | translate
+                  "
+                  [attr.aria-pressed]="log.rating_good"
+                  (click)="rate(log, 'good')"
+                >
+                  <ui-icon name="md-check" />
+                </button>
+                <button
+                  type="button"
+                  class="log-rating-check"
+                  [class.active]="log.rating_final"
+                  [title]="
+                    (log.rating_final ? 'AGENCY.HISTORY.RATE_UNFINAL' : 'AGENCY.HISTORY.RATE_FINAL')
+                      | translate
+                  "
+                  [attr.aria-label]="
+                    (log.rating_final ? 'AGENCY.HISTORY.RATE_UNFINAL' : 'AGENCY.HISTORY.RATE_FINAL')
+                      | translate
+                  "
+                  [attr.aria-pressed]="log.rating_final"
+                  (click)="rate(log, 'final')"
+                >
+                  <ui-icon name="md-check md-double" />
+                </button>
+                @if (log.rating_good || log.rating_final) {
                   <button
                     type="button"
-                    class="log-reuse"
-                    [title]="'AGENCY.HISTORY.REUSE_TITLE' | translate"
-                    [disabled]="!log.request"
-                    (click)="reuse(log)"
+                    class="log-rating-clear"
+                    [title]="'AGENCY.HISTORY.RATE_CLEAR' | translate"
+                    [attr.aria-label]="'AGENCY.HISTORY.RATE_CLEAR' | translate"
+                    (click)="clearRating(log)"
                   >
-                    <i class="md md-refresh"></i
-                    ><span>{{ 'AGENCY.HISTORY.REUSE_SHORT' | translate }}</span>
+                    <ui-icon name="md-close" />
                   </button>
-
-                  <p-button
-                    icon="md md-download"
-                    [label]="'AGENCY.HISTORY.DOWNLOAD' | translate"
-                    size="small"
-                    severity="secondary"
-                    [outlined]="true"
-                    [disabled]="!hasOutput(log)"
-                    (onClick)="downloadOutput(log, absoluteUrl(outputUrl(log)))"
-                  />
-
-                  <div
-                    class="log-rating-group"
-                    role="group"
-                    [attr.aria-label]="'AGENCY.HISTORY.RATING_GROUP_ARIA' | translate"
-                  >
-                    <button
-                      type="button"
-                      class="log-rating-check"
-                      [class.active]="log.rating_good"
-                      [title]="
-                        (log.rating_good
-                          ? 'AGENCY.HISTORY.RATE_UNLIKE'
-                          : 'AGENCY.HISTORY.RATE_LIKE'
-                        ) | translate
-                      "
-                      [attr.aria-label]="
-                        (log.rating_good
-                          ? 'AGENCY.HISTORY.RATE_UNLIKE'
-                          : 'AGENCY.HISTORY.RATE_LIKE'
-                        ) | translate
-                      "
-                      [attr.aria-pressed]="log.rating_good"
-                      (click)="rate(log, 'good')"
-                    >
-                      <ui-icon name="md-check" />
-                    </button>
-                    <button
-                      type="button"
-                      class="log-rating-check"
-                      [class.active]="log.rating_final"
-                      [title]="
-                        (log.rating_final
-                          ? 'AGENCY.HISTORY.RATE_UNFINAL'
-                          : 'AGENCY.HISTORY.RATE_FINAL'
-                        ) | translate
-                      "
-                      [attr.aria-label]="
-                        (log.rating_final
-                          ? 'AGENCY.HISTORY.RATE_UNFINAL'
-                          : 'AGENCY.HISTORY.RATE_FINAL'
-                        ) | translate
-                      "
-                      [attr.aria-pressed]="log.rating_final"
-                      (click)="rate(log, 'final')"
-                    >
-                      <ui-icon name="md-check md-double" />
-                    </button>
-                    @if (log.rating_good || log.rating_final) {
-                      <button
-                        type="button"
-                        class="log-rating-clear"
-                        [title]="'AGENCY.HISTORY.RATE_CLEAR' | translate"
-                        [attr.aria-label]="'AGENCY.HISTORY.RATE_CLEAR' | translate"
-                        (click)="clearRating(log)"
-                      >
-                        <ui-icon name="md-close" />
-                      </button>
-                    }
-                  </div>
-                </div>
+                }
               </div>
-            </article>
-          }
+            </div>
+          </div>
+        </article>
+      }
     </div>
 
     <!-- Paginado incremental -->
@@ -405,7 +389,7 @@
         } @else {
           <img
             appImgFade
-            [src]="absoluteUrl(outputUrl(log))"
+            [src]="absoluteUrl(outputPreview(log))"
             [alt]="log.piece_name || log.model_name || ('AGENCY.HISTORY.GENERATION' | translate)"
             class="viewer-preview"
             width="1280"
